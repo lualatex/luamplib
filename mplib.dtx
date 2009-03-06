@@ -1,0 +1,982 @@
+% \iffalse meta-comment
+%
+% Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
+% <elie.roux@telecom-bretagne.eu>.
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either
+% version 1.3 of this license or (at your option) any later
+% version. The latest version of this license is in
+%    http://www.latex-project.org/lppl.txt
+% and version 1.3 or later is part of all distributions of
+% LaTeX version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status "maintained".
+%
+% This Current Maintainer of this work is Elie Roux.
+%
+% This work consists of the main source file luamplib.dtx
+% and the derived files
+%    luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
+%
+%
+% Unpacking and documentation:
+%    pdflatex luamplib.dtx
+%
+%    The class ltxdoc loads the configuration file ltxdoc.cfg
+%    if available. Here you can specify further options, e.g.
+%    use A4 as paper format:
+%       \PassOptionsToClass{a4paper}{article}
+%
+%
+%<*ignore>
+\begingroup
+
+\input docstrip.tex
+\Msg{************************************************************************}
+\Msg{* Installation}
+\Msg{* Package: luamplib 2009/01/09 v0.9 package for LuaTeX with MPLib.}
+\Msg{************************************************************************}
+
+\keepsilent
+\askforoverwritefalse
+
+\preamble
+This is a generated file.
+
+Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
+<elie.roux@telecom-bretagne.eu>.
+
+This work may be distributed and/or modified under the
+conditions of the LaTeX Project Public License, either
+version 1.3 of this license or (at your option) any later
+version. The latest version of this license is in
+   http://www.latex-project.org/lppl.txt
+and version 1.3 or later is part of all distributions of
+LaTeX version 2005/12/01 or later.
+
+This work has the LPPL maintenance status "maintained".
+
+This Current Maintainer of this work is Elie Roux.
+
+This work consists of the main source file luamplib.dtx
+and the derived files
+   luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
+
+\endpreamble
+
+\generate{%
+  \file{luamplib.drv}{\from{luamplib.dtx}{driver}}%
+  \usedir{tex/luatex/luamplib}%
+  \file{luamplib.sty}{\from{luamplib.dtx}{package}}%
+  \file{luamplib.tex}{\from{luamplib.dtx}{tex}}%
+}
+
+% The following hacks are to generate a lua file with lua comments starting by -- instead of %%
+
+\def\MetaPrefix{-- }
+
+% we have to redefine the preamble to get the good comments.
+
+\preamble
+This is a generated file.
+
+Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
+<elie.roux@telecom-bretagne.eu>.
+
+This work may be distributed and/or modified under the
+conditions of the LaTeX Project Public License, either
+version 1.3 of this license or (at your option) any later
+version. The latest version of this license is in
+   http://www.latex-project.org/lppl.txt
+and version 1.3 or later is part of all distributions of
+LaTeX version 2005/12/01 or later.
+
+This work has the LPPL maintenance status "maintained".
+
+This Current Maintainer of this work is Elie Roux.
+
+This work consists of the main source file luamplib.dtx
+and the derived files
+   luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
+\endpreamble
+
+\def\luapostamble{%
+  \MetaPrefix^^J%
+  \MetaPrefix\space End of File `\outFileName'.%
+}
+
+\def\currentpostamble{\luapostamble}%
+
+\generate{%
+  \usedir{tex/luatex/mplib}%
+  \file{luamplib.lua}{\from{luamplib.dtx}{lua}}%
+}
+
+\obeyspaces
+\Msg{************************************************************************}
+\Msg{*}
+\Msg{* To finish the installation you have to move the following}
+\Msg{* files into a directory searched by TeX:}
+\Msg{*}
+\Msg{*     luamplib.sty luamplib.lua luamplib.tex}
+\Msg{*}
+\Msg{* Happy TeXing!}
+\Msg{*}
+\Msg{************************************************************************}
+
+\endgroup
+%</ignore>
+% \iffalse
+%<package>
+%<package>\NeedsTeXFormat{LaTeX2e}
+%<package>\ProvidesPackage{luamplib.sty}
+%<package>  [2009/01/09 v0.9 MPLib package for LuaTeX]
+%<package>
+% \fi
+%<*driver>
+\documentclass{ltxdoc}
+\EnableCrossrefs
+\CodelineIndex
+\begin{document}
+  \DocInput{luamplib.dtx}%
+\end{document}
+%</driver>
+% \fi
+%
+% \CheckSum{0}
+%
+% \CharacterTable
+%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%   Digits        \0\1\2\3\4\5\6\7\8\9
+%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%   Dollar        \$     Percent       \%     Ampersand     \&
+%   Acute accent  \'     Left paren    \(     Right paren   \)
+%   Asterisk      \*     Plus          \+     Comma         \,
+%   Minus         \-     Point         \.     Solidus       \/
+%   Colon         \:     Semicolon     \;     Less than     \<
+%   Equals        \=     Greater than  \>     Question mark \?
+%   Commercial at \@     Left bracket  \[     Backslash     \\
+%   Right bracket \]     Circumflex    \^     Underscore    \_
+%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%   Right brace   \}     Tilde         \~}
+%
+% \GetFileInfo{luamplib.sty}
+%
+% \title{The \textsf{luamplib} package}
+% \date{2009/02/09 v0.9}
+% \author{Hans Hagen, Taco Hoekwater and Elie Roux \\ \texttt{elie.roux@telecom-bretagne.eu}}
+%
+% \maketitle
+%
+% \begin{abstract}
+% Package to have metapost code typeset directly in a document with Lua\TeX .
+% \end{abstract}
+%
+% \section{Documentation}
+%
+% This packages aims at providing a simple way to typeset directly metapost code in a document with Lua\TeX . Lua\TeX\ is built with the lua \texttt{mplib} library, that runs metapost code. This package is basically a wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\ functions to have the output of the \texttt{mplib} functions in the pdf.
+%
+% The package need to be in PDF mode in order to output something, as PDF specials are not supported by the DVI format and tools.
+%
+% The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions adjusted to the metapost code.
+%
+% The code is from the \texttt{supp-mpl.lua} and \texttt{supp-mpl.tex} files from Con\TeX t, they have been adapted to \LaTeX\ and Plain by Elie Roux. The changes are:
+%
+% \begin{itemize}
+% \item a \LaTeX\ environment
+% \item all \TeX\ macros start by \texttt{mplib}
+% \item a \texttt{luamplib.make} function
+% \item format \texttt{.mem} generation automatically, so that it works in most \TeX\ distributions
+% \end{itemize}
+%
+% Using this package is easy: in Plain, type your metapost code between the macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the \texttt{mplibcode} environment.
+%
+% In order to use metapost, some \texttt{.mem} files are needed. These files must be generated with the same version of \texttt{mplib} as the version of Lua\TeX . For most distributions it's not the case, so the mem files are autogenerated, but \TeX Live 2009 aims at providing mem files of the good versions. If this package is to be inluded in a distribution, some values may have to be changed in the file \texttt{luamplib.lua}, see comments in this file.
+%
+% By default, the first time you typeset some metapost, a \texttt{plain.mem} will appear in the current directory. It will be used each time you'll typeset metapost in this directory. \TeX\ distributions may fix it by providing \texttt{.mem} files working with mplib.
+%
+% For an unknown reason, the files \texttt{mpost.mem} and \texttt{metafun.mem} of \TeX Live do not work at all, so 
+%
+% \section{Files}
+%
+% This package contains three files:
+% \begin{itemize}
+% \item \texttt{luamplib.lua} containing the lua code that calls mplib
+% \item \texttt{luamplib.tex} containing the macros for pdf encapsulation for Plain
+% \item \texttt{luamplib.sty} containing the macros for \LaTeX
+% \end{itemize}
+%
+% \iffalse
+%<*lua>
+% \fi
+%
+% \subsection{\texttt{luamplib.lua}}
+%m
+% First the \texttt{metapost} module is registered as a Lua\TeX\ module, with some informations. Here we can't name it \texttt{mplib}, as the name is already taken.
+%
+%    \begin{macrocode}
+
+if not modules then modules = { } end modules ['luamplib'] = {
+    name          = "luamplib",
+    date          = "2009/02/26"
+    version       = 1.001,
+    description   = "Lua functions to typeset Metapost directly with MPLib",
+    author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
+    copyright     = "ConTeXt Development Team",
+    license       = "Public Domain",
+}
+
+%    \end{macrocode}
+% This module is a stripped down version of libraries that are used
+% by Con\TeX t.
+%    \begin{macrocode}
+
+local format, concat, abs = string.format, table.concat, math.abs
+
+luamplib          = luamplib or { }
+luamplib.lastlog  = ""
+
+%    \end{macrocode}
+% 
+% The \texttt{mem} file and the format name are hardcoded, and they can be set with \TeX\ if it's useful. The \TeX\ distributions should change these values if necessary. If autogenerate is false, it will change the \texttt{luamplib.finder} function so that it will really find the \texttt{.mem} file of the distribution. Set it to \texttt{false} only if your distribution provides usable mem files.
+%
+%    \begin{macrocode}
+
+luamplib.currentformat = "plain"
+luamplib.currentmem = "plain.mem"
+
+local currentformat = luamplib.currentformat
+local currentmem = luamplib.currentmem
+
+function luamplib.setformat (name)
+    luamplib.currentformat = name
+end
+
+function luamplib.setmemfile(name)
+    luamplib.currentmem = name
+end
+
+luamplib.autogen = luamplib.autogen or true
+
+function luamplib.setautogen(name)
+    if name == "true" or name == "1" then
+        luamplib.autogen = true
+    else
+        luamplib.autogen = false
+    end
+end
+
+%    \end{macrocode}
+%
+% We use the \texttt{kpse} library unless a finder is already defined. To find the .mem files with kpse, we have to set the \texttt{engine} environment variable to \texttt{metapost}. The trick here is not to find the distribution's \texttt{.mem} files if \texttt{autogen} is set to true. This way we generate them automatically.
+%
+%    \begin{macrocode}
+
+luamplib.finder = luamplib.finder or function(name, mode, ftype)
+    if mode == "w" then
+        return name
+    else
+        local result
+        if ftype == 'mem' and luamplib.autogen == false then
+            local envsave = os.getenv('engine')
+            os.setenv('engine', 'metapost')
+            result = kpse.find_file(name,ftype)
+            os.setenv('engine', envsave)
+            texio.write_nl(result)
+            
+        else
+            result = kpse.find_file(name,ftype)
+        end
+        return result
+    end
+end
+
+luamplib.report = luamplib.report or function(...)
+    texio.write(format("(metapost: %s)",format(...)))
+end
+
+function luamplib.resetlastlog()
+    luamplib.lastlog = ""
+end
+
+%    \end{macrocode}
+%
+% This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code line by line, but it needs to be passed entirely to \texttt{luamplib.process}, so we simply add the lines in \texttt{luamplib.data} and at the end we call \texttt{luamplib.process} on \texttt{luamplib.data}.
+%
+%    \begin{macrocode}
+
+luamplib.data = ""
+
+function luamplib.resetdata()
+    luamplib.data = ""
+end
+
+function luamplib.addline(line)
+    luamplib.data = luamplib.data .. '\n' .. line
+end
+
+function luamplib.processlines()
+    luamplib.process(luamplib.data)
+    luamplib.resetdata()
+end
+
+local preamble = [[
+input %s ; dump ;
+]]
+
+%    \end{macrocode}
+% \begin{macro}{luamplib.make}
+%
+% This function is the one called when an appropriate \texttt{.mem} file hasn't been found. The goal is to generate it. 
+%
+%    \begin{macrocode}
+
+luamplib.make = luamplib.make or function (name, mem_name)
+    local mpx = luamplib.new {
+        ini_version = true,
+        find_file = luamplib.finder,
+        job_name =  name}
+    if mpx then
+        local result
+        result = mpx:execute(format(preamble,name))
+        luamplib.report(format("dumping format %s in %s", name, mem_name))
+        mpx:finish()
+    end
+end
+
+%    \end{macrocode}
+%
+% \end{macro}
+%
+% \begin{macro}{luamplib.load}
+%
+% This function is the one loading the metapost format we want. It uses the \texttt{luamplib.currentformat} and \texttt{luamplib.currentmem} to determine the format and the mem file to use.
+%
+% The rest of this module is not documented. More info can be found in the
+% Lua\TeX\ manual, articles in user group journals and the files that
+% ship with Con\TeX t.
+%
+%    \begin{macrocode}
+
+function luamplib.load()
+    local mpx = luamplib.new {
+        ini_version = false,
+        mem_name = currentmem,
+        find_file = luamplib.finder
+    }
+    if not mpx then
+        luamplib.make(currentformat, currentmem)
+        mpx = luamplib.new {
+            ini_version = false,
+            mem_name = currentmem,
+            find_file = luamplib.finder
+        }
+    end
+    if mpx then
+        if luamplib.showlog then
+            luamplib.report("using file %s", currentmem)
+        end
+        return mpx, nil
+    else
+        return nil, { status = 99, error = "out of memory or invalid format" }
+    end
+end
+
+%    \end{macrocode}
+%
+% \end{macro}
+%
+%    \begin{macrocode}
+
+function luamplib.unload(mpx)
+    if mpx then
+        mpx:finish()
+    end
+end
+
+function luamplib.reporterror(result)
+    if not result then
+        luamplib.report("mp error: no result object returned")
+    elseif result.status > 0 then
+        local t, e, l = result.term, result.error, result.log
+        if t then
+            luamplib.report("mp terminal: %s",t)
+        end
+        if e then
+            luamplib.report("mp error: %s", e)
+        end
+        if not t and not e and l then
+            luamplib.lastlog = luamplib.lastlog .. "\n " .. l
+            luamplib.report("mp log: %s",l)
+        else
+            luamplib.report("mp error: unknown, no error, terminal or log messages")
+        end
+    else
+        return false
+    end
+    return true
+end
+
+function luamplib.process(data)
+    local converted, result = false, {}
+    local mpx = luamplib.load()
+    if mpx and data then
+        local result = mpx:execute(data)
+        if not result then
+            luamplib.report("mp error: no result object returned")
+        elseif result.status > 0 then
+            luamplib.report("mp error: %s",(result.term or "no-term") .. "\n" .. (result.error or "no-error"))
+        elseif luamplib.showlog then
+            luamplib.lastlog = luamplib.lastlog .. "\n" .. result.term
+            luamplib.report("mp info: %s",result.term or "no-term")
+        elseif result.fig then
+            converted = luamplib.convert(result)
+        else
+            luamplib.report("mp error: unknown error, maybe no beginfig/endfig")
+        end
+    else
+       luamplib.report("mp error: mem file not found")
+    end
+    return converted, result
+end
+
+local function getobjects(result,figure,f)
+    return figure:objects()
+end
+
+function luamplib.convert(result, flusher)
+    luamplib.flush(result, flusher)
+    return true -- done
+end
+
+local function pdf_startfigure(n,llx,lly,urx,ury)
+    tex.sprint(format("\\mplibstarttoPDF{%s}{%s}{%s}{%s}",llx,lly,urx,ury))
+end
+
+local function pdf_stopfigure()
+    tex.sprint("\\mplibstoptoPDF")
+end
+
+function pdf_literalcode(fmt,...) -- table
+    tex.sprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
+end
+
+function pdf_textfigure(font,size,text,width,height,depth)
+    text = text:gsub(".","\\hbox{%1}") -- kerning happens in metapost
+    tex.sprint(format("\\mplibtextext{%s}{%s}{%s}{%s}{%s}",font,size,text,0,-( 7200/ 7227)/65536*depth))
+end
+
+local bend_tolerance = 131/65536
+
+local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
+
+local function pen_characteristics(object)
+    if luamplib.pen_info then
+        local t = luamplib.pen_info(object)
+        rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
+        divider = sx*sy - rx*ry
+        return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
+    else
+        rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
+        return false, 1
+    end
+end
+
+local function concat(px, py) -- no tx, ty here
+    return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
+end
+
+local function curved(ith,pth)
+    local d = pth.left_x - ith.right_x
+    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+        d = pth.left_y - ith.right_y
+        if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+            return false
+        end
+    end
+    return true
+end
+
+local function flushnormalpath(path,open)
+    local pth, ith
+    for i=1,#path do
+        pth = path[i]
+        if not ith then
+            pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
+        elseif curved(ith,pth) then
+            pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+        else
+            pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
+        end
+        ith = pth
+    end
+    if not open then
+        local one = path[1]
+        if curved(pth,one) then
+            pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+        else
+            pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+        end
+    elseif #path == 1 then
+        -- special case .. draw point
+        local one = path[1]
+        pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+    end
+    return t
+end
+
+local function flushconcatpath(path,open)
+    pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
+    local pth, ith
+    for i=1,#path do
+        pth = path[i]
+        if not ith then
+           pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
+        elseif curved(ith,pth) then
+            local a, b = concat(ith.right_x,ith.right_y)
+            local c, d = concat(pth.left_x,pth.left_y)
+            pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
+        else
+           pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+        end
+        ith = pth
+    end
+    if not open then
+        local one = path[1]
+        if curved(pth,one) then
+            local a, b = concat(pth.right_x,pth.right_y)
+            local c, d = concat(one.left_x,one.left_y)
+            pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
+        else
+            pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+        end
+    elseif #path == 1 then
+        -- special case .. draw point
+        local one = path[1]
+        pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+    end
+    return t
+end
+
+%    \end{macrocode}
+%
+% Support for specials in DVI has been removed.
+%
+%    \begin{macrocode}
+
+function luamplib.flush(result,flusher)
+    if result then
+        local figures = result.fig
+        if figures then
+            for f=1, #figures do
+                luamplib.report("flushing figure %s",f)
+                local figure = figures[f]
+                local objects = getobjects(result,figure,f)
+                local fignum = tonumber((figure:filename()):match("([%d]+)$") or figure:charcode() or 0)
+                local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                local bbox = figure:boundingbox()
+                local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
+                if urx < llx then
+                    -- invalid
+                    pdf_startfigure(fignum,0,0,0,0)
+                    pdf_stopfigure()
+                else
+                    pdf_startfigure(fignum,llx,lly,urx,ury)
+                    pdf_literalcode("q")
+                    if objects then
+                        for o=1,#objects do
+                            local object = objects[o]
+                            local objecttype = object.type
+                            if objecttype == "start_bounds" or objecttype == "stop_bounds" then
+                                -- skip
+                            elseif objecttype == "start_clip" then
+                                pdf_literalcode("q")
+                                flushnormalpath(object.path,t,false)
+                                pdf_literalcode("W n")
+                            elseif objecttype == "stop_clip" then
+                                pdf_literalcode("Q")
+                                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                            elseif objecttype == "special" then
+                                -- not supported
+                            elseif objecttype == "text" then
+                                local ot = object.transform -- 3,4,5,6,1,2
+                                pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                                pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
+                                pdf_literalcode("Q")
+                            else
+                                local cs = object.color
+                                if cs and #cs > 0 then
+                                    pdf_literalcode(luamplib.colorconverter(cs))
+                                end
+                                local ml = object.miterlimit
+                                if ml and ml ~= miterlimit then
+                                    miterlimit = ml
+                                    pdf_literalcode("%f M",ml)
+                                end
+                                local lj = object.linejoin
+                                if lj and lj ~= linejoin then
+                                    linejoin = lj
+                                    pdf_literalcode("%i j",lj)
+                                end
+                                local lc = object.linecap
+                                if lc and lc ~= linecap then
+                                    linecap = lc
+                                    pdf_literalcode("%i J",lc)
+                                end
+                                local dl = object.dash
+                                if dl then
+                                    local d = format("[%s] %i d",concat(dl.dashes or {}," "),dl.offset)
+                                    if d ~= dashed then
+                                        dashed = d
+                                        pdf_literalcode(dashed)
+                                    end
+                                elseif dashed then
+                                   pdf_literalcode("[] 0 d")
+                                   dashed = false
+                                end
+                                local path = object.path
+                                local transformed, penwidth = false, 1
+                                local open = path and path[1].left_type and path[#path].right_type
+                                local pen = object.pen
+                                if pen then
+                                   if pen.type == 'elliptical' then
+                                        transformed, penwidth = pen_characteristics(object) -- boolean, value
+                                        pdf_literalcode("%f w",penwidth)
+                                        if objecttype == 'fill' then
+                                            objecttype = 'both'
+                                        end
+                                   else -- calculated by mplib itself
+                                        objecttype = 'fill'
+                                   end
+                                end
+                                if transformed then
+                                    pdf_literalcode("q")
+                                end
+                                if path then
+                                    if transformed then
+                                        flushconcatpath(path,open)
+                                    else
+                                        flushnormalpath(path,open)
+                                    end
+                                    if objecttype == "fill" then
+                                        pdf_literalcode("h f")
+                                    elseif objecttype == "outline" then
+                                        pdf_literalcode((open and "S") or "h S")
+                                    elseif objecttype == "both" then
+                                        pdf_literalcode("h B")
+                                    end
+                                end
+                                if transformed then
+                                    pdf_literalcode("Q")
+                                end
+                                local path = object.htap
+                                if path then
+                                    if transformed then
+                                        pdf_literalcode("q")
+                                    end
+                                    if transformed then
+                                        flushconcatpath(path,open)
+                                    else
+                                        flushnormalpath(path,open)
+                                    end
+                                    if objecttype == "fill" then
+                                        pdf_literalcode("h f")
+                                    elseif objecttype == "outline" then
+                                        pdf_literalcode((open and "S") or "h S")
+                                    elseif objecttype == "both" then
+                                        pdf_literalcode("h B")
+                                    end
+                                    if transformed then
+                                        pdf_literalcode("Q")
+                                    end
+                                end
+                                if cr then
+                                    pdf_literalcode(cr)
+                                end
+                            end
+                       end
+                    end
+                    pdf_literalcode("Q")
+                    pdf_stopfigure()
+                end
+            end
+        end
+    end
+end
+
+function luamplib.colorconverter(cr)
+    local n = #cr
+    if n == 4 then
+        local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
+        return format("%.3f %.3f %.3f %.3f k %.3f %.3f %.3f %.3f K",c,m,y,k,c,m,y,k), "0 g 0 G"
+    elseif n == 3 then
+        local r, g, b = cr[1], cr[2], cr[3]
+        return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
+    else
+        local s = cr[1]
+        return format("%.3f g %.3f G",s,s), "0 g 0 G"
+    end
+end
+
+%    \end{macrocode}
+%
+% \iffalse
+%</lua>
+% \fi
+%
+% \subsection{\texttt{luamplib.sty}}
+%
+% \iffalse
+%<*package>
+% \fi
+%
+%
+% First we need to load fancyvrb, to define the environment mplibcode.
+%
+%    \begin{macrocode}
+
+\RequirePackage{fancyvrb}
+
+%    \end{macrocode}
+% Loading of lua code.
+%    \begin{macrocode}
+
+\directlua0{dofile(kpse.find_file('luamplib.lua'))}
+
+%    \end{macrocode}
+%
+%
+%
+% There are (basically) two formats for metapost: \emph{plain} and \emph{mpfun}. The corresponding \texttt{.mem} files are \texttt{mpost.mem} and \texttt{metafun.mem} in \TeX Live. With these functions you can set the format and the mem files that will be used by this package. You can also ask the package not to look for a mem file in the directories of your distribution, and thus to autogenerate the formats. By default the format is \texttt{plain}, the mem file is \texttt{plain.mem} and the mem file is autogenerated. The argument of setautogen can be the string \texttt{true}, anything else will be considered as false.
+%
+%    \begin{macrocode}
+
+\def\mplibsetformat#1{\directlua0{luamplib.setformat([[#1]])}}
+
+\def\mplibsetmemfile#1{\directlua0{luamplib.setmemfile([[#1]])}}
+
+\def\mplibsetautogen#1{\directlua0{luamplib.setautogen([[#1]])}}
+
+%    \end{macrocode}
+%
+%
+% MPLib only works in PDF mode, we don't do anything if we are in DVI mode, and we output a warning.
+%
+%    \begin{macrocode}
+
+\ifnum\pdfoutput>0
+    \let\mplibtoPDF\pdfliteral
+\else
+    %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
+    \def\mplibtoPDF#1{}
+    \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
+\fi
+
+%    \end{macrocode}
+% A Hack for the catcodes in \LaTeX .
+%    \begin{macrocode}
+
+\makeatletter
+\begingroup
+\catcode`\,=13
+\catcode`\-=13
+\gdef\FV@hack{%
+  \def,{\string,}%
+  \def-{\string-}%
+}
+\endgroup
+
+%    \end{macrocode}
+% In \LaTeX\ (it's not the case in plain\TeX ), we get the metapost code line by line, here is the function handling a line.
+%    \begin{macrocode}
+
+\newcommand\mplibaddlines[1]{
+  \begingroup
+  \FV@hack
+  \def\FV@ProcessLine##1{%
+    \directlua0{luamplib.addline([[##1]])}%
+  }%
+  \csname FV@SV@#1\endcsname
+  \endgroup
+}
+
+\makeatother
+
+%    \end{macrocode}
+% The \LaTeX\ environment is a modified \texttt{verbatim} environment.
+%    \begin{macrocode}
+
+\newenvironment{mplibcode}{%
+  \VerbatimEnvironment %
+  \begin{SaveVerbatim}{memoire}%
+}{%
+  \end{SaveVerbatim}%
+  \mplibaddlines{memoire}%
+  \directlua0{luamplib.processlines()}%
+}
+
+%    \end{macrocode}
+% We use a dedicated scratchbox.
+%    \begin{macrocode}
+
+\ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
+
+%    \end{macrocode}
+% We encapsulate the litterals.
+%    \begin{macrocode}
+
+\def\mplibstarttoPDF#1#2#3#4%
+  {\hbox\bgroup
+   \xdef\MPllx{#1}\xdef\MPlly{#2}%
+   \xdef\MPurx{#3}\xdef\MPury{#4}%
+   \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
+   \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
+   \parskip0pt%
+   \leftskip0pt%
+   \parindent0pt%
+   \everypar{}%
+   \setbox\mplibscratchbox\vbox\bgroup
+   \noindent}
+
+\def\mplibstoptoPDF
+  {\egroup
+   \setbox\mplibscratchbox\hbox
+     {\hskip-\MPllx bp%
+      \raise-\MPlly bp%
+      \box\mplibscratchbox}%
+   \setbox\mplibscratchbox\vbox to \MPheight
+     {\vfill
+      \hsize\MPwidth
+      \wd\mplibscratchbox0pt%
+      \ht\mplibscratchbox0pt%
+      \dp\mplibscratchbox0pt%
+      \box\mplibscratchbox}%
+   \wd\mplibscratchbox\MPwidth
+   \ht\mplibscratchbox\MPheight
+   \box\mplibscratchbox
+   \egroup}
+
+%    \end{macrocode}
+% Text items have a special handler.
+%    \begin{macrocode}
+
+\def\mplibtextext#1#2#3#4#5%
+  {\begingroup
+   \setbox\mplibscratchbox\hbox
+     {\font\temp=#1 at #2bp%
+      \temp
+      #3}%
+   \setbox\mplibscratchbox\hbox
+     {\hskip#4 bp%
+      \raise#5 bp%
+      \box\mplibscratchbox}%
+   \wd\mplibscratchbox0pt%
+   \ht\mplibscratchbox0pt%
+   \dp\mplibscratchbox0pt%
+   \box\mplibscratchbox
+   \endgroup}
+
+%    \end{macrocode}
+%
+% \iffalse
+%</package>
+% \fi
+%
+% \subsection{\texttt{luamplib.tex}}
+%
+% \iffalse
+%<*tex>
+% \fi
+%
+%
+% The plain\TeX package is almost the same, but has a different definition of \texttt{mplibcode} and \texttt{endmplibcode}. To use it, put your code between these macros.
+%
+%    \begin{macrocode}
+
+\directlua0{dofile(kpse.find_file('luamplib.lua'))}
+
+\def\mplibsetformat#1{\directlua0{luamplib.setformat([[#1]])}}
+
+\def\mplibsetmemfile#1{\directlua0{luamplib.setmemfile([[#1]])}}
+
+\def\mplibsetautogen#1{\directlua0{luamplib.setautogen([[#1]])}}
+
+\def\mplibsetupcatcodes
+  {\catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
+   \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12 }
+
+\def\mplibcode
+  {\bgroup
+   \mplibsetupcatcodes
+   \mplibdocode}
+
+\long\def\mplibdocode#1\endmplibcode
+  {\egroup
+   \directlua0{luamplib.process([[#1]])}}
+
+\ifnum\pdfoutput>0
+    \let\mplibtoPDF\pdfliteral
+\else
+    %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
+    \def\mplibtoPDF#1{}
+    \write16{Warning: MPLib only works in PDF mode, no figure will be output.}
+\fi
+
+\ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
+
+\def\mplibstarttoPDF#1#2#3#4%
+  {\hbox\bgroup
+   \xdef\MPllx{#1}\xdef\MPlly{#2}%
+   \xdef\MPurx{#3}\xdef\MPury{#4}%
+   \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
+   \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
+   \parskip0pt%
+   \leftskip0pt%
+   \parindent0pt%
+   \everypar{}%
+   \setbox\mplibscratchbox\vbox\bgroup
+   \noindent}
+
+\def\mplibstoptoPDF
+  {\egroup
+   \setbox\mplibscratchbox\hbox
+     {\hskip-\MPllx bp%
+      \raise-\MPlly bp%
+      \box\mplibscratchbox}%
+   \setbox\mplibscratchbox\vbox to \MPheight
+     {\vfill
+      \hsize\MPwidth
+      \wd\mplibscratchbox0pt%
+      \ht\mplibscratchbox0pt%
+      \dp\mplibscratchbox0pt%
+      \box\mplibscratchbox}%
+   \wd\mplibscratchbox\MPwidth
+   \ht\mplibscratchbox\MPheight
+   \box\mplibscratchbox
+   \egroup}
+
+\def\mplibtextext#1#2#3#4#5%
+  {\begingroup
+   \setbox\mplibscratchbox\hbox
+     {\font\temp=#1 at #2bp%
+      \temp
+      #3}%
+   \setbox\mplibscratchbox\hbox
+     {\hskip#4 bp%
+      \raise#5 bp%
+      \box\mplibscratchbox}%
+   \wd\mplibscratchbox0pt%
+   \ht\mplibscratchbox0pt%
+   \dp\mplibscratchbox0pt%
+   \box\mplibscratchbox
+   \endgroup}
+
+%    \end{macrocode}
+%
+% \iffalse
+%</tex>
+% \fi
+% \Finale
+\endinput
