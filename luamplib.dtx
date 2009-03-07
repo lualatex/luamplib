@@ -3,21 +3,13 @@
 % Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
 % <elie.roux@telecom-bretagne.eu>.
 %
-% This work may be distributed and/or modified under the
-% conditions of the LaTeX Project Public License, either
-% version 1.3 of this license or (at your option) any later
-% version. The latest version of this license is in
-%    http://www.latex-project.org/lppl.txt
-% and version 1.3 or later is part of all distributions of
-% LaTeX version 2005/12/01 or later.
-%
-% This work has the LPPL maintenance status "maintained".
+% This work is under the CC0 license.
 %
 % This Current Maintainer of this work is Elie Roux.
 %
 % This work consists of the main source file luamplib.dtx
 % and the derived files
-%    luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
+%    luamplib.sty, luamplib.lua, luamplib.drv and luamplib.pdf.
 %
 %
 % Unpacking and documentation:
@@ -31,75 +23,52 @@
 %
 %<*ignore>
 \begingroup
-
+  \def\x{LaTeX2e}%
+\expandafter\endgroup
+\ifcase 0\ifx\install y1\fi\expandafter
+         \ifx\csname processbatchFile\endcsname\relax\else1\fi
+         \ifx\fmtname\x\else 1\fi\relax
+\else\csname fi\endcsname
+%</ignore>
+%<*install>
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/01/09 v0.9 package for LuaTeX with MPLib.}
+\Msg{* Package: luamplib 2009/01/09 v0.9 metapost package for LuaTeX with luamplib.}
 \Msg{************************************************************************}
 
 \keepsilent
 \askforoverwritefalse
 
+\let\MetaPrefix\relax
+
 \preamble
 This is a generated file.
 
 Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
 <elie.roux@telecom-bretagne.eu>.
 
-This work may be distributed and/or modified under the
-conditions of the LaTeX Project Public License, either
-version 1.3 of this license or (at your option) any later
-version. The latest version of this license is in
-   http://www.latex-project.org/lppl.txt
-and version 1.3 or later is part of all distributions of
-LaTeX version 2005/12/01 or later.
-
-This work has the LPPL maintenance status "maintained".
+This work is under the CC0 license.
 
 This Current Maintainer of this work is Elie Roux.
 
 This work consists of the main source file luamplib.dtx
 and the derived files
-   luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
+   luamplib.sty, luamplib.lua, luamplib.drv and luamplib.pdf.
 
 \endpreamble
 
+\let\MetaPrefix\DoubleperCent
+
 \generate{%
   \file{luamplib.drv}{\from{luamplib.dtx}{driver}}%
-  \usedir{tex/luatex/luamplib}%
+  \usedir{tex/luatex/mplib}%
   \file{luamplib.sty}{\from{luamplib.dtx}{package}}%
-  \file{luamplib.tex}{\from{luamplib.dtx}{tex}}%
 }
 
 % The following hacks are to generate a lua file with lua comments starting by -- instead of %%
 
 \def\MetaPrefix{-- }
-
-% we have to redefine the preamble to get the good comments.
-
-\preamble
-This is a generated file.
-
-Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
-<elie.roux@telecom-bretagne.eu>.
-
-This work may be distributed and/or modified under the
-conditions of the LaTeX Project Public License, either
-version 1.3 of this license or (at your option) any later
-version. The latest version of this license is in
-   http://www.latex-project.org/lppl.txt
-and version 1.3 or later is part of all distributions of
-LaTeX version 2005/12/01 or later.
-
-This work has the LPPL maintenance status "maintained".
-
-This Current Maintainer of this work is Elie Roux.
-
-This work consists of the main source file luamplib.dtx
-and the derived files
-   luamplib.sty, luamplib.lua, luamplib.tex, luamplib.drv and luamplib.pdf.
-\endpreamble
 
 \def\luapostamble{%
   \MetaPrefix^^J%
@@ -111,6 +80,7 @@ and the derived files
 \generate{%
   \usedir{tex/luatex/mplib}%
   \file{luamplib.lua}{\from{luamplib.dtx}{lua}}%
+  \file{create-mem.lua}{\from{luamplib.dtx}{gen-lua}}%
 }
 
 \obeyspaces
@@ -119,25 +89,22 @@ and the derived files
 \Msg{* To finish the installation you have to move the following}
 \Msg{* files into a directory searched by TeX:}
 \Msg{*}
-\Msg{*     luamplib.sty luamplib.lua luamplib.tex}
+\Msg{*     luamplib.sty luamplib.lua}
 \Msg{*}
 \Msg{* Happy TeXing!}
 \Msg{*}
 \Msg{************************************************************************}
 
-\endgroup
+\endbatchfile
+%</install>
+%<*ignore>
+\fi
 %</ignore>
-% \iffalse
-%<package>
-%<package>\NeedsTeXFormat{LaTeX2e}
-%<package>\ProvidesPackage{luamplib.sty}
-%<package>  [2009/01/09 v0.9 MPLib package for LuaTeX]
-%<package>
-% \fi
 %<*driver>
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{luamplib.drv}%
+  [2009/03/07 v1.01 mplib package for LuaTeX.]%
 \documentclass{ltxdoc}
-\EnableCrossrefs
-\CodelineIndex
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
@@ -162,10 +129,10 @@ and the derived files
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
 %
-% \GetFileInfo{luamplib.sty}
+% \GetFileInfo{luamplib.drv}
 %
 % \title{The \textsf{luamplib} package}
-% \date{2009/02/09 v0.9}
+% \date{2009/03/07 v1.01}
 % \author{Hans Hagen, Taco Hoekwater and Elie Roux \\ \texttt{elie.roux@telecom-bretagne.eu}}
 %
 % \maketitle
@@ -187,15 +154,14 @@ and the derived files
 % \begin{itemize}
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
-% \item a \texttt{luamplib.make} function
-% \item format \texttt{.mem} generation automatically, so that it works in most \TeX\ distributions
+% \item use of the luatextra printing functions
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the \texttt{mplibcode} environment.
 %
 % In order to use metapost, some \texttt{.mem} files are needed. These files must be generated with the same version of \texttt{mplib} as the version of Lua\TeX . For most distributions it's not the case, so the mem files are autogenerated, but \TeX Live 2009 aims at providing mem files of the good versions. If this package is to be inluded in a distribution, some values may have to be changed in the file \texttt{luamplib.lua}, see comments in this file.
 %
-% By default, the first time you typeset some metapost, a \texttt{plain.mem} will appear in the current directory. It will be used each time you'll typeset metapost in this directory. \TeX\ distributions may fix it by providing \texttt{.mem} files working with mplib.
+% By default, the first time you typeset some metapost, a \texttt{plain.mem} will appear in the current directory. It will be used each time you'll typeset metapost in this directory. \TeX\ distributions may fix it by providing \texttt{.mem} files working with luamplib.
 %
 % For an unknown reason, the files \texttt{mpost.mem} and \texttt{metafun.mem} of \TeX Live do not work at all, so 
 %
@@ -213,20 +179,24 @@ and the derived files
 % \fi
 %
 % \subsection{\texttt{luamplib.lua}}
-%m
+%
 % First the \texttt{metapost} module is registered as a Lua\TeX\ module, with some informations. Here we can't name it \texttt{mplib}, as the name is already taken.
 %
 %    \begin{macrocode}
 
-if not modules then modules = { } end modules ['luamplib'] = {
+luamplib = { }
+
+luamplib.module = {
     name          = "luamplib",
-    date          = "2009/02/26"
-    version       = 1.001,
-    description   = "Lua functions to typeset Metapost directly with MPLib",
+    version       =  1.001,
+    date          = "2009/03/06",
+    description   = "Lua functions to typeset Metapost directly with MPLib.",
     author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
-    copyright     = "ConTeXt Development Team",
-    license       = "Public Domain",
+    copyright     = "ConTeXt Development Team & Elie Roux",
+    license       = "CC0",
 }
+
+luatextra.provides_module(luamplib.module)
 
 %    \end{macrocode}
 % This module is a stripped down version of libraries that are used
@@ -235,9 +205,6 @@ if not modules then modules = { } end modules ['luamplib'] = {
 
 local format, concat, abs = string.format, table.concat, math.abs
 
-luamplib          = luamplib or { }
-luamplib.lastlog  = ""
-
 %    \end{macrocode}
 % 
 % The \texttt{mem} file and the format name are hardcoded, and they can be set with \TeX\ if it's useful. The \TeX\ distributions should change these values if necessary. If autogenerate is false, it will change the \texttt{luamplib.finder} function so that it will really find the \texttt{.mem} file of the distribution. Set it to \texttt{false} only if your distribution provides usable mem files.
@@ -245,7 +212,7 @@ luamplib.lastlog  = ""
 %    \begin{macrocode}
 
 luamplib.currentformat = "plain"
-luamplib.currentmem = "plain.mem"
+luamplib.currentmem = "luatex-plain.mem"
 
 local currentformat = luamplib.currentformat
 local currentmem = luamplib.currentmem
@@ -256,16 +223,6 @@ end
 
 function luamplib.setmemfile(name)
     luamplib.currentmem = name
-end
-
-luamplib.autogen = luamplib.autogen or true
-
-function luamplib.setautogen(name)
-    if name == "true" or name == "1" then
-        luamplib.autogen = true
-    else
-        luamplib.autogen = false
-    end
 end
 
 %    \end{macrocode}
@@ -279,13 +236,11 @@ luamplib.finder = luamplib.finder or function(name, mode, ftype)
         return name
     else
         local result
-        if ftype == 'mem' and luamplib.autogen == false then
+        if ftype == 'mem' then
             local envsave = os.getenv('engine')
             os.setenv('engine', 'metapost')
             result = kpse.find_file(name,ftype)
-            os.setenv('engine', envsave)
-            texio.write_nl(result)
-            
+            os.setenv('engine', envsave)    
         else
             result = kpse.find_file(name,ftype)
         end
@@ -293,12 +248,24 @@ luamplib.finder = luamplib.finder or function(name, mode, ftype)
     end
 end
 
-luamplib.report = luamplib.report or function(...)
-    texio.write(format("(metapost: %s)",format(...)))
+function luamplib.info (...)
+    luatextra.module_info('luamplib', format(...))
 end
 
-function luamplib.resetlastlog()
-    luamplib.lastlog = ""
+function luamplib.log (...)
+    luatextra.module_log('luamplib', format(...))
+end
+
+function luamplib.term (...)
+    luatextra.module_term('luamplib', format(...))
+end
+
+function luamplib.warning (...)
+    luatextra.module_warning('luamplib', format(...))
+end
+
+function luamplib.error (...)
+    luatextra.module_error('luamplib', format(...))
 end
 
 %    \end{macrocode}
@@ -322,29 +289,7 @@ function luamplib.processlines()
     luamplib.resetdata()
 end
 
-local preamble = [[
-input %s ; dump ;
-]]
 
-%    \end{macrocode}
-% \begin{macro}{luamplib.make}
-%
-% This function is the one called when an appropriate \texttt{.mem} file hasn't been found. The goal is to generate it. 
-%
-%    \begin{macrocode}
-
-luamplib.make = luamplib.make or function (name, mem_name)
-    local mpx = luamplib.new {
-        ini_version = true,
-        find_file = luamplib.finder,
-        job_name =  name}
-    if mpx then
-        local result
-        result = mpx:execute(format(preamble,name))
-        luamplib.report(format("dumping format %s in %s", name, mem_name))
-        mpx:finish()
-    end
-end
 
 %    \end{macrocode}
 %
@@ -361,23 +306,13 @@ end
 %    \begin{macrocode}
 
 function luamplib.load()
-    local mpx = luamplib.new {
+    local mpx = mplib.new {
         ini_version = false,
         mem_name = currentmem,
         find_file = luamplib.finder
     }
-    if not mpx then
-        luamplib.make(currentformat, currentmem)
-        mpx = luamplib.new {
-            ini_version = false,
-            mem_name = currentmem,
-            find_file = luamplib.finder
-        }
-    end
     if mpx then
-        if luamplib.showlog then
-            luamplib.report("using file %s", currentmem)
-        end
+        luamplib.log("using mem file %s", luamplib.finder(currentmem, 'r', 'mem'))
         return mpx, nil
     else
         return nil, { status = 99, error = "out of memory or invalid format" }
@@ -396,27 +331,35 @@ function luamplib.unload(mpx)
     end
 end
 
-function luamplib.reporterror(result)
+function luamplib.report(result)
     if not result then
-        luamplib.report("mp error: no result object returned")
+        luamplib.error("no result object")
     elseif result.status > 0 then
-        local t, e, l = result.term, result.error, result.log
+        local t, e, l, f = result.term, result.error, result.log
+        if l then
+            luamplib.log(l)
+        end
         if t then
-            luamplib.report("mp terminal: %s",t)
+            luamplib.term(t)
         end
         if e then
-            luamplib.report("mp error: %s", e)
+            if result.status == 1 then
+                luamplib.warning(e)
+            else
+                luamplib.error(e)
+            end
         end
-        if not t and not e and l then
-            luamplib.lastlog = luamplib.lastlog .. "\n " .. l
-            luamplib.report("mp log: %s",l)
-        else
-            luamplib.report("mp error: unknown, no error, terminal or log messages")
+        if not t and not e and not l then
+            if result.status == 1 then
+                luamplib.warning("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
+            else
+                luamplib.error("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
+            end
         end
     else
-        return false
+        return true
     end
-    return true
+    return false
 end
 
 function luamplib.process(data)
@@ -424,20 +367,15 @@ function luamplib.process(data)
     local mpx = luamplib.load()
     if mpx and data then
         local result = mpx:execute(data)
-        if not result then
-            luamplib.report("mp error: no result object returned")
-        elseif result.status > 0 then
-            luamplib.report("mp error: %s",(result.term or "no-term") .. "\n" .. (result.error or "no-error"))
-        elseif luamplib.showlog then
-            luamplib.lastlog = luamplib.lastlog .. "\n" .. result.term
-            luamplib.report("mp info: %s",result.term or "no-term")
-        elseif result.fig then
-            converted = luamplib.convert(result)
-        else
-            luamplib.report("mp error: unknown error, maybe no beginfig/endfig")
+        if luamplib.report(result) then
+            if result.fig then
+                converted = luamplib.convert(result)
+            else
+                luamplib.warning("no figure output")
+            end
         end
     else
-       luamplib.report("mp error: mem file not found")
+        luamplib.error("mem file not found")
     end
     return converted, result
 end
@@ -571,7 +509,7 @@ function luamplib.flush(result,flusher)
         local figures = result.fig
         if figures then
             for f=1, #figures do
-                luamplib.report("flushing figure %s",f)
+                luamplib.info("flushing figure %s",f)
                 local figure = figures[f]
                 local objects = getobjects(result,figure,f)
                 local fignum = tonumber((figure:filename()):match("([%d]+)$") or figure:charcode() or 0)
@@ -719,7 +657,6 @@ function luamplib.colorconverter(cr)
         return format("%.3f g %.3f G",s,s), "0 g 0 G"
     end
 end
-
 %    \end{macrocode}
 %
 % \iffalse
@@ -737,13 +674,20 @@ end
 %
 %    \begin{macrocode}
 
-\RequirePackage{fancyvrb}
+\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\expandafter\ifx\csname LuaTeX\endcsname\relax
+\input luatextra.sty
+\fi
+\else
+\@ifpackageloaded{luatextra}{}{\RequirePackage{luatextra}}
+\@ifpackageloaded{fancyvrb}{}{\RequirePackage{fancyvrb}}
+\fi
 
 %    \end{macrocode}
 % Loading of lua code.
 %    \begin{macrocode}
 
-\directlua0{dofile(kpse.find_file('luamplib.lua'))}
+\luaUseModule{luamplib}
 
 %    \end{macrocode}
 %
@@ -771,11 +715,44 @@ end
 \else
     %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
     \def\mplibtoPDF#1{}
-    \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
+    \expandafter\ifx\csname PackageWarning\endcsname\relax
+      \write16{}
+      \write16{Warning: MPLib only works in PDF mode, no figure will be output.}
+      \write16{}
+    \else
+      \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
+    \fi
 \fi
 
 %    \end{macrocode}
-% A Hack for the catcodes in \LaTeX .
+%
+% The Plain-specific stuff.
+%
+%    \begin{macrocode}
+
+\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+
+\def\mplibsetupcatcodes
+  {\catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
+   \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12 }
+
+\def\mplibcode
+  {\bgroup
+   \mplibsetupcatcodes
+   \domplibcode}
+
+\long\def\domplibcode#1\endmplibcode
+  {\egroup
+   \mplibcall#1}
+
+\long\def\mplibcall#1{%
+\luadirect{luamplib.process([[#1]])}
+}
+
+\else
+
+%    \end{macrocode}
+% The \LaTeX-specific parts. First a Hack for the catcodes in \LaTeX .
 %    \begin{macrocode}
 
 \makeatletter
@@ -816,6 +793,8 @@ end
   \mplibaddlines{memoire}%
   \directlua0{luamplib.processlines()}%
 }
+
+\fi
 
 %    \end{macrocode}
 % We use a dedicated scratchbox.
@@ -884,99 +863,48 @@ end
 %</package>
 % \fi
 %
-% \subsection{\texttt{luamplib.tex}}
-%
 % \iffalse
-%<*tex>
+%<*gen-lua>
 % \fi
-%
-%
-% The plain\TeX package is almost the same, but has a different definition of \texttt{mplibcode} and \texttt{endmplibcode}. To use it, put your code between these macros.
+
+kpse.set_program_name("kpsewhich")
+
+function finder (name, mode, ftype)
+    if mode == "w" then
+        return name
+    else
+        local result = kpse.find_file(name,ftype)
+        return result
+    end
+end
+
+local preamble = [[
+input %s ; dump ;
+]]
+
+%    \end{macrocode}
+% \begin{macro}{makeformat}
 %
 %    \begin{macrocode}
 
-\directlua0{dofile(kpse.find_file('luamplib.lua'))}
+makeformat = function (name, mem_name)
+    local mpx = mplib.new {
+        ini_version = true,
+        find_file = finder,
+        job_name =  mem_name,
+        }
+    if mpx then
+        local result
+        result = mpx:execute(string.format(preamble,name))
+        print(string.format("dumping format %s in %s", name, mem_name))
+        mpx:finish()
+    end
+end
 
-\def\mplibsetformat#1{\directlua0{luamplib.setformat([[#1]])}}
+makeformat("plain", "luatex-plain.mem")
 
-\def\mplibsetmemfile#1{\directlua0{luamplib.setmemfile([[#1]])}}
-
-\def\mplibsetautogen#1{\directlua0{luamplib.setautogen([[#1]])}}
-
-\def\mplibsetupcatcodes
-  {\catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
-   \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12 }
-
-\def\mplibcode
-  {\bgroup
-   \mplibsetupcatcodes
-   \mplibdocode}
-
-\long\def\mplibdocode#1\endmplibcode
-  {\egroup
-   \directlua0{luamplib.process([[#1]])}}
-
-\ifnum\pdfoutput>0
-    \let\mplibtoPDF\pdfliteral
-\else
-    %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
-    \def\mplibtoPDF#1{}
-    \write16{Warning: MPLib only works in PDF mode, no figure will be output.}
-\fi
-
-\ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
-
-\def\mplibstarttoPDF#1#2#3#4%
-  {\hbox\bgroup
-   \xdef\MPllx{#1}\xdef\MPlly{#2}%
-   \xdef\MPurx{#3}\xdef\MPury{#4}%
-   \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
-   \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
-   \parskip0pt%
-   \leftskip0pt%
-   \parindent0pt%
-   \everypar{}%
-   \setbox\mplibscratchbox\vbox\bgroup
-   \noindent}
-
-\def\mplibstoptoPDF
-  {\egroup
-   \setbox\mplibscratchbox\hbox
-     {\hskip-\MPllx bp%
-      \raise-\MPlly bp%
-      \box\mplibscratchbox}%
-   \setbox\mplibscratchbox\vbox to \MPheight
-     {\vfill
-      \hsize\MPwidth
-      \wd\mplibscratchbox0pt%
-      \ht\mplibscratchbox0pt%
-      \dp\mplibscratchbox0pt%
-      \box\mplibscratchbox}%
-   \wd\mplibscratchbox\MPwidth
-   \ht\mplibscratchbox\MPheight
-   \box\mplibscratchbox
-   \egroup}
-
-\def\mplibtextext#1#2#3#4#5%
-  {\begingroup
-   \setbox\mplibscratchbox\hbox
-     {\font\temp=#1 at #2bp%
-      \temp
-      #3}%
-   \setbox\mplibscratchbox\hbox
-     {\hskip#4 bp%
-      \raise#5 bp%
-      \box\mplibscratchbox}%
-   \wd\mplibscratchbox0pt%
-   \ht\mplibscratchbox0pt%
-   \dp\mplibscratchbox0pt%
-   \box\mplibscratchbox
-   \endgroup}
-
-%    \end{macrocode}
-%
 % \iffalse
-%</tex>
+%</gen-lua>
 % \fi
 % \Finale
 \endinput
