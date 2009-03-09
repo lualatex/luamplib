@@ -9,11 +9,14 @@
 %
 % This work consists of the main source file luamplib.dtx
 % and the derived files
-%    luamplib.sty, luamplib.lua, luamplib.drv and luamplib.pdf.
+%    luamplib.sty, luamplib.lua, luamplib-createmem.lua luamplib.drv and luamplib.pdf.
 %
 %
-% Unpacking and documentation:
-%    pdflatex luamplib.dtx
+% Unpacking:
+%    tex luamplib.dtx
+% 
+% Documentation:
+%    pdflatex luamplib.drv
 %
 %    The class ltxdoc loads the configuration file ltxdoc.cfg
 %    if available. Here you can specify further options, e.g.
@@ -34,7 +37,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/01/09 v1.01 metapost package for LuaTeX with luamplib.}
+\Msg{* Package: luamplib 2009/03/09 v1.01 metapost package for LuaTeX with luamplib.}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -54,7 +57,7 @@ This Current Maintainer of this work is Elie Roux.
 
 This work consists of the main source file luamplib.dtx
 and the derived files
-   luamplib.sty, luamplib.lua, luamplib.drv and luamplib.pdf.
+   luamplib.sty, luamplib.lua, luamplib-createmem.lua, luamplib.drv and luamplib.pdf.
 
 \endpreamble
 
@@ -80,7 +83,7 @@ and the derived files
 \generate{%
   \usedir{tex/luatex/mplib}%
   \file{luamplib.lua}{\from{luamplib.dtx}{lua}}%
-  \file{create-mem.lua}{\from{luamplib.dtx}{gen-lua}}%
+  \file{luamplib-createmem.lua}{\from{luamplib.dtx}{gen-lua}}%
 }
 
 \obeyspaces
@@ -162,7 +165,7 @@ and the derived files
 % In order to use metapost, some \texttt{.mem} files are needed. These files must be generated with the same version of \texttt{mplib} as the version of Lua\TeX . These files names can be changed, they are by default \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem}. If this package is to be included in a distribution, some values may have to be changed in the file \texttt{luamplib.lua}, see comments.
 %
 %
-% If your distribution does not provide valid \texttt{.mem} files (\TeX Live 2009 will be the first), you'll have to generate and install them by hand, with the script \texttt{create-mem.lua} included in this package.
+% If your distribution does not provide valid \texttt{.mem} files (\TeX Live 2009 will be the first), you'll have to generate and install them by hand, with the script \texttt{luamplib-createmem.lua} included in this package.
 %
 % \section{Files}
 %
@@ -853,7 +856,7 @@ end
 %</package>
 % \fi
 %
-% \subsection{\texttt{create-mem.lua}}
+% \subsection{\texttt{luamplib-createmem.lua}}
 %
 % Finally a small standalone file to call with \texttt{texlua} that generates \texttt{luatex-plain.mem} in the current directory. To generate other formats in other names, simply change the last line. After the \texttt{mem} generation, you'll have to install it in a directory searchable by \TeX .
 %
