@@ -766,7 +766,7 @@ end
   \begingroup
   \FV@hack
   \def\FV@ProcessLine##1{%
-    \directlua0{luamplib.addline([[##1]])}%
+    \luadirect{luamplib.addline([[##1]])}%
   }%
   \csname FV@SV@#1\endcsname
   \endgroup
@@ -784,7 +784,7 @@ end
 }{%
   \end{SaveVerbatim}%
   \mplibaddlines{memoire}%
-  \directlua0{luamplib.processlines()}%
+  \luadirect{luamplib.processlines()}%
 }
 
 \fi
