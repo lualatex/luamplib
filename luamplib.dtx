@@ -370,7 +370,7 @@ function luamplib.process(data)
             end
         end
     else
-        luamplib.error("mem file not found")
+        luamplib.error("Mem file unloadable. Maybe generated with a different version of mplib?")
     end
     return converted, result
 end
@@ -670,12 +670,13 @@ end
 %    \begin{macrocode}
 
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\expandafter\ifx\csname LuaTeX\endcsname\relax
-\input luatextra.sty
-\fi
+  \input luatextra.sty
 \else
-\RequirePackage{luatextra}
-\RequirePackage{fancyvrb}
+  \NeedsTeXFormat{LaTeX2e}
+  \ProvidesPackage{luamplib}
+    [2009/03/08 v1.01 mplib package for LuaTeX.]
+  \RequirePackage{luatextra}
+  \RequirePackage{fancyvrb}
 \fi
 
 %    \end{macrocode}
