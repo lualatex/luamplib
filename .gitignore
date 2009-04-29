@@ -1,0 +1,8 @@
+# .gitignore file for luamplib
+# See mrproper in the Makefile
+luamplib-createmem.lua
+luamplib.lua
+luamplib.pdf
+luamplib.sty
+luamplib.zip
+luamplib.tds.zip

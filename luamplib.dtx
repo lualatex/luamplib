@@ -9,14 +9,14 @@
 %
 % This work consists of the main source file luamplib.dtx
 % and the derived files
-%    luamplib.sty, luamplib.lua, luamplib-createmem.lua luamplib.drv and luamplib.pdf.
+%    luamplib.sty, luamplib.lua, luamplib-createmem.lua and luamplib.pdf.
 %
 %
 % Unpacking:
 %    tex luamplib.dtx
 % 
 % Documentation:
-%    pdflatex luamplib.drv
+%    pdflatex luamplib.dtx
 %
 %    The class ltxdoc loads the configuration file ltxdoc.cfg
 %    if available. Here you can specify further options, e.g.
@@ -57,14 +57,13 @@ This Current Maintainer of this work is Elie Roux.
 
 This work consists of the main source file luamplib.dtx
 and the derived files
-   luamplib.sty, luamplib.lua, luamplib-createmem.lua, luamplib.drv and luamplib.pdf.
+   luamplib.sty, luamplib.lua, luamplib-createmem.lua and luamplib.pdf.
 
 \endpreamble
 
 \let\MetaPrefix\DoubleperCent
 
 \generate{%
-  \file{luamplib.drv}{\from{luamplib.dtx}{driver}}%
   \usedir{tex/luatex/mplib}%
   \file{luamplib.sty}{\from{luamplib.dtx}{package}}%
 }
@@ -131,8 +130,6 @@ and the derived files
 %   Right bracket \]     Circumflex    \^     Underscore    \_
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
-%
-% \GetFileInfo{luamplib.drv}
 %
 % \title{The \textsf{luamplib} package}
 % \date{2009/03/08 v1.01}
