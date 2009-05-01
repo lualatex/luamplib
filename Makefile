@@ -1,4 +1,4 @@
-# Makefile for luainputenc.
+# Makefile for luamplib
 
 NAME = luamplib
 DOC = $(NAME).pdf
@@ -26,15 +26,17 @@ DOCDIR = doc/$(FORMAT)/$(NAME)
 SRCDIR = source/$(FORMAT)/$(NAME)
 ALL_DIRS = $(RUNDIR) $(DOCDIR) $(SRCDIR)
 
-FLAT_ZIP = $(NAME).zip
+CTAN_ZIP = $(NAME).zip
 TDS_ZIP = $(NAME).tds.zip
-CTAN = $(FLAT_ZIP) $(TDS_ZIP)
+ZIPS = $(CTAN_ZIP) $(TDS_ZIP)
 
 DO_TEX = tex --interaction=batchmode $< >/dev/null
 DO_PDFLATEX = pdflatex --interaction=batchmode $< >/dev/null
 
 all: $(GENERATED)
-ctan: $(CTAN)
+ctan: $(CTAN_ZIP)
+doc: $(COMPILED)
+tds: $(TDS_ZIP)
 world: all ctan
 
 $(COMPILED): $(DTX)
@@ -44,13 +46,13 @@ $(COMPILED): $(DTX)
 $(UNPACKED): $(DTX)
 	$(DO_TEX)
 
-$(FLAT_ZIP): $(ALL_FILES)
-	@echo "Making $@ for normal CTAN distribution."
+$(CTAN_ZIP): $(SOURCE) $(COMPILED) $(TDS_ZIP)
+	@echo "Making $@ for CTAN upload."
 	@$(RM) -- $@
-	@zip -9 $@ $(ALL_FILES) >/dev/null
+	@zip -9 $@ $^ >/dev/null
 
 $(TDS_ZIP): $(ALL_FILES)
-	@echo "Making $@ for TDS-ready CTAN distribution."
+	@echo "Making TDS-ready archive $@."
 	@$(RM) -- $@
 	@mkdir -p $(ALL_DIRS)
 	@cp $(RUNFILES) $(RUNDIR)
@@ -63,6 +65,6 @@ clean:
 	@$(RM) -- *.log *.aux
 
 mrproper: clean
-	@$(RM) -- $(GENERATED) $(CTAN)
+	@$(RM) -- $(GENERATED) $(ZIPS)
 
 .PHONY: clean mrproper
