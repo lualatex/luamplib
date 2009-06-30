@@ -37,7 +37,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/03/09 v1.01 metapost package for LuaTeX with luamplib.}
+\Msg{* Package: luamplib 2009/03/09 v1.01 metapost package for LuaTeX.}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -68,7 +68,8 @@ and the derived files
   \file{luamplib.sty}{\from{luamplib.dtx}{package}}%
 }
 
-% The following hacks are to generate a lua file with lua comments starting by -- instead of %%
+% The following hacks are to generate a lua file with lua comments starting by
+% -- instead of %%
 
 \def\MetaPrefix{-- }
 
@@ -133,7 +134,8 @@ and the derived files
 %
 % \title{The \textsf{luamplib} package}
 % \date{2009/03/09 v1.01}
-% \author{Hans Hagen, Taco Hoekwater and Elie Roux \\ \texttt{elie.roux@telecom-bretagne.eu}}
+% \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
+% \texttt{elie.roux@telecom-bretagne.eu}}
 %
 % \maketitle
 %
@@ -143,13 +145,21 @@ and the derived files
 %
 % \section{Documentation}
 %
-% This packages aims at providing a simple way to typeset directly metapost code in a document with Lua\TeX . Lua\TeX\ is built with the lua \texttt{mplib} library, that runs metapost code. This package is basically a wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\ functions to have the output of the \texttt{mplib} functions in the pdf.
+% This packages aims at providing a simple way to typeset directly metapost
+% code in a document with Lua\TeX . Lua\TeX\ is built with the lua
+% \texttt{mplib} library, that runs metapost code. This package is basically a
+% wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
+% functions to have the output of the \texttt{mplib} functions in the pdf.
 %
-% The package need to be in PDF mode in order to output something, as PDF specials are not supported by the DVI format and tools.
+% The package need to be in PDF mode in order to output something, as PDF
+% specials are not supported by the DVI format and tools.
 %
-% The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions adjusted to the metapost code.
+% The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
+% adjusted to the metapost code.
 %
-% The code is from the \texttt{supp-mpl.lua} and \texttt{supp-mpl.tex} files from Con\TeX t, they have been adapted to \LaTeX\ and Plain by Elie Roux. The changes are:
+% The code is from the \texttt{supp-mpl.lua} and \texttt{supp-mpl.tex} files
+% from Con\TeX t, they have been adapted to \LaTeX\ and Plain by Elie Roux.
+% The changes are:
 %
 % \begin{itemize}
 % \item a \LaTeX\ environment
@@ -157,12 +167,21 @@ and the derived files
 % \item use of the luatextra printing and module functions
 % \end{itemize}
 %
-% Using this package is easy: in Plain, type your metapost code between the macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the \texttt{mplibcode} environment.
+% Using this package is easy: in Plain, type your metapost code between the
+% macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the
+% \texttt{mplibcode} environment.
 %
-% In order to use metapost, some \texttt{.mem} files are needed. These files must be generated with the same version of \texttt{mplib} as the version of Lua\TeX . These files names can be changed, they are by default \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem}. If this package is to be included in a distribution, some values may have to be changed in the file \texttt{luamplib.lua}, see comments.
+% In order to use metapost, some \texttt{.mem} files are needed. These files
+% must be generated with the same version of \texttt{mplib} as the version of
+% Lua\TeX . These files names can be changed, they are by default
+% \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem}. If this package is
+% to be included in a distribution, some values may have to be changed in the
+% file \texttt{luamplib.lua}, see comments.
 %
 %
-% If your distribution does not provide valid \texttt{.mem} files (\TeX Live 2009 will be the first), you'll have to generate and install them by hand, with the script \texttt{luamplib-createmem.lua} included in this package.
+% If your distribution does not provide valid \texttt{.mem} files (\TeX Live
+% 2009 will be the first), you'll have to generate and install them by hand,
+% with the script \texttt{luamplib-createmem.lua} included in this package.
 %
 % \section{Files}
 %
@@ -179,7 +198,9 @@ and the derived files
 %
 % \subsection{\texttt{luamplib.lua}}
 %
-% First the \texttt{luamplib} module is registered as a Lua\TeX\ module, with some informations. Here we can't name it \texttt{mplib}, as the name is already taken.
+%    First the \texttt{luamplib} module is registered as a Lua\TeX\ module,
+%    with some informations. Here we can't name it \texttt{mplib}, as the name
+%    is already taken.
 %
 %    \begin{macrocode}
 
@@ -198,15 +219,17 @@ luamplib.module = {
 luatextra.provides_module(luamplib.module)
 
 %    \end{macrocode}
-% This module is a stripped down version of libraries that are used
-% by Con\TeX t.
+%    This module is a stripped down version of libraries that are used by
+%    Con\TeX t.
 %    \begin{macrocode}
 
 local format, concat, abs = string.format, table.concat, math.abs
 
 %    \end{macrocode}
 % 
-% The \texttt{mem} file and the format name are hardcoded, and they can be set with \TeX\ if it's useful. The \TeX\ distributions should change these values if necessary.
+%    The \texttt{mem} file and the format name are hardcoded, and they can be
+%    set with \TeX\ if it's useful. The \TeX\ distributions should change
+%    these values if necessary.
 %
 %    \begin{macrocode}
 
@@ -226,7 +249,9 @@ end
 
 %    \end{macrocode}
 %
-% We use the \texttt{kpse} library unless a finder is already defined. To find the .mem files with kpse, we have to set the \texttt{engine} environment variable to \texttt{metapost}.
+%    We use the \texttt{kpse} library unless a finder is already defined. To
+%    find the .mem files with kpse, we have to set the \texttt{engine}
+%    environment variable to \texttt{metapost}.
 %
 %    \begin{macrocode}
 
@@ -269,7 +294,11 @@ end
 
 %    \end{macrocode}
 %
-% This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code line by line, but it needs to be passed entirely to \texttt{luamplib.process}, so we simply add the lines in \texttt{luamplib.data} and at the end we call \texttt{luamplib.process} on \texttt{luamplib.data}.
+%    This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code
+%    line by line, but it needs to be passed entirely to
+%    \texttt{luamplib.process}, so we simply add the lines in
+%    \texttt{luamplib.data} and at the end we call \texttt{luamplib.process}
+%    on \texttt{luamplib.data}.
 %
 %    \begin{macrocode}
 
@@ -295,11 +324,13 @@ end
 %
 % \begin{macro}{luamplib.load}
 %
-% This function is the one loading the metapost format we want. It uses the \texttt{luamplib.currentformat} and \texttt{luamplib.currentmem} to determine the format and the mem file to use.
+%    This function is the one loading the metapost format we want. It uses the
+%    \texttt{luamplib.currentformat} and \texttt{luamplib.currentmem} to
+%    determine the format and the mem file to use.
 %
-% The rest of this module is not documented. More info can be found in the
-% Lua\TeX\ manual, articles in user group journals and the files that
-% ship with Con\TeX t.
+%    The rest of this module is not documented. More info can be found in the
+%    Lua\TeX\ manual, articles in user group journals and the files that ship
+%    with Con\TeX t.
 %
 %    \begin{macrocode}
 
@@ -492,7 +523,7 @@ end
 
 %    \end{macrocode}
 %
-% Support for specials in DVI has been removed.
+%    Support for specials in DVI has been removed.
 %
 %    \begin{macrocode}
 
@@ -662,7 +693,7 @@ end
 % \fi
 %
 %
-% First we need to load fancyvrb, to define the environment mplibcode.
+%    First we need to load fancyvrb, to define the environment mplibcode.
 %
 %    \begin{macrocode}
 
@@ -686,7 +717,12 @@ end
 %
 %
 %
-% There are (basically) two formats for metapost: \emph{plain} and \emph{mpfun}. The corresponding \texttt{.mem} files are (at least will be) \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem} in \TeX Live. With these functions you can set the format and the mem files that will be used by this package. Warning: the package never generates the mem files, you have to do it by hand, with \texttt{create-mem.lua}.
+%    There are (basically) two formats for metapost: \emph{plain} and
+%    \emph{mpfun}. The corresponding \texttt{.mem} files are (at least will
+%    be) \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem} in \TeX Live.
+%    With these functions you can set the format and the mem files that will
+%    be used by this package. Warning: the package never generates the mem
+%    files, you have to do it by hand, with \texttt{create-mem.lua}.
 %
 %    \begin{macrocode}
 
@@ -697,7 +733,8 @@ end
 %    \end{macrocode}
 %
 %
-% MPLib only works in PDF mode, we don't do anything if we are in DVI mode, and we output a warning.
+%    MPLib only works in PDF mode, we don't do anything if we are in DVI mode,
+%    and we output a warning.
 %
 %    \begin{macrocode}
 
@@ -717,7 +754,7 @@ end
 
 %    \end{macrocode}
 %
-% The Plain-specific stuff.
+%    The Plain-specific stuff.
 %
 %    \begin{macrocode}
 
@@ -746,7 +783,7 @@ end
 \else
 
 %    \end{macrocode}
-% The \LaTeX-specific parts. First a Hack for the catcodes in \LaTeX .
+%    The \LaTeX-specific parts. First a Hack for the catcodes in \LaTeX .
 %    \begin{macrocode}
 
 \makeatletter
@@ -760,7 +797,8 @@ end
 \endgroup
 
 %    \end{macrocode}
-% In \LaTeX\ (it's not the case in plain\TeX ), we get the metapost code line by line, here is the function handling a line.
+%    In \LaTeX\ (it's not the case in plain\TeX ), we get the metapost code
+%    line by line, here is the function handling a line.
 %    \begin{macrocode}
 
 \newcommand\mplibaddlines[1]{%
@@ -776,7 +814,7 @@ end
 \makeatother
 
 %    \end{macrocode}
-% The \LaTeX\ environment is a modified \texttt{verbatim} environment.
+%    The \LaTeX\ environment is a modified \texttt{verbatim} environment.
 %    \begin{macrocode}
 
 \newenvironment{mplibcode}{%
@@ -791,13 +829,13 @@ end
 \fi
 
 %    \end{macrocode}
-% We use a dedicated scratchbox.
+%    We use a dedicated scratchbox.
 %    \begin{macrocode}
 
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 
 %    \end{macrocode}
-% We encapsulate the litterals.
+%    We encapsulate the litterals.
 %    \begin{macrocode}
 
 \def\mplibstarttoPDF#1#2#3#4{
@@ -834,7 +872,7 @@ end
 }
 
 %    \end{macrocode}
-% Text items have a special handler.
+%    Text items have a special handler.
 %    \begin{macrocode}
 
 \def\mplibtextext#1#2#3#4#5{%
@@ -860,13 +898,18 @@ end
 %</package>
 % \fi
 %
-% \subsection{\texttt{luamplib-createmem.lua}}
-%
-% Finally a small standalone file to call with \texttt{texlua} that generates \texttt{luatex-plain.mem} in the current directory. To generate other formats in other names, simply change the last line. After the \texttt{mem} generation, you'll have to install it in a directory searchable by \TeX .
-%
 % \iffalse
 %<*gen-lua>
 % \fi
+%
+% \subsection{\texttt{luamplib-createmem.lua}}
+%
+%    Finally a small standalone file to call with \texttt{texlua} that
+%    generates \texttt{luatex-plain.mem} in the current directory. To generate
+%    other formats in other names, simply change the last line. After the
+%    \texttt{mem} generation, you'll have to install it in a directory
+%    searchable by \TeX .
+%
 %    \begin{macrocode}
 
 kpse.set_program_name("kpsewhich")
@@ -885,8 +928,8 @@ input %s ; dump ;
 ]]
 
 %    \end{macrocode}
-% \begin{macro}{makeformat}
 %
+%    \begin{macro}{makeformat}
 %    \begin{macrocode}
 
 makeformat = function (name, mem_name)
@@ -906,7 +949,7 @@ end
 makeformat("plain", "luatex-plain.mem")
 
 %    \end{macrocode}
-% \end{macro}
+%    \end{macro}
 % \iffalse
 %</gen-lua>
 % \fi
