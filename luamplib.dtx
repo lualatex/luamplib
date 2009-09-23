@@ -37,7 +37,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/03/09 v1.01 metapost package for LuaTeX.}
+\Msg{* Package: luamplib 2009/09/23 v1.01 metapost package for LuaTeX.}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -106,7 +106,7 @@ and the derived files
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2009/03/09 v1.01 mplib package for LuaTeX.]%
+  [2009/09/23 v1.01 mplib package for LuaTeX.]%
 \documentclass{ltxdoc}
 \begin{document}
   \DocInput{luamplib.dtx}%
@@ -133,7 +133,7 @@ and the derived files
 %   Right brace   \}     Tilde         \~}
 %
 % \title{The \textsf{luamplib} package}
-% \date{2009/03/09 v1.01}
+% \date{2009/09/23 v1.01}
 % \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
 % \texttt{elie.roux@telecom-bretagne.eu}}
 %
@@ -209,7 +209,7 @@ luamplib = { }
 luamplib.module = {
     name          = "luamplib",
     version       =  1.01,
-    date          = "2009/03/09",
+    date          = "2009/09/23",
     description   = "Lua functions to typeset Metapost directly with MPLib.",
     author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
     copyright     = "ConTeXt Development Team & Elie Roux",
@@ -702,7 +702,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2009/03/09 v1.01 mplib package for LuaTeX.]
+    [2009/09/23 v1.01 mplib package for LuaTeX.]
   \RequirePackage{luatextra}
   \RequirePackage{fancyvrb}
 \fi
@@ -711,7 +711,7 @@ end
 % Loading of lua code.
 %    \begin{macrocode}
 
-\luaUseModule{luamplib}
+\luatexUseModule{luamplib}
 
 %    \end{macrocode}
 %
