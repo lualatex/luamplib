@@ -37,7 +37,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/09/23 v1.01 metapost package for LuaTeX.}
+\Msg{* Package: luamplib 2009/10/01 v1.02 metapost package for LuaTeX.}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -106,7 +106,7 @@ and the derived files
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2009/09/23 v1.01 mplib package for LuaTeX.]%
+  [2009/10/01 v1.02 mplib package for LuaTeX.]%
 \documentclass{ltxdoc}
 \begin{document}
   \DocInput{luamplib.dtx}%
@@ -133,7 +133,7 @@ and the derived files
 %   Right brace   \}     Tilde         \~}
 %
 % \title{The \textsf{luamplib} package}
-% \date{2009/09/23 v1.01}
+% \date{2009/10/01 v1.02}
 % \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
 % \texttt{elie.roux@telecom-bretagne.eu}}
 %
@@ -165,6 +165,7 @@ and the derived files
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
 % \item use of the luatextra printing and module functions
+% \item adapted warning, error and log messages
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -174,14 +175,19 @@ and the derived files
 % In order to use metapost, some \texttt{.mem} files are needed. These files
 % must be generated with the same version of \texttt{mplib} as the version of
 % Lua\TeX . These files names can be changed, they are by default
-% \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem}. If this package is
+% \texttt{mpost.mem} and \texttt{mpfun.mem}. If this package is
 % to be included in a distribution, some values may have to be changed in the
 % file \texttt{luamplib.lua}, see comments.
 %
-%
 % If your distribution does not provide valid \texttt{.mem} files (\TeX Live
 % 2009 will be the first), you'll have to generate and install them by hand,
-% with the script \texttt{luamplib-createmem.lua} included in this package.
+% with the script \texttt{luamplib-createmem.lua} included in this package
+% if you want them.
+%
+% These .mem files are not mandatory though. If this package doesn't find the
+% mem files, it will just input the \texttt{.mp} file, and work without problem;
+% the only difference is that it may be a bit slower but this is not noticeable
+% on a modern computer.
 %
 % \section{Files}
 %
@@ -208,9 +214,9 @@ luamplib = { }
 
 luamplib.module = {
     name          = "luamplib",
-    version       =  1.01,
-    date          = "2009/09/23",
-    description   = "Lua functions to typeset Metapost directly with MPLib.",
+    version       =  1.02,
+    date          = "2009/10/01",
+    description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
     author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
     copyright     = "ConTeXt Development Team & Elie Roux",
     license       = "CC0",
@@ -234,7 +240,7 @@ local format, concat, abs = string.format, table.concat, math.abs
 %    \begin{macrocode}
 
 luamplib.currentformat = "plain"
-luamplib.currentmem = "luatex-plain.mem"
+luamplib.currentmem = "mpost"
 
 local currentformat = luamplib.currentformat
 local currentmem = luamplib.currentmem
@@ -249,24 +255,21 @@ end
 
 %    \end{macrocode}
 %
-%    We use the \texttt{kpse} library unless a finder is already defined. To
-%    find the .mem files with kpse, we have to set the \texttt{engine}
-%    environment variable to \texttt{metapost}.
+%    We use the \texttt{kpse} library and make it behave like when used
+%    with Metapost. To find the .mem files with kpse, we have to make a
+%    small hack... that might be a little bug.
 %
 %    \begin{macrocode}
 
-luamplib.finder = luamplib.finder or function(name, mode, ftype)
+local mpkpse = kpse.new("luatex","mpost")
+
+function luamplib.finder(name, mode, ftype)
     if mode == "w" then
         return name
     else
-        local result
-        if ftype == 'mem' then
-            local envsave = os.getenv('engine')
-            os.setenv('engine', 'metapost')
-            result = kpse.find_file(name,ftype)
-            os.setenv('engine', envsave)    
-        else
-            result = kpse.find_file(name,ftype)
+        local result = mpkpse:find_file(name,ftype)
+        if not result and ftype == "mem" then
+            result = mpkpse:find_file("metapost/"..name,ftype)
         end
         return result
     end
@@ -317,10 +320,31 @@ function luamplib.processlines()
     luamplib.resetdata()
 end
 
+%    \end{macrocode}
+%
+%
+% \begin{macro}{luamplib.input mp}
+%
+%    This function creates a new mplib object and inputs the
+%    good .mp file. It's less efficient than loading the .mem
+%    file, but it works more safely, as the .mp file does not
+%    depend on the version of the mpost program.
+%
+%    \begin{macrocode}
 
+function luamplib.input_mp(name)
+    local mpx = mplib.new {
+        ini_version = true,
+        find_file = luamplib.finder,
+        job_name = name,
+    }
+    mpx:execute(format("input %s ;",name))
+    return mpx
+end
 
 %    \end{macrocode}
 %
+% \end{macro}
 %
 % \begin{macro}{luamplib.load}
 %
@@ -342,10 +366,15 @@ function luamplib.load()
     }
     if mpx then
         luamplib.log("using mem file %s", luamplib.finder(currentmem, 'r', 'mem'))
-        return mpx, nil
     else
-        return nil, { status = 99, error = "out of memory or invalid format" }
+        mpx = luamplib.input_mp(currentformat)
+        if mpx then
+            luamplib.log("using mp file %s", luamplib.finder(currentformat, 'r', 'mp'))
+        else
+            luamplib.error("unable to load the metapost format.")
+        end
     end
+    return mpx
 end
 
 %    \end{macrocode}
@@ -532,7 +561,7 @@ function luamplib.flush(result,flusher)
         local figures = result.fig
         if figures then
             for f=1, #figures do
-                luamplib.info("flushing figure %s",f)
+                luamplib.log("flushing figure %s",f)
                 local figure = figures[f]
                 local objects = getobjects(result,figure,f)
                 local fignum = tonumber((figure:filename()):match("([%d]+)$") or figure:charcode() or 0)
@@ -702,7 +731,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2009/09/23 v1.01 mplib package for LuaTeX.]
+    [2009/10/01 v1.02 mplib package for LuaTeX.]
   \RequirePackage{luatextra}
   \RequirePackage{fancyvrb}
 \fi
