@@ -4,7 +4,7 @@
 This package allows typesetting of metapost natively in the TeX documents
 thanks to the LuaTeX mplib library. It only works in PDF mode.
 
-This package is developped on <http://github.com/mpg/luamplib>.
+This package is developed on <http://github.com/mpg/luamplib>.
 
 
 Installation
