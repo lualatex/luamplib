@@ -37,7 +37,7 @@
 \input docstrip.tex
 \Msg{************************************************************************}
 \Msg{* Installation}
-\Msg{* Package: luamplib 2009/10/01 v1.02 metapost package for LuaTeX.}
+\Msg{* Package: luamplib 2010/05/10 v1.02 metapost package for LuaTeX.}
 \Msg{************************************************************************}
 
 \keepsilent
@@ -106,7 +106,7 @@ and the derived files
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2009/10/01 v1.02 mplib package for LuaTeX.]%
+  [2010/05/10 v1.03 mplib package for LuaTeX.]%
 \documentclass{ltxdoc}
 \begin{document}
   \DocInput{luamplib.dtx}%
@@ -133,7 +133,7 @@ and the derived files
 %   Right brace   \}     Tilde         \~}
 %
 % \title{The \textsf{luamplib} package}
-% \date{2009/10/01 v1.02}
+% \date{2010/05/10 v1.03}
 % \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
 % \texttt{elie.roux@telecom-bretagne.eu}}
 %
@@ -164,7 +164,7 @@ and the derived files
 % \begin{itemize}
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
-% \item use of the luatextra printing and module functions
+% \item use of the luatexbase printing and module functions
 % \item adapted warning, error and log messages
 % \end{itemize}
 %
@@ -210,19 +210,19 @@ and the derived files
 %
 %    \begin{macrocode}
 
-luamplib = { }
+module('luamplib', package.seeall)
 
 luamplib.module = {
     name          = "luamplib",
-    version       =  1.02,
-    date          = "2009/10/01",
+    version       =  1.03,
+    date          = "2010/05/10",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
     author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
     copyright     = "ConTeXt Development Team & Elie Roux",
     license       = "CC0",
 }
 
-luatextra.provides_module(luamplib.module)
+luatexbase.provides_module(luamplib.module)
 
 %    \end{macrocode}
 %    This module is a stripped down version of libraries that are used by
@@ -276,23 +276,23 @@ function luamplib.finder(name, mode, ftype)
 end
 
 function luamplib.info (...)
-    luatextra.module_info('luamplib', format(...))
+    luatexbase.module_info('luamplib', format(...))
 end
 
 function luamplib.log (...)
-    luatextra.module_log('luamplib', format(...))
+    luatexbase.module_log('luamplib', format(...))
 end
 
 function luamplib.term (...)
-    luatextra.module_term('luamplib', format(...))
+    luatexbase.module_term('luamplib', format(...))
 end
 
 function luamplib.warning (...)
-    luatextra.module_warning('luamplib', format(...))
+    luatexbase.module_warning('luamplib', format(...))
 end
 
 function luamplib.error (...)
-    luatextra.module_error('luamplib', format(...))
+    luatexbase.module_error('luamplib', format(...))
 end
 
 %    \end{macrocode}
@@ -727,12 +727,12 @@ end
 %    \begin{macrocode}
 
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-  \input luatextra.sty
+  \input luatexbase-modutils.sty
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2009/10/01 v1.02 mplib package for LuaTeX.]
-  \RequirePackage{luatextra}
+    [2010/05/10 v1.03 mplib package for LuaTeX.]
+  \RequirePackage{luatexbase-modutils}
   \RequirePackage{fancyvrb}
 \fi
 
@@ -755,9 +755,9 @@ end
 %
 %    \begin{macrocode}
 
-\def\mplibsetformat#1{\directlua0{luamplib.setformat([[#1]])}}
+\def\mplibsetformat#1{\directlua{luamplib.setformat([[#1]])}}
 
-\def\mplibsetmemfile#1{\directlua0{luamplib.setmemfile([[#1]])}}
+\def\mplibsetmemfile#1{\directlua{luamplib.setmemfile([[#1]])}}
 
 %    \end{macrocode}
 %
@@ -806,7 +806,7 @@ end
 }
 
 \long\def\mplibprocess#1{%
-  \luadirect{luamplib.process([[#1]])}%
+  \directlua{luamplib.process([[#1]])}%
 }
 
 \else
@@ -834,7 +834,7 @@ end
   \begingroup %
   \FV@hack %
   \def\FV@ProcessLine##1{%
-    \luadirect{luamplib.addline([[##1]])}%
+    \directlua{luamplib.addline([[##1]])}%
   }%
   \csname FV@SV@#1\endcsname %
   \endgroup %
