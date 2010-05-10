@@ -7,12 +7,12 @@ DTX = $(NAME).dtx
 # Files grouped by generation mode
 COMPILED = $(DOC)
 UNPACKED = luamplib-createmem.lua luamplib.lua luamplib.sty
-SOURCE = $(DTX) README Makefile
+SOURCE = $(DTX) README Makefile NEWS
 GENERATED = $(COMPILED) $(UNPACKED)
 
 # Files grouped by installation location
 RUNFILES = $(UNPACKED)
-DOCFILES = $(DOC) README
+DOCFILES = $(DOC) README NEWS
 SRCFILES = $(DTX) Makefile
 
 # The following definitions should be equivalent
