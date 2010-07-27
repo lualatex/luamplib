@@ -240,7 +240,7 @@ local format, concat, abs = string.format, table.concat, math.abs
 %    \begin{macrocode}
 
 luamplib.currentformat = "plain"
-luamplib.currentmem = "mpost"
+luamplib.currentmem = "mplib-luatex"
 
 local currentformat = luamplib.currentformat
 local currentmem = luamplib.currentmem
@@ -747,8 +747,8 @@ end
 %
 %
 %    There are (basically) two formats for metapost: \emph{plain} and
-%    \emph{mpfun}. The corresponding \texttt{.mem} files are (at least will
-%    be) \texttt{luatex-plain.mem} and \texttt{luatex-mpfun.mem} in \TeX Live.
+%    \emph{mpfun}. The corresponding \texttt{.mem} files are 
+%    \texttt{mplib-luatex.mem} in \TeX Live 2010.
 %    With these functions you can set the format and the mem files that will
 %    be used by this package. Warning: the package never generates the mem
 %    files, you have to do it by hand, with \texttt{create-mem.lua}.
@@ -934,7 +934,7 @@ end
 % \subsection{\texttt{luamplib-createmem.lua}}
 %
 %    Finally a small standalone file to call with \texttt{texlua} that
-%    generates \texttt{luatex-plain.mem} in the current directory. To generate
+%    generates \texttt{mplib-luatex.mem} in the current directory. To generate
 %    other formats in other names, simply change the last line. After the
 %    \texttt{mem} generation, you'll have to install it in a directory
 %    searchable by \TeX .
@@ -975,7 +975,7 @@ makeformat = function (name, mem_name)
     end
 end
 
-makeformat("plain", "luatex-plain.mem")
+makeformat("plain", "mplib-luatex.mem")
 
 %    \end{macrocode}
 %    \end{macro}
