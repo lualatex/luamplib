@@ -1,11 +1,14 @@
-                        History of the luamplib package
+                       History of the luamplib package
 
-2010/08/02, luamplib v1.04:
+2010/10/10 v1.05
+    * adapt to luatexbase v0.3
+
+2010/08/02 v1.04
     * fixing a bug in LaTeX's detection (made Tikz fail)
     * setting luamplib-luatex as the default name for the format, it's the case
       in TeXLive 2010
     * adding two test files in the git repository
 
-2010/05/10, luamplib v1.03:
+2010/05/10 v1.03
     * adaptation to the new luatexbase package
 
