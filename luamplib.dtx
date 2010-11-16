@@ -463,8 +463,8 @@ local bend_tolerance = 131/65536
 local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
 
 local function pen_characteristics(object)
-    if luamplib.pen_info then
-        local t = luamplib.pen_info(object)
+    if mplib.pen_info then
+        local t = mplib.pen_info(object)
         rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
         divider = sx*sy - rx*ry
         return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
