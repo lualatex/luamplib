@@ -1,53 +1,52 @@
-# Makefile for luamplib
+NAME      = luamplib
+FORMAT    = luatex
 
-NAME = luamplib
-DOC = $(NAME).pdf
-DTX = $(NAME).dtx
+DTX       = $(NAME).dtx
+DOC       = $(NAME).pdf
+STY       = $(NAME).sty
+LUA       = $(NAME).lua
+LUASCRIPT = luamplib-createmem.lua
+TEST      = test-$(NAME)-plain.tex test-$(NAME)-latex.tex
 
-# Files grouped by generation mode
-COMPILED = $(DOC)
-UNPACKED = luamplib-createmem.lua luamplib.lua luamplib.sty
-SOURCE = $(DTX) README Makefile NEWS
-GENERATED = $(COMPILED) $(UNPACKED)
+UNPACKED  = $(STY) $(LUA) $(LUASCRIPT)
+GENERATED = $(UNPACKED) $(DOC)
+SOURCES   = $(DTX) README NEWS Makefile $(TEST)
 
-# Files grouped by installation location
-RUNFILES = $(UNPACKED)
-DOCFILES = $(DOC) README NEWS
-SRCFILES = $(DTX) Makefile
+DOCFILES  = $(DOC) $(TEST) README NEWS
+SRCFILES  = $(DTX) Makefile
+RUNFILES  = $(STY) $(LUA) $(LUASCRIPT)
 
-# The following definitions should be equivalent
-# ALL_FILES = $(RUNFILES) $(DOCFILES) $(SRCFILES)
-ALL_FILES = $(GENERATED) $(SOURCE)
+ALL       = $(SRCFILES) $(DOCFILES) $(RUNFILES)
 
-# Installation locations
-FORMAT = luatex
-RUNDIR = $(TEXMFROOT)/tex/$(FORMAT)/$(NAME)
-DOCDIR = $(TEXMFROOT)/doc/$(FORMAT)/$(NAME)
-SRCDIR = $(TEXMFROOT)/source/$(FORMAT)/$(NAME)
 TEXMFROOT = ./texmf
+RUNDIR    = $(TEXMFROOT)/tex/$(FORMAT)/$(NAME)
+DOCDIR    = $(TEXMFROOT)/doc/$(FORMAT)/$(NAME)
+SRCDIR    = $(TEXMFROOT)/source/$(FORMAT)/$(NAME)
 
-CTAN_ZIP = $(NAME).zip
-TDS_ZIP = $(NAME).tds.zip
-ZIPS = $(CTAN_ZIP) $(TDS_ZIP)
-
-DO_TEX = tex --interaction=batchmode $< >/dev/null
-DO_PDFLATEX = pdflatex --interaction=batchmode $< >/dev/null
+CTAN_ZIP  = $(NAME).zip
+TDS_ZIP   = $(NAME).tds.zip
+ZIPS      = $(CTAN_ZIP) $(TDS_ZIP)
 
 all: $(GENERATED)
 doc: $(COMPILED)
 unpack: $(UNPACKED)
-ctan: $(CTAN_ZIP)
+ctan: check $(CTAN_ZIP)
 tds: $(TDS_ZIP)
 world: all ctan
 
-$(COMPILED): $(DTX)
-	$(DO_PDFLATEX)
-	$(DO_PDFLATEX)
+.PHONY: all doc unpack ctan tds check world
+
+%.pdf: %.dtx
+	latexmk -pdf -silent $< >/dev/null
 
 $(UNPACKED): $(DTX)
-	$(DO_TEX)
+	tex -interaction=batchmode $< >/dev/null
 
-$(CTAN_ZIP): $(SOURCE) $(COMPILED) $(TDS_ZIP)
+check: $(UNPACKED)
+	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
+	lualatex -interaction=batchmode test-$(NAME)-latex.tex  >/dev/null
+
+$(CTAN_ZIP): $(SOURCES) $(COMPILED) $(TDS_ZIP)
 	@echo "Making $@ for CTAN upload."
 	@$(RM) -- $@
 	@zip -9 $@ $^ >/dev/null
@@ -59,29 +58,35 @@ define run-install
 endef
 
 $(TDS_ZIP): TEXMFROOT=./tmp-texmf
-$(TDS_ZIP): $(ALL_FILES)
+$(TDS_ZIP): $(ALL)
 	@echo "Making TDS-ready archive $@."
 	@$(RM) -- $@
+	@if test -e $(TEXMFROOT); then echo 'bad TEXMFROOT'; false; fi
 	$(run-install)
-	@cd $(TEXMFROOT) && zip -9 ../$@ -r . >/dev/null
+	@cd $(TEXMFROOT) && zip -q -9 ../$@ -r .
 	@$(RM) -r -- $(TEXMFROOT)
 
-.PHONY: install manifest clean mrproper
+.PHONY: install clean mrproper help
 
-install: $(ALL_FILES)
+install: check $(ALL)
 	@echo "Installing in '$(TEXMFROOT)'."
 	$(run-install)
 
-manifest: 
-	@echo "Source files:"
-	@for f in $(SOURCE); do echo $$f; done
-	@echo ""
-	@echo "Derived files:"
-	@for f in $(GENERATED); do echo $$f; done
-
-clean: 
-	@$(RM) -- *.log *.aux *.toc *.idx *.ind *.ilg *.out
+clean:
+	@latexmk -silent -c $(DTX) >/dev/null
+	@rm -f -- *.log
 
 mrproper: clean
-	@$(RM) -- $(GENERATED) $(ZIPS)
+	@rm -f -- $(GENERATED) $(ZIPS)
 
+help:
+	@echo '$(NAME) makefile targets:'
+	@echo '                      help - (this message)'
+	@echo '                       all - (default target) all generated files'
+	@echo '                     world - synonymous for ctan'
+	@echo '                    unpack - extract all files'
+	@echo '                       doc - compile documentation'
+	@echo '                      ctan - run check & generate archive for CTAN'
+	@echo '                       tds - generate a TDS compliant archive'
+	@echo '                     check - run the test files'
+	@echo '  install TEXMFROOT=<path> - install in <path>'
