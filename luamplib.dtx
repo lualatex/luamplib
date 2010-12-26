@@ -1,28 +1,21 @@
-% \iffalse meta-comment
+% \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
-% <elie.roux@telecom-bretagne.eu>.  (Support: <lualatex-dev@tug.org>.)
+% Copyright (C) 2008-2010 by Hans Hagen, Taco Hoekwater, Elie Roux, and
+% Manuel Pégourié-Gonnard.
+% Currently maintained by Manuel Pégourié-Gonnard <mpg@elzevir.fr>
+% Support: <lualatex-dev@tug.org>
 %
 % This work is under the CC0 license.
-%
-% This Current Maintainer of this work is Elie Roux.
 %
 % This work consists of the main source file luamplib.dtx
 % and the derived files
 %    luamplib.sty, luamplib.lua, luamplib-createmem.lua and luamplib.pdf.
 %
-%
 % Unpacking:
 %    tex luamplib.dtx
-% 
+%
 % Documentation:
 %    pdflatex luamplib.dtx
-%
-%    The class ltxdoc loads the configuration file ltxdoc.cfg
-%    if available. Here you can specify further options, e.g.
-%    use A4 as paper format:
-%       \PassOptionsToClass{a4paper}{article}
-%
 %
 %<*ignore>
 \begingroup
@@ -46,18 +39,8 @@
 \let\MetaPrefix\relax
 
 \preamble
-This is a generated file.
 
-Copyright (C) 2008-2009 by Hans Hagen, Taco Hoekwater and Elie Roux
-<elie.roux@telecom-bretagne.eu>.  (Support: <lualatex-dev@tug.org>.)
-
-This work is under the CC0 license.
-
-This Current Maintainer of this work is Elie Roux.
-
-This work consists of the main source file luamplib.dtx
-and the derived files
-   luamplib.sty, luamplib.lua, luamplib-createmem.lua and luamplib.pdf.
+See source file '\inFileName' for author, licencing and contact information.
 
 \endpreamble
 
@@ -67,9 +50,6 @@ and the derived files
   \usedir{tex/luatex/mplib}%
   \file{luamplib.sty}{\from{luamplib.dtx}{package}}%
 }
-
-% The following hacks are to generate a lua file with lua comments starting by
-% -- instead of %%
 
 \def\MetaPrefix{-- }
 
@@ -104,19 +84,29 @@ and the derived files
 \fi
 %</ignore>
 %<*driver>
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesFile{luamplib.drv}%
-  [2010/10/17 v1.06 mplib package for LuaTeX]%
 \documentclass{ltxdoc}
-\usepackage{hyperref}
-\newcommand*\email[1]{\href{mailto:#1}{#1}}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+\usepackage{fixltx2e}
+
+\usepackage[a4paper]{geometry}
+\usepackage[english]{babel}
+\usepackage[colorlinks]{hyperref}
+\usepackage{bookmark}
+
+\newcommand*\email [1] {<\href{mailto:#1}{#1}>}
+\newcommand \file       {\nolinkurl}
+\newcommand \pk         {\textsf}
+
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
 %</driver>
 % \fi
 %
-% \CheckSum{2}
+% \CheckSum{0}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -135,9 +125,10 @@ and the derived files
 %   Right brace   \}     Tilde         \~}
 %
 % \title{The \textsf{luamplib} package}
-% \date{2010/10/17 v1.06}
 % \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
+% Maintainer: Manuel Pégourié-Gonnard ---
 % Support: \email{lualatex-dev@tug.org}}
+% \date{2010/10/17 v1.06}
 %
 % \maketitle
 %
@@ -214,17 +205,13 @@ and the derived files
 
 module('luamplib', package.seeall)
 
-luamplib.module = {
+
+luatexbase.provides_module({
     name          = "luamplib",
     version       =  1.06,
     date          = "2010/10/17",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
-    author        = "Hans Hagen, Taco Hoekwater & Elie Roux",
-    copyright     = "ConTeXt Development Team & Elie Roux",
-    license       = "CC0",
-}
-
-luatexbase.provides_module(luamplib.module)
+})
 
 %    \end{macrocode}
 %    This module is a stripped down version of libraries that are used by
@@ -234,7 +221,7 @@ luatexbase.provides_module(luamplib.module)
 local format, concat, abs = string.format, table.concat, math.abs
 
 %    \end{macrocode}
-% 
+%
 %    The \texttt{mem} file and the format name are hardcoded, and they can be
 %    set with \TeX\ if it's useful. The \TeX\ distributions should change
 %    these values if necessary.
@@ -750,7 +737,7 @@ end
 %
 %
 %    There are (basically) two formats for metapost: \emph{plain} and
-%    \emph{mpfun}. The corresponding \texttt{.mem} files are 
+%    \emph{mpfun}. The corresponding \texttt{.mem} files are
 %    \texttt{mplib-luatex.mem} in \TeX Live 2010.
 %    With these functions you can set the format and the mem files that will
 %    be used by this package. Warning: the package never generates the mem
@@ -795,7 +782,7 @@ end
 
 \def\mplibsetupcatcodes{
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
-  \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12 
+  \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12
 }
 
 \def\mplibcode{%
