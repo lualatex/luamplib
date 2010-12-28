@@ -195,31 +195,35 @@ See source file '\inFileName' for author, licencing and contact information.
 %<*lua>
 % \fi
 %
-% \subsection{\texttt{luamplib.lua}}
+%    \subsection{\texttt{luamplib.lua}}
 %
-%    First the \texttt{luamplib} module is registered as a Lua\TeX\ module,
-%    with some informations. Here we can't name it \texttt{mplib}, as the name
-%    is already taken.
+%    Use the |luamplib| namespace, since |mplib| is for the metapost library
+%    itself.
 %
 %    \begin{macrocode}
-
 module('luamplib', package.seeall)
-
-
-luatexbase.provides_module({
+%    \end{macrocode}
+%
+%    Identification, and additional reporting function, for compatibility with
+%    the original |report()| function and associated data structure.
+%
+%    \begin{macrocode}
+local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  1.06,
     date          = "2010/10/17",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
-
+local function term(...)
+    texio.write_nl('term', 'luamplib: ' .. string.format(...))
+end
 %    \end{macrocode}
+%
 %    This module is a stripped down version of libraries that are used by
-%    Con\TeX t.
+%    Con\TeX t. Provide a few ``shortcuts'' expected by the imported code.
+%
 %    \begin{macrocode}
-
 local format, concat, abs = string.format, table.concat, math.abs
-
 %    \end{macrocode}
 %
 %    The \texttt{mem} file and the format name are hardcoded, and they can be
@@ -263,27 +267,6 @@ function luamplib.finder(name, mode, ftype)
         return result
     end
 end
-
-function luamplib.info (...)
-    luatexbase.module_info('luamplib', format(...))
-end
-
-function luamplib.log (...)
-    luatexbase.module_log('luamplib', format(...))
-end
-
-function luamplib.term (...)
-    luatexbase.module_term('luamplib', format(...))
-end
-
-function luamplib.warning (...)
-    luatexbase.module_warning('luamplib', format(...))
-end
-
-function luamplib.error (...)
-    luatexbase.module_error('luamplib', format(...))
-end
-
 %    \end{macrocode}
 %
 %    This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code
@@ -341,9 +324,9 @@ end
 %    \texttt{luamplib.currentformat} and \texttt{luamplib.currentmem} to
 %    determine the format and the mem file to use.
 %
-%    The rest of this module is not documented. More info can be found in the
-%    Lua\TeX\ manual, articles in user group journals and the files that ship
-%    with Con\TeX t.
+%    The rest of this module is not documented. More information can be found
+%    in the Lua\TeX\ manual, articles in user group journals and the files
+%    that ship with Con\TeX t.
 %
 %    \begin{macrocode}
 
@@ -354,13 +337,13 @@ function luamplib.load()
         find_file = luamplib.finder
     }
     if mpx then
-        luamplib.log("using mem file %s", luamplib.finder(currentmem, 'r', 'mem'))
+        log("using mem file %s", luamplib.finder(currentmem, 'r', 'mem'))
     else
         mpx = luamplib.input_mp(currentformat)
         if mpx then
-            luamplib.log("using mp file %s", luamplib.finder(currentformat, 'r', 'mp'))
+            log("using mp file %s", luamplib.finder(currentformat, 'r', 'mp'))
         else
-            luamplib.error("unable to load the metapost format.")
+            err("unable to load the metapost format.")
         end
     end
     return mpx
@@ -374,27 +357,27 @@ end
 
 function luamplib.report(result)
     if not result then
-        luamplib.error("no result object")
+        err("no result object")
     elseif result.status > 0 then
         local t, e, l, f = result.term, result.error, result.log
         if l then
-            luamplib.log(l)
+            log(l)
         end
         if t then
-            luamplib.term(t)
+            term(t)
         end
         if e then
             if result.status == 1 then
-                luamplib.warning(e)
+                warn(e)
             else
-                luamplib.error(e)
+                err(e)
             end
         end
         if not t and not e and not l then
             if result.status == 1 then
-                luamplib.warning("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
+                warn("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
             else
-                luamplib.error("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
+                err("unknown error, no error, terminal or log messages, maybe missing beginfig/endfig")
             end
         end
     else
@@ -412,11 +395,11 @@ function luamplib.process(data)
             if result.fig then
                 converted = luamplib.convert(result)
             else
-                luamplib.warning("no figure output")
+                warn("no figure output")
             end
         end
     else
-        luamplib.error("Mem file unloadable. Maybe generated with a different version of mplib?")
+        err("Mem file unloadable. Maybe generated with a different version of mplib?")
     end
     return converted, result
 end
@@ -550,7 +533,7 @@ function luamplib.flush(result,flusher)
         local figures = result.fig
         if figures then
             for f=1, #figures do
-                luamplib.log("flushing figure %s",f)
+                log("flushing figure %s",f)
                 local figure = figures[f]
                 local objects = getobjects(result,figure,f)
                 local fignum = tonumber((figure:filename()):match("([%d]+)$") or figure:charcode() or 0)
