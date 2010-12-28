@@ -40,7 +40,7 @@
 
 \preamble
 
-See source file '\inFileName' for author, licencing and contact information.
+See source file '\inFileName' for licencing and contact information.
 
 \endpreamble
 
@@ -214,9 +214,11 @@ local err, warn, info, log = luatexbase.provides_module({
     date          = "2010/10/17",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
+
 local function term(...)
     texio.write_nl('term', 'luamplib: ' .. string.format(...))
 end
+
 %    \end{macrocode}
 %
 %    This module is a stripped down version of libraries that are used by
@@ -224,6 +226,7 @@ end
 %
 %    \begin{macrocode}
 local format, concat, abs = string.format, table.concat, math.abs
+
 %    \end{macrocode}
 %
 %    The \texttt{mem} file and the format name are hardcoded, and they can be
@@ -231,19 +234,15 @@ local format, concat, abs = string.format, table.concat, math.abs
 %    these values if necessary.
 %
 %    \begin{macrocode}
+local currentformat = "plain"
+local currentmem = "mplib-luatex"
 
-luamplib.currentformat = "plain"
-luamplib.currentmem = "mplib-luatex"
-
-local currentformat = luamplib.currentformat
-local currentmem = luamplib.currentmem
-
-function luamplib.setformat (name)
-    luamplib.currentformat = name
+function setformat (name)
+    currentformat = name
 end
 
-function luamplib.setmemfile(name)
-    luamplib.currentmem = name
+function setmemfile(name)
+    currentmem = name
 end
 
 %    \end{macrocode}
@@ -253,10 +252,9 @@ end
 %    small hack... that might be a little bug.
 %
 %    \begin{macrocode}
+local mpkpse = kpse.new("luatex", "mpost")
 
-local mpkpse = kpse.new("luatex","mpost")
-
-function luamplib.finder(name, mode, ftype)
+local function finder(name, mode, ftype)
     if mode == "w" then
         return name
     else
@@ -267,35 +265,30 @@ function luamplib.finder(name, mode, ftype)
         return result
     end
 end
+
 %    \end{macrocode}
 %
 %    This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code
 %    line by line, but it needs to be passed entirely to
-%    \texttt{luamplib.process}, so we simply add the lines in
-%    \texttt{luamplib.data} and at the end we call \texttt{luamplib.process}
-%    on \texttt{luamplib.data}.
+%    \texttt{process}, so we simply add the lines in
+%    \texttt{data} and at the end we call \texttt{process}
+%    on \texttt{data}.
 %
 %    \begin{macrocode}
+local data = ""
 
-luamplib.data = ""
-
-function luamplib.resetdata()
-    luamplib.data = ""
+local function resetdata()
+    data = ""
 end
-
-function luamplib.addline(line)
-    luamplib.data = luamplib.data .. '\n' .. line
+function addline(line)
+    data = data .. '\n' .. line
 end
-
-function luamplib.processlines()
-    luamplib.process(luamplib.data)
-    luamplib.resetdata()
+function processlines()
+    process(data)
+    resetdata()
 end
 
 %    \end{macrocode}
-%
-%
-% \begin{macro}{luamplib.input mp}
 %
 %    This function creates a new mplib object and inputs the
 %    good .mp file. It's less efficient than loading the .mem
@@ -303,11 +296,10 @@ end
 %    depend on the version of the mpost program.
 %
 %    \begin{macrocode}
-
-function luamplib.input_mp(name)
+local function input_mp(name)
     local mpx = mplib.new {
         ini_version = true,
-        find_file = luamplib.finder,
+        find_file = finder,
         job_name = name,
     }
     mpx:execute(format("input %s ;",name))
@@ -316,32 +308,23 @@ end
 
 %    \end{macrocode}
 %
-% \end{macro}
-%
-% \begin{macro}{luamplib.load}
-%
 %    This function is the one loading the metapost format we want. It uses the
-%    \texttt{luamplib.currentformat} and \texttt{luamplib.currentmem} to
+%    \texttt{currentformat} and \texttt{currentmem} to
 %    determine the format and the mem file to use.
 %
-%    The rest of this module is not documented. More information can be found
-%    in the Lua\TeX\ manual, articles in user group journals and the files
-%    that ship with Con\TeX t.
-%
 %    \begin{macrocode}
-
-function luamplib.load()
+function load()
     local mpx = mplib.new {
         ini_version = false,
         mem_name = currentmem,
-        find_file = luamplib.finder
+        find_file = finder
     }
     if mpx then
-        log("using mem file %s", luamplib.finder(currentmem, 'r', 'mem'))
+        log("using mem file %s", finder(currentmem, 'r', 'mem'))
     else
-        mpx = luamplib.input_mp(currentformat)
+        mpx = input_mp(currentformat)
         if mpx then
-            log("using mp file %s", luamplib.finder(currentformat, 'r', 'mp'))
+            log("using mp file %s", finder(currentformat, 'r', 'mp'))
         else
             err("unable to load the metapost format.")
         end
@@ -351,11 +334,12 @@ end
 
 %    \end{macrocode}
 %
-% \end{macro}
+%    The rest of this module is not documented. More information can be found
+%    in the Lua\TeX\ manual, articles in user group journals and the files
+%    that ship with Con\TeX t.
 %
 %    \begin{macrocode}
-
-function luamplib.report(result)
+function report(result)
     if not result then
         err("no result object")
     elseif result.status > 0 then
@@ -386,14 +370,14 @@ function luamplib.report(result)
     return false
 end
 
-function luamplib.process(data)
+function process(data)
     local converted, result = false, {}
-    local mpx = luamplib.load()
+    local mpx = load()
     if mpx and data then
         local result = mpx:execute(data)
-        if luamplib.report(result) then
+        if report(result) then
             if result.fig then
-                converted = luamplib.convert(result)
+                converted = convert(result)
             else
                 warn("no figure output")
             end
@@ -408,8 +392,8 @@ local function getobjects(result,figure,f)
     return figure:objects()
 end
 
-function luamplib.convert(result, flusher)
-    luamplib.flush(result, flusher)
+function convert(result, flusher)
+    flush(result, flusher)
     return true -- done
 end
 
@@ -527,8 +511,7 @@ end
 %    Support for specials in DVI has been removed.
 %
 %    \begin{macrocode}
-
-function luamplib.flush(result,flusher)
+function flush(result,flusher)
     if result then
         local figures = result.fig
         if figures then
@@ -570,7 +553,7 @@ function luamplib.flush(result,flusher)
                             else
                                 local cs = object.color
                                 if cs and #cs > 0 then
-                                    pdf_literalcode(luamplib.colorconverter(cs))
+                                    pdf_literalcode(colorconverter(cs))
                                 end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
@@ -668,7 +651,7 @@ function luamplib.flush(result,flusher)
     end
 end
 
-function luamplib.colorconverter(cr)
+function colorconverter(cr)
     local n = #cr
     if n == 4 then
         local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
@@ -692,7 +675,6 @@ end
 % \iffalse
 %<*package>
 % \fi
-%
 %
 %    First we need to load fancyvrb, to define the environment mplibcode.
 %
@@ -932,7 +914,6 @@ input %s ; dump ;
 
 %    \end{macrocode}
 %
-%    \begin{macro}{makeformat}
 %    \begin{macrocode}
 
 makeformat = function (name, mem_name)
@@ -952,7 +933,6 @@ end
 makeformat("plain", "mplib-luatex.mem")
 
 %    \end{macrocode}
-%    \end{macro}
 % \iffalse
 %</gen-lua>
 % \fi
