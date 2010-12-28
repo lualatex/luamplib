@@ -9,7 +9,7 @@
 %
 % This work consists of the main source file luamplib.dtx
 % and the derived files
-%    luamplib.sty, luamplib.lua, luamplib-createmem.lua and luamplib.pdf.
+%    luamplib.sty, luamplib.lua and luamplib.pdf.
 %
 % Unpacking:
 %    tex luamplib.dtx
@@ -63,7 +63,6 @@ See source file '\inFileName' for licencing and contact information.
 \generate{%
   \usedir{tex/luatex/mplib}%
   \file{luamplib.lua}{\from{luamplib.dtx}{lua}}%
-  \file{luamplib-createmem.lua}{\from{luamplib.dtx}{gen-lua}}%
 }
 
 \obeyspaces
@@ -144,7 +143,7 @@ See source file '\inFileName' for licencing and contact information.
 % wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
 % functions to have the output of the \texttt{mplib} functions in the pdf.
 %
-% The package need to be in PDF mode in order to output something, as PDF
+% The package needs to be in PDF mode in order to output something, as PDF
 % specials are not supported by the DVI format and tools.
 %
 % The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
@@ -157,45 +156,25 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{itemize}
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
-% \item use of the luatexbase printing and module functions
-% \item adapted warning, error and log messages
+% \item use of luatexbase for errors, warnings and declaration
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
 % macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
 %
-% In order to use metapost, some \texttt{.mem} files are needed. These files
-% must be generated with the same version of \texttt{mplib} as the version of
-% Lua\TeX . These files names can be changed, they are by default
-% \texttt{mpost.mem} and \texttt{mpfun.mem}. If this package is
-% to be included in a distribution, some values may have to be changed in the
-% file \texttt{luamplib.lua}, see comments.
+% There are (basically) two formats for metapost: \emph{plain} and
+% \emph{mpfun}. By default, the \emph{plain} format is used, but you can set
+% the format to be used by future figures at any time using
+% \cs{mplibsetformat}\marg{format name}.
 %
-% If your distribution does not provide valid \texttt{.mem} files (\TeX Live
-% 2009 will be the first), you'll have to generate and install them by hand,
-% with the script \texttt{luamplib-createmem.lua} included in this package
-% if you want them.
+%    \section{Implementation}
 %
-% These .mem files are not mandatory though. If this package doesn't find the
-% mem files, it will just input the \texttt{.mp} file, and work without problem;
-% the only difference is that it may be a bit slower but this is not noticeable
-% on a modern computer.
+%    \subsection{Lua module}
 %
-% \section{Files}
-%
-% This package contains three files:
-% \begin{itemize}
-% \item \texttt{luamplib.lua} containing the lua code that calls mplib
-% \item \texttt{luamplib.sty} containing the macros for \LaTeX\ and Plain
-% \item \texttt{create-mem.lua}, a standalone mem generation script
-% \end{itemize}
-%
-% \iffalse
+%    \begin{macrocode}
 %<*lua>
-% \fi
-%
-%    \subsection{\texttt{luamplib.lua}}
+%    \end{macrocode}
 %
 %    Use the |luamplib| namespace, since |mplib| is for the metapost library
 %    itself.
@@ -229,50 +208,9 @@ local format, concat, abs = string.format, table.concat, math.abs
 
 %    \end{macrocode}
 %
-%    The \texttt{mem} file and the format name are hardcoded, and they can be
-%    set with \TeX\ if it's useful. The \TeX\ distributions should change
-%    these values if necessary.
-%
-%    \begin{macrocode}
-local currentformat = "plain"
-local currentmem = "mplib-luatex"
-
-function setformat (name)
-    currentformat = name
-end
-
-function setmemfile(name)
-    currentmem = name
-end
-
-%    \end{macrocode}
-%
-%    We use the \texttt{kpse} library and make it behave like when used
-%    with Metapost. To find the .mem files with kpse, we have to make a
-%    small hack... that might be a little bug.
-%
-%    \begin{macrocode}
-local mpkpse = kpse.new("luatex", "mpost")
-
-local function finder(name, mode, ftype)
-    if mode == "w" then
-        return name
-    else
-        local result = mpkpse:find_file(name,ftype)
-        if not result and ftype == "mem" then
-            result = mpkpse:find_file("metapost/"..name,ftype)
-        end
-        return result
-    end
-end
-
-%    \end{macrocode}
-%
-%    This is a small hack for \LaTeX . In \LaTeX\ we read the metapost code
-%    line by line, but it needs to be passed entirely to
-%    \texttt{process}, so we simply add the lines in
-%    \texttt{data} and at the end we call \texttt{process}
-%    on \texttt{data}.
+%    This is a small trick for \LaTeX . In \LaTeX\ we read the metapost code
+%    line by line, but it needs to be passed entirely to |process()|, so we
+%    simply add the lines in |data| and at the end we call |process(data)|.
 %
 %    \begin{macrocode}
 local data = ""
@@ -290,45 +228,48 @@ end
 
 %    \end{macrocode}
 %
-%    This function creates a new mplib object and inputs the
-%    good .mp file. It's less efficient than loading the .mem
-%    file, but it works more safely, as the .mp file does not
-%    depend on the version of the mpost program.
+%    As the finder function for |mplib|, use the |kpse| library and
+%    make it behave like as if MetaPost was used (or almost, since the engine
+%    name is not set this way---not sure if this is a problem).
 %
 %    \begin{macrocode}
-local function input_mp(name)
-    local mpx = mplib.new {
-        ini_version = true,
-        find_file = finder,
-        job_name = name,
-    }
-    mpx:execute(format("input %s ;",name))
-    return mpx
+local mpkpse = kpse.new("luatex", "mpost")
+
+local function finder(name, mode, ftype)
+    if mode == "w" then
+        return name
+    else
+        return mpkpse:find_file(name,ftype)
+    end
 end
 
 %    \end{macrocode}
 %
-%    This function is the one loading the metapost format we want. It uses the
-%    \texttt{currentformat} and \texttt{currentmem} to
-%    determine the format and the mem file to use.
+%    Default format name, and a public function to change it.
+%
+%    \begin{macrocode}
+local currentformat = "plain"
+
+function setformat (name)
+    currentformat = name
+end
+
+%    \end{macrocode}
+%
+%    Create a new mplib object and input the correct .mp file as given by
+%    |currentformat|. With older versions of MetaPost, using a |mem| file may
+%    be more efficient, but newer versions don't support it any more so for
+%    the sake of simplicity, don't even try to use a |mem| file.
+%    |ini_version| is ignored by new versions but is useful to prevent old
+%    ones from trying to load a |mem| file.
 %
 %    \begin{macrocode}
 function load()
     local mpx = mplib.new {
-        ini_version = false,
-        mem_name = currentmem,
-        find_file = finder
+        find_file   = finder,
+        ini_version = true,
     }
-    if mpx then
-        log("using mem file %s", finder(currentmem, 'r', 'mem'))
-    else
-        mpx = input_mp(currentformat)
-        if mpx then
-            log("using mp file %s", finder(currentformat, 'r', 'mp'))
-        else
-            err("unable to load the metapost format.")
-        end
-    end
+    mpx:execute(format("input %s ;", currentformat))
     return mpx
 end
 
@@ -666,20 +607,19 @@ function colorconverter(cr)
 end
 %    \end{macrocode}
 %
-% \iffalse
+%    \begin{macrocode}
 %</lua>
-% \fi
+%    \end{macrocode}
 %
-% \subsection{\texttt{luamplib.sty}}
+%    \subsection{\texorpdfstring{\TeX}{TeX} package}
 %
-% \iffalse
+%    \begin{macrocode}
 %<*package>
-% \fi
+%    \end{macrocode}
 %
 %    First we need to load fancyvrb, to define the environment mplibcode.
 %
 %    \begin{macrocode}
-
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
   \input luatexbase-modutils.sty
@@ -690,38 +630,25 @@ end
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{fancyvrb}
 \fi
-
 %    \end{macrocode}
-% Loading of lua code.
+%
+%    Loading of lua code.
+%
 %    \begin{macrocode}
-
 \RequireLuaModule{luamplib}
-
 %    \end{macrocode}
 %
-%
-%
-%    There are (basically) two formats for metapost: \emph{plain} and
-%    \emph{mpfun}. The corresponding \texttt{.mem} files are
-%    \texttt{mplib-luatex.mem} in \TeX Live 2010.
-%    With these functions you can set the format and the mem files that will
-%    be used by this package. Warning: the package never generates the mem
-%    files, you have to do it by hand, with \texttt{create-mem.lua}.
+%    Set the format for metapost.
 %
 %    \begin{macrocode}
-
-\def\mplibsetformat#1{\directlua{luamplib.setformat([[#1]])}}
-
-\def\mplibsetmemfile#1{\directlua{luamplib.setmemfile([[#1]])}}
-
+\def\mplibsetformat#1{%
+  \directlua{luamplib.setformat("\luatexluaescapestring{#1}")}}
 %    \end{macrocode}
-%
 %
 %    MPLib only works in PDF mode, we don't do anything if we are in DVI mode,
 %    and we output a warning.
 %
 %    \begin{macrocode}
-
 \ifnum\pdfoutput>0
     \let\mplibtoPDF\pdfliteral
 \else
@@ -735,43 +662,35 @@ end
       \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
     \fi
 \fi
-
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
 %
 %    \begin{macrocode}
-
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-
 \def\mplibsetupcatcodes{
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
   \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12
 }
-
 \def\mplibcode{%
   \bgroup %
   \mplibsetupcatcodes %
   \mplibdocode %
 }
-
 \long\def\mplibdocode#1\endmplibcode{%
   \egroup %
   \mplibprocess{#1}%
 }
-
 \long\def\mplibprocess#1{%
-  \directlua{luamplib.process([[#1]])}%
+  \directlua{luamplib.process("\luatexluaescapestring{#1}")}%
 }
-
 \else
-
 %    \end{macrocode}
+%
 %    The \LaTeX-specific parts. First a Hack for the catcodes in \LaTeX .
+%
 %    \begin{macrocode}
-
-\makeatletter
 \begingroup
 \catcode`\,=13
 \catcode`\-=13
@@ -780,28 +699,26 @@ end
   \def-{\string-}%
 }
 \endgroup
-
 %    \end{macrocode}
+%
 %    In \LaTeX\ (it's not the case in plain\TeX ), we get the metapost code
 %    line by line, here is the function handling a line.
+%
 %    \begin{macrocode}
-
 \newcommand\mplibaddlines[1]{%
   \begingroup %
   \FV@hack %
   \def\FV@ProcessLine##1{%
-    \directlua{luamplib.addline([[##1]])}%
+    \directlua{luamplib.addline("\luatexluaescapestring{##1}")}%
   }%
   \csname FV@SV@#1\endcsname %
   \endgroup %
 }
-
-\makeatother
-
 %    \end{macrocode}
+%
 %    The \LaTeX\ environment is a modified \texttt{verbatim} environment.
+%
 %    \begin{macrocode}
-
 \newenvironment{mplibcode}{%
   \VerbatimEnvironment %
   \begin{SaveVerbatim}{memoire}%
@@ -812,17 +729,17 @@ end
 }
 
 \fi
-
 %    \end{macrocode}
+%
 %    We use a dedicated scratchbox.
+%
 %    \begin{macrocode}
-
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
-
 %    \end{macrocode}
+%
 %    We encapsulate the litterals.
+%
 %    \begin{macrocode}
-
 \def\mplibstarttoPDF#1#2#3#4{
   \hbox\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
@@ -836,7 +753,9 @@ end
   \setbox\mplibscratchbox\vbox\bgroup
   \noindent
 }
-
+%    \end{macrocode}
+%
+%    \begin{macrocode}
 \def\mplibstoptoPDF{%
   \egroup %
   \setbox\mplibscratchbox\hbox %
@@ -855,11 +774,11 @@ end
   \box\mplibscratchbox
   \egroup
 }
-
 %    \end{macrocode}
+%
 %    Text items have a special handler.
+%
 %    \begin{macrocode}
-
 \def\mplibtextext#1#2#3#4#5{%
   \begingroup
   \setbox\mplibscratchbox\hbox
@@ -876,65 +795,14 @@ end
   \box\mplibscratchbox
   \endgroup
 }
-
 %    \end{macrocode}
 %
-% \iffalse
+%    That's all folks!
+%
+%    \begin{macrocode}
 %</package>
-% \fi
-%
-% \iffalse
-%<*gen-lua>
-% \fi
-%
-% \subsection{\texttt{luamplib-createmem.lua}}
-%
-%    Finally a small standalone file to call with \texttt{texlua} that
-%    generates \texttt{mplib-luatex.mem} in the current directory. To generate
-%    other formats in other names, simply change the last line. After the
-%    \texttt{mem} generation, you'll have to install it in a directory
-%    searchable by \TeX .
-%
-%    \begin{macrocode}
-
-kpse.set_program_name("kpsewhich")
-
-function finder (name, mode, ftype)
-    if mode == "w" then
-        return name
-    else
-        local result = kpse.find_file(name,ftype)
-        return result
-    end
-end
-
-local preamble = [[
-input %s ; dump ;
-]]
-
 %    \end{macrocode}
 %
-%    \begin{macrocode}
-
-makeformat = function (name, mem_name)
-    local mpx = mplib.new {
-        ini_version = true,
-        find_file = finder,
-        job_name =  mem_name,
-        }
-    if mpx then
-        local result
-        result = mpx:execute(string.format(preamble,name))
-        print(string.format("dumping format %s in %s", name, mem_name))
-        mpx:finish()
-    end
-end
-
-makeformat("plain", "mplib-luatex.mem")
-
-%    \end{macrocode}
-% \iffalse
-%</gen-lua>
-% \fi
+%
 % \Finale
 \endinput

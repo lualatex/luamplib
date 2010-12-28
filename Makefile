@@ -5,16 +5,15 @@ DTX       = $(NAME).dtx
 DOC       = $(NAME).pdf
 STY       = $(NAME).sty
 LUA       = $(NAME).lua
-LUASCRIPT = luamplib-createmem.lua
 TEST      = test-$(NAME)-plain.tex test-$(NAME)-latex.tex
 
-UNPACKED  = $(STY) $(LUA) $(LUASCRIPT)
+UNPACKED  = $(STY) $(LUA)
 GENERATED = $(UNPACKED) $(DOC)
 SOURCES   = $(DTX) README NEWS Makefile $(TEST)
 
 DOCFILES  = $(DOC) $(TEST) README NEWS
 SRCFILES  = $(DTX) Makefile
-RUNFILES  = $(STY) $(LUA) $(LUASCRIPT)
+RUNFILES  = $(STY) $(LUA)
 
 ALL       = $(SRCFILES) $(DOCFILES) $(RUNFILES)
 
