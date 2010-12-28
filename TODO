@@ -1,0 +1,5 @@
+- use infwarerr and ltxcmds for Plain/LaTeX compat
+- use own verbatim env for LaTeX (à la luacode)?
+- make variants of mplibcode with \ { } still special?
+- expand doc?
+- synchronize with Context?
