@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2010/12/28
+    * fix two bugs reported by Arno Trautmann that made the package crash with
+      luatex 0.65 (mp 1.5+).
+    * remove support for using .mem files (to fix the second bug)
+
 2010/10/17 v1.06
     * bugfix from Hans (bad function name)
 
