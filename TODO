@@ -3,3 +3,4 @@
 - make variants of mplibcode with \ { } still special?
 - expand doc?
 - synchronize with Context?
+- add a figure with mpfun in the test files

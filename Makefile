@@ -27,7 +27,7 @@ TDS_ZIP   = $(NAME).tds.zip
 ZIPS      = $(CTAN_ZIP) $(TDS_ZIP)
 
 all: $(GENERATED)
-doc: $(COMPILED)
+doc: $(DOC)
 unpack: $(UNPACKED)
 ctan: check $(CTAN_ZIP)
 tds: $(TDS_ZIP)
@@ -45,7 +45,7 @@ check: $(UNPACKED)
 	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
 	lualatex -interaction=batchmode test-$(NAME)-latex.tex  >/dev/null
 
-$(CTAN_ZIP): $(SOURCES) $(COMPILED) $(TDS_ZIP)
+$(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@echo "Making $@ for CTAN upload."
 	@$(RM) -- $@
 	@zip -9 $@ $^ >/dev/null
