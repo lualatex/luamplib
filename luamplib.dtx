@@ -694,9 +694,17 @@ end
 \begingroup
 \catcode`\,=13
 \catcode`\-=13
+\catcode`\<=13
+\catcode`\>=13
+\catcode`\^^I=13
+\catcode`\`=13 % must be last...
 \gdef\FV@hack{%
   \def,{\string,}%
   \def-{\string-}%
+  \def<{\string<}%
+  \def>{\string>}%
+  \def`{\string`}%
+  \def^^I{\string^^I}%
 }
 \endgroup
 %    \end{macrocode}

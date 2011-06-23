@@ -2,8 +2,19 @@
 \usepackage{luamplib}
 \begin{document}
 \begin{mplibcode}
+%% test all printable ascii chars in comments
+%%    (  2  <  F  P  Z  d   n   x
+%%    )  3  =  G  Q  [  e   o   y
+%%    *  4  >  H  R  \  f   p   z
+%% !  +  5  ?  I  S  ]  g   q   {
+%% "  ,  6  @  J  T  ^  h   r   |
+%% #  -  7  A  K  U  _  i   s   }
+%% $  .  8  B  L  V  `  j   t   ~
+%% %  /  9  C  M  W  a  k   u  DEL
+%% &  0  :  D  N  X  b  l   v
+%% ´  1  ;  E  O  Y  c  m   w
 beginfig(1); 
-   fill fullcircle scaled 20; 
+	fill fullcircle scaled 20; %% actual <tab> to make sure it works
 endfig; 
 \end{mplibcode}
 \end{document}
