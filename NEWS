@@ -1,6 +1,10 @@
                        History of the luamplib package
 
-2010/12/28
+2011/06/23 1.08
+    * Fix bug reported by Rolf Dieterich: <, >, TAB anywhere in a luacode
+      environment caused errors. The character ` was affected too.
+
+2010/12/28 1.07
     * fix two bugs reported by Arno Trautmann that made the package crash with
       luatex 0.65 (mp 1.5+).
     * remove support for using .mem files (to fix the second bug)

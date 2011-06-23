@@ -1,5 +1,6 @@
 - use infwarerr and ltxcmds for Plain/LaTeX compat
-- use own verbatim env for LaTeX (à la luacode)?
+- use own verbatim env for LaTeX (à la luacode)
+    yep, will be much better than working arround fancyvrb
 - make variants of mplibcode with \ { } still special?
 - expand doc?
 - synchronize with Context?
