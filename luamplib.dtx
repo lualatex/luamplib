@@ -669,7 +669,7 @@ end
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\def\mplibsetupcatcodes{
+\def\mplibsetupcatcodes{%
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
   \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12
 }
@@ -748,7 +748,7 @@ end
 %    We encapsulate the litterals.
 %
 %    \begin{macrocode}
-\def\mplibstarttoPDF#1#2#3#4{
+\def\mplibstarttoPDF#1#2#3#4{%
   \hbox\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
   \xdef\MPurx{#3}\xdef\MPury{#4}%
