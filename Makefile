@@ -44,6 +44,8 @@ $(UNPACKED): $(DTX)
 check: $(UNPACKED)
 	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
 	lualatex -interaction=batchmode test-$(NAME)-latex.tex  >/dev/null
+	! grep "blank space"              test-$(NAME)-plain.log
+	! grep "blank space"              test-$(NAME)-latex.log
 
 $(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@echo "Making $@ for CTAN upload."

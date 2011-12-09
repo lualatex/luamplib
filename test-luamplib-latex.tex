@@ -1,6 +1,8 @@
 \documentclass{article}
 \usepackage{luamplib}
 \begin{document}
+\tracingcommands1
+A%
 \begin{mplibcode}
 %% test all printable ascii chars in comments
 %%    (  2  <  F  P  Z  d   n   x
@@ -13,8 +15,9 @@
 %% %  /  9  C  M  W  a  k   u  DEL
 %% &  0  :  D  N  X  b  l   v
 %% ´  1  ;  E  O  Y  c  m   w
-beginfig(1); 
+beginfig(1);
 	fill fullcircle scaled 20; %% actual <tab> to make sure it works
-endfig; 
+endfig;
 \end{mplibcode}
+B\par
 \end{document}
