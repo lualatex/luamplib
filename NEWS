@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2011/12/09 1.09
+    * Fix bug reported by Paul Vojta: spurious spaces.
+
 2011/06/23 1.08
     * Fix bug reported by Rolf Dieterich: <, >, TAB anywhere in a luacode
       environment caused errors. The character ` was affected too.
