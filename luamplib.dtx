@@ -838,6 +838,12 @@ luamplib.colorconverter = colorconverter
       \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
     \fi
 \fi
+\def\mplibsetupcatcodes{%
+  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12
+  \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
+  %catcode`\%=12 %% don’t in Plain!
+  \catcode`\&=12 \catcode`\$=12
+}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -845,20 +851,14 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\def\mplibsetupcatcodes{%
-  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12
-  \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  %catcode`\%=12 %% don’t in Plain!
-  \catcode`\&=12 \catcode`\$=12
-}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\box#1\hss}}}
 \def\mplibcode{%
-  \bgroup %
-  \mplibsetupcatcodes %
+  \bgroup
+  \mplibsetupcatcodes
   \mplibdocode %
 }
 \long\def\mplibdocode#1\endmplibcode{%
-  \egroup %
+  \egroup
   \directlua{
     luamplib.settexboxes([===[\unexpanded{#1}]===])
   }%
@@ -896,12 +896,12 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \newcommand\mplibaddlines[1]{%
-  \begingroup %
-  \FV@hack %
+  \begingroup
+  \FV@hack
   \def\FV@ProcessLine##1{%
     \directlua{luamplib.addline("\luatexluaescapestring{##1}")}%
   }%
-  \csname FV@SV@#1\endcsname %
+  \csname FV@SV@#1\endcsname
   \endgroup %
 }
 %    \end{macrocode}
@@ -910,18 +910,29 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
-\def\ltxdomplibcode{\bgroup\setupmplibcatcodes\ltxdomplibcodeX}
-\long\def\ltxdomplibcodeX#1\end{%
+\def\ltxdomplibcode{%
+  \bgroup
+  \mplibsetupcatcodes
+  \ltxdomplibcodeindeed %
+}
+%
+\long\def\ltxdomplibcodeindeed#1\end{%
   \egroup
-  \toks@\expandafter{\the\toks@#1}\ltxdomplibcodeXX}%
-  \def\ltxdomplibcodeXX#1{%
-    \ifnum\pdf@strcmp{#1}{mplibcode}=\z@
- \directlua{luamplib.settexboxes([===[\the\toks@]===])}%
- \directlua{local data = luamplib.gettexboxes([===[\the\toks@]===])
-        luamplib.process(data)}\end{mplibcode}%
-    \else
- \toks@\expandafter{\the\toks@\end{#1}}\expandafter\ltxdomplibcode
-    \fi}
+  \toks@\expandafter{\the\toks@#1}\ltxdomplibcodefinally%
+}%
+%
+\def\ltxdomplibcodefinally#1{%
+  \ifnum\pdf@strcmp{#1}{mplibcode}=\z@
+    \directlua{luamplib.settexboxes([===[\the\toks@]===])}%
+    \directlua{
+      local data = luamplib.gettexboxes([===[\the\toks@]===])
+      luamplib.process(data)
+    }%
+    \end{mplibcode}%
+  \else
+    \toks@\expandafter{\the\toks@\end{#1}}\expandafter\ltxdomplibcode
+ \fi%
+}
 \fi
 %    \end{macrocode}
 %
