@@ -266,23 +266,6 @@ if not file then
       return (stringgsub(filename,"%.[%a%d]+$",""))
   end
 end
-
-local data = ""
-
-local function resetdata()
-    data = ""
-end
-luamplib.resetdata = resetdata
-local function addline(line)
-    data = data .. '\n' .. line
-end
-luamplib.addline = addline
-local function processlines()
-    luamplib.process(data)
-    resetdata()
-end
-luamplib.processlines = processlines
-
 %    \end{macrocode}
 %      As the finder function for |mplib|, use the |kpse| library and
 %      make it behave like as if MetaPost was used (or almost, since the engine
@@ -918,22 +901,7 @@ luamplib.colorconverter = colorconverter
 \endgroup
 %    \end{macrocode}
 %
-%    In \LaTeX\ (it's not the case in plain\TeX ), we get the metapost code
-%    line by line, here is the function handling a line.
-%
-%    \begin{macrocode}
-\newcommand\mplibaddlines[1]{%
-  \begingroup
-  \FV@hack
-  \def\FV@ProcessLine##1{%
-    \directlua{luamplib.addline("\luatexluaescapestring{##1}")}%
-  }%
-  \csname FV@SV@#1\endcsname
-  \endgroup %
-}
-%    \end{macrocode}
-%
-%    The \LaTeX\ environment is a modified \texttt{verbatim} environment.
+%    The \LaTeX\ environment.
 %
 %    \begin{macrocode}
 \newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
