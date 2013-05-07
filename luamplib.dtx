@@ -83,16 +83,44 @@ See source file '\inFileName' for licencing and contact information.
 \fi
 %</ignore>
 %<*driver>
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{luamplib.drv}%
+  [2013/05/09 v2.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
-\usepackage[T1]{fontenc}
-\usepackage{textcomp}
-\usepackage{lmodern}
-\usepackage{fixltx2e}
+\usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
+\usepackage[x11names]{xcolor}
+%
+\def\primarycolor{DodgerBlue4}  %%-> rgb  16  78 139 | #104e8b
+\def\secondarycolor{Goldenrod4} %%-> rgb 139 105 200 | #8b6914
+%
+\usepackage[
+    bookmarks=true,
+   colorlinks=true,
+    linkcolor=\primarycolor,
+     urlcolor=\secondarycolor,
+    citecolor=\primarycolor,
+     pdftitle={The luamplib package},
+   pdfsubject={Interface for using the mplib library},
+    pdfauthor={Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang & Kin Dohyun},
+  pdfkeywords={luatex, lualatex, mplib, metapost}
+]{hyperref}
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont[
+  Numbers     = OldStyle,
+  Ligatures   = TeX,
+  BoldFont    = {Linux Libertine O Bold},
+  ItalicFont  = {Linux Libertine O Italic},
+  SlantedFont = {Linux Libertine O Italic},
+]{Linux Libertine O}
+\setmonofont[Ligatures=TeX,Scale=MatchLowercase]{Liberation Mono}
+%setsansfont[Ligatures=TeX]{Linux Biolinum O}
+\setsansfont[Ligatures=TeX,Scale=MatchLowercase]{Iwona Medium}
+%setmathfont{XITS Math}
 
-\usepackage[a4paper]{geometry}
-%\usepackage[english]{babel}
-\usepackage[colorlinks]{hyperref}
-\usepackage{bookmark}
+\usepackage{hologo}
+
+\newcommand\ConTeXt {Con\TeX t\xspace}
 
 \newcommand*\email [1] {<\href{mailto:#1}{#1}>}
 \newcommand \file       {\nolinkurl}
@@ -275,8 +303,8 @@ luamplib.finder = finder
 
 %    \end{macrocode}
 % The rest of this module is not documented. More info can be found in the
-% \LUATEX manual, articles in user group journals and the files that
-% ship with \CONTEXT.
+% \LuaTeX{} manual, articles in user group journals and the files that
+% ship with \ConTeXt.
 %
 %    \begin{macrocode}
 
