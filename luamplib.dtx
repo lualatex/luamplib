@@ -1,8 +1,8 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2010 by Hans Hagen, Taco Hoekwater, Elie Roux, and
-% Manuel Pégourié-Gonnard.
-% Currently maintained by Manuel Pégourié-Gonnard <mpg@elzevir.fr>
+% Copyright (C) 2008-2010 by Hans Hagen, Taco Hoekwater, Elie Roux, 
+% Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
+% Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
 %
 % This work is under the CC0 license.
@@ -151,10 +151,10 @@ See source file '\inFileName' for licencing and contact information.
 %   Right brace   \}     Tilde         \~}
 %
 % \title{The \textsf{luamplib} package}
-% \author{Hans Hagen, Taco Hoekwater and Elie Roux \\
-% Maintainer: Manuel Pégourié-Gonnard ---
+% \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
+% Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2011/12/09 v1.09}
+% \date{2013/05/09 v2.0}
 %
 % \maketitle
 %
@@ -165,7 +165,7 @@ See source file '\inFileName' for licencing and contact information.
 % \section{Documentation}
 %
 % This packages aims at providing a simple way to typeset directly metapost
-% code in a document with Lua\TeX . Lua\TeX\ is built with the lua
+% code in a document with \LuaTeX . \LuaTeX\ is built with the lua
 % \texttt{mplib} library, that runs metapost code. This package is basically a
 % wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
 % functions to have the output of the \texttt{mplib} functions in the pdf.
@@ -176,8 +176,8 @@ See source file '\inFileName' for licencing and contact information.
 % The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
 % adjusted to the metapost code.
 %
-% The code is from the \texttt{supp-mpl.lua} and \texttt{supp-mpl.tex} files
-% from Con\TeX t, they have been adapted to \LaTeX\ and Plain by Elie Roux.
+% The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
+% from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux.
 % The changes are:
 %
 % \begin{itemize}
@@ -203,11 +203,11 @@ See source file '\inFileName' for licencing and contact information.
 %<*lua>
 % \fi
 %    Use the |luamplib| namespace, since |mplib| is for the metapost library
-%    itself.
+%    itself. \ConTeXt{} uses |metapost|.
 %
 %    \begin{macrocode}
 
-luamplib          = luamplib or { } --- HH has: metapost
+luamplib          = luamplib or { }
 
 %    \end{macrocode}
 %    Identification.
@@ -228,7 +228,7 @@ local err, warn, info, log = luatexbase.provides_module({
 
 %    \end{macrocode}
 %    This module is a stripped down version of libraries that are used by
-%    Con\TeX t. Provide a few ``shortcuts'' expected by the imported code.
+%    \ConTeXt. Provide a few ``shortcuts'' expected by the imported code.
 %
 %    \begin{macrocode}
 
@@ -796,11 +796,6 @@ local function colorconverter(cr)
     end
 end
 luamplib.colorconverter = colorconverter
-
-
---  End of File `luamplib.lua'.
---- vim:ts=4:sw=4:expandtab
-
 %    \end{macrocode}
 %
 % \iffalse
