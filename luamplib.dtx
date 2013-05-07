@@ -182,8 +182,7 @@ See source file '\inFileName' for licencing and contact information.
 luamplib          = luamplib or { } --- HH has: metapost
 
 %    \end{macrocode}
-%    Identification, and additional reporting function, for compatibility with
-%    the original |report()| function and associated data structure.
+%    Identification.
 %
 %    \begin{macrocode}
 
@@ -198,9 +197,6 @@ local err, warn, info, log = luatexbase.provides_module({
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
-local function term(...)
-    texio.write_nl('term', 'luamplib: ' .. string.format(...))
-end
 
 %    \end{macrocode}
 %    This module is a stripped down version of libraries that are used by
@@ -218,8 +214,6 @@ local texsprint     = tex.sprint
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
-
-
 
 local file = file
 if not file then
@@ -278,8 +272,6 @@ local function finder(name, mode, ftype)
 end
 luamplib.finder = finder
 
-luamplib.report = info --- <- metapost.report
-
 %    \end{macrocode}
 % The rest of this module is not documented. More info can be found in the
 % \LUATEX manual, articles in user group journals and the files that
@@ -310,9 +302,9 @@ if mplibone then
         mpx:execute(string.format("input %s ;",name))
         if dump then
             mpx:execute("dump ;")
-            luamplib.report("format %s made and dumped for %s in %0.3f seconds",mem_name,name,os.clock()-t)
+            info("format %s made and dumped for %s in %0.3f seconds",mem_name,name,os.clock()-t)
         else
-            luamplib.report("%s read in %0.3f seconds",name,os.clock()-t)
+            info("%s read in %0.3f seconds",name,os.clock()-t)
         end
         return mpx
     end
@@ -329,7 +321,7 @@ if mplibone then
             mpx = luamplib.make(name,mem_name)
         end
         if mpx then
-            luamplib.report("using format %s",mem_name,false)
+            info("using format %s",mem_name,false)
             return mpx, nil
         else
             return nil, { status = 99, error = "out of memory or invalid format" }
@@ -379,20 +371,20 @@ luamplib.setformat = setformat
 
 luamplib.reporterror = function (result)
     if not result then
-        luamplib.report("luamplib error: no result object returned")
+        err("no result object returned")
     elseif result.status > 0 then
         local t, e, l = result.term, result.error, result.log
         if t then
-            luamplib.report("luamplib terminal: %s",t)
+            info(t)
         end
         if e then
-            luamplib.report("luamplib error: %s", e)
+            err(e)
         end
         if not t and not e and l then
             luamplib.lastlog = luamplib.lastlog .. "\n " .. l
-            luamplib.report("luamplib log: %s",l)
+            log(l)
         else
-            luamplib.report("luamplib error: unknown, no error, terminal or log messages")
+            err("unknown, no error, terminal or log messages")
         end
     else
         return false
@@ -406,19 +398,19 @@ local function process_indeed (mpx, data)
     if mpx and data then
         local result = mpx:execute(data)
         if not result then
-            luamplib.report("mp error: no result object returned")
+            err("no result object returned")
         elseif result.status > 0 then
-            luamplib.report("mp error: %s",(result.term or "no-term") .. "\n" .. (result.error or "no-error"))
+            err("%s",(result.term or "no-term") .. "\n" .. (result.error or "no-error"))
         elseif luamplib.showlog then
             luamplib.lastlog = luamplib.lastlog .. "\n" .. result.term
-            luamplib.report("mp info: %s",result.term or "no-term")
+            info("%s",result.term or "no-term")
         elseif result.fig then
             converted = luamplib.convert(result)
         else
-            luamplib.report("mp error: unknown error, maybe no beginfig/endfig")
+            err("unknown error, maybe no beginfig/endfig")
         end
     else
-        luamplib.report("luamplib error: Mem file unloadable. Maybe generated with a different version of mplib?")
+        err("Mem file unloadable. Maybe generated with a different version of mplib?")
     end
     return converted, result
 end
@@ -619,7 +611,7 @@ local function flush(result,flusher)
         local figures = result.fig
         if figures then
             for f=1, #figures do
-                luamplib.report("flushing figure %s",f)
+                info("flushing figure %s",f)
                 local figure = figures[f]
                 local objects = getobjects(result,figure,f)
                 local fignum = tonumber(stringmatch(figure:filename(),"([%d]+)$") or figure:charcode() or 0)
