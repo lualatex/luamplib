@@ -177,13 +177,15 @@ See source file '\inFileName' for licencing and contact information.
 % adjusted to the metapost code.
 %
 % The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
-% from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux.
+% from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux and
+% Philipp Gesang, new functionalities have been added by Kil Dohyun.
 % The changes are:
 %
 % \begin{itemize}
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
 % \item use of luatexbase for errors, warnings and declaration
+% \item possibility to use |btex ... etex| to typeset \TeX .
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -442,6 +444,9 @@ end
 luamplib.convert = convert
 
 local function pdf_startfigure(n,llx,lly,urx,ury)
+%    \end{macrocode}
+%     The following line has been slightly modified by Kim.
+%    \begin{macrocode}
     texsprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
 end
 
@@ -456,6 +461,9 @@ luamplib.pdf_literalcode = pdf_literalcode
 
 local function pdf_textfigure(font,size,text,width,height,depth)
     text = text:gsub(".","\\hbox{%1}") -- kerning happens in metapost
+%    \end{macrocode}
+%     The following line has been slightly modified by Kim.
+%    \begin{macrocode}
     texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
 end
 luamplib.pdf_textfigure = pdf_textfigure
