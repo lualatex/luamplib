@@ -815,14 +815,12 @@ luamplib.colorconverter = colorconverter
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
   \input luatexbase-modutils.sty
-  \input pdftexcmds.sty%% by Kim
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2011/12/09 v1.09 mplib package for LuaTeX]
+    [2013/05/07 v2.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
-  \RequirePackage{fancyvrb}
 \fi
 %    \end{macrocode}
 %
