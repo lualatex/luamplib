@@ -792,11 +792,13 @@ luamplib.colorconverter = colorconverter
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
   \input luatexbase-modutils.sty
+  \input pdftexcmds.sty%% by Kim
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
     [2011/12/09 v1.09 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
+  \RequirePackage{pdftexcmds}
   \RequirePackage{fancyvrb}
 \fi
 %    \end{macrocode}
@@ -844,6 +846,7 @@ luamplib.colorconverter = colorconverter
   %catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
 }
+\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\box#1\hss}}}
 \def\mplibcode{%
   \bgroup %
   \mplibsetupcatcodes %
@@ -851,10 +854,13 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \egroup %
-  \mplibprocess{#1}%
-}
-\long\def\mplibprocess#1{%
-  \directlua{luamplib.process("\luatexluaescapestring{#1}")}%
+  \directlua{
+    luamplib.settexboxes([===[\unexpanded{#1}]===])
+  }%
+  \directlua{
+    local data = luamplib.gettexboxes([===[\unexpanded{#1}]===])
+    luamplib.process(data)
+  }%
 }
 \else
 %    \end{macrocode}
@@ -898,15 +904,19 @@ luamplib.colorconverter = colorconverter
 %    The \LaTeX\ environment is a modified \texttt{verbatim} environment.
 %
 %    \begin{macrocode}
-\newenvironment{mplibcode}{%
-  \VerbatimEnvironment %
-  \begin{SaveVerbatim}{memoire}%
-}{%
-  \end{SaveVerbatim}%
-  \mplibaddlines{memoire}%
-  \directlua{luamplib.processlines()}%
-}
-
+\newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
+\def\ltxdomplibcode{\bgroup\setupmplibcatcodes\ltxdomplibcodeX}
+\long\def\ltxdomplibcodeX#1\end{%
+  \egroup
+  \toks@\expandafter{\the\toks@#1}\ltxdomplibcodeXX}%
+  \def\ltxdomplibcodeXX#1{%
+    \ifnum\pdf@strcmp{#1}{mplibcode}=\z@
+ \directlua{luamplib.settexboxes([===[\the\toks@]===])}%
+ \directlua{local data = luamplib.gettexboxes([===[\the\toks@]===])
+        luamplib.process(data)}\end{mplibcode}%
+    \else
+ \toks@\expandafter{\the\toks@\end{#1}}\expandafter\ltxdomplibcode
+    \fi}
 \fi
 %    \end{macrocode}
 %
