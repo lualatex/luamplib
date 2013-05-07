@@ -207,6 +207,7 @@ local err, warn, info, log = luatexbase.provides_module({
 local format, abs = string.format, math.abs
 
 local stringgsub    = string.gsub
+local stringfind    = string.find
 local stringmatch   = string.match
 local stringgmatch  = string.gmatch
 local tableconcat   = table.concat
@@ -299,7 +300,7 @@ if mplibone then
             find_file = luamplib.finder,
             job_name = file.stripsuffix(name)
         }
-        mpx:execute(string.format("input %s ;",name))
+        mpx:execute(format("input %s ;",name))
         if dump then
             mpx:execute("dump ;")
             info("format %s made and dumped for %s in %0.3f seconds",mem_name,name,os.clock()-t)
@@ -430,21 +431,21 @@ end
 luamplib.convert = convert
 
 local function pdf_startfigure(n,llx,lly,urx,ury)
-    tex.sprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
+    texsprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
 end
 
 local function pdf_stopfigure()
-    tex.sprint("\\mplibstoptoPDF")
+    texsprint("\\mplibstoptoPDF")
 end
 
 local function pdf_literalcode(fmt,...) -- table
-    tex.sprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
+    texsprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
 end
 luamplib.pdf_literalcode = pdf_literalcode
 
 local function pdf_textfigure(font,size,text,width,height,depth)
     text = text:gsub(".","\\hbox{%1}") -- kerning happens in metapost
-    tex.sprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
+    texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
 end
 luamplib.pdf_textfigure = pdf_textfigure
 
@@ -559,7 +560,7 @@ local function settexboxes (data)
     for _,c,_ in stringgmatch(data,"(%A)btex(%A.-%A)etex(%A)") do
         i = i + 1
         c = stringgsub(c,"^%s*(.-)%s*$","%1")
-        tex.sprint(format("\\setbox%i\\hbox{%s}",i,c))
+        texsprint(format("\\setbox%i\\hbox{%s}",i,c))
     end
 end
 
@@ -630,7 +631,7 @@ local function flush(result,flusher)
                             local object        = objects[o]
                             local objecttype    = object.type
                             local prescript     = object.prescript --- [be]tex patch
-                            if prescript and string.find(prescript,"%%%%textext:") then
+                            if prescript and stringfind(prescript,"%%%%textext:") then
                                puttexboxes(object)
                             elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                                 -- skip
