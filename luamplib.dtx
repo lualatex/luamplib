@@ -214,6 +214,7 @@ local stringgsub    = string.gsub
 local stringmatch   = string.match
 local stringgmatch  = string.gmatch
 local tableconcat   = table.concat
+local texsprint     = tex.sprint
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -849,9 +850,9 @@ luamplib.colorconverter = colorconverter
 %    The Plain-specific stuff.
 %
 %    \begin{macrocode}
+\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\box#1\hss}}}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\box#1\hss}}}
 \def\mplibcode{%
   \bgroup
   \mplibsetupcatcodes
