@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/05/09 v2.0}
+% \date{2013/05/07 v2.0}
 %
 % \maketitle
 %
@@ -658,6 +658,11 @@ local function flush(result,flusher)
                         for o=1,#objects do
                             local object        = objects[o]
                             local objecttype    = object.type
+%    \end{macrocode}
+%     Change from \ConTeXt{} code: the following 3 lines are part of the
+%     |btex...etex| patch.
+%
+%    \begin{macrocode}
                             local prescript     = object.prescript --- [be]tex patch
                             if prescript and stringfind(prescript,"%%%%textext:") then
                                puttexboxes(object)
@@ -679,6 +684,11 @@ local function flush(result,flusher)
                                 pdf_literalcode("Q")
                             else
                                 local cs = object.color
+%    \end{macrocode}
+%     Change from \ConTeXt{} code: the following 5 lines are part of the
+%     |btex...etex| patch.
+%
+%    \begin{macrocode}
                                 local cr = nil
                                 if cs and #cs > 0 then
                                     local start,stop = luamplib.colorconverter(cs)
