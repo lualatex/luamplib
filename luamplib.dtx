@@ -761,8 +761,10 @@ luamplib.colorconverter = colorconverter
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibsetupcatcodes{%
-  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\^=12 \catcode`\~=12
-  \catcode`\_=12 \catcode`\%=12 \catcode`\&=12 \catcode`\$=12
+  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12
+  \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
+  %catcode`\%=12 %% don’t in Plain!
+  \catcode`\&=12 \catcode`\$=12
 }
 \def\mplibcode{%
   \bgroup %
