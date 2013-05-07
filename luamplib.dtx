@@ -208,7 +208,12 @@ end
 %
 %    \begin{macrocode}
 
-local format, concat, abs, match = string.format, table.concat, math.abs, string.match
+local format, abs = string.format, math.abs
+
+local stringgsub    = string.gsub
+local stringmatch   = string.match
+local stringgmatch  = string.gmatch
+local tableconcat   = table.concat
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -230,11 +235,11 @@ if not file then
   file = { }
 
   function file.replacesuffix(filename, suffix)
-      return (string.gsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
+      return (stringgsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
   end
 
   function file.stripsuffix(filename)
-      return (string.gsub(filename,"%.[%a%d]+$",""))
+      return (stringgsub(filename,"%.[%a%d]+$",""))
   end
 end
 
@@ -616,7 +621,7 @@ local function flush(result,flusher)
                 luamplib.report("flushing figure %s",f)
                 local figure = figures[f]
                 local objects = getobjects(result,figure,f)
-                local fignum = tonumber(match(figure:filename(),"([%d]+)$") or figure:charcode() or 0)
+                local fignum = tonumber(stringmatch(figure:filename(),"([%d]+)$") or figure:charcode() or 0)
                 local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
                 local bbox = figure:boundingbox()
                 local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
