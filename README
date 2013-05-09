@@ -4,7 +4,7 @@
 This package allows typesetting of metapost natively in the TeX documents
 thanks to the LuaTeX mplib library. It only works in PDF mode.
 
-This package is developed on <http://github.com/mpg/luamplib>.
+This package is developed on <http://github.com/lualatex/luamplib>.
 
 
 Installation
@@ -15,16 +15,12 @@ Here are the recommended installation methods (preferred first).
 1. If you are using TeX Live 2008 or later, use 'tlmgr install luamplib'.
 Alternatively, try your (TeX or Linux) distribution's package management system.
 
-2. a. Grab luamplib.tds.zip on the CTAN.
-   b. Unzip it at the root of one or your TDS trees.
+2. a. Grab the sources from CTAN or github.
+   b. Run 'make install TEXMFROOT=/path/to/texmf'.
    c. You may need to update some filename database after, see your TeX
 distribution's manual for details.
 
-3. a. Grab the sources from CTAN or github.
-   b. Run 'make install TEXMFROOT=/path/to/texmf'.
-   c. See 2c.
-
-4. Try to figure it out by looking at the Makefile and comments in the sources.
+3. Try to figure it out by looking at the Makefile and comments in the sources.
 
 
 Manifest
@@ -37,18 +33,29 @@ Derived files:
         luamplib.pdf            documentation
         luamplib.sty            package
         luamplib.lua            lua code used by the package
-        luamplib-createmem.lua  script used to generated mpost mem file
 
 
 License
 -------
 
-This work and the derived files are under the Creative Commons CC0 license.
+The luamplib bundle, as a derived work of ConTeXt, is distributed under the
+GNU GPLv2 license:
 
-See the full text at
+   <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>
 
-http://creativecommons.org/publicdomain/zero/1.0/legalcode
+This license requires the license itself to be distributed with the work. For
+its full text see the documentation in luamplib.pdf.
 
-and a FAQ at
 
-http://wiki.creativecommons.org/CC0
+                                  DISCLAIMER
+
+        This program is free software; you can redistribute it and/or
+        modify it under the terms of the GNU General Public License
+        as published by the Free Software Foundation; version 2.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        See headers of each source file for copyright details.
