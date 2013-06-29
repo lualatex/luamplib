@@ -865,7 +865,7 @@ luamplib.colorconverter = colorconverter
 %    The Plain-specific stuff.
 %
 %    \begin{macrocode}
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\box#1\hss}}}
+\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\box#1\hss}}}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibcode{%
