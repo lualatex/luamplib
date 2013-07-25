@@ -586,8 +586,10 @@ end
 luamplib.settexboxes = settexboxes
 
 luamplib.userpreamble = ''
+luamplib.useuserpreamble = true
 
 local function gettexboxes (data)
+    local userpreamble = luamplib.useuserpreamble and luamplib.userpreamble or ''
     local i = tex.count[14] -- the same newbox register
     data = stringgsub(data,"(%A)btex%A.-%Aetex(%A)",
     function(pre,post)
@@ -600,7 +602,7 @@ local function gettexboxes (data)
                         box and (box.depth/factor) or 0)
         return pre .. boxmetr .. post
     end)
-    return mplibcodepreamble .. luamplib.userpreamble .. data
+    return mplibcodepreamble .. userpreamble .. data
 end
 
 luamplib.gettexboxes = gettexboxes
@@ -866,7 +868,8 @@ luamplib.colorconverter = colorconverter
 %
 %    The Plain-specific stuff.
 %
-%    Also implemented \verb|\mplibpreamble ... \endmplibpreamble|.
+%    Also implemented \verb|\mplibpreamble ... \endmplibpreamble|
+%    with option [nopreamble] or [usepreamble].
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\box#1\hss}}}
@@ -881,7 +884,36 @@ luamplib.colorconverter = colorconverter
   \egroup
   \directlua{luamplib.userpreamble = [===[#1]===]}%
 }
-\def\mplibcode{%
+\def\mplibcode{\futurelet\mplibtmptoken\mplibcodeplain}
+\def\mplibcodeplain{%
+  \ifx[\mplibtmptoken
+    \expandafter\mplibcodeplainwithoption
+  \else
+    \expandafter\mplibcodeplainwithoutoption
+  \fi
+}
+\def\mplibcodeoptionusepreamble{usepreamble}
+\def\mplibcodeoptionnopreamble{nopreamble}
+\def\mplibcodeplainwithoption[#1]{%
+  \def\mplibtmpmacro{#1}%
+  \ifx\mplibtmpmacro\mplibcodeoptionusepreamble
+    \directlua{luamplib.useuserpreamble = true}%
+  \else
+    \ifx\mplibtmpmacro\mplibcodeoptionnopreamble
+      \directlua{luamplib.useuserpreamble = false}%
+    \else
+      \errhelp{Option of mplibcode environment should be [nopreamble]
+      or [usepreamble].^^J}%
+      \errmessage{option unknown for mplibcode}%
+    \fi
+  \fi
+  \mplibdocodeplain
+}
+\def\mplibcodeplainwithoutoption{%
+  \directlua{luamplib.useuserpreamble = true}%
+  \mplibdocodeplain
+}
+\def\mplibdocodeplain{%
   \bgroup
   \mplibsetupcatcodes
   \mplibdocode %
@@ -922,10 +954,11 @@ luamplib.colorconverter = colorconverter
 %
 %    The \LaTeX\ environment.
 %
-%    Also implemented \verb|\begin{mplibpreamble} ... \end{mplibpreamble}|.
+%    Also implemented \verb|\begin{mplibpreamble} ... \end{mplibpreamble}|
+%    with option [nopreamble] or [usepreamble].
 %
 %    \begin{macrocode}
-\newenvironment{mplibpreamble}{\def\mplib@tmp@mac{}\ltxdomplibpreamble}{}
+\newenvironment*{mplibpreamble}{\def\mplib@tmp@mac{}\ltxdomplibpreamble}{}
 \def\ltxdomplibpreamble{%
   \bgroup
   \mplibsetupcatcodes
@@ -945,7 +978,22 @@ luamplib.colorconverter = colorconverter
     \expandafter\ltxdomplibpreamble
   \fi
 }
-\newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
+\newenvironment*{mplibcode}{%
+  \@ifnextchar[{\ltx@mplibcode}{\ltx@mplibcode[usepreamble]}%
+}{}
+\def\ltx@mplibcode[#1]{%
+  \ifnum\pdf@strcmp{#1}{usepreamble}=\z@
+    \directlua{luamplib.useuserpreamble = true}%
+  \else
+    \ifnum\pdf@strcmp{#1}{nopreamble}=\z@
+      \directlua{luamplib.useuserpreamble = false}%
+    \else
+      \PackageError{luamplib}{unknown option}{Option of mplibcode
+      environment should be [nopreamble] or [usepreamble].^^J}%
+    \fi
+  \fi
+  \toks@{}\ltxdomplibcode
+}
 \def\ltxdomplibcode{%
   \bgroup
   \mplibsetupcatcodes
