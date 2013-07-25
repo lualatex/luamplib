@@ -585,6 +585,8 @@ end
 
 luamplib.settexboxes = settexboxes
 
+luamplib.userpreamble = ''
+
 local function gettexboxes (data)
     local i = tex.count[14] -- the same newbox register
     data = stringgsub(data,"(%A)btex%A.-%Aetex(%A)",
@@ -598,7 +600,7 @@ local function gettexboxes (data)
                         box and (box.depth/factor) or 0)
         return pre .. boxmetr .. post
     end)
-    return mplibcodepreamble .. data
+    return mplibcodepreamble .. luamplib.userpreamble .. data
 end
 
 luamplib.gettexboxes = gettexboxes
@@ -859,6 +861,18 @@ luamplib.colorconverter = colorconverter
   \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   %catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
+}
+%    \end{macrocode}
+%
+%    user preamble which is common to all figs.
+%    For instance: \verb|\mplibpreamble{u:=72;}|
+%
+%    \begin{macrocode}
+\long\def\mplibpreamble#1{%
+  \bgroup
+  \mplibsetupcatcodes
+  \directlua{luamplib.userpreamble = [===[\unexpanded{#1}]===]}%
+  \egroup
 }
 %    \end{macrocode}
 %
