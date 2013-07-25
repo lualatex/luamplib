@@ -864,24 +864,23 @@ luamplib.colorconverter = colorconverter
 }
 %    \end{macrocode}
 %
-%    user preamble which is common to all figs.
-%    For instance: \verb|\mplibpreamble{u:=72;}|
-%
-%    \begin{macrocode}
-\long\def\mplibpreamble#1{%
-  \bgroup
-  \mplibsetupcatcodes
-  \directlua{luamplib.userpreamble = [===[#1]===]}%
-  \egroup
-}
-%    \end{macrocode}
-%
 %    The Plain-specific stuff.
+%
+%    Also implemented \verb|\mplibpreamble ... \endmplibpreamble|.
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\box#1\hss}}}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\def\mplibpreamble{%
+  \bgroup
+  \mplibsetupcatcodes
+  \mplibdopreamble
+}
+\long\def\mplibdopreamble#1\endmplibpreamble{%
+  \egroup
+  \directlua{luamplib.userpreamble = [===[#1]===]}%
+}
 \def\mplibcode{%
   \bgroup
   \mplibsetupcatcodes
@@ -923,7 +922,29 @@ luamplib.colorconverter = colorconverter
 %
 %    The \LaTeX\ environment.
 %
+%    Also implemented \verb|\begin{mplibpreamble} ... \end{mplibpreamble}|.
+%
 %    \begin{macrocode}
+\newenvironment{mplibpreamble}{\def\mplib@tmp@mac{}\ltxdomplibpreamble}{}
+\def\ltxdomplibpreamble{%
+  \bgroup
+  \mplibsetupcatcodes
+  \ltxdomplibpreambleindeed
+}
+\long\def\ltxdomplibpreambleindeed#1\end{%
+  \egroup
+  \edef\mplib@tmp@mac{\unexpanded\expandafter{\mplib@tmp@mac #1}}%
+  \ltxdomplibpreamblefinally
+}
+\def\ltxdomplibpreamblefinally#1{%
+  \ifnum\pdf@strcmp{#1}{mplibpreamble}=\z@
+    \directlua{luamplib.userpreamble = [===[\mplib@tmp@mac]===]}%
+    \end{mplibpreamble}%
+  \else
+    \edef\mplib@tmp@mac{\unexpanded\expandafter{\mplib@tmp@mac\end{#1}}}%
+    \expandafter\ltxdomplibpreamble
+  \fi
+}
 \newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
 \def\ltxdomplibcode{%
   \bgroup
