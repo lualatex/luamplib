@@ -871,7 +871,7 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibpreamble#1{%
   \bgroup
   \mplibsetupcatcodes
-  \directlua{luamplib.userpreamble = [===[\unexpanded{#1}]===]}%
+  \directlua{luamplib.userpreamble = [===[#1]===]}%
   \egroup
 }
 %    \end{macrocode}
