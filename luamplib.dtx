@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/05/09 v2.0 Interface for using the mplib library]%
+  [2013/09/24 v2.01 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/05/07 v2.0}
+% \date{2013/09/24 v2.01}
 %
 % \maketitle
 %
@@ -178,7 +178,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
 % from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux and
-% Philipp Gesang, new functionalities have been added by Kil Dohyun.
+% Philipp Gesang, new functionalities have been added by Kim Dohyun.
 % The changes are:
 %
 % \begin{itemize}
@@ -222,8 +222,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.00,
-    date          = "2013/05/07",
+    version       =  2.01,
+    date          = "2013/09/24",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -567,7 +567,7 @@ vardef textext@#(expr n, w, h, d) =
         addto currentpicture doublepath unitsquare
         xscaled w
         yscaled (h+d)
-	shifted (0,-d)
+        shifted (0,-d)
         withprescript "%%textext:"&decimal n&":"&decimal w&":"&decimal(h+d);
     )
 enddef;
@@ -819,7 +819,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/05/07 v2.0 mplib package for LuaTeX]
+    [2013/09/24 v2.01 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
