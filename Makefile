@@ -50,7 +50,10 @@ check: $(UNPACKED)
 $(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@echo "Making $@ for CTAN upload."
 	@$(RM) -- $@
-	@zip -9 $@ $^ >/dev/null
+	@mkdir -p $(NAME)
+	@cp -f $(SOURCES) $(DOC) $(NAME)
+	@zip -9 -r $@ $(TDS_ZIP) $(NAME) >/dev/null
+	@rm -rf $(NAME)
 
 define run-install
 @mkdir -p $(RUNDIR) && cp $(RUNFILES) $(RUNDIR)
