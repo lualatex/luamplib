@@ -36,7 +36,7 @@ world: all ctan
 .PHONY: all doc unpack ctan tds check world
 
 %.pdf: %.dtx
-	latexmk -pdf -e '$$pdflatex = q(lualatex %O %S)' -silent $< >/dev/null
+	latexmk -lualatex -recorder- -silent $< >/dev/null
 
 $(UNPACKED): $(DTX)
 	tex -interaction=batchmode $< >/dev/null
