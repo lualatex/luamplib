@@ -922,6 +922,7 @@ luamplib.colorconverter = colorconverter
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibcode{%
   \bgroup
+  \bgroup
   \mplibsetupcatcodes
   \mplibdocode %
 }
@@ -933,6 +934,7 @@ luamplib.colorconverter = colorconverter
   \directlua{
     luamplib.processwithTEXboxes(luamplib.tempdata)
   }%
+  \egroup
 }
 \else
 %    \end{macrocode}
