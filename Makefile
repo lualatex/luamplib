@@ -36,7 +36,7 @@ world: all ctan
 .PHONY: all doc unpack ctan tds check world
 
 %.pdf: %.dtx
-	latexmk -pdf -e '$$pdflatex = q(lualatex %O %S)' -silent $< >/dev/null
+	latexmk -lualatex -recorder- -silent $< >/dev/null
 
 $(UNPACKED): $(DTX)
 	tex -interaction=batchmode $< >/dev/null
@@ -50,7 +50,10 @@ check: $(UNPACKED)
 $(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@echo "Making $@ for CTAN upload."
 	@$(RM) -- $@
-	@zip -9 $@ $^ >/dev/null
+	@mkdir -p $(NAME)
+	@cp -f $(SOURCES) $(DOC) $(NAME)
+	@zip -9 -r $@ $(TDS_ZIP) $(NAME) >/dev/null
+	@rm -rf $(NAME)
 
 define run-install
 @mkdir -p $(RUNDIR) && cp $(RUNFILES) $(RUNDIR)

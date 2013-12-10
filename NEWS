@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2013/12/11 2.03
+    * implemented textext() macro which is identical to TEX() from TEX.mp.
+      TEX() is a synonym of textext().
+    * fix a bug regarding tex-text box inside for...endfor loop,
+      reported at http://www.ktug.org/xe/index.php?document_srl=178050
+
 2013/09/24 2.01
     * fix bug reported by Stephan Hennig: wrong baseline of tex-text box
 
