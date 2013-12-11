@@ -575,7 +575,7 @@ let TEX = textext;
 ]]
 
 local mplibcodepreamblesecond = [[
-vardef textext (expr t) =
+vardef textext (text t) =
     TEXBOX := TEXBOX + 1;
     image (
         addto currentpicture doublepath unitsquare
@@ -586,9 +586,9 @@ vardef textext (expr t) =
                       decimal TEXBOX & ":" &
                       decimal TEXBOXwd[TEXBOX] & ":" &
                       decimal(TEXBOXht[TEXBOX]+TEXBOXdp[TEXBOX]);
-)
+    )
 enddef;
-def TEX (expr t) = textext (t) enddef;
+def TEX (text t) = textext (t) enddef;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -621,12 +621,12 @@ local function domakeTEXboxes (data)
                 for o=1,#objects do
                     local object    = objects[o]
                     local prescript = object.prescript
-                    if prescript and stringfind(prescript,"%%%%mkTEXbox:") then
-                        num = num + 1
-                        stringgsub(prescript, "%%%%mkTEXbox:(.+)",
-                        function(str)
+                    if prescript then
+                        local str = stringmatch(prescript, "%%%%mkTEXbox:(.*)")
+                        if str then
+                            num = num + 1
                             texsprint(format("\\setbox%i\\hbox{%s}",num,str))
-                        end)
+                        end
                     end
                 end
             end
@@ -635,10 +635,15 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
-    data = stringgsub(data,"(%A)btex(%A.-%A)etex(%A)",
-    function(pre,texcode,post)
-        texcode = stringgsub(texcode,"^%s*(.-)%s*$","%1")
-        return pre .. "textext(\"" .. texcode .. "\")" .. post
+    data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
+    function(pre,post)
+        post = stringgsub(post,"%s","")
+        return pre .. 'textext("' .. post
+    end)
+    data = stringgsub(data, "([^A-Z_a-z])etex([^A-Z_a-z])",
+    function(pre,post)
+        pre = stringgsub(pre,"%s","")
+        return pre .. '")' .. post
     end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
@@ -652,14 +657,13 @@ luamplib.makeTEXboxes = makeTEXboxes
 
 local function processwithTEXboxes (data)
     local num = tex.count[14] -- the same newbox register
-    local prepreamble = "numeric TEXBOX, TEXBOXwd[], TEXBOXht[], TEXBOXdp[];\n"..
-    "TEXBOX := "..num..";\n"
+    local prepreamble = "TEXBOX := "..num..";\n"
     while true do
         num = num + 1
         local box = tex.box[num]
         if not box then break end
         prepreamble = prepreamble ..
-        "TEXBOXwd["..num.."] := "..box.width/factor ..";\n"..
+        "TEXBOXwd["..num.."] := "..box.width /factor..";\n"..
         "TEXBOXht["..num.."] := "..box.height/factor..";\n"..
         "TEXBOXdp["..num.."] := "..box.depth /factor..";\n"
     end
