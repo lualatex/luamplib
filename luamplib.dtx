@@ -572,23 +572,27 @@ def textext (expr t) =
     image( special "%%mkTEXbox:"&t; )
 enddef;
 let TEX = textext;
+def VerbatimTeX (text t) = enddef;
 ]]
 
 local mplibcodepreamblesecond = [[
 vardef textext (text t) =
-    TEXBOX := TEXBOX + 1;
+    TEXBOX_ := TEXBOX_ + 1;
     image (
         addto currentpicture doublepath unitsquare
-        xscaled TEXBOXwd[TEXBOX]
-        yscaled (TEXBOXht[TEXBOX] + TEXBOXdp[TEXBOX])
-        shifted (0, -TEXBOXdp[TEXBOX])
+        xscaled TEXBOX_wd[TEXBOX_]
+        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+        shifted (0, -TEXBOX_dp[TEXBOX_])
         withprescript "%%TEXtxtbox:" &
-                      decimal TEXBOX & ":" &
-                      decimal TEXBOXwd[TEXBOX] & ":" &
-                      decimal(TEXBOXht[TEXBOX]+TEXBOXdp[TEXBOX]);
+                      decimal TEXBOX_ & ":" &
+                      decimal TEXBOX_wd[TEXBOX_] & ":" &
+                      decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
     )
 enddef;
 def TEX (text t) = textext (t) enddef;
+def VerbatimTeX (text t) =
+    message "verbatimtex '"& t &"' is ignored";
+enddef;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -604,9 +608,15 @@ local function putTEXboxes (object)
         local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
+        local cs, cr = object.color, nil
+        if cs and #cs > 0 then
+            cs, cr = luamplib.colorconverter(cs)
+            if cs then pdf_literalcode(cs) end
+        end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
         texsprint(format("\\mplibputtextbox{%i}",n))
         pdf_literalcode("Q")
+        if cr then pdf_literalcode(cr) end
     end
 end
 
@@ -621,12 +631,10 @@ local function domakeTEXboxes (data)
                 for o=1,#objects do
                     local object    = objects[o]
                     local prescript = object.prescript
-                    if prescript then
-                        local str = stringmatch(prescript, "%%%%mkTEXbox:(.*)")
-                        if str then
-                            num = num + 1
-                            texsprint(format("\\setbox%i\\hbox{%s}",num,str))
-                        end
+                    local str = prescript and stringmatch(prescript, "%%%%mkTEXbox:(.*)")
+                    if str then
+                        num = num + 1
+                        texsprint(format("\\setbox%i\\hbox{%s}",num,str))
                     end
                 end
             end
@@ -639,6 +647,11 @@ local function makeTEXboxes (data)
     function(pre,post)
         post = stringgsub(post,"%s","")
         return pre .. 'textext("' .. post
+    end)
+    data = stringgsub(data, "([^A-Z_a-z])verbatimtex([^A-Z_a-z])",
+    function(pre,post)
+        post = stringgsub(post,"%s","")
+        return pre .. 'VerbatimTeX("' .. post
     end)
     data = stringgsub(data, "([^A-Z_a-z])etex([^A-Z_a-z])",
     function(pre,post)
@@ -657,15 +670,15 @@ luamplib.makeTEXboxes = makeTEXboxes
 
 local function processwithTEXboxes (data)
     local num = tex.count[14] -- the same newbox register
-    local prepreamble = "TEXBOX := "..num..";\n"
+    local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
         num = num + 1
         local box = tex.box[num]
         if not box then break end
         prepreamble = prepreamble ..
-        "TEXBOXwd["..num.."] := "..box.width /factor..";\n"..
-        "TEXBOXht["..num.."] := "..box.height/factor..";\n"..
-        "TEXBOXdp["..num.."] := "..box.depth /factor..";\n"
+        "TEXBOX_wd["..num.."] := "..box.width /factor..";\n"..
+        "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
+        "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
     process(prepreamble .. mplibcodepreamblesecond .. data)
 end
