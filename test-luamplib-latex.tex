@@ -44,7 +44,7 @@ A%
 \begin{mplibcode}
 beginfig(2);
 numeric u; u=1cm;
-z1=-z2=origin-(u,0);
+z1=-z2=(-u,0);
 for i = 1 upto 3:
   draw z1..(0, i*u)..z2;
   label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u)) withcolor blue;
