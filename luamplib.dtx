@@ -15,7 +15,7 @@
 %    tex luamplib.dtx
 %
 % Documentation:
-%    pdflatex luamplib.dtx
+%    lualatex luamplib.dtx
 %
 %<*ignore>
 \begingroup
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/11 v2.03 Interface for using the mplib library]%
+  [2013/12/19 v2.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -101,7 +101,7 @@ See source file '\inFileName' for licencing and contact information.
     citecolor=\primarycolor,
      pdftitle={The luamplib package},
    pdfsubject={Interface for using the mplib library},
-    pdfauthor={Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang & Kin Dohyun},
+    pdfauthor={Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang & Kim Dohyun},
   pdfkeywords={luatex, lualatex, mplib, metapost}
 ]{hyperref}
 \usepackage{fontspec}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/11 v2.03}
+% \date{2013/12/19 v2.1}
 %
 % \maketitle
 %
@@ -185,7 +185,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
 % \item use of luatexbase for errors, warnings and declaration
-% \item possibility to use |btex ... etex| to typeset \TeX .
+% \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
@@ -196,7 +196,7 @@ See source file '\inFileName' for licencing and contact information.
 % \texttt{mplibcode} environment.
 %
 % There are (basically) two formats for metapost: \emph{plain} and
-% \emph{mpfun}. By default, the \emph{plain} format is used, but you can set
+% \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 % the format to be used by future figures at any time using
 % \cs{mplibsetformat}\marg{format name}.
 %
@@ -225,8 +225,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.03,
-    date          = "2013/12/11",
+    version       =  2.1,
+    date          = "2013/12/19",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -562,7 +562,7 @@ end
 %     Below code has been contributed by Dohyun Kim.
 %     It implements \verb|btex| / \verb|etex| functions.
 %
-%     v2.2: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
+%     v2.1: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
 %           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
 %
 %    \begin{macrocode}
@@ -572,23 +572,27 @@ def textext (expr t) =
     image( special "%%mkTEXbox:"&t; )
 enddef;
 let TEX = textext;
+def VerbatimTeX (text t) = enddef;
 ]]
 
 local mplibcodepreamblesecond = [[
-vardef textext (expr t) =
-    TEXBOX := TEXBOX + 1;
+vardef textext (text t) =
+    TEXBOX_ := TEXBOX_ + 1;
     image (
         addto currentpicture doublepath unitsquare
-        xscaled TEXBOXwd[TEXBOX]
-        yscaled (TEXBOXht[TEXBOX] + TEXBOXdp[TEXBOX])
-        shifted (0, -TEXBOXdp[TEXBOX])
+        xscaled TEXBOX_wd[TEXBOX_]
+        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+        shifted (0, -TEXBOX_dp[TEXBOX_])
         withprescript "%%TEXtxtbox:" &
-                      decimal TEXBOX & ":" &
-                      decimal TEXBOXwd[TEXBOX] & ":" &
-                      decimal(TEXBOXht[TEXBOX]+TEXBOXdp[TEXBOX]);
-)
+                      decimal TEXBOX_ & ":" &
+                      decimal TEXBOX_wd[TEXBOX_] & ":" &
+                      decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
+    )
 enddef;
-def TEX (expr t) = textext (t) enddef;
+def TEX (text t) = textext (t) enddef;
+def VerbatimTeX (text t) =
+    message "verbatimtex '"& t &"' is ignored";
+enddef;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -604,7 +608,12 @@ local function putTEXboxes (object)
         local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
+        local cs = object.color
+        if cs and #cs > 0 then
+            cs = luamplib.colorconverter(cs)
+        end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+        if cs then pdf_literalcode(cs) end
         texsprint(format("\\mplibputtextbox{%i}",n))
         pdf_literalcode("Q")
     end
@@ -621,12 +630,10 @@ local function domakeTEXboxes (data)
                 for o=1,#objects do
                     local object    = objects[o]
                     local prescript = object.prescript
-                    if prescript and stringfind(prescript,"%%%%mkTEXbox:") then
+                    local str = prescript and stringmatch(prescript, "%%%%mkTEXbox:(.*)")
+                    if str then
                         num = num + 1
-                        stringgsub(prescript, "%%%%mkTEXbox:(.+)",
-                        function(str)
-                            texsprint(format("\\setbox%i\\hbox{%s}",num,str))
-                        end)
+                        texsprint(format("\\setbox%i\\hbox{%s}",num,str))
                     end
                 end
             end
@@ -635,10 +642,20 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
-    data = stringgsub(data,"(%A)btex(%A.-%A)etex(%A)",
-    function(pre,texcode,post)
-        texcode = stringgsub(texcode,"^%s*(.-)%s*$","%1")
-        return pre .. "textext(\"" .. texcode .. "\")" .. post
+    data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
+    function(pre,post)
+        post = stringgsub(post,"%s","")
+        return pre .. 'textext("' .. post
+    end)
+    data = stringgsub(data, "([^A-Z_a-z])verbatimtex([^A-Z_a-z])",
+    function(pre,post)
+        post = stringgsub(post,"%s","")
+        return pre .. 'VerbatimTeX("' .. post
+    end)
+    data = stringgsub(data, "([^A-Z_a-z])etex([^A-Z_a-z])",
+    function(pre,post)
+        pre = stringgsub(pre,"%s","")
+        return pre .. '")' .. post
     end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
@@ -652,16 +669,15 @@ luamplib.makeTEXboxes = makeTEXboxes
 
 local function processwithTEXboxes (data)
     local num = tex.count[14] -- the same newbox register
-    local prepreamble = "numeric TEXBOX, TEXBOXwd[], TEXBOXht[], TEXBOXdp[];\n"..
-    "TEXBOX := "..num..";\n"
+    local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
         num = num + 1
         local box = tex.box[num]
         if not box then break end
         prepreamble = prepreamble ..
-        "TEXBOXwd["..num.."] := "..box.width/factor ..";\n"..
-        "TEXBOXht["..num.."] := "..box.height/factor..";\n"..
-        "TEXBOXdp["..num.."] := "..box.depth /factor..";\n"
+        "TEXBOX_wd["..num.."] := "..box.width /factor..";\n"..
+        "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
+        "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
     process(prepreamble .. mplibcodepreamblesecond .. data)
 end
@@ -717,21 +733,29 @@ local function flush(result,flusher)
                                 -- not supported
                             elseif objecttype == "text" then
                                 local ot = object.transform -- 3,4,5,6,1,2
+%    \end{macrocode}
+%
+%     Change from \ConTeXt{} code: the `cs' stuffs are for supporting `withcolor' option 
+%
+%    \begin{macrocode}
+                                local cs = object.color
+                                if cs and #cs > 0 then
+                                    cs = luamplib.colorconverter(cs)
+                                end
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                                if cs then pdf_literalcode(cs) end
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
                             else
-                                local cs = object.color
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 5 lines are part of the
-%     |btex...etex| patch.
+%
+%     Change from \ConTeXt{} code: the following 5 lines are for properly supporting `withcolor' option 
 %
 %    \begin{macrocode}
-                                local cr = nil
+                                local cs, cr = object.color, nil
                                 if cs and #cs > 0 then
-                                    local start,stop = luamplib.colorconverter(cs)
-                                    pdf_literalcode(start)
-                                    cr = stop
+                                    cs, cr = luamplib.colorconverter(cs)
+                                    pdf_literalcode(cs)
                                 end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
@@ -865,7 +889,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/11 v2.03 mplib package for LuaTeX]
+    [2013/12/19 v2.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -921,6 +945,7 @@ luamplib.colorconverter = colorconverter
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibcode{%
+  \begingroup
   \bgroup
   \mplibsetupcatcodes
   \mplibdocode %
@@ -933,6 +958,7 @@ luamplib.colorconverter = colorconverter
   \directlua{
     luamplib.processwithTEXboxes(luamplib.tempdata)
   }%
+  \endgroup
 }
 \else
 %    \end{macrocode}

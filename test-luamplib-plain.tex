@@ -20,6 +20,11 @@ endfig;
 B\par
 A%
 \mplibcode
+beginfig(0);
+draw origin--(1cm,0) withcolor red;
+draw btex g etex withcolor blue;
+endfig;
+
 beginfig(18);
 numeric u;
 u = 1cm;
@@ -30,6 +35,18 @@ draw (0,0){up}
 label.lrt(btex $\sqrt x$ etex, (3,sqrt 3)*u);
 label.bot(btex $x$ etex, (2u,0));
 label.lft(btex $y$ etex, (0,u));
+endfig;
+\endmplibcode
+B\par
+A%
+\mplibcode
+beginfig(2);
+numeric u; u=1cm;
+z1=-z2=origin-(u,0);
+for i = 1 upto 3:
+  draw z1..(0, i*u)..z2;
+  label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u)) withcolor blue;
+endfor;
 endfig;
 \endmplibcode
 B\par
