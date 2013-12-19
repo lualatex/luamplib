@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/11 v2.03 Interface for using the mplib library]%
+  [2013/12/19 v2.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/11 v2.03}
+% \date{2013/12/19 v2.1}
 %
 % \maketitle
 %
@@ -185,7 +185,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by \texttt{mplib}
 % \item use of luatexbase for errors, warnings and declaration
-% \item possibility to use |btex ... etex| to typeset \TeX .
+% \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
@@ -225,8 +225,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.03,
-    date          = "2013/12/11",
+    version       =  2.1,
+    date          = "2013/12/19",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -562,7 +562,7 @@ end
 %     Below code has been contributed by Dohyun Kim.
 %     It implements \verb|btex| / \verb|etex| functions.
 %
-%     v2.2: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
+%     v2.1: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
 %           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
 %
 %    \begin{macrocode}
@@ -608,15 +608,14 @@ local function putTEXboxes (object)
         local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
-        local cs, cr = object.color, nil
+        local cs = object.color
         if cs and #cs > 0 then
-            cs, cr = luamplib.colorconverter(cs)
-            if cs then pdf_literalcode(cs) end
+            cs = luamplib.colorconverter(cs)
         end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+        if cs then pdf_literalcode(cs) end
         texsprint(format("\\mplibputtextbox{%i}",n))
         pdf_literalcode("Q")
-        if cr then pdf_literalcode(cr) end
     end
 end
 
@@ -734,21 +733,29 @@ local function flush(result,flusher)
                                 -- not supported
                             elseif objecttype == "text" then
                                 local ot = object.transform -- 3,4,5,6,1,2
+%    \end{macrocode}
+%
+%     Change from \ConTeXt{} code: the `cs' stuffs are for supporting `withcolor' option 
+%
+%    \begin{macrocode}
+                                local cs = object.color
+                                if cs and #cs > 0 then
+                                    cs = luamplib.colorconverter(cs)
+                                end
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                                if cs then pdf_literalcode(cs) end
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
                             else
-                                local cs = object.color
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 5 lines are part of the
-%     |btex...etex| patch.
+%
+%     Change from \ConTeXt{} code: the following 5 lines are for properly supporting `withcolor' option 
 %
 %    \begin{macrocode}
-                                local cr = nil
+                                local cs, cr = object.color, nil
                                 if cs and #cs > 0 then
-                                    local start,stop = luamplib.colorconverter(cs)
-                                    pdf_literalcode(start)
-                                    cr = stop
+                                    cs, cr = luamplib.colorconverter(cs)
+                                    pdf_literalcode(cs)
                                 end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
@@ -882,7 +889,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/11 v2.03 mplib package for LuaTeX]
+    [2013/12/19 v2.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
