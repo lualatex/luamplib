@@ -609,9 +609,7 @@ local function putTEXboxes (object)
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
         local cs = object.color
-        if cs and #cs > 0 then
-            cs = luamplib.colorconverter(cs)
-        end
+        if cs then cs = luamplib.colorconverter(cs) end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
         if cs then pdf_literalcode(cs) end
         texsprint(format("\\mplibputtextbox{%i}",n))
@@ -739,9 +737,7 @@ local function flush(result,flusher)
 %
 %    \begin{macrocode}
                                 local cs = object.color
-                                if cs and #cs > 0 then
-                                    cs = luamplib.colorconverter(cs)
-                                end
+                                if cs then cs = luamplib.colorconverter(cs) end
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                                 if cs then pdf_literalcode(cs) end
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
@@ -753,9 +749,9 @@ local function flush(result,flusher)
 %
 %    \begin{macrocode}
                                 local cs, cr = object.color, nil
-                                if cs and #cs > 0 then
+                                if cs then
                                     cs, cr = luamplib.colorconverter(cs)
-                                    pdf_literalcode(cs)
+                                    if cs then pdf_literalcode(cs) end
                                 end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
@@ -862,7 +858,12 @@ local function colorconverter(cr)
     elseif n == 3 then
         local r, g, b = cr[1], cr[2], cr[3]
         return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
-    else
+%    \end{macrocode}
+%
+%    Next line has been slightly modified by Kim.
+%
+%    \begin{macrocode}
+    elseif n == 1 then
         local s = cr[1]
         return format("%.3f g %.3f G",s,s), "0 g 0 G"
     end
