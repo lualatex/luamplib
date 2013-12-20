@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2013/12/20 2.11
+    * fix a bug wrt "withoutcolor" option
+
 2013/12/19 2.1
     * Do not ignore "withcolor" option during textext process
     * verbatimtex ... etex is now just ignored, not raising error

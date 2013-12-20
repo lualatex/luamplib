@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/19 v2.1 Interface for using the mplib library]%
+  [2013/12/20 v2.11 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/19 v2.1}
+% \date{2013/12/20 v2.11}
 %
 % \maketitle
 %
@@ -225,8 +225,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.1,
-    date          = "2013/12/19",
+    version       =  2.11,
+    date          = "2013/12/20",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -609,9 +609,10 @@ local function putTEXboxes (object)
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
         local cs = object.color
-        if cs then cs = luamplib.colorconverter(cs) end
+        if cs and #cs > 0 then
+            pdf_literalcode(luamplib.colorconverter(cs))
+        end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-        if cs then pdf_literalcode(cs) end
         texsprint(format("\\mplibputtextbox{%i}",n))
         pdf_literalcode("Q")
     end
@@ -737,21 +738,16 @@ local function flush(result,flusher)
 %
 %    \begin{macrocode}
                                 local cs = object.color
-                                if cs then cs = luamplib.colorconverter(cs) end
+                                if cs and #cs > 0 then
+                                    pdf_literalcode(luamplib.colorconverter(cs))
+                                end
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
-                                if cs then pdf_literalcode(cs) end
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
                             else
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: the following 5 lines are for properly supporting `withcolor' option 
-%
-%    \begin{macrocode}
-                                local cs, cr = object.color, nil
-                                if cs then
-                                    cs, cr = luamplib.colorconverter(cs)
-                                    if cs then pdf_literalcode(cs) end
+                                local cs = object.color
+                                if cs and #cs > 0 then
+                                    pdf_literalcode(luamplib.colorconverter(cs))
                                 end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
@@ -835,9 +831,9 @@ local function flush(result,flusher)
                                         pdf_literalcode("Q")
                                     end
                                 end
-                                if cr then
-                                    pdf_literalcode(cr)
-                                end
+--                              if cr then
+--                                  pdf_literalcode(cr)
+--                              end
                             end
                        end
                     end
@@ -858,12 +854,7 @@ local function colorconverter(cr)
     elseif n == 3 then
         local r, g, b = cr[1], cr[2], cr[3]
         return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
-%    \end{macrocode}
-%
-%    Next line has been slightly modified by Kim.
-%
-%    \begin{macrocode}
-    elseif n == 1 then
+    else
         local s = cr[1]
         return format("%.3f g %.3f G",s,s), "0 g 0 G"
     end
@@ -890,7 +881,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/19 v2.1 mplib package for LuaTeX]
+    [2013/12/20 v2.11 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
