@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/20 v2.11 Interface for using the mplib library]%
+  [2013/12/21 v2.11 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/20 v2.11}
+% \date{2013/12/21 v2.11}
 %
 % \maketitle
 %
@@ -226,7 +226,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.11,
-    date          = "2013/12/20",
+    date          = "2013/12/21",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -463,10 +463,11 @@ end
 luamplib.pdf_literalcode = pdf_literalcode
 
 local function pdf_textfigure(font,size,text,width,height,depth)
-    text = text:gsub(".","\\hbox{%1}") -- kerning happens in metapost
 %    \end{macrocode}
-%     The following line has been slightly modified by Kim.
+%     The following three lines have been modified by Kim.
 %    \begin{macrocode}
+    if text == "" then text = "\0" end -- char(0) has gone
+    text = text:gsub(".",function(c) return "\\hbox{\\char"..string.byte(c).."}" end) -- kerning happens in metapost
     texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
 end
 luamplib.pdf_textfigure = pdf_textfigure
@@ -881,7 +882,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/20 v2.11 mplib package for LuaTeX]
+    [2013/12/21 v2.11 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

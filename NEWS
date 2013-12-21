@@ -2,6 +2,7 @@
 
 2013/12/20 2.11
     * fix a bug wrt "withoutcolor" option
+    * fix a bug wrt "char <number> infont <font>" picture
 
 2013/12/19 2.1
     * Do not ignore "withcolor" option during textext process
