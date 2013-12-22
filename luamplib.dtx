@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/21 v2.11 Interface for using the mplib library]%
+  [2013/12/22 v2.11 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/21 v2.11}
+% \date{2013/12/22 v2.11}
 %
 % \maketitle
 %
@@ -226,7 +226,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.11,
-    date          = "2013/12/21",
+    date          = "2013/12/22",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -355,6 +355,7 @@ else
     local preamble = [[
         boolean mplib ; mplib := true ;
         let dump = endinput ;
+        let normalfontsize = fontsize;
         input %s ;
     ]]
 
@@ -466,8 +467,10 @@ local function pdf_textfigure(font,size,text,width,height,depth)
 %    \end{macrocode}
 %     The following three lines have been modified by Kim.
 %    \begin{macrocode}
-    if text == "" then text = "\0" end -- char(0) has gone
-    text = text:gsub(".",function(c) return "\\hbox{\\char"..string.byte(c).."}" end) -- kerning happens in metapost
+    -- if text == "" then text = "\0" end -- char(0) has gone
+    text = text:gsub(".",function(c)
+        return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
+    end)
     texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
 end
 luamplib.pdf_textfigure = pdf_textfigure
@@ -568,6 +571,24 @@ end
 %
 %    \begin{macrocode}
 
+local preambleformetafun = [[
+defaultfont := "cmtt10";
+let infont = normalinfont;
+let fontsize = normalfontsize;
+vardef thelabel@#(expr p,z) =
+    if string p :
+        thelabel@#(p infont defaultfont scaled defaultscale,z)
+    else :
+        p shifted (z + labeloffset*mfun_laboff@# -
+            (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
+            (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
+    fi
+enddef;
+def externalfigure primary filename =
+    draw textext("\includegraphics{"& filename &"}")
+enddef;
+]]
+
 local mplibcodepreamblefirst = [[
 def textext (expr t) =
     image( special "%%mkTEXbox:"&t; )
@@ -590,7 +611,7 @@ vardef textext (text t) =
                       decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
     )
 enddef;
-def TEX (text t) = textext (t) enddef;
+def TEX = textext enddef;
 def VerbatimTeX (text t) =
     message "verbatimtex '"& t &"' is ignored";
 enddef;
@@ -659,7 +680,11 @@ local function makeTEXboxes (data)
     end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
-        local result = mpx:execute(mplibcodepreamblefirst .. data)
+        local mplibpreamble = mplibcodepreamblefirst
+        if currentformat == "metafun" then
+            mplibpreamble = preambleformetafun..mplibpreamble
+        end
+        local result = mpx:execute(mplibpreamble .. data)
         domakeTEXboxes(result)
     end
     return data
@@ -679,7 +704,11 @@ local function processwithTEXboxes (data)
         "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
         "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
-    process(prepreamble .. mplibcodepreamblesecond .. data)
+    local mplibpreamble = prepreamble..mplibcodepreamblesecond
+    if currentformat == "metafun" then
+        mplibpreamble = preambleformetafun..mplibpreamble
+    end
+    process(mplibpreamble .. data)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
@@ -882,7 +911,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/21 v2.11 mplib package for LuaTeX]
+    [2013/12/22 v2.11 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
