@@ -1,11 +1,13 @@
                        History of the luamplib package
 
-2013/12/22 2.11
+2013/12/23 2.11
     * fix a bug wrt "withoutcolor" option
     * fix a bug wrt "char <number> infont <font>" picture
+    * bypass ConTeXt commands which raise errors under metafun format
+    * ignore "fontmapfile <filename>" which crashes engine
 
 2013/12/19 2.1
-    * Do not ignore "withcolor" option during textext process
+    * Do not ignore "withcolor" option for textext and normal text object
     * verbatimtex ... etex is now just ignored, not raising error
 
 2013/12/11 2.03

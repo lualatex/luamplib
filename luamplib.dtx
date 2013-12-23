@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/22 v2.11 Interface for using the mplib library]%
+  [2013/12/23 v2.11 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/22 v2.11}
+% \date{2013/12/23 v2.11}
 %
 % \maketitle
 %
@@ -226,7 +226,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.11,
-    date          = "2013/12/22",
+    date          = "2013/12/23",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -595,6 +595,7 @@ def textext (expr t) =
 enddef;
 let TEX = textext;
 def VerbatimTeX (text t) = enddef;
+def fontmapfile primary filename = enddef;
 ]]
 
 local mplibcodepreamblesecond = [[
@@ -615,6 +616,7 @@ def TEX = textext enddef;
 def VerbatimTeX (text t) =
     message "verbatimtex '"& t &"' is ignored";
 enddef;
+def fontmapfile primary filename = enddef;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -911,7 +913,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/22 v2.11 mplib package for LuaTeX]
+    [2013/12/23 v2.11 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
