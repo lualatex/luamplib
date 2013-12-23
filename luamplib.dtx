@@ -571,50 +571,46 @@ end
 %
 %    \begin{macrocode}
 
-local preambleformetafun = [[
-defaultfont := "cmtt10";
-let infont = normalinfont;
-let fontsize = normalfontsize;
-vardef thelabel@#(expr p,z) =
-    if string p :
-        thelabel@#(p infont defaultfont scaled defaultscale,z)
-    else :
-        p shifted (z + labeloffset*mfun_laboff@# -
-            (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
-            (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
+local mplibcodepreamble = [[
+vardef rawtextext (expr t) =
+    if unknown TEXBOX_:
+        image( special "%%mkTEXbox:"&t; )
+    else:
+        TEXBOX_ := TEXBOX_ + 1;
+        image (
+            addto currentpicture doublepath unitsquare
+            xscaled TEXBOX_wd[TEXBOX_]
+            yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+            shifted (0, -TEXBOX_dp[TEXBOX_])
+            withprescript "%%TEXtxtbox:" &
+                          decimal TEXBOX_ & ":" &
+                          decimal TEXBOX_wd[TEXBOX_] & ":" &
+                          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
+        )
     fi
 enddef;
+if known context_mlib:
+    defaultfont := "cmtt10";
+    let infont = normalinfont;
+    let fontsize = normalfontsize;
+    vardef thelabel@#(expr p,z) =
+        if string p :
+            thelabel@#(p infont defaultfont scaled defaultscale,z)
+        else :
+            p shifted (z + labeloffset*mfun_laboff@# -
+                (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
+                (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
+        fi
+    enddef;
+else:
+    vardef textext@# (text t) = rawtextext (t) enddef;
+fi
 def externalfigure primary filename =
-    draw textext("\includegraphics{"& filename &"}")
-enddef;
-]]
-
-local mplibcodepreamblefirst = [[
-def textext (expr t) =
-    image( special "%%mkTEXbox:"&t; )
-enddef;
-let TEX = textext;
-def VerbatimTeX (text t) = enddef;
-def fontmapfile primary filename = enddef;
-]]
-
-local mplibcodepreamblesecond = [[
-vardef textext (text t) =
-    TEXBOX_ := TEXBOX_ + 1;
-    image (
-        addto currentpicture doublepath unitsquare
-        xscaled TEXBOX_wd[TEXBOX_]
-        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-        shifted (0, -TEXBOX_dp[TEXBOX_])
-        withprescript "%%TEXtxtbox:" &
-                      decimal TEXBOX_ & ":" &
-                      decimal TEXBOX_wd[TEXBOX_] & ":" &
-                      decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
-    )
+    draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
 def VerbatimTeX (text t) =
-    message "verbatimtex '"& t &"' is ignored";
+    if known TEXBOX_: message "verbatimtex '"& t &"' is ignored"; fi
 enddef;
 def fontmapfile primary filename = enddef;
 ]]
@@ -682,11 +678,7 @@ local function makeTEXboxes (data)
     end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
-        local mplibpreamble = mplibcodepreamblefirst
-        if currentformat == "metafun" then
-            mplibpreamble = preambleformetafun..mplibpreamble
-        end
-        local result = mpx:execute(mplibpreamble .. data)
+        local result = mpx:execute(mplibcodepreamble .. data)
         domakeTEXboxes(result)
     end
     return data
@@ -706,11 +698,7 @@ local function processwithTEXboxes (data)
         "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
         "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
-    local mplibpreamble = prepreamble..mplibcodepreamblesecond
-    if currentformat == "metafun" then
-        mplibpreamble = preambleformetafun..mplibpreamble
-    end
-    process(mplibpreamble .. data)
+    process(prepreamble .. mplibcodepreamble .. data)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
