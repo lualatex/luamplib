@@ -782,6 +782,19 @@ local function color_normalize(ca,cb)
 end
 
 local function do_preobj_color(object,prescript)
+    -- transparency
+    local opaq = prescript and prescript.tr_transparency
+    if opaq then
+        local mode = prescript.tr_alternative or 1
+        mode = transparancy_modes[tonumber(mode)]
+        tr_pdf_pageresources(mode,opaq)
+        pdf_literalcode("/TransGs%s%g gs",mode,opaq)
+    end
+    -- color
+    local cs = object.color
+    if cs and #cs > 0 then
+        pdf_literalcode(luamplib.colorconverter(cs))
+    end
     -- shading
     local sh_type = prescript and prescript.sh_type
     if sh_type then
@@ -800,7 +813,7 @@ local function do_preobj_color(object,prescript)
         if     #colora == 1 then colorspace = "DeviceGray"
         elseif #colora == 3 then colorspace = "DeviceRGB"
         elseif #colora == 4 then colorspace = "DeviceCMYK"
-        else return
+        else return opaq
         end
         colora = tableconcat(colora, " "); colorb = tableconcat(colorb, " ")
         if sh_type == "linear" then
@@ -813,30 +826,17 @@ local function do_preobj_color(object,prescript)
             sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
         end
         pdf_literalcode("q /Pattern cs")
-        return nil,shade_no
+        return opaq,shade_no
     end
-    -- transparency
-    local opaq = prescript and prescript.tr_transparency
-    if opaq then
-        local mode = prescript.tr_alternative or 1
-        mode = transparancy_modes[tonumber(mode)]
-        tr_pdf_pageresources(mode,opaq)
-        pdf_literalcode("/TransGs%s%g gs",mode,opaq)
-    end
-    -- color
-    local cs = object.color
-    if cs and #cs > 0 then
-        pdf_literalcode(luamplib.colorconverter(cs))
-    end
-    -- return
-    return opaq,nil
+    return opaq
 end
 
 local function do_postobj_color(tr,sh)
+    if sh then
+        pdf_literalcode("W n /MpSh%s sh Q",sh)
+    end
     if tr then
         pdf_literalcode("/TransGsNormal1 gs")
-    elseif sh then
-        pdf_literalcode("W n /MpSh%s sh Q",sh)
     end
 end
 
