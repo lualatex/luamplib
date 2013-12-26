@@ -1028,13 +1028,13 @@ local function colorconverter(cr)
     local n = #cr
     if n == 4 then
         local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
-        return format("%g %g %g %g k %g %g %g %g K",c,m,y,k,c,m,y,k), "0 g 0 G"
+        return format("%.3g %.3g %.3g %.3g k %.3g %.3g %.3g %.3g K",c,m,y,k,c,m,y,k), "0 g 0 G"
     elseif n == 3 then
         local r, g, b = cr[1], cr[2], cr[3]
-        return format("%g %g %g rg %g %g %g RG",r,g,b,r,g,b), "0 g 0 G"
+        return format("%.3g %.3g %.3g rg %.3g %.3g %.3g RG",r,g,b,r,g,b), "0 g 0 G"
     else
         local s = cr[1]
-        return format("%g g %g G",s,s), "0 g 0 G"
+        return format("%.3g g %.3g G",s,s), "0 g 0 G"
     end
 end
 luamplib.colorconverter = colorconverter
