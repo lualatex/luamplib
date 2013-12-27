@@ -679,7 +679,7 @@ local function makeTEXboxes (data)
     data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
     function(pre,post)
         post = stringgsub(post,"%s","")
-        return pre .. 'textext("' .. post
+        return pre .. 'rawtextext("' .. post
     end)
     data = stringgsub(data, "([^A-Z_a-z])verbatimtex([^A-Z_a-z])",
     function(pre,post)
