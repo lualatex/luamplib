@@ -718,22 +718,34 @@ end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
 
+-- transparency / shading
+
+local pdf_objs = {}
+
+-- objstr <string> => obj <number>, new <boolean>
+local function update_pdfobjs (os)
+    local on = pdf_objs[os]
+    if on then
+        return on,false
+    end
+    on = pdf.immediateobj(os)
+    pdf_objs[os] = on
+    return on,true
+end
+
 local transparancy_modes = { [0] =  "Normal",
     "Normal",       "Multiply",     "Screen",       "Overlay",
     "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
     "Darken",       "Lighten",      "Difference",   "Exclusion",
     "Hue",          "Saturation",   "Color",        "Luminosity",
-    "Compatible", -- last one is obsolete; normal is used
+    "Compatible",
 }
 
-local transp_t = {}
-
 local function update_tr_res(res,mode,opaq)
-    local name = format("%s%g",mode,opaq)
-    if not transp_t[name] then
-        local n = pdf.immediateobj(format("<</BM /%s/ca %g/CA %g/AIS false>>",mode,opaq,opaq))
-        transp_t[name] = n
-        res = res .. format("/MPlibTr%s %i 0 R",name,n)
+    local os = format("<</BM /%s/ca %g/CA %g/AIS false>>",mode,opaq,opaq)
+    local on, new = update_pdfobjs(os)
+    if new then
+        res = res .. format("/MPlibTr%s%g %i 0 R",mode,opaq,on)
     end
     return res
 end
@@ -752,23 +764,26 @@ local function tr_pdf_pageresources(mode,opaq)
     end
 end
 
-local shade_no = 0
-
 -- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
-    local f = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
-                     domain, colora, colorb)
-    f = pdf.immediateobj(f)
-    local s = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
-                     shtype, colorspace, f, coordinates)
-    s = pdf.immediateobj(s)
-    local r = format("/MPlibSh%i %i 0 R", shade_no, s)
+    local os, on, new
+    os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
+                domain, colora, colorb)
+    on = update_pdfobjs(os)
+    os = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
+                shtype, colorspace, on, coordinates)
+    on, new = update_pdfobjs(os)
+    if not new then
+        return on
+    end
+    local res = format("/MPlibSh%i %i 0 R", on, on)
     local ppr = pdf.pageresources or ""
     if not stringfind(ppr,"/Shading<<.*>>") then
         ppr = ppr.."/Shading<<>>"
     end
-    pdf.pageresources = stringgsub(ppr,"/Shading<<","%1"..r)
+    pdf.pageresources = stringgsub(ppr,"/Shading<<","%1"..res)
+    return on
 end
 
 local function color_normalize(ca,cb)
@@ -800,7 +815,6 @@ local function do_preobj_color(object,prescript)
     -- shading
     local sh_type = prescript and prescript.sh_type
     if sh_type then
-        shade_no = shade_no + 1
         local domain  = prescript.sh_domain
         local centera = prescript.sh_center_a
         local centerb = prescript.sh_center_b
@@ -812,20 +826,22 @@ local function do_preobj_color(object,prescript)
             color_normalize(colorb,colora)
         end
         local colorspace
-        if     #colora == 1 then colorspace = "DeviceGray"
-        elseif #colora == 3 then colorspace = "DeviceRGB"
-        elseif #colora == 4 then colorspace = "DeviceCMYK"
-        else return opaq
+        if     #colorb == 1 then colorspace = "DeviceGray"
+        elseif #colorb == 3 then colorspace = "DeviceRGB"
+        elseif #colorb == 4 then colorspace = "DeviceCMYK"
+        else   return opaq
         end
-        colora = tableconcat(colora, " "); colorb = tableconcat(colorb, " ")
+        colora = tableconcat(colora, " ")
+        colorb = tableconcat(colorb, " ")
+        local shade_no
         if sh_type == "linear" then
             local coordinates = format("%s %s",centera,centerb)
-            sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
+            shade_no = sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
         elseif sh_type == "circular" then
             local radiusa = prescript.sh_radius_a
             local radiusb = prescript.sh_radius_b
             local coordinates = format("%s %s %s %s",centera,radiusa,centerb,radiusb)
-            sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
+            shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
         end
         pdf_literalcode("q /Pattern cs")
         return opaq,shade_no
