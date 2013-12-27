@@ -576,14 +576,14 @@ local function script2table(s)
     local t = {}
     for i in stringgmatch(s,"[^\13]+") do
         k,v = stringmatch(i,"(.+)=(.+)")
-        if stringfind(v,":") then
-            local vv = {}
-            for j in stringgmatch(v,"[^:]+") do
-                vv[#vv+1] = j
-            end
-            t[k] = vv
-        else
+        local vv = {}
+        for j in stringgmatch(v,"[^:]+") do
+            vv[#vv+1] = j
+        end
+        if #vv == 1 then
             t[k] = v
+        else
+            t[k] = vv
         end
     end
     return t
@@ -733,7 +733,7 @@ local function update_tr_res(res,mode,opaq)
     if not transp_t[name] then
         local n = pdf.immediateobj(format("<</BM /%s/ca %g/CA %g/AIS false>>",mode,opaq,opaq))
         transp_t[name] = n
-        res = res .. format("/TransGs%s %i 0 R",name,n)
+        res = res .. format("/MPlibTr%s %i 0 R",name,n)
     end
     return res
 end
@@ -752,7 +752,9 @@ local function tr_pdf_pageresources(mode,opaq)
     end
 end
 
-local shade_no = 0;
+local shade_no = 0
+
+-- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
     local f = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
@@ -761,7 +763,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
     local s = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
                      shtype, colorspace, f, coordinates)
     s = pdf.immediateobj(s)
-    local r = format("/MpSh%i %i 0 R", shade_no, s)
+    local r = format("/MPlibSh%i %i 0 R", shade_no, s)
     local ppr = pdf.pageresources or ""
     if not stringfind(ppr,"/Shading<<.*>>") then
         ppr = ppr.."/Shading<<>>"
@@ -788,7 +790,7 @@ local function do_preobj_color(object,prescript)
         local mode = prescript.tr_alternative or 1
         mode = transparancy_modes[tonumber(mode)]
         tr_pdf_pageresources(mode,opaq)
-        pdf_literalcode("/TransGs%s%g gs",mode,opaq)
+        pdf_literalcode("/MPlibTr%s%g gs",mode,opaq)
     end
     -- color
     local cs = object.color
@@ -833,10 +835,10 @@ end
 
 local function do_postobj_color(tr,sh)
     if sh then
-        pdf_literalcode("W n /MpSh%s sh Q",sh)
+        pdf_literalcode("W n /MPlibSh%s sh Q",sh)
     end
     if tr then
-        pdf_literalcode("/TransGsNormal1 gs")
+        pdf_literalcode("/MPlibTrNormal1 gs")
     end
 end
 
@@ -869,16 +871,15 @@ local function flush(result,flusher)
                             local object        = objects[o]
                             local objecttype    = object.type
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 6 lines are part of the
+%     Change from \ConTeXt{} code: the following 5 lines are part of the
 %     |btex...etex| patch.
 %
 %    \begin{macrocode}
                             local prescript     = object.prescript
                             prescript = prescript and script2table(prescript) -- prescript is now a table
+                            local tr_opaq,shade_no = do_preobj_color(object,prescript)
                             if prescript and prescript.MPlibTEXboxID then
-                                local tr_opaq = do_preobj_color(object,prescript)
                                 putTEXboxes(object,prescript)
-                                do_postobj_color(tr_opaq)
                             elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                                 -- skip
                             elseif objecttype == "start_clip" then
@@ -891,29 +892,11 @@ local function flush(result,flusher)
                             elseif objecttype == "special" then
                                 -- not supported
                             elseif objecttype == "text" then
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: color stuff
-%
-%    \begin{macrocode}
-                                local tr_opaq = do_preobj_color(object,prescript)
                                 local ot = object.transform -- 3,4,5,6,1,2
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: color stuff
-%
-%    \begin{macrocode}
-                                do_postobj_color(tr_opaq)
                             else
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: color stuff
-%
-%    \begin{macrocode}
-                                local tr_opaq,shade_no = do_preobj_color(object,prescript)
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
                                     miterlimit = ml
@@ -969,7 +952,7 @@ local function flush(result,flusher)
 %     Change from \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-                                    if not shade_no then ---------------- conflict with shading
+                                    if not shade_no then ----- conflict with shading
                                         if objecttype == "fill" then
                                             pdf_literalcode("h f")
                                         elseif objecttype == "outline" then
@@ -1003,16 +986,16 @@ local function flush(result,flusher)
                                         pdf_literalcode("Q")
                                     end
                                 end
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: color stuff
-%
-%    \begin{macrocode}
-                                do_postobj_color(tr_opaq,shade_no)
 --                              if cr then
 --                                  pdf_literalcode(cr)
 --                              end
                             end
+%    \end{macrocode}
+%
+%     Added to \ConTeXt{} code: color stuff
+%
+%    \begin{macrocode}
+                            do_postobj_color(tr_opaq,shade_no)
                        end
                     end
                     pdf_literalcode("Q")
