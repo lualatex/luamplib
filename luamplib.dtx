@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/26 v2.2 Interface for using the mplib library]%
+  [2013/12/29 v2.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/26 v2.2}
+% \date{2013/12/29 v2.2}
 %
 % \maketitle
 %
@@ -189,6 +189,11 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
+% \item \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%   but \TeX\ code inbetween is inserted before the mplib hbox. Using this command,
+%   each mplib box can be freely moved horizontally and/or vertically.\\
+%   \textsc{n.b.} \verb|\endgraf| should be used instead of \verb|\par| inside
+%   \verb|verbatimtex ... etex|.
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -226,7 +231,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.2,
-    date          = "2013/12/26",
+    date          = "2013/12/29",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -576,14 +581,16 @@ local function script2table(s)
     local t = {}
     for i in stringgmatch(s,"[^\13]+") do
         k,v = stringmatch(i,"(.+)=(.+)")
-        local vv = {}
-        for j in stringgmatch(v,"[^:]+") do
-            vv[#vv+1] = j
-        end
-        if #vv == 1 then
-            t[k] = v
-        else
-            t[k] = vv
+        if k and v then
+            local vv = {}
+            for j in stringgmatch(v,"[^:]+") do
+                vv[#vv+1] = j
+            end
+            if #vv == 1 then
+                t[k] = v
+            else
+                t[k] = vv
+            end
         end
     end
     return t
@@ -627,10 +634,12 @@ def externalfigure primary filename =
     draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
-def VerbatimTeX (text t) =
-    if known TEXBOX_: message "verbatimtex '"& t &"' is ignored"; fi
-enddef;
 def fontmapfile primary filename = enddef;
+def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
+def ignoreVerbatimTeX  (text t) = enddef;
+let VerbatimTeX = specialVerbatimTeX;
+extra_beginfig := extra_beginfig & "let VerbatimTeX = ignoreVerbatimTeX;" ;
+extra_endfig   := extra_endfig   & "let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -652,11 +661,14 @@ local function putTEXboxes (object,prescript)
     end
 end
 
+local TeX_code_t = {}
+
 local function domakeTEXboxes (data)
     local num = tex.count[14] -- newbox register
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
+            TeX_code_t[f] = {}
             local figure = figures[f]
             local objects = getobjects(data,figure,f)
             if objects then
@@ -669,6 +681,20 @@ local function domakeTEXboxes (data)
                         num = num + 1
                         texsprint(format("\\setbox%i\\hbox{%s}",num,str))
                     end
+%    \end{macrocode}
+%     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%     but the \TeX\ code inbetween is inserted before the mplib box. Examples:
+%     \verb|verbatimtex \moveright 3cm etex|;
+%     \verb|verbatimtex \leavevmode etex|;
+%     \verb|verbatimtex \leavevmode\lower 1ex etex|;
+%     \verb|verbatimtex \endgraf etex|.
+%
+%     As shown, \verb|\endgraf| should be used instead of \verb|\par|.
+%    \begin{macrocode}
+                    local texcode = prescript and prescript.MPlibVerbTeX
+                    if texcode and texcode ~= "" then
+                        table.insert(TeX_code_t[f],texcode)
+                    end
                 end
             end
         end
@@ -676,6 +702,7 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
+    data = "relax " .. data
     data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
     function(pre,post)
         post = stringgsub(post,"%s","")
@@ -880,6 +907,12 @@ local function flush(result,flusher)
                     pdf_startfigure(fignum,0,0,0,0)
                     pdf_stopfigure()
                 else
+%    \end{macrocode}
+%    Insert \verb|verbatimtex| code before mplib box.
+%    \begin{macrocode}
+                    if #TeX_code_t[f] > 0 then
+                        texsprint(tableconcat(TeX_code_t[f]))
+                    end
                     pdf_startfigure(fignum,llx,lly,urx,ury)
                     pdf_literalcode("q")
                     if objects then
@@ -1058,7 +1091,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/26 v2.2 mplib package for LuaTeX]
+    [2013/12/29 v2.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
