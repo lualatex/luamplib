@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/23 v2.11 Interface for using the mplib library]%
+  [2013/12/29 v2.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/23 v2.11}
+% \date{2013/12/29 v2.2}
 %
 % \maketitle
 %
@@ -189,6 +189,11 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
+% \item \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%   but \TeX\ code inbetween is inserted before the mplib hbox. Using this command,
+%   each mplib box can be freely moved horizontally and/or vertically.\\
+%   \textsc{n.b.} \verb|\endgraf| should be used instead of \verb|\par| inside
+%   \verb|verbatimtex ... etex|.
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -225,8 +230,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.11,
-    date          = "2013/12/23",
+    version       =  2.2,
+    date          = "2013/12/29",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -569,12 +574,32 @@ end
 %     v2.1: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
 %           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
 %
+%     v2.2: Transparency and Shading
 %    \begin{macrocode}
+
+local function script2table(s)
+    local t = {}
+    for i in stringgmatch(s,"[^\13]+") do
+        k,v = stringmatch(i,"(.+)=(.+)")
+        if k and v then
+            local vv = {}
+            for j in stringgmatch(v,"[^:]+") do
+                vv[#vv+1] = j
+            end
+            if #vv == 1 then
+                t[k] = v
+            else
+                t[k] = vv
+            end
+        end
+    end
+    return t
+end
 
 local mplibcodepreamble = [[
 vardef rawtextext (expr t) =
     if unknown TEXBOX_:
-        image( special "%%mkTEXbox:"&t; )
+        image( special "MPlibmkTEXbox="&t; )
     else:
         TEXBOX_ := TEXBOX_ + 1;
         image (
@@ -582,7 +607,7 @@ vardef rawtextext (expr t) =
             xscaled TEXBOX_wd[TEXBOX_]
             yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
             shifted (0, -TEXBOX_dp[TEXBOX_])
-            withprescript "%%TEXtxtbox:" &
+            withprescript "MPlibTEXboxID=" &
                           decimal TEXBOX_ & ":" &
                           decimal TEXBOX_wd[TEXBOX_] & ":" &
                           decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
@@ -609,17 +634,19 @@ def externalfigure primary filename =
     draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
-def VerbatimTeX (text t) =
-    if known TEXBOX_: message "verbatimtex '"& t &"' is ignored"; fi
-enddef;
 def fontmapfile primary filename = enddef;
+def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
+def ignoreVerbatimTeX  (text t) = enddef;
+let VerbatimTeX = specialVerbatimTeX;
+extra_beginfig := extra_beginfig & "let VerbatimTeX = ignoreVerbatimTeX;" ;
+extra_endfig   := extra_endfig   & "let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
 local factor = 65536*(7227/7200)
 
-local function putTEXboxes (object)
-    local n,tw,th = stringmatch(object.prescript,
-                                "%%%%TEXtxtbox:(%d+):([%d%.%+%-]+):([%d%.%+%-]+)")
+local function putTEXboxes (object,prescript)
+    local box = prescript.MPlibTEXboxID
+    local n,tw,th = box[1],box[2],box[3]
     if n and tw and th then
         local op = object.path
         local first, second, fourth = op[1], op[2], op[4]
@@ -628,31 +655,45 @@ local function putTEXboxes (object)
         local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
         if sx == 0 then sx = 0.00001 end
         if sy == 0 then sy = 0.00001 end
-        local cs = object.color
-        if cs and #cs > 0 then
-            pdf_literalcode(luamplib.colorconverter(cs))
-        end
         pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
         texsprint(format("\\mplibputtextbox{%i}",n))
         pdf_literalcode("Q")
     end
 end
 
+local TeX_code_t = {}
+
 local function domakeTEXboxes (data)
     local num = tex.count[14] -- newbox register
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
+            TeX_code_t[f] = {}
             local figure = figures[f]
             local objects = getobjects(data,figure,f)
             if objects then
                 for o=1,#objects do
                     local object    = objects[o]
                     local prescript = object.prescript
-                    local str = prescript and stringmatch(prescript, "%%%%mkTEXbox:(.*)")
+                    prescript = prescript and script2table(prescript)
+                    local str = prescript and prescript.MPlibmkTEXbox
                     if str then
                         num = num + 1
                         texsprint(format("\\setbox%i\\hbox{%s}",num,str))
+                    end
+%    \end{macrocode}
+%     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%     but the \TeX\ code inbetween is inserted before the mplib box. Examples:
+%     \verb|verbatimtex \moveright 3cm etex|;
+%     \verb|verbatimtex \leavevmode etex|;
+%     \verb|verbatimtex \leavevmode\lower 1ex etex|;
+%     \verb|verbatimtex \endgraf etex|.
+%
+%     As shown, \verb|\endgraf| should be used instead of \verb|\par|.
+%    \begin{macrocode}
+                    local texcode = prescript and prescript.MPlibVerbTeX
+                    if texcode and texcode ~= "" then
+                        table.insert(TeX_code_t[f],texcode)
                     end
                 end
             end
@@ -661,10 +702,11 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
+    data = "relax " .. data
     data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
     function(pre,post)
         post = stringgsub(post,"%s","")
-        return pre .. 'textext("' .. post
+        return pre .. 'rawtextext("' .. post
     end)
     data = stringgsub(data, "([^A-Z_a-z])verbatimtex([^A-Z_a-z])",
     function(pre,post)
@@ -703,8 +745,148 @@ end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
 
+-- transparency / shading
+
+local pdf_objs = {}
+
+-- objstr <string> => obj <number>, new <boolean>
+local function update_pdfobjs (os)
+    local on = pdf_objs[os]
+    if on then
+        return on,false
+    end
+    on = pdf.immediateobj(os)
+    pdf_objs[os] = on
+    return on,true
+end
+
+local transparancy_modes = { [0] =  "Normal",
+    "Normal",       "Multiply",     "Screen",       "Overlay",
+    "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
+    "Darken",       "Lighten",      "Difference",   "Exclusion",
+    "Hue",          "Saturation",   "Color",        "Luminosity",
+    "Compatible",
+}
+
+local function update_tr_res(res,mode,opaq)
+    local os = format("<</BM /%s/ca %g/CA %g/AIS false>>",mode,opaq,opaq)
+    local on, new = update_pdfobjs(os)
+    if new then
+        res = res .. format("/MPlibTr%s%g %i 0 R",mode,opaq,on)
+    end
+    return res
+end
+
+local function tr_pdf_pageresources(mode,opaq)
+    local res = ""
+    res = update_tr_res(res, "Normal", 1)
+    res = update_tr_res(res, mode, opaq)
+    if res ~= "" then
+        local tpr = tex.pdfpageresources -- respect luaotfload-colors
+        if not stringfind(tpr,"/ExtGState<<.*>>") then
+            tpr = tpr.."/ExtGState<<>>"
+        end
+        tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+        tex.set("global","pdfpageresources",tpr)
+    end
+end
+
+-- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
+
+local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
+    local os, on, new
+    os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
+                domain, colora, colorb)
+    on = update_pdfobjs(os)
+    os = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
+                shtype, colorspace, on, coordinates)
+    on, new = update_pdfobjs(os)
+    if not new then
+        return on
+    end
+    local res = format("/MPlibSh%i %i 0 R", on, on)
+    local ppr = pdf.pageresources or ""
+    if not stringfind(ppr,"/Shading<<.*>>") then
+        ppr = ppr.."/Shading<<>>"
+    end
+    pdf.pageresources = stringgsub(ppr,"/Shading<<","%1"..res)
+    return on
+end
+
+local function color_normalize(ca,cb)
+    if #cb == 1 then
+        if #ca == 4 then
+            cb[1], cb[2], cb[3], cb[4] = 0, 0, 0, 1-cb[1]
+        else -- #ca = 3
+            cb[1], cb[2], cb[3] = cb[1], cb[1], cb[1]
+        end
+    elseif #cb == 3 then -- #ca == 4
+        cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
+    end
+end
+
+local function do_preobj_color(object,prescript)
+    -- transparency
+    local opaq = prescript and prescript.tr_transparency
+    if opaq then
+        local mode = prescript.tr_alternative or 1
+        mode = transparancy_modes[tonumber(mode)]
+        tr_pdf_pageresources(mode,opaq)
+        pdf_literalcode("/MPlibTr%s%g gs",mode,opaq)
+    end
+    -- color
+    local cs = object.color
+    if cs and #cs > 0 then
+        pdf_literalcode(luamplib.colorconverter(cs))
+    end
+    -- shading
+    local sh_type = prescript and prescript.sh_type
+    if sh_type then
+        local domain  = prescript.sh_domain
+        local centera = prescript.sh_center_a
+        local centerb = prescript.sh_center_b
+        local colora  = prescript.sh_color_a or {0};
+        local colorb  = prescript.sh_color_b or {1};
+        if #colora > #colorb then
+            color_normalize(colora,colorb)
+        elseif #colorb > #colora then
+            color_normalize(colorb,colora)
+        end
+        local colorspace
+        if     #colorb == 1 then colorspace = "DeviceGray"
+        elseif #colorb == 3 then colorspace = "DeviceRGB"
+        elseif #colorb == 4 then colorspace = "DeviceCMYK"
+        else   return opaq
+        end
+        colora = tableconcat(colora, " ")
+        colorb = tableconcat(colorb, " ")
+        local shade_no
+        if sh_type == "linear" then
+            local coordinates = format("%s %s",centera,centerb)
+            shade_no = sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
+        elseif sh_type == "circular" then
+            local radiusa = prescript.sh_radius_a
+            local radiusb = prescript.sh_radius_b
+            local coordinates = format("%s %s %s %s",centera,radiusa,centerb,radiusb)
+            shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
+        end
+        pdf_literalcode("q /Pattern cs")
+        return opaq,shade_no
+    end
+    return opaq
+end
+
+local function do_postobj_color(tr,sh)
+    if sh then
+        pdf_literalcode("W n /MPlibSh%s sh Q",sh)
+    end
+    if tr then
+        pdf_literalcode("/MPlibTrNormal1 gs")
+    end
+end
+
 %    \end{macrocode}
-%     End of \verb|btex| -- \verb|etex| patch.
+%     End of \verb|btex| -- \verb|etex| and Transparency/Shading patch.
 %
 %    \begin{macrocode}
 
@@ -725,6 +907,12 @@ local function flush(result,flusher)
                     pdf_startfigure(fignum,0,0,0,0)
                     pdf_stopfigure()
                 else
+%    \end{macrocode}
+%    Insert \verb|verbatimtex| code before mplib box.
+%    \begin{macrocode}
+                    if #TeX_code_t[f] > 0 then
+                        texsprint(tableconcat(TeX_code_t[f]))
+                    end
                     pdf_startfigure(fignum,llx,lly,urx,ury)
                     pdf_literalcode("q")
                     if objects then
@@ -732,13 +920,15 @@ local function flush(result,flusher)
                             local object        = objects[o]
                             local objecttype    = object.type
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 3 lines are part of the
+%     Change from \ConTeXt{} code: the following 5 lines are part of the
 %     |btex...etex| patch.
 %
 %    \begin{macrocode}
-                            local prescript     = object.prescript --- [be]tex patch
-                            if prescript and stringfind(prescript,"%%%%TEXtxtbox:") then
-                                putTEXboxes(object)
+                            local prescript     = object.prescript
+                            prescript = prescript and script2table(prescript) -- prescript is now a table
+                            local tr_opaq,shade_no = do_preobj_color(object,prescript)
+                            if prescript and prescript.MPlibTEXboxID then
+                                putTEXboxes(object,prescript)
                             elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                                 -- skip
                             elseif objecttype == "start_clip" then
@@ -752,23 +942,10 @@ local function flush(result,flusher)
                                 -- not supported
                             elseif objecttype == "text" then
                                 local ot = object.transform -- 3,4,5,6,1,2
-%    \end{macrocode}
-%
-%     Change from \ConTeXt{} code: the `cs' stuffs are for supporting `withcolor' option 
-%
-%    \begin{macrocode}
-                                local cs = object.color
-                                if cs and #cs > 0 then
-                                    pdf_literalcode(luamplib.colorconverter(cs))
-                                end
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
                             else
-                                local cs = object.color
-                                if cs and #cs > 0 then
-                                    pdf_literalcode(luamplib.colorconverter(cs))
-                                end
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
                                     miterlimit = ml
@@ -819,12 +996,19 @@ local function flush(result,flusher)
                                     else
                                         flushnormalpath(path,open)
                                     end
-                                    if objecttype == "fill" then
-                                        pdf_literalcode("h f")
-                                    elseif objecttype == "outline" then
-                                        pdf_literalcode((open and "S") or "h S")
-                                    elseif objecttype == "both" then
-                                        pdf_literalcode("h B")
+%    \end{macrocode}
+%
+%     Change from \ConTeXt{} code: color stuff
+%
+%    \begin{macrocode}
+                                    if not shade_no then ----- conflict with shading
+                                        if objecttype == "fill" then
+                                            pdf_literalcode("h f")
+                                        elseif objecttype == "outline" then
+                                            pdf_literalcode((open and "S") or "h S")
+                                        elseif objecttype == "both" then
+                                            pdf_literalcode("h B")
+                                        end
                                     end
                                 end
                                 if transformed then
@@ -855,6 +1039,12 @@ local function flush(result,flusher)
 --                                  pdf_literalcode(cr)
 --                              end
                             end
+%    \end{macrocode}
+%
+%     Added to \ConTeXt{} code: color stuff
+%
+%    \begin{macrocode}
+                            do_postobj_color(tr_opaq,shade_no)
                        end
                     end
                     pdf_literalcode("Q")
@@ -870,13 +1060,13 @@ local function colorconverter(cr)
     local n = #cr
     if n == 4 then
         local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
-        return format("%.3f %.3f %.3f %.3f k %.3f %.3f %.3f %.3f K",c,m,y,k,c,m,y,k), "0 g 0 G"
+        return format("%.3g %.3g %.3g %.3g k %.3g %.3g %.3g %.3g K",c,m,y,k,c,m,y,k), "0 g 0 G"
     elseif n == 3 then
         local r, g, b = cr[1], cr[2], cr[3]
-        return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
+        return format("%.3g %.3g %.3g rg %.3g %.3g %.3g RG",r,g,b,r,g,b), "0 g 0 G"
     else
         local s = cr[1]
-        return format("%.3f g %.3f G",s,s), "0 g 0 G"
+        return format("%.3g g %.3g G",s,s), "0 g 0 G"
     end
 end
 luamplib.colorconverter = colorconverter
@@ -901,7 +1091,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/23 v2.11 mplib package for LuaTeX]
+    [2013/12/29 v2.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

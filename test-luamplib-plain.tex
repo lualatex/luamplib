@@ -50,4 +50,22 @@ endfor;
 endfig;
 \endmplibcode
 B\par
+\mplibsetformat{metafun}%
+\mplibcode
+verbatimtex \moveright 2cm etex
+beginfig(0);
+path p; p:= fullcircle scaled 2cm yshifted .5cm;
+fill p withcolor transparent("normal", 0.5, red);
+fill p rotated 120 withcolor transparent("normal", 0.5, green);
+fill p rotated 240 withcolor transparent("normal", 0.5, blue);
+endfig;
+beginfig(1);
+picture p;
+p := btex MetaPost etex scaled 2;
+linear_shade(bbox p,0,blue,.7white);
+circular_shade(bbox p xshifted 4cm,0,blue,.7white);
+draw p withcolor white;
+draw p xshifted 4cm withcolor white;
+endfig;
+\endmplibcode
 \bye
