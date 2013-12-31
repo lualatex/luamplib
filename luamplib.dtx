@@ -589,20 +589,27 @@ end
 %
 %     v2.2: Transparency and Shading
 %    \begin{macrocode}
+local further_split_keys = {
+    ["MPlibTEXboxID"] = true,
+    ["sh_color_a"]    = true,
+    ["sh_color_b"]    = true,
+}
 
 local function script2table(s)
     local t = {}
     for i in stringgmatch(s,"[^\13]+") do
-        local k,v = stringmatch(i,"(.+)=(.+)")
+        local k,v = stringmatch(i,"(.-)=(.+)") -- v may contain =.
         if k and v then
             local vv = {}
-            for j in stringgmatch(v,"[^:]+") do
-                vv[#vv+1] = j
+            if further_split_keys[k] then
+                for j in stringgmatch(v,"[^:]+") do
+                    vv[#vv+1] = j
+                end
             end
-            if #vv == 1 then
-                t[k] = v
-            else
+            if #vv > 0 then
                 t[k] = vv
+            else
+                t[k] = v
             end
         end
     end
