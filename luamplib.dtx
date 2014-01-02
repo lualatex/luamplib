@@ -189,15 +189,28 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
-% \item \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
-%   but \TeX\ code inbetween is inserted before the mplib hbox. Using this command,
-%   each mplib box can be freely moved horizontally and/or vertically.\\
-%   \textsc{n.b.} \verb|\endgraf| should be used instead of \verb|\par| inside
+% \item \verb|verbatimtex ... etex| that comes just before \verb|beginfig()|
+%   is not ignored, but the \TeX\ code inbetween will be inserted before the
+%   following mplib hbox.  Using this command,
+%   each mplib box can be freely moved horizontally and/or vertically.
+%   All other \verb|verbatimtex ... etex|'s are ignored.
+%   \textsc{e.g.}:
+%   \begin{verbatim}
+%     \mplibcode
+%     verbatimtex \moveright 3cm etex; beignfig(0); ... endfig;
+%     verbatimtex \leavevmode etex; beignfig(1); ... endfig;
+%     verbatimtex \leavevmode\lower 1ex etex; beignfig(2); ... endfig;
+%     verbatimtex \endgraf\moveright 1cm etex; beignfig(3); ... endfig;
+%     \endmplibcode
+%   \end{verbatim}
+%   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
 %   \verb|verbatimtex ... etex|.
+% \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
+%   the width value of latest figure; \cs{MPheight}, the height value.
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
-% macros \texttt{mplibcode} and \texttt{endmplibcode}, and in \LaTeX\ in the
+% macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
 %
 % There are (basically) two formats for metapost: \emph{plain} and
@@ -576,20 +589,27 @@ end
 %
 %     v2.2: Transparency and Shading
 %    \begin{macrocode}
+local further_split_keys = {
+    ["MPlibTEXboxID"] = true,
+    ["sh_color_a"]    = true,
+    ["sh_color_b"]    = true,
+}
 
 local function script2table(s)
     local t = {}
     for i in stringgmatch(s,"[^\13]+") do
-        k,v = stringmatch(i,"(.+)=(.+)")
+        local k,v = stringmatch(i,"(.-)=(.+)") -- v may contain =.
         if k and v then
             local vv = {}
-            for j in stringgmatch(v,"[^:]+") do
-                vv[#vv+1] = j
+            if further_split_keys[k] then
+                for j in stringgmatch(v,"[^:]+") do
+                    vv[#vv+1] = j
+                end
             end
-            if #vv == 1 then
-                t[k] = v
-            else
+            if #vv > 0 then
                 t[k] = vv
+            else
+                t[k] = v
             end
         end
     end
@@ -638,8 +658,8 @@ def fontmapfile primary filename = enddef;
 def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
 def ignoreVerbatimTeX  (text t) = enddef;
 let VerbatimTeX = specialVerbatimTeX;
-extra_beginfig := extra_beginfig & "let VerbatimTeX = ignoreVerbatimTeX;" ;
-extra_endfig   := extra_endfig   & "let VerbatimTeX = specialVerbatimTeX;" ;
+extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
+extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
 local factor = 65536*(7227/7200)
@@ -668,7 +688,7 @@ local function domakeTEXboxes (data)
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
-            TeX_code_t[f] = {}
+            TeX_code_t[f] = nil
             local figure = figures[f]
             local objects = getobjects(data,figure,f)
             if objects then
@@ -683,17 +703,11 @@ local function domakeTEXboxes (data)
                     end
 %    \end{macrocode}
 %     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
-%     but the \TeX\ code inbetween is inserted before the mplib box. Examples:
-%     \verb|verbatimtex \moveright 3cm etex|;
-%     \verb|verbatimtex \leavevmode etex|;
-%     \verb|verbatimtex \leavevmode\lower 1ex etex|;
-%     \verb|verbatimtex \endgraf etex|.
-%
-%     As shown, \verb|\endgraf| should be used instead of \verb|\par|.
+%     but the \TeX\ code inbetween is inserted before the mplib box.
 %    \begin{macrocode}
                     local texcode = prescript and prescript.MPlibVerbTeX
                     if texcode and texcode ~= "" then
-                        table.insert(TeX_code_t[f],texcode)
+                        TeX_code_t[f] = texcode
                     end
                 end
             end
@@ -745,8 +759,9 @@ end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
 
--- transparency / shading
-
+%    \end{macrocode}
+%    Transparency and Shading
+%    \begin{macrocode}
 local pdf_objs = {}
 
 -- objstr <string> => obj <number>, new <boolean>
@@ -910,8 +925,8 @@ local function flush(result,flusher)
 %    \end{macrocode}
 %    Insert \verb|verbatimtex| code before mplib box.
 %    \begin{macrocode}
-                    if #TeX_code_t[f] > 0 then
-                        texsprint(tableconcat(TeX_code_t[f]))
+                    if TeX_code_t[f] then
+                        texsprint(TeX_code_t[f])
                     end
                     pdf_startfigure(fignum,llx,lly,urx,ury)
                     pdf_literalcode("q")
@@ -921,7 +936,7 @@ local function flush(result,flusher)
                             local objecttype    = object.type
 %    \end{macrocode}
 %     Change from \ConTeXt{} code: the following 5 lines are part of the
-%     |btex...etex| patch.
+%     |btex...etex| patch. Again, colors are processed at this stage.
 %
 %    \begin{macrocode}
                             local prescript     = object.prescript
@@ -946,6 +961,9 @@ local function flush(result,flusher)
                                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                                 pdf_literalcode("Q")
                             else
+%    \end{macrocode}
+%     Color stuffs are modified and moved to several lines above.
+%    \begin{macrocode}
                                 local ml = object.miterlimit
                                 if ml and ml ~= miterlimit then
                                     miterlimit = ml

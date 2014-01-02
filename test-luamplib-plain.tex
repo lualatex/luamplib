@@ -20,6 +20,7 @@ endfig;
 B\par
 A%
 \mplibcode
+verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor red;
 draw btex g etex withcolor blue;
@@ -52,20 +53,23 @@ endfig;
 B\par
 \mplibsetformat{metafun}%
 \mplibcode
-verbatimtex \moveright 2cm etex
+verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
 path p; p:= fullcircle scaled 2cm yshifted .5cm;
 fill p withcolor transparent("normal", 0.5, red);
 fill p rotated 120 withcolor transparent("normal", 0.5, green);
 fill p rotated 240 withcolor transparent("normal", 0.5, blue);
 endfig;
+verbatimtex \leavevmode etex
+picture p; p := btex MetaPost etex scaled 2;
 beginfig(1);
-picture p;
-p := btex MetaPost etex scaled 2;
 linear_shade(bbox p,0,blue,.7white);
-circular_shade(bbox p xshifted 4cm,0,blue,.7white);
 draw p withcolor white;
-draw p xshifted 4cm withcolor white;
+endfig;
+verbatimtex \kern10pt etex
+beginfig(2);
+circular_shade(bbox p,0,blue,.7white);
+draw p withcolor white;
 endfig;
 \endmplibcode
 \bye

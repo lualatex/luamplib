@@ -2,8 +2,9 @@
 
 2013/12/30 2.2
     * start to support transparency/shading under metafun format.
-    * verbatimtex ... etex before beginfig() is not ignored. Using this
-      macro, each mplib box can be moved horizontally and/or vertically
+    * verbatimtex ... etex just before beginfig() is not ignored.
+      Using this macro, each mplib box can be moved horizontally and/or
+      vertically.
 
 2013/12/23 2.11
     * fix a bug wrt "withoutcolor" option
