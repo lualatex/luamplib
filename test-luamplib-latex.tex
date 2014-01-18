@@ -1,5 +1,7 @@
 \documentclass{article}
 \usepackage{luamplib}
+\everymplib{ beginfig(0); }
+\everyendmplib{ endfig; }
 \begin{document}
 \tracingcommands1
 A%
@@ -15,11 +17,10 @@ A%
 %% %  /  9  C  M  W  a  k   u  DEL
 %% &  0  :  D  N  X  b  l   v
 %% ´  1  ;  E  O  Y  c  m   w
-beginfig(1);
 	fill fullcircle scaled 20; %% actual <tab> to make sure it works
-endfig;
 \end{mplibcode}%
 B\par
+\everymplib{}\everyendmplib{}% reset toks
 A%
 \begin{mplibcode}
 verbatimtex \lower.2em etex

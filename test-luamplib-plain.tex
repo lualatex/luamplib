@@ -1,4 +1,5 @@
 \input luamplib.sty
+\everymplib{ beginfig(0); }\everyendmplib{ endfig; }
 \tracingcommands1
 A%
 \mplibcode
@@ -13,11 +14,10 @@ A%
 %% %  /  9  C  M  W  a  k   u  DEL
 %% &  0  :  D  N  X  b  l   v
 %% ´  1  ;  E  O  Y  c  m   w
-beginfig(1);
    fill fullcircle scaled 20;
-endfig;
 \endmplibcode
 B\par
+\everymplib{}\everyendmplib{}% reset toks
 A%
 \mplibcode
 verbatimtex \lower.2em etex
