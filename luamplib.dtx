@@ -697,7 +697,7 @@ local function protecttextext(data)
     data = stringgsub(data, "textext%s*%b()", insert_unexpanded)
     data = stringgsub(data, "%f[A-Za-z]VerbatimTeX%s*%b()", insert_unexpanded)
     data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", insert_unexpanded)
-    tex.sprint(data)
+    texsprint(data)
 end
 
 luamplib.protecttextext = protecttextext
