@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2014/01/19 2.3
+    * \everymplib, \everyendmplib: macros that redefine token lists
+      \everymplibtoks and \everyendmplibtoks. These will be
+      automatically inserted at the beginning and ending (respectively)
+      of each and every mplib code.
+    * naked TeX codes, includig \mpdim{...}, are allowed inside
+      mplibcode environment. Refer the manual of gmp package for
+      details.
+
 2013/12/30 2.2
     * start to support transparency/shading under metafun format.
     * verbatimtex ... etex just before beginfig() is not ignored.

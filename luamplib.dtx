@@ -212,15 +212,15 @@ See source file '\inFileName' for licencing and contact information.
 %   be automatically inserted at the beginning and ending of each mplib code.
 %   \textsc{e.g.}:
 %   \begin{verbatim}
-%     \everymplib{ beginfig(0); }
+%     \everymplib{ verbatimtex \leavevmode etex; beginfig(0); }
 %     \everyendmplib{ endfig; }
-%     \mplibcode % befinfig/endfig not needed
+%     \mplibcode % befinfig/endfig not needed; always in horizontal mode
 %       draw fullcircle scaled 1cm;
 %     \endmplibcode
 %   \end{verbatim}
-% \item Since v2.4, \cs{mpdim} and other raw \TeX\ commands are allowed 
+% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
 %   inside mplib code. This feature is inpired by gmp.sty written by
-%   Enrico Gregorio.  Please see the manual of gmp.sty for details.
+%   Enrico Gregorio. Please refer the manual of gmp package for details.
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -679,8 +679,8 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 local function insert_unexpanded (str)
     local cmd,_,str = stringmatch(str,"^([A-Za-z]+)%s*%(([\"\'])(.*)%2%)$")
     if not str then return end
-    str = stringgsub(str, "\\unexpanded%s*%b{}", function(s)
-        stringmatch(s,"{(.*)}") end)
+    str = stringgsub(str, "\\unexpanded%s*%b{}",
+        function(s) return stringmatch(s,"{(.*)}") end)
     return format("%s(\"\\unexpanded{%s}\")",cmd,str)
 end
 
