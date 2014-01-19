@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2010 by Hans Hagen, Taco Hoekwater, Elie Roux, 
+% Copyright (C) 2008-2014 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2013/12/29 v2.2 Interface for using the mplib library]%
+  [2014/01/19 v2.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2013/12/29 v2.2}
+% \date{2014/01/19 v2.3}
 %
 % \maketitle
 %
@@ -207,6 +207,20 @@ See source file '\inFileName' for licencing and contact information.
 %   \verb|verbatimtex ... etex|.
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
+% \item \cs{everymplib} \& \cs{everyendmplib}: macros that redefine
+%   token lists \cs{everymplibtoks} \& \cs{everyendmplibtoks}, which will
+%   be automatically inserted at the beginning and ending of each mplib code.
+%   \textsc{e.g.}:
+%   \begin{verbatim}
+%     \everymplib{ verbatimtex \leavevmode etex; beginfig(0); }
+%     \everyendmplib{ endfig; }
+%     \mplibcode % befinfig/endfig not needed; always in horizontal mode
+%       draw fullcircle scaled 1cm;
+%     \endmplibcode
+%   \end{verbatim}
+% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
+%   inside mplib code. This feature is inpired by gmp.sty written by
+%   Enrico Gregorio. Please refer the manual of gmp package for details.
 % \end{itemize}
 %
 % Using this package is easy: in Plain, type your metapost code between the
@@ -243,8 +257,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.2,
-    date          = "2013/12/29",
+    version       =  2.3,
+    date          = "2014/01/19",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -662,6 +676,32 @@ extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
+local function insert_unexpanded (str)
+    local cmd,_,str = stringmatch(str,"^([A-Za-z]+)%s*%(([\"\'])(.*)%2%)$")
+    if not str then return end
+    str = stringgsub(str, "\\unexpanded%s*%b{}",
+        function(s) return stringmatch(s,"{(.*)}") end)
+    return format("%s(\"\\unexpanded{%s}\")",cmd,str)
+end
+
+local function protecttextext(data)
+    local everymplib    = tex.toks['everymplibtoks']    or ''
+    local everyendmplib = tex.toks['everyendmplibtoks'] or ''
+    data = " " .. everymplib .. data .. everyendmplib
+    data = stringgsub(data,
+        "%f[A-Za-z]btex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "rawtextext(\"%1\")")
+    data = stringgsub(data,
+        "%f[A-Za-z]verbatimtex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "VerbatimTeX(\"%1\")")
+    data = stringgsub(data, "textext%s*%b()", insert_unexpanded)
+    data = stringgsub(data, "%f[A-Za-z]VerbatimTeX%s*%b()", insert_unexpanded)
+    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", insert_unexpanded)
+    texsprint(data)
+end
+
+luamplib.protecttextext = protecttextext
+
 local factor = 65536*(7227/7200)
 
 local function putTEXboxes (object,prescript)
@@ -716,22 +756,6 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
-    data = "relax " .. data
-    data = stringgsub(data, "([^A-Z_a-z])btex([^A-Z_a-z])",
-    function(pre,post)
-        post = stringgsub(post,"%s","")
-        return pre .. 'rawtextext("' .. post
-    end)
-    data = stringgsub(data, "([^A-Z_a-z])verbatimtex([^A-Z_a-z])",
-    function(pre,post)
-        post = stringgsub(post,"%s","")
-        return pre .. 'VerbatimTeX("' .. post
-    end)
-    data = stringgsub(data, "([^A-Z_a-z])etex([^A-Z_a-z])",
-    function(pre,post)
-        pre = stringgsub(pre,"%s","")
-        return pre .. '")' .. post
-    end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
@@ -1109,7 +1133,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2013/12/29 v2.2 mplib package for LuaTeX]
+    [2014/01/19 v2.3 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1146,7 +1170,8 @@ luamplib.colorconverter = colorconverter
     \fi
 \fi
 \def\mplibsetupcatcodes{%
-  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12
+  %catcode`\{=12 %catcode`\}=12
+  \catcode`\#=12
   \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   %catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
@@ -1172,12 +1197,10 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \egroup
-  \directlua{
-    luamplib.tempdata = luamplib.makeTEXboxes([===[\unexpanded{#1}]===])
-  }%
-  \directlua{
-    luamplib.processwithTEXboxes(luamplib.tempdata)
-  }%
+  \expandafter\def\expandafter\mplibtmp\expandafter
+    {\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtmp]===])}%
+  \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
 }
 \else
@@ -1188,30 +1211,46 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
 \def\ltxdomplibcode{%
-  \bgroup
+  \begingroup
   \mplibsetupcatcodes
   \ltxdomplibcodeindeed %
 }
 %
-\long\def\ltxdomplibcodeindeed#1\end{%
-  \egroup
-  \toks@\expandafter{\the\toks@#1}\ltxdomplibcodefinally%
-}%
-%
-\def\ltxdomplibcodefinally#1{%
-  \ifnum\pdf@strcmp{#1}{mplibcode}=\z@
-    \directlua{
-      luamplib.tempdata = luamplib.makeTEXboxes([===[\the\toks@]===])
-    }%
-    \directlua{
-      luamplib.processwithTEXboxes(luamplib.tempdata)
-    }%
+\long\def\ltxdomplibcodeindeed#1\end#2{%
+  \endgroup
+  \toks@\expandafter{\the\toks@#1}%
+  \ifnum\pdf@strcmp{#2}{mplibcode}=\z@
+    \expandafter\def\expandafter\reserved@a\expandafter
+      {\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
+    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
+    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
   \else
-    \toks@\expandafter{\the\toks@\end{#1}}\expandafter\ltxdomplibcode
- \fi%
+    \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
+  \fi
 }
 \fi
+%    \end{macrocode}
+%
+%    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
+%    \cs{everymplibtoks} \& \cs{everyendmplibtoks} respectively
+%
+%    \begin{macrocode}
+\newtoks\everymplibtoks
+\newtoks\everyendmplibtoks
+\protected\def\everymplib{%
+  \begingroup
+  \mplibsetupcatcodes
+  \expandafter\endgroup
+  \everymplibtoks
+}
+\protected\def\everyendmplib{%
+  \begingroup
+  \mplibsetupcatcodes
+  \expandafter\endgroup
+  \everyendmplibtoks
+}
+\def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 %    \end{macrocode}
 %
 %    We use a dedicated scratchbox.
