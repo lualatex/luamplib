@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/01/19 v2.3 Interface for using the mplib library]%
+  [2014/01/20 v2.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/01/19 v2.3}
+% \date{2014/01/20 v2.3}
 %
 % \maketitle
 %
@@ -258,7 +258,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.3,
-    date          = "2014/01/19",
+    date          = "2014/01/20",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -676,27 +676,33 @@ extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
-local function insert_unexpanded (str)
-    local cmd,_,str = stringmatch(str,"^([A-Za-z]+)%s*%(([\"\'])(.*)%2%)$")
-    if not str then return end
-    str = stringgsub(str, "\\unexpanded%s*%b{}",
-        function(s) return stringmatch(s,"{(.*)}") end)
-    return format("%s(\"\\unexpanded{%s}\")",cmd,str)
-end
-
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
     data = " " .. everymplib .. data .. everyendmplib
     data = stringgsub(data,
         "%f[A-Za-z]btex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
-        "rawtextext(\"%1\")")
+        function(str)
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("rawtextext(\\unexpanded{\"%s\"})",str)
+        end)
     data = stringgsub(data,
         "%f[A-Za-z]verbatimtex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
-        "VerbatimTeX(\"%1\")")
-    data = stringgsub(data, "textext%s*%b()", insert_unexpanded)
-    data = stringgsub(data, "%f[A-Za-z]VerbatimTeX%s*%b()", insert_unexpanded)
-    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", insert_unexpanded)
+        function(str)
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
+        end)
+    data = stringgsub(data, "\".-\"", -- hack for parentheses inside quotes
+        function(str)
+            str = stringgsub(str,"%(","%%%%LEFTPAREN%%%%")
+            str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
+            return str
+        end)
+    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Za-z]textext%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Za-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
+    data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
     texsprint(data)
 end
 
@@ -1133,7 +1139,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/01/19 v2.3 mplib package for LuaTeX]
+    [2014/01/20 v2.3 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
