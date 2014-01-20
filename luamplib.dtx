@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/01/19 v2.3 Interface for using the mplib library]%
+  [2014/01/20 v2.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/01/19 v2.3}
+% \date{2014/01/20 v2.3}
 %
 % \maketitle
 %
@@ -176,6 +176,10 @@ See source file '\inFileName' for licencing and contact information.
 % The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
 % adjusted to the metapost code.
 %
+% Using this package is easy: in Plain, type your metapost code between the
+% macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
+% \texttt{mplibcode} environment.
+%
 % The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
 % from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux and
 % Philipp Gesang, new functionalities have been added by Kim Dohyun.
@@ -189,12 +193,12 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
 %   avoided.
-% \item \verb|verbatimtex ... etex| that comes just before \verb|beginfig()|
+% \item |verbatimtex ... etex| that comes just before |beginfig()|
 %   is not ignored, but the \TeX\ code inbetween will be inserted before the
 %   following mplib hbox.  Using this command,
 %   each mplib box can be freely moved horizontally and/or vertically.
-%   All other \verb|verbatimtex ... etex|'s are ignored.
-%   \textsc{e.g.}:
+%   All other |verbatimtex ... etex|'s are ignored.
+%   \textsc{e.g.}
 %   \begin{verbatim}
 %     \mplibcode
 %     verbatimtex \moveright 3cm etex; beignfig(0); ... endfig;
@@ -204,13 +208,14 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmplibcode
 %   \end{verbatim}
 %   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
-%   \verb|verbatimtex ... etex|.
+%   |verbatimtex ... etex|.
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
-% \item \cs{everymplib} \& \cs{everyendmplib}: macros that redefine
-%   token lists \cs{everymplibtoks} \& \cs{everyendmplibtoks}, which will
+% \item Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
+%   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
+%   which will
 %   be automatically inserted at the beginning and ending of each mplib code.
-%   \textsc{e.g.}:
+%   \textsc{e.g.}
 %   \begin{verbatim}
 %     \everymplib{ verbatimtex \leavevmode etex; beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -219,13 +224,20 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmplibcode
 %   \end{verbatim}
 % \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
-%   inside mplib code. This feature is inpired by gmp.sty written by
+%   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
+%   \textsc{e.g.}
+%   \begin{verbatim}
+%     \begin{mplibcode}
+%       draw origin--(\mpdim{\linewidth},0) withpen pencircle scaled 4
+%       dashed evenly scaled 4 withcolor \myrulecolor;
+%     \end{mplibcode}
+%   \end{verbatim}
+%   \textsc{n.b.} Users should not use the protected variant of
+%   |btex ... etex| as provided by gmp package. As \textsf{luamplib}
+%   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
+%   here.
 % \end{itemize}
-%
-% Using this package is easy: in Plain, type your metapost code between the
-% macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
-% \texttt{mplibcode} environment.
 %
 % There are (basically) two formats for metapost: \emph{plain} and
 % \emph{metafun}. By default, the \emph{plain} format is used, but you can set
@@ -258,7 +270,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       =  2.3,
-    date          = "2014/01/19",
+    date          = "2014/01/20",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -602,6 +614,9 @@ end
 %           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
 %
 %     v2.2: Transparency and Shading
+%
+%     v2.2: \cs{everymplib}, \cs{everyendmplib},
+%           and allows naked \TeX\ commands.
 %    \begin{macrocode}
 local further_split_keys = {
     ["MPlibTEXboxID"] = true,
@@ -676,27 +691,33 @@ extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
-local function insert_unexpanded (str)
-    local cmd,_,str = stringmatch(str,"^([A-Za-z]+)%s*%(([\"\'])(.*)%2%)$")
-    if not str then return end
-    str = stringgsub(str, "\\unexpanded%s*%b{}",
-        function(s) return stringmatch(s,"{(.*)}") end)
-    return format("%s(\"\\unexpanded{%s}\")",cmd,str)
-end
-
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
     data = " " .. everymplib .. data .. everyendmplib
     data = stringgsub(data,
         "%f[A-Za-z]btex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
-        "rawtextext(\"%1\")")
+        function(str)
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("rawtextext(\\unexpanded{\"%s\"})",str)
+        end)
     data = stringgsub(data,
         "%f[A-Za-z]verbatimtex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
-        "VerbatimTeX(\"%1\")")
-    data = stringgsub(data, "textext%s*%b()", insert_unexpanded)
-    data = stringgsub(data, "%f[A-Za-z]VerbatimTeX%s*%b()", insert_unexpanded)
-    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", insert_unexpanded)
+        function(str)
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
+        end)
+    data = stringgsub(data, "\".-\"", -- hack for parentheses inside quotes
+        function(str)
+            str = stringgsub(str,"%(","%%%%LEFTPAREN%%%%")
+            str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
+            return str
+        end)
+    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Za-z]textext%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Za-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
+    data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
     texsprint(data)
 end
 
@@ -1133,7 +1154,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/01/19 v2.3 mplib package for LuaTeX]
+    [2014/01/20 v2.3 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

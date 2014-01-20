@@ -1,6 +1,6 @@
                        History of the luamplib package
 
-2014/01/19 2.3
+2014/01/20 2.3
     * \everymplib, \everyendmplib: macros that redefine token lists
       \everymplibtoks and \everyendmplibtoks. These will be
       automatically inserted at the beginning and ending (respectively)
