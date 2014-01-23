@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/01/20 v2.3 Interface for using the mplib library]%
+  [2014/01/23 v2.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/01/20 v2.3}
+% \date{2014/01/23 v2.4}
 %
 % \maketitle
 %
@@ -269,8 +269,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.3,
-    date          = "2014/01/20",
+    version       =  2.4,
+    date          = "2014/01/23",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -777,6 +777,7 @@ local function domakeTEXboxes (data)
 end
 
 local function makeTEXboxes (data)
+    data = stringgsub(data, "##", "#") -- restore # doubled in input string
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
@@ -1154,7 +1155,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/01/20 v2.3 mplib package for LuaTeX]
+    [2014/01/23 v2.4 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1218,9 +1219,8 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \egroup
-  \expandafter\def\expandafter\mplibtmp\expandafter
-    {\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-  \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtmp]===])}%
+  \def\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
 }
@@ -1241,8 +1241,7 @@ luamplib.colorconverter = colorconverter
   \endgroup
   \toks@\expandafter{\the\toks@#1}%
   \ifnum\pdf@strcmp{#2}{mplibcode}=\z@
-    \expandafter\def\expandafter\reserved@a\expandafter
-      {\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
+    \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
@@ -1262,14 +1261,20 @@ luamplib.colorconverter = colorconverter
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
-  \expandafter\endgroup
-  \everymplibtoks
+  \mplibdoeverymplib
+}
+\def\mplibdoeverymplib#1{%
+  \endgroup
+  \everymplibtoks{#1}%
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
-  \expandafter\endgroup
-  \everyendmplibtoks
+  \mplibdoeveryendmplib
+}
+\def\mplibdoeveryendmplib#1{%
+  \endgroup
+  \everyendmplibtoks{#1}%
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 %    \end{macrocode}
