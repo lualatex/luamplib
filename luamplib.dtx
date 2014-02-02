@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/01/23 v2.3 Interface for using the mplib library]%
+  [2014/02/02 v2.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/01/23 v2.3}
+% \date{2014/02/02 v2.4}
 %
 % \maketitle
 %
@@ -267,10 +267,18 @@ local luamplib    = luamplib
 luamplib.showlog  = luamplib.showlog or false
 luamplib.lastlog  = ""
 
+%    \end{macrocode}
+%    Provides |numbersystem| option since v2.4. Default is |"scaled"|,
+%    which can be changed by declaring |\mplibnumbersystem{double}|.
+%    See \url{https://github.com/lualatex/luamplib/issues/21}.
+%
+%    \begin{macrocode}
+luamplib.numbersystem = luamplib.numbersystem or "scaled"
+
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.3,
-    date          = "2014/01/23",
+    version       =  2.4,
+    date          = "2014/02/02",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -410,6 +418,7 @@ else
         local mpx = mplib.new {
             ini_version = true,
             find_file = luamplib.finder,
+            math_mode = luamplib.numbersystem,
         }
         local result
         if not mpx then
@@ -1155,7 +1164,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/01/23 v2.3 mplib package for LuaTeX]
+    [2014/02/02 v2.4 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1277,6 +1286,7 @@ luamplib.colorconverter = colorconverter
   \everyendmplibtoks{#1}%
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
+\def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
 %    \end{macrocode}
 %
 %    We use a dedicated scratchbox.
