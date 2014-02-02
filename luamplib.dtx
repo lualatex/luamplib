@@ -219,7 +219,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{verbatim}
 %     \everymplib{ verbatimtex \leavevmode etex; beginfig(0); }
 %     \everyendmplib{ endfig; }
-%     \mplibcode % befinfig/endfig not needed; always in horizontal mode
+%     \mplibcode % beginfig/endfig not needed; always in horizontal mode
 %       draw fullcircle scaled 1cm;
 %     \endmplibcode
 %   \end{verbatim}
@@ -266,14 +266,6 @@ luamplib          = luamplib or { }
 local luamplib    = luamplib
 luamplib.showlog  = luamplib.showlog or false
 luamplib.lastlog  = ""
-
-%    \end{macrocode}
-%    Provides |numbersystem| option since v2.4. Default is |"scaled"|,
-%    which can be changed by declaring |\mplibnumbersystem{double}|.
-%    See \url{https://github.com/lualatex/luamplib/issues/21}.
-%
-%    \begin{macrocode}
-luamplib.numbersystem = luamplib.numbersystem or "scaled"
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
@@ -418,6 +410,11 @@ else
         local mpx = mplib.new {
             ini_version = true,
             find_file = luamplib.finder,
+%    \end{macrocode}
+%    Provides |numbersystem| option since v2.4. Default value |"scaled"|
+%    can be changed by declaring |\mplibnumbersystem{double}|.
+%    See \url{https://github.com/lualatex/luamplib/issues/21}.
+%    \begin{macrocode}
             math_mode = luamplib.numbersystem,
         }
         local result
