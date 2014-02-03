@@ -36,7 +36,7 @@ world: all ctan
 .PHONY: all doc unpack ctan tds check world
 
 %.pdf: %.dtx
-	lualatex --interaction=batchmode $< >/dev/null
+	latexmk -lualatex -recorder- -silent $< >/dev/null
 
 $(UNPACKED): $(DTX)
 	luatex -interaction=batchmode $< >/dev/null
