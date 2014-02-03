@@ -17,10 +17,10 @@ RUNFILES  = $(STY) $(LUA)
 
 ALL       = $(SRCFILES) $(DOCFILES) $(RUNFILES)
 
-TEXMFROOT = ./texmf
-RUNDIR    = $(TEXMFROOT)/tex/$(FORMAT)/$(NAME)
-DOCDIR    = $(TEXMFROOT)/doc/$(FORMAT)/$(NAME)
-SRCDIR    = $(TEXMFROOT)/source/$(FORMAT)/$(NAME)
+TEXMFDIR  = ./texmf
+RUNDIR    = $(TEXMFDIR)/tex/$(FORMAT)/$(NAME)
+DOCDIR    = $(TEXMFDIR)/doc/$(FORMAT)/$(NAME)
+SRCDIR    = $(TEXMFDIR)/source/$(FORMAT)/$(NAME)
 
 CTAN_ZIP  = $(NAME).zip
 TDS_ZIP   = $(NAME).tds.zip
@@ -39,7 +39,7 @@ world: all ctan
 	latexmk -lualatex -recorder- -silent $< >/dev/null
 
 $(UNPACKED): $(DTX)
-	tex -interaction=batchmode $< >/dev/null
+	luatex -interaction=batchmode $< >/dev/null
 
 check: $(UNPACKED)
 	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
@@ -61,19 +61,19 @@ define run-install
 @mkdir -p $(SRCDIR) && cp $(SRCFILES) $(SRCDIR)
 endef
 
-$(TDS_ZIP): TEXMFROOT=./tmp-texmf
+$(TDS_ZIP): TEXMFDIR=./tmp-texmf
 $(TDS_ZIP): $(ALL)
 	@echo "Making TDS-ready archive $@."
 	@$(RM) -- $@
-	@if test -e $(TEXMFROOT); then echo 'bad TEXMFROOT'; false; fi
+	@if test -e $(TEXMFDIR); then echo 'bad TEXMFDIR'; false; fi
 	$(run-install)
-	@cd $(TEXMFROOT) && zip -q -9 ../$@ -r .
-	@$(RM) -r -- $(TEXMFROOT)
+	@cd $(TEXMFDIR) && zip -q -9 ../$@ -r .
+	@$(RM) -r -- $(TEXMFDIR)
 
 .PHONY: install clean mrproper help
 
 install: check $(ALL)
-	@echo "Installing in '$(TEXMFROOT)'."
+	@echo "Installing in '$(TEXMFDIR)'."
 	$(run-install)
 
 clean:
@@ -93,4 +93,4 @@ help:
 	@echo '                      ctan - run check & generate archive for CTAN'
 	@echo '                       tds - generate a TDS compliant archive'
 	@echo '                     check - run the test files'
-	@echo '  install TEXMFROOT=<path> - install in <path>'
+	@echo '   install TEXMFDIR=<path> - install in <path>'

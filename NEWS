@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2014/02/02 2.4
+    * implemented "numbersystem" option. Default value "scaled" can be
+      changed by declaring \mplibnumbersystem{double}. For details, see
+      http://github.com/lualatex/luamplib/issues/21
+
 2014/01/20 2.3
     * \everymplib, \everyendmplib: macros that redefine token lists
       \everymplibtoks and \everyendmplibtoks. These will be

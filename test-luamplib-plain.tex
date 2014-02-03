@@ -89,4 +89,12 @@ endfig;
 \copy\mympbox
 \copy\mympbox
 \copy\mympbox
+
+\mplibnumbersystem{double}%
+\mplibcode
+beginfig(0);
+u := 10**5*(10**-4);
+draw unitsquare scaled u;
+endfig;
+\endmplibcode
 \bye
