@@ -686,6 +686,16 @@ if known context_mlib:
                 (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
         fi
     enddef;
+    def graphictext primary filename =
+        if (readfrom filename = EOF):
+          errmessage "Please prepare '"&filename&"' in advance with command"&
+          " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
+        fi
+        closefrom filename;
+        def data_mpy_file = filename enddef;
+        mfun_do_graphic_text (filename)
+    enddef;
+    if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
 else:
     vardef textext@# (text t) = rawtextext (t) enddef;
 fi
