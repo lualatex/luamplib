@@ -332,7 +332,9 @@ local function finder(name, mode, ftype)
     if mode == "w" then
         return name
     else
-        return mpkpse:find_file(name,ftype)
+        local file = mpkpse:find_file(name,ftype)
+        if file then return file end
+        return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
     end
 end
 luamplib.finder = finder
