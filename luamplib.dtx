@@ -223,6 +223,11 @@ See source file '\inFileName' for licencing and contact information.
 %       draw fullcircle scaled 1cm;
 %     \endmplibcode
 %   \end{verbatim}
+%   \textsc{n.b.} Many users have complained that mplib figures do not
+%   respect alignment commands such as \cs{centering} or \cs{raggedright}.
+%   That's because \textsf{luamplib} does not force horizontal or vertical mode.
+%   If you want all mplib figures aligned at center or right, please use
+%   \cs{everymplib} command with \cs{leavevmode} as shown above.
 % \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
 %   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
@@ -718,13 +723,13 @@ local function protecttextext(data)
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
     data = " " .. everymplib .. data .. everyendmplib
     data = stringgsub(data,
-        "%f[A-Za-z]btex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             return format("rawtextext(\\unexpanded{\"%s\"})",str)
         end)
     data = stringgsub(data,
-        "%f[A-Za-z]verbatimtex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
@@ -735,9 +740,9 @@ local function protecttextext(data)
             str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
             return str
         end)
-    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Za-z]textext%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Za-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]TEX%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]textext%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
     data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
     data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
     texsprint(data)
@@ -800,6 +805,23 @@ end
 
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
+    data = stringgsub(data,"%f[A-Z_a-z]input%f[^A-Z_a-z]%s*(.-)[%s;]",
+        function(filename)
+            local fh = io.open(filename..".mp","r")
+            if not fh then fh = io.open(filename,"r") end
+            if not fh then return end
+            local all = fh:read("*all"); fh:close()
+            all = stringgsub(all,
+                "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+                function(str)
+                    str = stringgsub(str,'"','"&ditto&"')
+                    return format("rawtextext(\"%s\")",str)
+                end)
+            all = stringgsub(all,
+                "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+                "")
+            return all
+        end)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
