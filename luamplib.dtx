@@ -803,25 +803,44 @@ local function domakeTEXboxes (data)
     end
 end
 
+local function parseinputfile (filename)
+    local fh = io.open(filename..".mp","r")
+    if not fh then fh = io.open(filename,"r") end
+    if not fh then return end
+    local data = fh:read("*all"); fh:close()
+    data = stringgsub(data,
+        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        function(str)
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("rawtextext(\"%s\")",str)
+        end)
+    data = stringgsub(data,
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        "")
+    data = stringgsub(data,"\"(.-)\"",function(str)
+        str = stringgsub(str,"%%","****PERCENT****")
+        str = stringgsub(str,"input","****INPUT****")
+        return format("\"%s\"",str)
+    end)
+    data = stringgsub(data,"%%.-\n","")
+    data = stringgsub(data,"****PERCENT****","%%")
+    data = stringgsub(data,
+        "%f[A-Z_a-z]input%f[^A-Z_a-z]%s*(.-)[%s;]",
+        parseinputfile)
+    data = stringgsub(data,"****INPUT****","input")
+    return data
+end
+
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
-    data = stringgsub(data,"%f[A-Z_a-z]input%f[^A-Z_a-z]%s*(.-)[%s;]",
-        function(filename)
-            local fh = io.open(filename..".mp","r")
-            if not fh then fh = io.open(filename,"r") end
-            if not fh then return end
-            local all = fh:read("*all"); fh:close()
-            all = stringgsub(all,
-                "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-                function(str)
-                    str = stringgsub(str,'"','"&ditto&"')
-                    return format("rawtextext(\"%s\")",str)
-                end)
-            all = stringgsub(all,
-                "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-                "")
-            return all
-        end)
+    data = stringgsub(data,"\"(.-)\"",function(str)
+        str = stringgsub(str,"input","****INPUT****")
+        return format("\"%s\"",str)
+    end)
+    data = stringgsub(data,
+        "%f[A-Z_a-z]input%f[^A-Z_a-z]%s*(.-)[%s;]",
+        parseinputfile)
+    data = stringgsub(data,"****INPUT****","input")
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
