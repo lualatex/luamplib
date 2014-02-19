@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/02 v2.4 Interface for using the mplib library]%
+  [2014/02/19 v2.5 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/02 v2.4}
+% \date{2014/02/19 v2.5}
 %
 % \maketitle
 %
@@ -192,11 +192,16 @@ See source file '\inFileName' for licencing and contact information.
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
-%   avoided.
-% \item |verbatimtex ... etex| that comes just before |beginfig()|
+%   avoided.\par
+%   \textsc{n.b.} Since v2.5, |btex ... etex| input from external |mp| files
+%   will also be processed by \textsf{luamplib}. However,
+%   |verbatimtex ... etex| will be entirely ignored in this case.
+% \item |verbatimtex ... etex| (in \TeX\ file) that comes just before |beginfig()|
 %   is not ignored, but the \TeX\ code inbetween will be inserted before the
 %   following mplib hbox.  Using this command,
 %   each mplib box can be freely moved horizontally and/or vertically.
+%   Also, a box number might be assigned to mplib box, allowing it to be
+%   reused later (see test files).
 %   All other |verbatimtex ... etex|'s are ignored.
 %   \textsc{e.g.}
 %   \begin{verbatim}
@@ -223,6 +228,11 @@ See source file '\inFileName' for licencing and contact information.
 %       draw fullcircle scaled 1cm;
 %     \endmplibcode
 %   \end{verbatim}
+%   \textsc{n.b.} Many users have complained that mplib figures do not
+%   respect alignment commands such as \cs{centering} or \cs{raggedleft}.
+%   That's because \textsf{luamplib} does not force horizontal or vertical mode.
+%   If you want all mplib figures center- (or right-) aligned, please use
+%   \cs{everymplib} command with \cs{leavevmode} as shown above.
 % \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
 %   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
@@ -273,8 +283,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       =  2.4,
-    date          = "2014/02/02",
+    version       =  2.5,
+    date          = "2014/02/19",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -319,6 +329,43 @@ if not file then
       return (stringgsub(filename,"%.[%a%d]+$",""))
   end
 end
+
+%    \end{macrocode}
+%     |btex ... etex| in input .mp files will be replaced in finder.
+%    \begin{macrocode}
+local function replaceinputmpfile (file)
+    local fh = io.open(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    data = stringgsub(data, "\".-\"",
+        function(str)
+            str = stringgsub(str,"%%","*****PERCENT*****")
+            str = stringgsub(str,"([bm])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            return str
+        end)
+    data = stringgsub(data,"%%.-\n","")
+    local count,cnt = 0,0
+    data,cnt = stringgsub(data,
+        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        function(str)
+            str = stringgsub(str,"[\n\r]%s*"," ")
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("rawtextext(\"%s\")",str)
+        end)
+    count = count + cnt
+    data,cnt = stringgsub(data,
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        "")
+    count = count + cnt
+    if count == 0 then return file end
+    data = stringgsub(data,"([bm])***T***E***X***","%1tex")
+    data = stringgsub(data,"*****PERCENT*****","%%")
+    local newfile = stringgsub(file,".*/","luamplib_input_")
+    fh = io.open(newfile,"w")
+    if not fh then return file end
+    fh:write(data); fh:close()
+    return newfile
+end
 %    \end{macrocode}
 %      As the finder function for |mplib|, use the |kpse| library and
 %      make it behave like as if MetaPost was used (or almost, since the engine
@@ -332,7 +379,14 @@ local function finder(name, mode, ftype)
     if mode == "w" then
         return name
     else
-        return mpkpse:find_file(name,ftype)
+        local file = mpkpse:find_file(name,ftype)
+        if file then
+          if ftype == "mp" then
+            file = replaceinputmpfile(file)
+          end
+          return file
+        end
+        return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
     end
 end
 luamplib.finder = finder
@@ -686,6 +740,16 @@ if known context_mlib:
                 (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
         fi
     enddef;
+    def graphictext primary filename =
+        if (readfrom filename = EOF):
+          errmessage "Please prepare '"&filename&"' in advance with command"&
+          " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
+        fi
+        closefrom filename;
+        def data_mpy_file = filename enddef;
+        mfun_do_graphic_text (filename)
+    enddef;
+    if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
 else:
     vardef textext@# (text t) = rawtextext (t) enddef;
 fi
@@ -706,13 +770,13 @@ local function protecttextext(data)
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
     data = " " .. everymplib .. data .. everyendmplib
     data = stringgsub(data,
-        "%f[A-Za-z]btex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             return format("rawtextext(\\unexpanded{\"%s\"})",str)
         end)
     data = stringgsub(data,
-        "%f[A-Za-z]verbatimtex%f[^A-Za-z]%s*(.-)%s*%f[A-Za-z]etex%f[^A-Za-z]",
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
@@ -723,9 +787,9 @@ local function protecttextext(data)
             str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
             return str
         end)
-    data = stringgsub(data, "%f[A-Za-z]TEX%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Za-z]textext%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Za-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]TEX%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]textext%s*%b()", "\\unexpanded{%1}")
+    data = stringgsub(data, "%f[A-Z_a-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
     data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
     data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
     texsprint(data)
@@ -1165,7 +1229,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/02 v2.4 mplib package for LuaTeX]
+    [2014/02/19 v2.5 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
