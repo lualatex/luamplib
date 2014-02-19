@@ -333,6 +333,8 @@ end
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
+local mpreplacedabove = {}
+
 local function replaceinputmpfile (file)
     local fh = io.open(file,"r")
     if not fh then return file end
@@ -357,15 +359,57 @@ local function replaceinputmpfile (file)
         "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         "")
     count = count + cnt
-    if count == 0 then return file end
+    if count == 0 then
+        mpreplacedabove[file] = file
+        return file
+    end
     data = stringgsub(data,"([bm])***T***E***X***","%1tex")
     data = stringgsub(data,"*****PERCENT*****","%%")
     local newfile = stringgsub(file,".*/","luamplib_input_")
     fh = io.open(newfile,"w")
     if not fh then return file end
     fh:write(data); fh:close()
+    mpreplacedabove[file] = newfile
     return newfile
 end
+
+local noneedtoreplace = {
+    ["boxes.mp"] = true,
+    ["format.mp"] = true,
+    ["graph.mp"] = true,
+    ["marith.mp"] = true,
+    ["mfplain.mp"] = true,
+    ["mpost.mp"] = true,
+    ["plain.mp"] = true,
+    ["rboxes.mp"] = true,
+    ["sarith.mp"] = true,
+    ["string.mp"] = true,
+    ["TEX.mp"] = true,
+    ["metafun.mp"] = true,
+    ["metafun.mpiv"] = true,
+    ["mp-abck.mpiv"] = true,
+    ["mp-apos.mpiv"] = true,
+    ["mp-asnc.mpiv"] = true,
+    ["mp-base.mpiv"] = true,
+    ["mp-butt.mpiv"] = true,
+    ["mp-char.mpiv"] = true,
+    ["mp-chem.mpiv"] = true,
+    ["mp-core.mpiv"] = true,
+    ["mp-crop.mpiv"] = true,
+    ["mp-figs.mpiv"] = true,
+    ["mp-form.mpiv"] = true,
+    ["mp-func.mpiv"] = true,
+    ["mp-grap.mpiv"] = true,
+    ["mp-grid.mpiv"] = true,
+    ["mp-grph.mpiv"] = true,
+    ["mp-idea.mpiv"] = true,
+    ["mp-mlib.mpiv"] = true,
+    ["mp-page.mpiv"] = true,
+    ["mp-shap.mpiv"] = true,
+    ["mp-step.mpiv"] = true,
+    ["mp-text.mpiv"] = true,
+    ["mp-tool.mpiv"] = true,
+}
 %    \end{macrocode}
 %      As the finder function for |mplib|, use the |kpse| library and
 %      make it behave like as if MetaPost was used (or almost, since the engine
@@ -381,10 +425,9 @@ local function finder(name, mode, ftype)
     else
         local file = mpkpse:find_file(name,ftype)
         if file then
-          if ftype == "mp" then
-            file = replaceinputmpfile(file)
-          end
-          return file
+            if ftype ~= "mp" or noneedtoreplace[name] then return file end
+            if mpreplacedabove[file] then return mpreplacedabove[file] end
+            return replaceinputmpfile(file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
     end
@@ -465,6 +508,7 @@ else
     end
 
     function luamplib.load(name)
+        mpreplacedabove = {} -- reset
         local mpx = mplib.new {
             ini_version = true,
             find_file = luamplib.finder,
@@ -679,7 +723,7 @@ end
 %
 %     v2.2: Transparency and Shading
 %
-%     v2.2: \cs{everymplib}, \cs{everyendmplib},
+%     v2.3: \cs{everymplib}, \cs{everyendmplib},
 %           and allows naked \TeX\ commands.
 %    \begin{macrocode}
 local further_split_keys = {
