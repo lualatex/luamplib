@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2014/02/19 2.5
+    * btex ... etex input from external *.mp files will also be processed
+      by luamplib. However, verbatimtex ... etex will be entirely ignored
+      in this case.
+
 2014/02/02 2.4
     * implemented "numbersystem" option. Default value "scaled" can be
       changed by declaring \mplibnumbersystem{double}. For details, see
