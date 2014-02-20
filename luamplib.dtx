@@ -1340,11 +1340,8 @@ luamplib.colorconverter = colorconverter
 \fi
 \def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12
-  \catcode`\#=12
-  \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  \catcode`\%=12 %% don’t in Plain!
-  \catcode`\&=12 \catcode`\$=12
-  \obeylines %
+  \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
+  \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \endlinechar10
 }
 %    \end{macrocode}
 %
@@ -1362,15 +1359,14 @@ luamplib.colorconverter = colorconverter
 \def\mplibcode{%
   \begingroup
   \bgroup
-  \mplibsetupcatcodes
-  \mplibdocode %
+  \mplibsetupcatcodes \mplibdocode
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \egroup
   \def\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-  \endgroup
+  \endgroup \mplibgobblenewline
 }
 \else
 %    \end{macrocode}
@@ -1382,7 +1378,7 @@ luamplib.colorconverter = colorconverter
 \def\ltxdomplibcode{%
   \begingroup
   \mplibsetupcatcodes
-  \ltxdomplibcodeindeed %
+  \ltxdomplibcodeindeed
 }
 %
 \long\def\ltxdomplibcodeindeed#1\end#2{%
@@ -1392,12 +1388,15 @@ luamplib.colorconverter = colorconverter
     \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-    \end{mplibcode}%
+    \end{mplibcode}\expandafter\mplibgobblenewline
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
 }
 \fi
+\def\mplibgobblenewline{\futurelet\next\mplibgobblenewlineX}
+\def\mplibgobblenewlineX{\ifx\next^^J\expandafter\mplibgobblenewlineXX\fi}
+\def\mplibgobblenewlineXX{\let\next= }
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
@@ -1408,21 +1407,19 @@ luamplib.colorconverter = colorconverter
 \newtoks\everyendmplibtoks
 \protected\def\everymplib{%
   \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeverymplib %
+  \mplibsetupcatcodes \mplibdoeverymplib
 }
 \long\def\mplibdoeverymplib#1{%
   \endgroup
-  \everymplibtoks{#1}%
+  \everymplibtoks{#1}\mplibgobblenewline
 }
 \protected\def\everyendmplib{%
   \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeveryendmplib %
+  \mplibsetupcatcodes \mplibdoeveryendmplib
 }
 \long\def\mplibdoeveryendmplib#1{%
   \endgroup
-  \everyendmplibtoks{#1}%
+  \everyendmplibtoks{#1}\mplibgobblenewline
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
