@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2014/02/20 2.5.2
+    * added a hack to support graph.mp (in fact, format.mp)
+    * [fix] luamplib now respects percent sign if it is enclosed by quotes.
+    * spaces after \end{mplibcode} is gobbled. This is a side effect
+      of change on percent sign.
+
 2014/02/19 2.5
     * btex ... etex input from external *.mp files will also be processed
       by luamplib. However, verbatimtex ... etex will be entirely ignored
@@ -25,7 +31,7 @@
       Using this macro, each mplib box can be moved horizontally and/or
       vertically.
 
-2013/12/23 2.11
+2013/12/23 2.1.1
     * fix a bug wrt "withoutcolor" option
     * fix a bug wrt "char <number> infont <font>" picture
     * bypass some ConTeXt commands which raise errors under metafun format

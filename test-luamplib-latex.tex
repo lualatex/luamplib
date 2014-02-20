@@ -18,7 +18,7 @@ A%
 %% &  0  :  D  N  X  b  l   v
 %% ´  1  ;  E  O  Y  c  m   w
 	fill fullcircle scaled 20; %% actual <tab> to make sure it works
-\end{mplibcode}%
+\end{mplibcode}
 B\par
 \everymplib{}\everyendmplib{}% reset toks
 A%
@@ -40,7 +40,7 @@ label.lrt(btex $\sqrt x$ etex, (3,sqrt 3)*u);
 label.bot(btex $x$ etex, (2u,0));
 label.lft(btex $y$ etex, (0,u));
 endfig;
-\end{mplibcode}%
+\end{mplibcode}
 B\par
 A%
 \begin{mplibcode}
@@ -52,7 +52,7 @@ for i = 1 upto 3:
   label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u)) withcolor blue;
 endfor;
 endfig;
-\end{mplibcode}%
+\end{mplibcode}
 B\par
 \mplibsetformat{metafun}%
 \begin{mplibcode}
@@ -74,7 +74,7 @@ beginfig(2);
 circular_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
-\end{mplibcode}%
+\end{mplibcode}
 
 \newbox\mympbox
 \begin{mplibcode}
@@ -87,7 +87,7 @@ x4=breadth;
 y1=y4=height/2; y2=y3=height; y5=y6=0;
 fill z1--z2--z3--z4--z5--z6--cycle;
 endfig;
-\end{mplibcode}%
+\end{mplibcode}
 \copy\mympbox
 \copy\mympbox
 \copy\mympbox
@@ -99,5 +99,5 @@ beginfig(0);
 u := 10**5*(10**-4);
 draw unitsquare scaled u;
 endfig;
-\end{mplibcode}%
+\end{mplibcode}
 \end{document}

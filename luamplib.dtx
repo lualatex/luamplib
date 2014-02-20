@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/19 v2.5.1 Interface for using the mplib library]%
+  [2014/02/20 v2.5.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/19 v2.5.1}
+% \date{2014/02/20 v2.5.2}
 %
 % \maketitle
 %
@@ -179,6 +179,9 @@ See source file '\inFileName' for licencing and contact information.
 % Using this package is easy: in Plain, type your metapost code between the
 % macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
+%
+% \textsc{n.b.} Spaces after |\end{mplibcode}| will be gobbled up by
+% \textsf{luamplib}. This is not like other \LaTeX\ environments.
 %
 % The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
 % from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux and
@@ -283,8 +286,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       = "2.5.1",
-    date          = "2014/02/19",
+    version       = "2.5.2",
+    date          = "2014/02/20",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -373,9 +376,28 @@ local function replaceinputmpfile (file)
     return newfile
 end
 
+local function replaceformatmp(file)
+    local fh = io.open(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    local newfile = stringgsub(file,".*/","luamplib_input_")
+    fh = io.open(newfile,"w")
+    if not fh then return file end
+    fh:write(
+        "let normalinfont = infont;\n",
+        "primarydef str infont name = rawtextext(str) enddef;\n",
+        data,
+        "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
+        "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
+        "let infont = normalinfont;\n"
+    ); fh:close()
+    mpreplacedabove[file] = newfile
+    return newfile
+end
+
 local noneedtoreplace = {
     ["boxes.mp"] = true,
-    ["format.mp"] = true,
+--  ["format.mp"] = true,
     ["graph.mp"] = true,
     ["marith.mp"] = true,
     ["mfplain.mp"] = true,
@@ -427,6 +449,7 @@ local function finder(name, mode, ftype)
         if file then
             if ftype ~= "mp" or noneedtoreplace[name] then return file end
             if mpreplacedabove[file] then return mpreplacedabove[file] end
+            if name == "format.mp" then return replaceformatmp(file) end
             return replaceinputmpfile(file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
@@ -817,48 +840,33 @@ local function protecttextext(data)
         "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
+            str = stringgsub(str,"[\r\n]%s*"," ")
             return format("rawtextext(\\unexpanded{\"%s\"})",str)
         end)
     data = stringgsub(data,
         "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
+            str = stringgsub(str,"[\r\n]%s*"," ")
             return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
         end)
     data = stringgsub(data, "\".-\"", -- hack for parentheses inside quotes
         function(str)
-            str = stringgsub(str,"%(","%%%%LEFTPAREN%%%%")
-            str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
+            str = stringgsub(str,"%(","****LEFTPAREN****")
+            str = stringgsub(str,"%)","****RGHTPAREN****")
+            str = stringgsub(str,"%%","****PERCENT****")
             return str
         end)
+    data = stringgsub(data,"%%.-[\r\n]","")
     data = stringgsub(data, "%f[A-Z_a-z]TEX%s*%b()", "\\unexpanded{%1}")
     data = stringgsub(data, "%f[A-Z_a-z]textext%s*%b()", "\\unexpanded{%1}")
     data = stringgsub(data, "%f[A-Z_a-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
-    data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
+    data = stringgsub(data, "****LEFTPAREN****", "(") -- restore
+    data = stringgsub(data, "****RGHTPAREN****", ")") -- restore
     texsprint(data)
 end
 
 luamplib.protecttextext = protecttextext
-
-local factor = 65536*(7227/7200)
-
-local function putTEXboxes (object,prescript)
-    local box = prescript.MPlibTEXboxID
-    local n,tw,th = box[1],box[2],box[3]
-    if n and tw and th then
-        local op = object.path
-        local first, second, fourth = op[1], op[2], op[4]
-        local tx, ty = first.x_coord, first.y_coord
-        local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
-        local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
-        if sx == 0 then sx = 0.00001 end
-        if sy == 0 then sy = 0.00001 end
-        pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-        texsprint(format("\\mplibputtextbox{%i}",n))
-        pdf_literalcode("Q")
-    end
-end
 
 local TeX_code_t = {}
 
@@ -896,6 +904,7 @@ end
 
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
+    data = stringgsub(data, "****PERCENT****", "%%") -- restore
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
@@ -905,6 +914,8 @@ local function makeTEXboxes (data)
 end
 
 luamplib.makeTEXboxes = makeTEXboxes
+
+local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
     local num = tex.count[14] -- the same newbox register
@@ -922,6 +933,23 @@ local function processwithTEXboxes (data)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
+
+local function putTEXboxes (object,prescript)
+    local box = prescript.MPlibTEXboxID
+    local n,tw,th = box[1],box[2],box[3]
+    if n and tw and th then
+        local op = object.path
+        local first, second, fourth = op[1], op[2], op[4]
+        local tx, ty = first.x_coord, first.y_coord
+        local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
+        local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
+        if sx == 0 then sx = 0.00001 end
+        if sy == 0 then sy = 0.00001 end
+        pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+        texsprint(format("\\mplibputtextbox{%i}",n))
+        pdf_literalcode("Q")
+    end
+end
 
 %    \end{macrocode}
 %    Transparency and Shading
@@ -1273,7 +1301,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/19 v2.5.1 mplib package for LuaTeX]
+    [2014/02/20 v2.5.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1313,8 +1341,9 @@ luamplib.colorconverter = colorconverter
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12
   \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  %catcode`\%=12 %% don’t in Plain!
+  \catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
+  \endlinechar10
 }
 %    \end{macrocode}
 %
@@ -1322,6 +1351,9 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+\def\mplibgobbleendline{\futurelet\next\mplibgobbleendlineX}
+\def\mplibgobbleendlineX{\ifx\next^^J\expandafter\mplibgobbleendlineXX\fi}
+\def\mplibgobbleendlineXX{\let\next= }
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1341,6 +1373,7 @@ luamplib.colorconverter = colorconverter
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
+  \mplibgobbleendline
 }
 \else
 %    \end{macrocode}
@@ -1362,7 +1395,7 @@ luamplib.colorconverter = colorconverter
     \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-    \end{mplibcode}%
+    \end{mplibcode}\expandafter\mplibgobbleendline
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
@@ -1379,20 +1412,22 @@ luamplib.colorconverter = colorconverter
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdoeverymplib
+  \mplibdoeverymplib %
 }
 \def\mplibdoeverymplib#1{%
   \endgroup
   \everymplibtoks{#1}%
+  \mplibgobbleendline
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdoeveryendmplib
+  \mplibdoeveryendmplib %
 }
 \def\mplibdoeveryendmplib#1{%
   \endgroup
   \everyendmplibtoks{#1}%
+  \mplibgobbleendline
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
