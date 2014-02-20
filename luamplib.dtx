@@ -180,9 +180,6 @@ See source file '\inFileName' for licencing and contact information.
 % macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
 %
-% \textsc{n.b.} Spaces after |\end{mplibcode}| will be gobbled up by
-% \textsf{luamplib}. This is not like other \LaTeX\ environments.
-%
 % The code is from the \texttt{luatex-mplib.lua} and \texttt{luatex-mplib.tex} files
 % from \ConTeXt, they have been adapted to \LaTeX\ and Plain by Elie Roux and
 % Philipp Gesang, new functionalities have been added by Kim Dohyun.
@@ -194,9 +191,8 @@ See source file '\inFileName' for licencing and contact information.
 % \item use of luatexbase for errors, warnings and declaration
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
-%   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
-%   avoided.\par
-%   \textsc{n.b.} Since v2.5, |btex ... etex| input from external |mp| files
+%   |TEX()| is also allowed and is a synomym of |textext()|.\par\smallskip
+%   \textsc{n.b.} v2.5: |btex ... etex| input from external |mp| files
 %   will also be processed by \textsf{luamplib}. However,
 %   |verbatimtex ... etex| will be entirely ignored in this case.
 % \item |verbatimtex ... etex| (in \TeX\ file) that comes just before |beginfig()|
@@ -342,10 +338,10 @@ local function replaceinputmpfile (file)
     local fh = io.open(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
-    data = stringgsub(data, "\".-\"",
+    data = stringgsub(data, "\"[^\n]-\"",
         function(str)
             str = stringgsub(str,"%%","*****PERCENT*****")
-            str = stringgsub(str,"([bm])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
             return str
         end)
     data = stringgsub(data,"%%.-\n","")
@@ -366,7 +362,7 @@ local function replaceinputmpfile (file)
         mpreplacedabove[file] = file
         return file
     end
-    data = stringgsub(data,"([bm])***T***E***X***","%1tex")
+    data = stringgsub(data,"([bem])***T***E***X***","%1tex")
     data = stringgsub(data,"*****PERCENT*****","%%")
     local newfile = stringgsub(file,".*/","luamplib_input_")
     fh = io.open(newfile,"w")
@@ -835,34 +831,36 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
-    data = " " .. everymplib .. data .. everyendmplib
+    data = " " .. everymplib .."\n".. data .."\n".. everyendmplib
+    data = stringgsub(data, "\"[^\r\n]-\"",
+        function(str)
+            str = stringgsub(str,"%%","****PERCENT****")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            return str
+        end)
+    data = stringgsub(data,"%%.-[\r\n]","")
     data = stringgsub(data,
         "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             str = stringgsub(str,"[\r\n]%s*"," ")
-            return format("rawtextext(\\unexpanded{\"%s\"})",str)
+            return format("rawtextext(\"%s\")",str)
         end)
     data = stringgsub(data,
         "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
             str = stringgsub(str,"[\r\n]%s*"," ")
-            return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
+            return format("VerbatimTeX(\"%s\")",str)
         end)
-    data = stringgsub(data, "\".-\"", -- hack for parentheses inside quotes
+    data = stringgsub(data, "\"[^\r\n]-\"",
         function(str)
-            str = stringgsub(str,"%(","****LEFTPAREN****")
-            str = stringgsub(str,"%)","****RGHTPAREN****")
-            str = stringgsub(str,"%%","****PERCENT****")
-            return str
+            str = stringgsub(str,"([bem])***T***E***X***","%1tex")
+            str = stringgsub(str,"{", "****LEFTBRCE****")
+            str = stringgsub(str,"}", "****RGHTBRCE****")
+            str = stringgsub(str,"#", "****SHARPE****")
+            return format("\\unexpanded{%s}",str)
         end)
-    data = stringgsub(data,"%%.-[\r\n]","")
-    data = stringgsub(data, "%f[A-Z_a-z]TEX%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Z_a-z]textext%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Z_a-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "****LEFTPAREN****", "(") -- restore
-    data = stringgsub(data, "****RGHTPAREN****", ")") -- restore
     texsprint(data)
 end
 
@@ -904,7 +902,10 @@ end
 
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
-    data = stringgsub(data, "****PERCENT****", "%%") -- restore
+    data = stringgsub(data, "****PERCENT****", "%%")
+    data = stringgsub(data, "****LEFTBRCE****","{")
+    data = stringgsub(data, "****RGHTBRCE****","}")
+    data = stringgsub(data, "****SHARPE****",  "#" )
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
@@ -1343,7 +1344,7 @@ luamplib.colorconverter = colorconverter
   \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
-  \endlinechar10
+  \obeylines %
 }
 %    \end{macrocode}
 %
@@ -1351,9 +1352,6 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
-\def\mplibgobbleendline{\futurelet\next\mplibgobbleendlineX}
-\def\mplibgobbleendlineX{\ifx\next^^J\expandafter\mplibgobbleendlineXX\fi}
-\def\mplibgobbleendlineXX{\let\next= }
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1373,7 +1371,6 @@ luamplib.colorconverter = colorconverter
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
-  \mplibgobbleendline
 }
 \else
 %    \end{macrocode}
@@ -1395,7 +1392,7 @@ luamplib.colorconverter = colorconverter
     \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-    \end{mplibcode}\expandafter\mplibgobbleendline
+    \end{mplibcode}%
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
@@ -1414,20 +1411,18 @@ luamplib.colorconverter = colorconverter
   \mplibsetupcatcodes
   \mplibdoeverymplib %
 }
-\def\mplibdoeverymplib#1{%
+\long\def\mplibdoeverymplib#1{%
   \endgroup
   \everymplibtoks{#1}%
-  \mplibgobbleendline
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeveryendmplib %
 }
-\def\mplibdoeveryendmplib#1{%
+\long\def\mplibdoeveryendmplib#1{%
   \endgroup
   \everyendmplibtoks{#1}%
-  \mplibgobbleendline
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}

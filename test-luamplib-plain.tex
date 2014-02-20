@@ -24,6 +24,12 @@ verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor red;
 draw btex g etex withcolor blue;
+draw btex\tracingcommands0 multi
+    line
+    tex code
+  etex shifted (20,0);
+draw textext("\tracingcommands0 textext 50\% color") shifted (10,-10) withcolor .5white;
+draw bbox currentpicture;
 endfig;
 
 beginfig(18);
