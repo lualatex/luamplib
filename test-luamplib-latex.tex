@@ -26,7 +26,8 @@ A%
 verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor red;
-draw btex g etex withcolor blue;
+draw btex g\begin{huge}g\end{huge}etex withcolor blue;
+draw bbox currentpicture;
 endfig;
 
 beginfig(18);

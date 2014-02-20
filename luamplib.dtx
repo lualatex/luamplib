@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/19 v2.5.1 Interface for using the mplib library]%
+  [2014/02/20 v2.5.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/19 v2.5.1}
+% \date{2014/02/20 v2.5.2}
 %
 % \maketitle
 %
@@ -191,9 +191,8 @@ See source file '\inFileName' for licencing and contact information.
 % \item use of luatexbase for errors, warnings and declaration
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
-%   |TEX()| is also allowed unless TEX.mp is loaded, which should be always 
-%   avoided.\par
-%   \textsc{n.b.} Since v2.5, |btex ... etex| input from external |mp| files
+%   |TEX()| is also allowed and is a synomym of |textext()|.\par\smallskip
+%   \textsc{n.b.} v2.5: |btex ... etex| input from external |mp| files
 %   will also be processed by \textsf{luamplib}. However,
 %   |verbatimtex ... etex| will be entirely ignored in this case.
 % \item |verbatimtex ... etex| (in \TeX\ file) that comes just before |beginfig()|
@@ -283,8 +282,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       = "2.5.1",
-    date          = "2014/02/19",
+    version       = "2.5.2",
+    date          = "2014/02/20",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -339,10 +338,10 @@ local function replaceinputmpfile (file)
     local fh = io.open(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
-    data = stringgsub(data, "\".-\"",
+    data = stringgsub(data, "\"[^\n]-\"",
         function(str)
             str = stringgsub(str,"%%","*****PERCENT*****")
-            str = stringgsub(str,"([bm])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
             return str
         end)
     data = stringgsub(data,"%%.-\n","")
@@ -363,7 +362,7 @@ local function replaceinputmpfile (file)
         mpreplacedabove[file] = file
         return file
     end
-    data = stringgsub(data,"([bm])***T***E***X***","%1tex")
+    data = stringgsub(data,"([bem])***T***E***X***","%1tex")
     data = stringgsub(data,"*****PERCENT*****","%%")
     local newfile = stringgsub(file,".*/","luamplib_input_")
     fh = io.open(newfile,"w")
@@ -373,9 +372,28 @@ local function replaceinputmpfile (file)
     return newfile
 end
 
+local function replaceformatmp(file)
+    local fh = io.open(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    local newfile = stringgsub(file,".*/","luamplib_input_")
+    fh = io.open(newfile,"w")
+    if not fh then return file end
+    fh:write(
+        "let normalinfont = infont;\n",
+        "primarydef str infont name = rawtextext(str) enddef;\n",
+        data,
+        "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
+        "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
+        "let infont = normalinfont;\n"
+    ); fh:close()
+    mpreplacedabove[file] = newfile
+    return newfile
+end
+
 local noneedtoreplace = {
     ["boxes.mp"] = true,
-    ["format.mp"] = true,
+--  ["format.mp"] = true,
     ["graph.mp"] = true,
     ["marith.mp"] = true,
     ["mfplain.mp"] = true,
@@ -427,6 +445,7 @@ local function finder(name, mode, ftype)
         if file then
             if ftype ~= "mp" or noneedtoreplace[name] then return file end
             if mpreplacedabove[file] then return mpreplacedabove[file] end
+            if name == "format.mp" then return replaceformatmp(file) end
             return replaceinputmpfile(file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
@@ -812,53 +831,40 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
-    data = " " .. everymplib .. data .. everyendmplib
+    data = " " .. everymplib .."\n".. data .."\n".. everyendmplib
+    data = stringgsub(data, "\"[^\r\n]-\"",
+        function(str)
+            str = stringgsub(str,"%%","****PERCENT****")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            return str
+        end)
+    data = stringgsub(data,"%%.-[\r\n]","")
     data = stringgsub(data,
         "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
-            return format("rawtextext(\\unexpanded{\"%s\"})",str)
+            str = stringgsub(str,"[\r\n]%s*"," ")
+            return format("rawtextext(\"%s\")",str)
         end)
     data = stringgsub(data,
         "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
-            return format("VerbatimTeX(\\unexpanded{\"%s\"})",str)
+            str = stringgsub(str,"[\r\n]%s*"," ")
+            return format("VerbatimTeX(\"%s\")",str)
         end)
-    data = stringgsub(data, "\".-\"", -- hack for parentheses inside quotes
+    data = stringgsub(data, "\"[^\r\n]-\"",
         function(str)
-            str = stringgsub(str,"%(","%%%%LEFTPAREN%%%%")
-            str = stringgsub(str,"%)","%%%%RGHTPAREN%%%%")
-            return str
+            str = stringgsub(str,"([bem])***T***E***X***","%1tex")
+            str = stringgsub(str,"{", "****LEFTBRCE****")
+            str = stringgsub(str,"}", "****RGHTBRCE****")
+            str = stringgsub(str,"#", "****SHARPE****")
+            return format("\\unexpanded{%s}",str)
         end)
-    data = stringgsub(data, "%f[A-Z_a-z]TEX%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Z_a-z]textext%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%f[A-Z_a-z]textext%.[_a-z]+%s*%b()", "\\unexpanded{%1}")
-    data = stringgsub(data, "%%%%LEFTPAREN%%%%", "(") -- restore
-    data = stringgsub(data, "%%%%RGHTPAREN%%%%", ")") -- restore
     texsprint(data)
 end
 
 luamplib.protecttextext = protecttextext
-
-local factor = 65536*(7227/7200)
-
-local function putTEXboxes (object,prescript)
-    local box = prescript.MPlibTEXboxID
-    local n,tw,th = box[1],box[2],box[3]
-    if n and tw and th then
-        local op = object.path
-        local first, second, fourth = op[1], op[2], op[4]
-        local tx, ty = first.x_coord, first.y_coord
-        local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
-        local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
-        if sx == 0 then sx = 0.00001 end
-        if sy == 0 then sy = 0.00001 end
-        pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-        texsprint(format("\\mplibputtextbox{%i}",n))
-        pdf_literalcode("Q")
-    end
-end
 
 local TeX_code_t = {}
 
@@ -896,6 +902,10 @@ end
 
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
+    data = stringgsub(data, "****PERCENT****", "%%")
+    data = stringgsub(data, "****LEFTBRCE****","{")
+    data = stringgsub(data, "****RGHTBRCE****","}")
+    data = stringgsub(data, "****SHARPE****",  "#" )
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(mplibcodepreamble .. data)
@@ -905,6 +915,8 @@ local function makeTEXboxes (data)
 end
 
 luamplib.makeTEXboxes = makeTEXboxes
+
+local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
     local num = tex.count[14] -- the same newbox register
@@ -922,6 +934,23 @@ local function processwithTEXboxes (data)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
+
+local function putTEXboxes (object,prescript)
+    local box = prescript.MPlibTEXboxID
+    local n,tw,th = box[1],box[2],box[3]
+    if n and tw and th then
+        local op = object.path
+        local first, second, fourth = op[1], op[2], op[4]
+        local tx, ty = first.x_coord, first.y_coord
+        local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
+        local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
+        if sx == 0 then sx = 0.00001 end
+        if sy == 0 then sy = 0.00001 end
+        pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+        texsprint(format("\\mplibputtextbox{%i}",n))
+        pdf_literalcode("Q")
+    end
+end
 
 %    \end{macrocode}
 %    Transparency and Shading
@@ -1273,7 +1302,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/19 v2.5.1 mplib package for LuaTeX]
+    [2014/02/20 v2.5.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1313,8 +1342,9 @@ luamplib.colorconverter = colorconverter
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12
   \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  %catcode`\%=12 %% don’t in Plain!
+  \catcode`\%=12 %% don’t in Plain!
   \catcode`\&=12 \catcode`\$=12
+  \obeylines %
 }
 %    \end{macrocode}
 %
@@ -1379,18 +1409,18 @@ luamplib.colorconverter = colorconverter
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdoeverymplib
+  \mplibdoeverymplib %
 }
-\def\mplibdoeverymplib#1{%
+\long\def\mplibdoeverymplib#1{%
   \endgroup
   \everymplibtoks{#1}%
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdoeveryendmplib
+  \mplibdoeveryendmplib %
 }
-\def\mplibdoeveryendmplib#1{%
+\long\def\mplibdoeveryendmplib#1{%
   \endgroup
   \everyendmplibtoks{#1}%
 }
