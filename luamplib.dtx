@@ -1349,6 +1349,11 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+\newcount\mplibstartlineno
+\def\mplibreplacenewlinebr{\begingroup\catcode`\%=12 \mplibdoreplacenewlinebr}
+\begingroup\lccode`\~=`\^^M \lowercase{%
+  \gdef\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
+\endgroup
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1356,17 +1361,24 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\def\mplibreplacenewlinecs{\begingroup\catcode`\%=12 \mplibdoreplacenewlinecs}
+\begingroup\lccode`\~=`\^^M \lowercase{%
+  \gdef\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
+\endgroup
 \def\mplibcode{%
+  \mplibstartlineno\inputlineno
   \begingroup
-  \bgroup
-  \mplibsetupcatcodes \mplibdocode
+  \begingroup
+  \mplibsetupcatcodes
+  \mplibdocode
 }
 \long\def\mplibdocode#1\endmplibcode{%
-  \egroup
+  \endgroup
   \def\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-  \endgroup \mplibgobblenewline
+  \endgroup
+  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinecs\fi
 }
 \else
 %    \end{macrocode}
@@ -1374,13 +1386,15 @@ luamplib.colorconverter = colorconverter
 %    The \LaTeX-specific parts: a new environment.
 %
 %    \begin{macrocode}
-\newenvironment{mplibcode}{\toks@{}\ltxdomplibcode}{}
+\newenvironment{mplibcode}{%
+  \global\mplibstartlineno\inputlineno
+  \toks@{}\ltxdomplibcode
+}{}
 \def\ltxdomplibcode{%
   \begingroup
   \mplibsetupcatcodes
   \ltxdomplibcodeindeed
 }
-%
 \long\def\ltxdomplibcodeindeed#1\end#2{%
   \endgroup
   \toks@\expandafter{\the\toks@#1}%
@@ -1388,15 +1402,15 @@ luamplib.colorconverter = colorconverter
     \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
-    \end{mplibcode}\expandafter\mplibgobblenewline
+    \end{mplibcode}%
+    \ifnum\mplibstartlineno<\inputlineno
+      \expandafter\expandafter\expandafter\mplibreplacenewlinebr
+    \fi
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
 }
 \fi
-\def\mplibgobblenewline{\futurelet\next\mplibgobblenewlineX}
-\def\mplibgobblenewlineX{\ifx\next^^J\expandafter\mplibgobblenewlineXX\fi}
-\def\mplibgobblenewlineXX{\let\next= }
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
@@ -1406,20 +1420,26 @@ luamplib.colorconverter = colorconverter
 \newtoks\everymplibtoks
 \newtoks\everyendmplibtoks
 \protected\def\everymplib{%
+  \mplibstartlineno\inputlineno
   \begingroup
-  \mplibsetupcatcodes \mplibdoeverymplib
+  \mplibsetupcatcodes
+  \mplibdoeverymplib
 }
 \long\def\mplibdoeverymplib#1{%
   \endgroup
-  \everymplibtoks{#1}\mplibgobblenewline
+  \everymplibtoks{#1}%
+  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 \protected\def\everyendmplib{%
+  \mplibstartlineno\inputlineno
   \begingroup
-  \mplibsetupcatcodes \mplibdoeveryendmplib
+  \mplibsetupcatcodes
+  \mplibdoeveryendmplib
 }
 \long\def\mplibdoeveryendmplib#1{%
   \endgroup
-  \everyendmplibtoks{#1}\mplibgobblenewline
+  \everyendmplibtoks{#1}%
+  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
