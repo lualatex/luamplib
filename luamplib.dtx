@@ -192,7 +192,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed and is a synomym of |textext()|.\par\smallskip
-%   \textsc{n.b.} v2.5: |btex ... etex| input from external |mp| files
+%   \textsc{n.b.} Since v2.5, |btex ... etex| input from external |mp| files
 %   will also be processed by \textsf{luamplib}. However,
 %   |verbatimtex ... etex| will be entirely ignored in this case.
 % \item |verbatimtex ... etex| (in \TeX\ file) that comes just before |beginfig()|
@@ -250,6 +250,20 @@ See source file '\inFileName' for licencing and contact information.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
 %   \url{http://github.com/lualatex/luamplib/issues/21}.
+% \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
+%   inspects the content of each and every |.mp| input files and makes caches
+%   if nececcsary, before returning their paths to \LuaTeX's mplib library.
+%   This would make the compile time longer wastefully, as most |.mp| files 
+%   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
+%   macros as follows, so that users can give instruction about files
+%   that do not require this functionality.
+%   \begin{itemize}
+%   \item |\mplibmakenocache{<filename>[,<filename>,...]}|
+%   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
+%   \end{itemize}
+%   where |<filename>| is a filename excluding |.mp| extension. Also
+%   Note that |.mp| files under |[TEXMFMAIN]/metapost/base| and
+%   |[TEXMFMAIN]/metapost/context/base| are already registered by default.
 % \end{itemize}
 %
 % There are (basically) two formats for metapost: \emph{plain} and
@@ -305,6 +319,7 @@ local texsprint     = tex.sprint
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
+local lfs   = require ('lfs')
 
 local file = file
 if not file then
@@ -332,65 +347,6 @@ end
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
-local mpreplacedabove = {}
-
-local function replaceinputmpfile (file)
-    local fh = io.open(file,"r")
-    if not fh then return file end
-    local data = fh:read("*all"); fh:close()
-    data = stringgsub(data, "\"[^\n]-\"",
-        function(str)
-            str = stringgsub(str,"%%","*****PERCENT*****")
-            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
-            return str
-        end)
-    data = stringgsub(data,"%%.-\n","")
-    local count,cnt = 0,0
-    data,cnt = stringgsub(data,
-        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        function(str)
-            str = stringgsub(str,"[\n\r]%s*"," ")
-            str = stringgsub(str,'"','"&ditto&"')
-            return format("rawtextext(\"%s\")",str)
-        end)
-    count = count + cnt
-    data,cnt = stringgsub(data,
-        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        "")
-    count = count + cnt
-    if count == 0 then
-        mpreplacedabove[file] = file
-        return file
-    end
-    data = stringgsub(data,"([bem])***T***E***X***","%1tex")
-    data = stringgsub(data,"*****PERCENT*****","%%")
-    local newfile = stringgsub(file,".*/","luamplib_input_")
-    fh = io.open(newfile,"w")
-    if not fh then return file end
-    fh:write(data); fh:close()
-    mpreplacedabove[file] = newfile
-    return newfile
-end
-
-local function replaceformatmp(file)
-    local fh = io.open(file,"r")
-    if not fh then return file end
-    local data = fh:read("*all"); fh:close()
-    local newfile = stringgsub(file,".*/","luamplib_input_")
-    fh = io.open(newfile,"w")
-    if not fh then return file end
-    fh:write(
-        "let normalinfont = infont;\n",
-        "primarydef str infont name = rawtextext(str) enddef;\n",
-        data,
-        "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
-        "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
-        "let infont = normalinfont;\n"
-    ); fh:close()
-    mpreplacedabove[file] = newfile
-    return newfile
-end
-
 local noneedtoreplace = {
     ["boxes.mp"] = true,
 --  ["format.mp"] = true,
@@ -428,6 +384,72 @@ local noneedtoreplace = {
     ["mp-text.mpiv"] = true,
     ["mp-tool.mpiv"] = true,
 }
+luamplib.noneedtoreplace = noneedtoreplace
+
+local function replaceformatmp(file)
+    local fh = io.open(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    local newfile = stringgsub(file,".*/","luamplib_input_")
+    fh = io.open(newfile,"w")
+    if not fh then return file end
+    fh:write(
+        "let normalinfont = infont;\n",
+        "primarydef str infont name = rawtextext(str) enddef;\n",
+        data,
+        "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
+        "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
+        "let infont = normalinfont;\n"
+    ); fh:close()
+    return newfile
+end
+
+local function replaceinputmpfile (name,file)
+    local newfile = stringgsub(file,".*/","luamplib_input_")
+    if newfile then
+        local of, nf = lfs.attributes(file), lfs.attributes(newfile)
+        if of and nf and nf.mode == "file" then
+            if of.modification < nf.modification then
+                return newfile
+            end
+        end
+    end
+    if name == "format.mp" then return replaceformatmp(file) end
+
+    local fh = io.open(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    data = stringgsub(data, "\"[^\n]-\"",
+        function(str)
+            str = stringgsub(str,"%%","*****PERCENT*****")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            return str
+        end)
+    data = stringgsub(data,"%%.-\n","")
+    local count,cnt = 0,0
+    data,cnt = stringgsub(data,
+        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        function(str)
+            str = stringgsub(str,"[\n\r]%s*"," ")
+            str = stringgsub(str,'"','"&ditto&"')
+            return format("rawtextext(\"%s\")",str)
+        end)
+    count = count + cnt
+    data,cnt = stringgsub(data,
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        "")
+    count = count + cnt
+    if count == 0 then
+        noneedtoreplace[name] = true
+        return file
+    end
+    data = stringgsub(data,"([bem])***T***E***X***","%1tex")
+    data = stringgsub(data,"*****PERCENT*****","%%")
+    fh = io.open(newfile,"w")
+    if not fh then return file end
+    fh:write(data); fh:close()
+    return newfile
+end
 %    \end{macrocode}
 %      As the finder function for |mplib|, use the |kpse| library and
 %      make it behave like as if MetaPost was used (or almost, since the engine
@@ -444,9 +466,7 @@ local function finder(name, mode, ftype)
         local file = mpkpse:find_file(name,ftype)
         if file then
             if ftype ~= "mp" or noneedtoreplace[name] then return file end
-            if mpreplacedabove[file] then return mpreplacedabove[file] end
-            if name == "format.mp" then return replaceformatmp(file) end
-            return replaceinputmpfile(file)
+            return replaceinputmpfile(name,file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
     end
@@ -527,7 +547,6 @@ else
     end
 
     function luamplib.load(name)
-        mpreplacedabove = {} -- reset
         local mpx = mplib.new {
             ini_version = true,
             find_file = luamplib.finder,
@@ -1443,6 +1462,28 @@ luamplib.colorconverter = colorconverter
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
+\def\mplibmakenocache#1{\mplibdomakenocache #1,*,}
+\def\mplibdomakenocache#1,{%
+  \ifx\empty#1\empty
+    \expandafter\mplibdomakenocache
+  \else
+    \ifx*#1\else
+      \directlua{luamplib.noneedtoreplace["#1.mp"]=true}%
+      \expandafter\expandafter\expandafter\mplibdomakenocache
+    \fi
+  \fi
+}
+\def\mplibcancelnocache#1{\mplibdocancelnocache #1,*,}
+\def\mplibdocancelnocache#1,{%
+  \ifx\empty#1\empty
+    \expandafter\mplibdocancelnocache
+  \else
+    \ifx*#1\else
+      \directlua{luamplib.noneedtoreplace["#1.mp"]=false}%
+      \expandafter\expandafter\expandafter\mplibdocancelnocache
+    \fi
+  \fi
+}
 %    \end{macrocode}
 %
 %    We use a dedicated scratchbox.
