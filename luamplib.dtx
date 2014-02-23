@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/23 v2.5.2 Interface for using the mplib library]%
+  [2014/02/24 v2.5.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/23 v2.5.2}
+% \date{2014/02/24 v2.5.2}
 %
 % \maketitle
 %
@@ -297,7 +297,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.5.2",
-    date          = "2014/02/23",
+    date          = "2014/02/24",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -407,7 +407,9 @@ local function replaceformatmp(file,newfile)
 end
 
 local function replaceinputmpfile (name,file)
-    local newfile = stringgsub(file,".*/","luamplib_input_")
+    local newfile = stringgsub(name,"%.mp$","")
+    newfile = stringgsub(newfile,"%W","_")
+    newfile = "luamplib_input_"..newfile..".mp"
     if newfile and luamplibchange then
         local ofchange = lfs.attributes(file,"modification")
         local nf = lfs.attributes(newfile)
@@ -854,29 +856,30 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
     local everyendmplib = tex.toks['everyendmplibtoks'] or ''
-    data = " " .. everymplib .."\n".. data .."\n".. everyendmplib
-    data = stringgsub(data, "\"[^\r\n]-\"",
+    data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
+    data = stringgsub(data,"\r","\n")
+    data = stringgsub(data, "\"[^\n]-\"",
         function(str)
             str = stringgsub(str,"%%","****PERCENT****")
             str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
             return str
         end)
-    data = stringgsub(data,"%%.-[\r\n]","")
+    data = stringgsub(data,"%%.-\n","")
     data = stringgsub(data,
         "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
-            str = stringgsub(str,"[\r\n]%s*"," ")
+            str = stringgsub(str,"\n%s*"," ")
             return format("rawtextext(\"%s\")",str)
         end)
     data = stringgsub(data,
         "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         function(str)
             str = stringgsub(str,'"','"&ditto&"')
-            str = stringgsub(str,"[\r\n]%s*"," ")
+            str = stringgsub(str,"\n%s*"," ")
             return format("VerbatimTeX(\"%s\")",str)
         end)
-    data = stringgsub(data, "\"[^\r\n]-\"",
+    data = stringgsub(data, "\"[^\n]-\"",
         function(str)
             str = stringgsub(str,"([bem])***T***E***X***","%1tex")
             str = stringgsub(str,"{", "****LEFTBRCE****")
@@ -1325,7 +1328,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/23 v2.5.2 mplib package for LuaTeX]
+    [2014/02/24 v2.5.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1364,7 +1367,7 @@ luamplib.colorconverter = colorconverter
 \def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \endlinechar10
+  \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12 \endlinechar=10
 }
 %    \end{macrocode}
 %
