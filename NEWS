@@ -1,6 +1,9 @@
                        History of the luamplib package
 
 2014/02/22 2.5.2
+    * new macros \mplibmakenocache{...} and \mplibcancelnocache{...} to
+      register/unregister those .mp files that do not need caches.
+      These macros affect the compilation speed only.
     * added a hack to support graph.mp (in fact, format.mp)
     * [fix] luamplib now respects percent sign if it is enclosed by quotes.
 
