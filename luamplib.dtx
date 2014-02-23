@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/22 v2.5.2 Interface for using the mplib library]%
+  [2014/02/23 v2.5.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/22 v2.5.2}
+% \date{2014/02/23 v2.5.2}
 %
 % \maketitle
 %
@@ -297,7 +297,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.5.2",
-    date          = "2014/02/22",
+    date          = "2014/02/23",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -347,6 +347,9 @@ end
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
+local luamplibchange = kpse.find_file("luamplib.lua")
+luamplibchange = luamplibchange and lfs.attributes(luamplibchange,"modification")
+
 local noneedtoreplace = {
     ["boxes.mp"] = true,
 --  ["format.mp"] = true,
@@ -386,11 +389,10 @@ local noneedtoreplace = {
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
-local function replaceformatmp(file)
+local function replaceformatmp(file,newfile)
     local fh = io.open(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
-    local newfile = stringgsub(file,".*/","luamplib_input_")
     fh = io.open(newfile,"w")
     if not fh then return file end
     fh:write(
@@ -406,15 +408,17 @@ end
 
 local function replaceinputmpfile (name,file)
     local newfile = stringgsub(file,".*/","luamplib_input_")
-    if newfile then
-        local of, nf = lfs.attributes(file), lfs.attributes(newfile)
-        if of and nf and nf.mode == "file" then
-            if of.modification < nf.modification then
+    if newfile and luamplibchange then
+        local ofchange = lfs.attributes(file,"modification")
+        local nf = lfs.attributes(newfile)
+        local nfchange = nf and nf.modification
+        if ofchange and nfchange and nf.mode == "file"
+            and ofchange < nfchange and luamplibchange < nfchange
+            then
                 return newfile
-            end
         end
     end
-    if name == "format.mp" then return replaceformatmp(file) end
+    if name == "format.mp" then return replaceformatmp(file,newfile) end
 
     local fh = io.open(file,"r")
     if not fh then return file end
@@ -1321,7 +1325,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/22 v2.5.2 mplib package for LuaTeX]
+    [2014/02/23 v2.5.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
