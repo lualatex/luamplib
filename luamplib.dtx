@@ -442,7 +442,7 @@ local function replaceinputmpfile (name,file)
         end)
     count = count + cnt
     data,cnt = stringgsub(data,
-        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*.-%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
         "")
     count = count + cnt
     if count == 0 then
@@ -1376,8 +1376,10 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
 \newcount\mplibstartlineno
-\def\mplibreplacenewlinebr{\begingroup
-  \catcode`\{=12 \catcode`\}=12 \catcode`\%=12 \mplibdoreplacenewlinebr}
+\def\mplibpostmpcatcodes{%
+  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\%=12 }
+\def\mplibreplacenewlinebr{%
+  \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
 \begingroup\lccode`\~=`\^^M \lowercase{%
   \gdef\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
 \endgroup
@@ -1388,8 +1390,8 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\def\mplibreplacenewlinecs{\begingroup
-  \catcode`\{=12 \catcode`\}=12 \catcode`\%=12 \mplibdoreplacenewlinecs}
+\def\mplibreplacenewlinecs{%
+  \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
 \begingroup\lccode`\~=`\^^M \lowercase{%
   \gdef\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
 \endgroup

@@ -101,4 +101,17 @@ u := 10**5*(10**-4);
 draw unitsquare scaled u;
 endfig;
 \end{mplibcode}%
+\mplibsetformat{plain}%
+\begin{mplibcode}
+  input graph;
+  beginfig(0);
+  draw begingraph(100,100);
+    gdraw (10,10)--(30,35)--(50,25)--(70,80)--(90,90);
+    autogrid(otick.bot,);
+    for y=20,40,60,80:
+      grid.lft(format("%e",1000y), y) withcolor .85white;
+    endfor
+    endgraph;
+  endfig;
+\end{mplibcode}%
 \end{document}
