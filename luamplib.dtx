@@ -1376,7 +1376,8 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
 \newcount\mplibstartlineno
-\def\mplibreplacenewlinebr{\begingroup\catcode`\%=12 \mplibdoreplacenewlinebr}
+\def\mplibreplacenewlinebr{\begingroup
+  \catcode`\{=12 \catcode`\}=12 \catcode`\%=12 \mplibdoreplacenewlinebr}
 \begingroup\lccode`\~=`\^^M \lowercase{%
   \gdef\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
 \endgroup
@@ -1387,7 +1388,8 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
-\def\mplibreplacenewlinecs{\begingroup\catcode`\%=12 \mplibdoreplacenewlinecs}
+\def\mplibreplacenewlinecs{\begingroup
+  \catcode`\{=12 \catcode`\}=12 \catcode`\%=12 \mplibdoreplacenewlinecs}
 \begingroup\lccode`\~=`\^^M \lowercase{%
   \gdef\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
 \endgroup
