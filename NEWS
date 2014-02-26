@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2014/02/27 2.5.3
+    * caches of system input files will be stored under $TEXMFCACHE
+
 2014/02/24 2.5.2
     * new macros \mplibmakenocache{...} and \mplibcancelnocache{...} to
       register/unregister those .mp files that do not need caches.
