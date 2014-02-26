@@ -350,6 +350,42 @@ end
 local luamplibchange = kpse.find_file("luamplib.lua")
 luamplibchange = luamplibchange and lfs.attributes(luamplibchange,"modification")
 
+local function getcachedir()
+  local cachedir
+  local cachedirs = kpse.expand_var('$TEXMFCACHE') or ""
+  if cachedirs == '$TEXMFCACHE' then cachedirs = "" end
+  local splitter = os.type == "windows" and ";" or ":"
+  for dir in stringgmatch(cachedirs..splitter,"(.-)"..splitter) do
+    if not lfs.isdir(dir) then
+      local full = ""
+      for sub in stringgmatch(dir.."/",".-/") do
+        full = full..sub
+        if not lfs.isdir(full) then lfs.mkdir(full) end
+      end
+    end
+    if lfs.isdir(dir) then
+      local tmpfile = dir.."/__lua_mplib_tmp_file__"
+      local fh = io.open(tmpfile,"w")
+      if fh then
+        fh:close()
+        os.remove(tmpfile)
+        cachedir = dir
+        break
+      end
+    end
+  end
+  if cachedir then
+    cachedir = cachedir.."/luatex-cache"
+    if not lfs.isdir(cachedir) then lfs.mkdir(cachedir) end
+    cachedir = cachedir.."/luamplib"
+    if not lfs.isdir(cachedir) then lfs.mkdir(cachedir) end
+  else
+    cachedir = "."
+  end
+  luamplib.cachedir = cachedir
+  return cachedir
+end
+
 local noneedtoreplace = {
     ["boxes.mp"] = true,
 --  ["format.mp"] = true,
@@ -407,9 +443,12 @@ local function replaceformatmp(file,newfile)
 end
 
 local function replaceinputmpfile (name,file)
+    local cachedir = luamplib.cachedir or getcachedir()
+    if stringfind(file,"^%.") then cachedir = "." end
     local newfile = stringgsub(name,"%.mp$","")
     newfile = stringgsub(newfile,"%W","_")
     newfile = "luamplib_input_"..newfile..".mp"
+    newfile = cachedir .."/".. newfile
     if newfile and luamplibchange then
         local ofchange = lfs.attributes(file,"modification")
         local nf = lfs.attributes(newfile)
@@ -417,7 +456,7 @@ local function replaceinputmpfile (name,file)
         if ofchange and nfchange and nf.mode == "file"
             and ofchange < nfchange and luamplibchange < nfchange
             then
-                return newfile
+                return nf.size == 0 and file or newfile
         end
     end
     if name == "format.mp" then return replaceformatmp(file,newfile) end
@@ -447,6 +486,7 @@ local function replaceinputmpfile (name,file)
     count = count + cnt
     if count == 0 then
         noneedtoreplace[name] = true
+        fh = io.open(newfile,"w"); fh:close()
         return file
     end
     data = stringgsub(data,"([bem])***T***E***X***","%1tex")
