@@ -355,6 +355,15 @@ end
 local luamplibchange = kpse.find_file("luamplib.lua")
 luamplibchange = luamplibchange and lfsattributes(luamplibchange,"modification")
 
+local outputdir = "."
+for _,v in ipairs(arg) do
+  local t = stringmatch(v,"%-output%-directory=(.+)")
+  if t then
+    outputdir = t
+    break
+  end
+end
+
 local function getcachedir()
   local cachedir
   local cachedirs = kpse.expand_var('$TEXMFCACHE') or ""
@@ -385,7 +394,7 @@ local function getcachedir()
     cachedir = cachedir.."/luamplib"
     if not lfsisdir(cachedir) then lfsmkdir(cachedir) end
   else
-    cachedir = "."
+    cachedir = outputdir
   end
   luamplib.cachedir = cachedir
   return cachedir
@@ -449,7 +458,7 @@ end
 
 local function replaceinputmpfile (name,file)
     local cachedir = luamplib.cachedir or getcachedir()
-    if stringfind(file,"^%.") then cachedir = "." end
+    if stringfind(file,"^%.") then cachedir = outputdir end
     local newfile = stringgsub(name,"%.mp$","")
     newfile = stringgsub(newfile,"%W","_")
     newfile = cachedir .."/luamplib_input_"..newfile..".mp"
