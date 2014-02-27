@@ -321,6 +321,11 @@ local mplib = require ('mplib')
 local kpse  = require ('kpse')
 local lfs   = require ('lfs')
 
+local lfsattributes = lfs.attributes
+local lfsisdir      = lfs.isdir
+local lfsmkdir      = lfs.mkdir
+local ioopen        = io.open
+
 local file = file
 if not file then
 
@@ -348,7 +353,7 @@ end
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
 local luamplibchange = kpse.find_file("luamplib.lua")
-luamplibchange = luamplibchange and lfs.attributes(luamplibchange,"modification")
+luamplibchange = luamplibchange and lfsattributes(luamplibchange,"modification")
 
 local function getcachedir()
   local cachedir
@@ -356,16 +361,16 @@ local function getcachedir()
   if cachedirs == '$TEXMFCACHE' then cachedirs = "" end
   local splitter = os.type == "windows" and ";" or ":"
   for dir in stringgmatch(cachedirs..splitter,"(.-)"..splitter) do
-    if not lfs.isdir(dir) then
+    if not lfsisdir(dir) then
       local full = ""
       for sub in stringgmatch(dir.."/",".-/") do
         full = full..sub
-        if not lfs.isdir(full) then lfs.mkdir(full) end
+        if not lfsisdir(full) then lfsmkdir(full) end
       end
     end
-    if lfs.isdir(dir) then
+    if lfsisdir(dir) then
       local tmpfile = dir.."/__lua_mplib_tmp_file__"
-      local fh = io.open(tmpfile,"w")
+      local fh = ioopen(tmpfile,"w")
       if fh then
         fh:close()
         os.remove(tmpfile)
@@ -376,9 +381,9 @@ local function getcachedir()
   end
   if cachedir then
     cachedir = cachedir.."/luatex-cache"
-    if not lfs.isdir(cachedir) then lfs.mkdir(cachedir) end
+    if not lfsisdir(cachedir) then lfsmkdir(cachedir) end
     cachedir = cachedir.."/luamplib"
-    if not lfs.isdir(cachedir) then lfs.mkdir(cachedir) end
+    if not lfsisdir(cachedir) then lfsmkdir(cachedir) end
   else
     cachedir = "."
   end
@@ -426,10 +431,10 @@ local noneedtoreplace = {
 luamplib.noneedtoreplace = noneedtoreplace
 
 local function replaceformatmp(file,newfile)
-    local fh = io.open(file,"r")
+    local fh = ioopen(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
-    fh = io.open(newfile,"w")
+    fh = ioopen(newfile,"w")
     if not fh then return file end
     fh:write(
         "let normalinfont = infont;\n",
@@ -449,8 +454,8 @@ local function replaceinputmpfile (name,file)
     newfile = stringgsub(newfile,"%W","_")
     newfile = cachedir .."/luamplib_input_"..newfile..".mp"
     if newfile and luamplibchange then
-        local ofchange = lfs.attributes(file,"modification")
-        local nf = lfs.attributes(newfile)
+        local ofchange = lfsattributes(file,"modification")
+        local nf = lfsattributes(newfile)
         local nfchange = nf and nf.modification
         if ofchange and nfchange and nf.mode == "file"
             and ofchange < nfchange and luamplibchange < nfchange
@@ -460,7 +465,7 @@ local function replaceinputmpfile (name,file)
     end
     if name == "format.mp" then return replaceformatmp(file,newfile) end
 
-    local fh = io.open(file,"r")
+    local fh = ioopen(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
     data = stringgsub(data, "\"[^\n]-\"",
@@ -485,12 +490,12 @@ local function replaceinputmpfile (name,file)
     count = count + cnt
     if count == 0 then
         noneedtoreplace[name] = true
-        fh = io.open(newfile,"w"); fh:close()
+        fh = ioopen(newfile,"w"); fh:close()
         return file
     end
     data = stringgsub(data,"([bem])***T***E***X***","%1tex")
     data = stringgsub(data,"*****PERCENT*****","%%")
-    fh = io.open(newfile,"w")
+    fh = ioopen(newfile,"w")
     if not fh then return file end
     fh:write(data); fh:close()
     return newfile
