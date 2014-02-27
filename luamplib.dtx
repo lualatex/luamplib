@@ -515,7 +515,7 @@ local function finder(name, mode, ftype)
     else
         local file = mpkpse:find_file(name,ftype)
         if file then
-            if ftype ~= "mp" or noneedtoreplace[name] then return file end
+            if not lfsmkdir or ftype ~= "mp" or noneedtoreplace[name] then return file end
             return replaceinputmpfile(name,file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
