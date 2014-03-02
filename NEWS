@@ -1,7 +1,11 @@
                        History of the luamplib package
 
-2014/02/27 2.5.3
-    * caches of system input files will be stored under $TEXMFCACHE
+2014/03/01 2.5.3
+    * using \mplibcachedir{<directory path>}, users can change the
+      directory for storing cache files. By default, it is the directory
+      where pdf output file is saved.
+    * at the end of package loading, luamplib searches 'luamplib.cfg',
+      and, when found, reads the file in automatically.
 
 2014/02/24 2.5.2
     * new macros \mplibmakenocache{...} and \mplibcancelnocache{...} to

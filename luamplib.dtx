@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/02/27 v2.5.3 Interface for using the mplib library]%
+  [2014/03/01 v2.5.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/02/27 v2.5.3}
+% \date{2014/03/01 v2.5.3}
 %
 % \maketitle
 %
@@ -261,9 +261,20 @@ See source file '\inFileName' for licencing and contact information.
 %   \item |\mplibmakenocache{<filename>[,<filename>,...]}|
 %   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
 %   \end{itemize}
-%   where |<filename>| is a filename excluding |.mp| extension.
+%   where |<filename>| is a file name excluding |.mp| extension.
 %   Note that |.mp| files under |[TEXMFMAIN]/metapost/base| and
 %   |[TEXMFMAIN]/metapost/context/base| are already registered by default.
+% \item By default, cache files will be stored in the same directory as
+%   pdf output file. This however can be changed by the command
+%   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
+%   as the user's home directory (on windows machines as well).
+%   As backslashes (|\|) should be escaped by users, it is easier to use
+%   slashes (|/|) instead.
+% \item At the end of package loading, \textsf{luamplib} searches
+%   |luamplib.cfg| and, if found, reads the file in automatically.
+%   Frequently used settings such as |\everymplib| or |\mplibcachedir|
+%   are suitable for going into this file.
+%   
 % \end{itemize}
 %
 % There are (basically) two formats for metapost: \emph{plain} and
@@ -297,7 +308,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.5.3",
-    date          = "2014/02/27",
+    date          = "2014/03/01",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -323,7 +334,7 @@ local lfs   = require ('lfs')
 
 local lfsattributes = lfs.attributes
 local lfsisdir      = lfs.isdir
-local lfsmkdir      = lfs.mkdir
+local lfstouch      = lfs.touch
 local ioopen        = io.open
 
 local file = file
@@ -352,8 +363,10 @@ end
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
-local luamplibchange = kpse.find_file("luamplib.lua")
-luamplibchange = luamplibchange and lfsattributes(luamplibchange,"modification")
+local luamplibtime = kpse.find_file("luamplib.lua")
+luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
+
+local currenttime = os.time()
 
 local outputdir = "."
 for _,v in ipairs(arg) do
@@ -364,40 +377,25 @@ for _,v in ipairs(arg) do
   end
 end
 
-local function getcachedir()
-  local cachedir
-  local cachedirs = kpse.expand_var('$TEXMFCACHE') or ""
-  if cachedirs == '$TEXMFCACHE' then cachedirs = "" end
-  local splitter = os.type == "windows" and ";" or ":"
-  for dir in stringgmatch(cachedirs..splitter,"(.-)"..splitter) do
-    if not lfsisdir(dir) then
-      local full = ""
-      for sub in stringgmatch(dir.."/",".-/") do
-        full = full..sub
-        if not lfsisdir(full) then lfsmkdir(full) end
-      end
-    end
+function luamplib.getcachedir(dir)
+  dir = stringgsub(dir,"##","#")
+  dir = stringgsub(dir,"^~",
+    os.type == "windows" and os.getenv("UserProfile") or os.getenv("HOME"))
+  if lfstouch and dir then
     if lfsisdir(dir) then
-      local tmpfile = dir.."/__lua_mplib_tmp_file__"
-      local fh = ioopen(tmpfile,"w")
+      local tmp = dir.."/_luam_plib_temp_file_"
+      local fh = ioopen(tmp,"w")
       if fh then
-        fh:close()
-        os.remove(tmpfile)
-        cachedir = dir
-        break
+        fh:close(fh)
+        os.remove(tmp)
+        luamplib.cachedir = dir
+      else
+        warn("Directory '"..dir.."' is not writable!")
       end
+    else
+      warn("Directory '"..dir.."' does not exist!")
     end
   end
-  if cachedir then
-    cachedir = cachedir.."/luatex-cache"
-    if not lfsisdir(cachedir) then lfsmkdir(cachedir) end
-    cachedir = cachedir.."/luamplib"
-    if not lfsisdir(cachedir) then lfsmkdir(cachedir) end
-  else
-    cachedir = outputdir
-  end
-  luamplib.cachedir = cachedir
-  return cachedir
 end
 
 local noneedtoreplace = {
@@ -439,7 +437,7 @@ local noneedtoreplace = {
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
-local function replaceformatmp(file,newfile)
+local function replaceformatmp(file,newfile,ofmodify)
     local fh = ioopen(file,"r")
     if not fh then return file end
     local data = fh:read("*all"); fh:close()
@@ -453,26 +451,23 @@ local function replaceformatmp(file,newfile)
         "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
         "let infont = normalinfont;\n"
     ); fh:close()
+    lfstouch(newfile,currenttime,ofmodify)
     return newfile
 end
 
 local function replaceinputmpfile (name,file)
-    local cachedir = luamplib.cachedir or getcachedir()
-    if stringfind(file,"^%.") then cachedir = outputdir end
-    local newfile = stringgsub(name,"%.mp$","")
-    newfile = stringgsub(newfile,"%W","_")
-    newfile = cachedir .."/luamplib_input_"..newfile..".mp"
-    if newfile and luamplibchange then
-        local ofchange = lfsattributes(file,"modification")
+    local ofmodify = lfsattributes(file,"modification")
+    if not ofmodify then return file end
+    local cachedir = luamplib.cachedir or outputdir
+    local newfile = stringgsub(name,"%W","_")
+    newfile = cachedir .."/luamplib_input_"..newfile
+    if newfile and luamplibtime then
         local nf = lfsattributes(newfile)
-        local nfchange = nf and nf.modification
-        if ofchange and nfchange and nf.mode == "file"
-            and ofchange < nfchange and luamplibchange < nfchange
-            then
-                return nf.size == 0 and file or newfile
+        if nf and nf.mode == "file" and ofmodify == nf.modification and luamplibtime < nf.access then
+            return nf.size == 0 and file or newfile
         end
     end
-    if name == "format.mp" then return replaceformatmp(file,newfile) end
+    if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
 
     local fh = ioopen(file,"r")
     if not fh then return file end
@@ -499,7 +494,11 @@ local function replaceinputmpfile (name,file)
     count = count + cnt
     if count == 0 then
         noneedtoreplace[name] = true
-        fh = ioopen(newfile,"w"); fh:close()
+        fh = ioopen(newfile,"w");
+        if fh then
+            fh:close()
+            lfstouch(newfile,currenttime,ofmodify)
+        end
         return file
     end
     data = stringgsub(data,"([bem])***T***E***X***","%1tex")
@@ -507,6 +506,7 @@ local function replaceinputmpfile (name,file)
     fh = ioopen(newfile,"w")
     if not fh then return file end
     fh:write(data); fh:close()
+    lfstouch(newfile,currenttime,ofmodify)
     return newfile
 end
 %    \end{macrocode}
@@ -524,7 +524,9 @@ local function finder(name, mode, ftype)
     else
         local file = mpkpse:find_file(name,ftype)
         if file then
-            if not lfsmkdir or ftype ~= "mp" or noneedtoreplace[name] then return file end
+            if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
+                return file
+            end
             return replaceinputmpfile(name,file)
         end
         return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
@@ -1381,7 +1383,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/02/27 v2.5.3 mplib package for LuaTeX]
+    [2014/03/01 v2.5.3 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1548,6 +1550,7 @@ luamplib.colorconverter = colorconverter
     \fi
   \fi
 }
+\def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
 %    \end{macrocode}
 %
 %    We use a dedicated scratchbox.
@@ -1614,6 +1617,16 @@ luamplib.colorconverter = colorconverter
   \box\mplibscratchbox
   \endgroup
 }
+%    \end{macrocode}
+%
+%    input luamplib.cfg when it exists
+%
+%    \begin{macrocode}
+\openin0=luamplib.cfg
+\ifeof0 \else
+  \closein0
+  \input luamplib.cfg
+\fi
 %    \end{macrocode}
 %
 %    That's all folks!
