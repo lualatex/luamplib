@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2014/03/03 2.6.0
+    * new macro \mplibtextextlabel{enable} enables string labels typeset
+      with textext() instead of infont operator. So, writing
+      label("my text",(0,0)) thereafter is exactly the same as
+      label(textext("my text"),(0,0)).
+
 2014/03/01 2.5.3
     * using \mplibcachedir{<directory path>}, users can change the
       directory for storing cache files. By default, it is the directory
