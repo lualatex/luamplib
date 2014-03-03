@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/01 v2.5.3 Interface for using the mplib library]%
+  [2014/03/03 v2.6.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/01 v2.5.3}
+% \date{2014/03/03 v2.6.0}
 %
 % \maketitle
 %
@@ -270,6 +270,11 @@ See source file '\inFileName' for licencing and contact information.
 %   as the user's home directory (on windows machines as well).
 %   As backslashes (|\|) should be escaped by users, it is easier to use
 %   slashes (|/|) instead.
+% \item Starting with version 2.6, |\mplibtextextlabel{enable}| enables
+%   string labels typeset via |textext()| instead of |infont| operator.
+%   So, writing |label("my text",(0,0))| thereafter is exactly the same as
+%   |label(textext("my text"),(0,0))|. Be careful about |char| operator,
+%   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as |\everymplib| or |\mplibcachedir|
@@ -307,8 +312,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       = "2.5.3",
-    date          = "2014/03/01",
+    version       = "2.6.0",
+    date          = "2014/03/03",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -854,50 +859,50 @@ end
 
 local mplibcodepreamble = [[
 vardef rawtextext (expr t) =
-    if unknown TEXBOX_:
-        image( special "MPlibmkTEXbox="&t; )
-    else:
-        TEXBOX_ := TEXBOX_ + 1;
-        image (
-            addto currentpicture doublepath unitsquare
-            xscaled TEXBOX_wd[TEXBOX_]
-            yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-            shifted (0, -TEXBOX_dp[TEXBOX_])
-            withprescript "MPlibTEXboxID=" &
-                          decimal TEXBOX_ & ":" &
-                          decimal TEXBOX_wd[TEXBOX_] & ":" &
-                          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
-        )
-    fi
+  if unknown TEXBOX_:
+    image( special "MPlibmkTEXbox="&t; )
+  else:
+    TEXBOX_ := TEXBOX_ + 1;
+    image (
+      addto currentpicture doublepath unitsquare
+      xscaled TEXBOX_wd[TEXBOX_]
+      yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+      shifted (0, -TEXBOX_dp[TEXBOX_])
+      withprescript "MPlibTEXboxID=" &
+                    decimal TEXBOX_ & ":" &
+                    decimal TEXBOX_wd[TEXBOX_] & ":" &
+                    decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
+    )
+  fi
 enddef;
 if known context_mlib:
-    defaultfont := "cmtt10";
-    let infont = normalinfont;
-    let fontsize = normalfontsize;
-    vardef thelabel@#(expr p,z) =
-        if string p :
-            thelabel@#(p infont defaultfont scaled defaultscale,z)
-        else :
-            p shifted (z + labeloffset*mfun_laboff@# -
-                (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
-                (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
-        fi
-    enddef;
-    def graphictext primary filename =
-        if (readfrom filename = EOF):
-          errmessage "Please prepare '"&filename&"' in advance with command"&
-          " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
-        fi
-        closefrom filename;
-        def data_mpy_file = filename enddef;
-        mfun_do_graphic_text (filename)
-    enddef;
-    if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
+  defaultfont := "cmtt10";
+  let infont = normalinfont;
+  let fontsize = normalfontsize;
+  vardef thelabel@#(expr p,z) =
+    if string p :
+      thelabel@#(p infont defaultfont scaled defaultscale,z)
+    else :
+      p shifted (z + labeloffset*mfun_laboff@# -
+        (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
+        (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
+    fi
+  enddef;
+  def graphictext primary filename =
+    if (readfrom filename = EOF):
+      errmessage "Please prepare '"&filename&"' in advance with"&
+      " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
+    fi
+    closefrom filename;
+    def data_mpy_file = filename enddef;
+    mfun_do_graphic_text (filename)
+  enddef;
+  if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
 else:
-    vardef textext@# (text t) = rawtextext (t) enddef;
+  vardef textext@# (text t) = rawtextext (t) enddef;
 fi
 def externalfigure primary filename =
-    draw rawtextext("\includegraphics{"& filename &"}")
+  draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
 def fontmapfile primary filename = enddef;
@@ -906,6 +911,14 @@ def ignoreVerbatimTeX  (text t) = enddef;
 let VerbatimTeX = specialVerbatimTeX;
 extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
+]]
+
+local textextlabelpreamble = [[
+primarydef s infont f =
+  rawtextext(if (f <> "") and (f <> defaultfont):
+    "\font\temp{"&f&"}\temp "& fi s )
+enddef;
+let normalinfont = infont;
 ]]
 
 local function protecttextext(data)
@@ -987,9 +1000,13 @@ local function makeTEXboxes (data)
     data = stringgsub(data, "****LEFTBRCE****","{")
     data = stringgsub(data, "****RGHTBRCE****","}")
     data = stringgsub(data, "****SHARPE****",  "#" )
+    local preamble = mplibcodepreamble
+    if luamplib.textextlabel then
+      preamble = textextlabelpreamble .. preamble
+    end
     local mpx = luamplib.load(currentformat)
     if mpx and data then
-        local result = mpx:execute(mplibcodepreamble .. data)
+        local result = mpx:execute(preamble .. data)
         domakeTEXboxes(result)
     end
     return data
@@ -1011,7 +1028,11 @@ local function processwithTEXboxes (data)
         "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
         "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
-    process(prepreamble .. mplibcodepreamble .. data)
+    local preamble = prepreamble .. mplibcodepreamble
+    if luamplib.textextlabel then
+      preamble = textextlabelpreamble .. preamble
+    end
+    process(preamble .. data)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
@@ -1383,7 +1404,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/01 v2.5.3 mplib package for LuaTeX]
+    [2014/03/03 v2.6.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1551,6 +1572,16 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
+\def\mplibtextextlabel#1{%
+  \begingroup
+  \def\tempa{enable}\def\tempb{#1}%
+  \ifx\tempa\tempb
+    \directlua{luamplib.textextlabel = true}%
+  \else
+    \directlua{luamplib.textextlabel = false}%
+  \fi
+  \endgroup
+}
 %    \end{macrocode}
 %
 %    We use a dedicated scratchbox.
