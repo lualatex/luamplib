@@ -270,6 +270,11 @@ See source file '\inFileName' for licencing and contact information.
 %   as the user's home directory (on windows machines as well).
 %   As backslashes (|\|) should be escaped by users, it is easier to use
 %   slashes (|/|) instead.
+% \item Starting with version 2.6, |\mplibtextextlabel{enable}| enables
+%   string labels typeset via |textext()| instead of |infont| operator.
+%   So, writing |label("my text",(0,0))| thereafter is exactly the same as
+%   |label(textext("my text"),(0,0))|. Be careful about |char| operator,
+%   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as |\everymplib| or |\mplibcachedir|
@@ -870,18 +875,13 @@ vardef rawtextext (expr t) =
     )
   fi
 enddef;
-if unknown mplib_textextlabel_:
-  boolean mplib_textextlabel_; mplib_textextlabel_ := false;
-fi
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
   let fontsize = normalfontsize;
   vardef thelabel@#(expr p,z) =
     if string p :
-      thelabel@#(if mplib_textextlabel_: rawtextext(p)
-                 else: p infont defaultfont
-                 fi scaled defaultscale,z)
+      thelabel@#(p infont defaultfont scaled defaultscale,z)
     else :
       p shifted (z + labeloffset*mfun_laboff@# -
         (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
@@ -890,7 +890,7 @@ if known context_mlib:
   enddef;
   def graphictext primary filename =
     if (readfrom filename = EOF):
-      errmessage "Please prepare '"&filename&"' in advance with command"&
+      errmessage "Please prepare '"&filename&"' in advance with"&
       " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
     fi
     closefrom filename;
@@ -900,17 +900,6 @@ if known context_mlib:
   if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
-  vardef thelabel@#(expr s,z) =
-    save p; picture p;
-    if picture s: p=s
-    else: p = if mplib_textextlabel_: rawtextext(s)
-              else: s infont defaultfont
-              fi scaled defaultscale
-    fi;
-    p shifted (z + labeloffset*laboff@# -
-       (labxf@#*lrcorner p + labyf@#*ulcorner p
-         + (1-labxf@#-labyf@#)*llcorner p))
-  enddef;
 fi
 def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
@@ -924,7 +913,13 @@ extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
-local textextlabelpreamble = "boolean mplib_textextlabel_; mplib_textextlabel_ := true;\n"
+local textextlabelpreamble = [[
+primarydef s infont f =
+  rawtextext(if (f <> "") and (f <> defaultfont):
+    "\font\temp{"&f&"}\temp "& fi s )
+enddef;
+let normalinfont = infont;
+]]
 
 local function protecttextext(data)
     local everymplib    = tex.toks['everymplibtoks']    or ''
@@ -1033,7 +1028,7 @@ local function processwithTEXboxes (data)
         "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
         "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
     end
-    local preamble = prepreamble..mplibcodepreamble
+    local preamble = prepreamble .. mplibcodepreamble
     if luamplib.textextlabel then
       preamble = textextlabelpreamble .. preamble
     end
