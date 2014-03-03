@@ -915,8 +915,7 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 
 local textextlabelpreamble = [[
 primarydef s infont f =
-  rawtextext(if (f <> "") and (f <> defaultfont):
-    "\font\temp{"&f&"}\temp "& fi s )
+  rawtextext(if f <> "": "\font\temp{"&f&"}\temp "& fi s)
 enddef;
 let normalinfont = infont;
 ]]
