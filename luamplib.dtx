@@ -270,10 +270,12 @@ See source file '\inFileName' for licencing and contact information.
 %   as the user's home directory (on windows machines as well).
 %   As backslashes (|\|) should be escaped by users, it is easier to use
 %   slashes (|/|) instead.
-% \item Starting with version 2.6, |\mplibtextextlabel{enable}| enables
+% \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
-%   So, writing |label("my text",(0,0))| thereafter is exactly the same as
-%   |label(textext("my text"),(0,0))|. Be careful about |char| operator,
+%   So, |label("my text",(0,0))| thereafter is exactly the same as
+%   |label(textext("my text"),(0,0))|. To typeset string labels with
+%   current \TeX\ font, assign empty string to |defaultfont|, that is
+%   |defaultfont:="";|. \textsc{n.b.} Be careful about |char| operator,
 %   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
@@ -915,8 +917,7 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 
 local textextlabelpreamble = [[
 primarydef s infont f =
-  rawtextext(if (f <> "") and (f <> defaultfont):
-    "\font\temp{"&f&"}\temp "& fi s )
+  rawtextext(if f <> "": "\font\temp{"&f&"}\temp "& fi s)
 enddef;
 let normalinfont = infont;
 ]]
