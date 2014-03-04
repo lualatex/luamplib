@@ -920,6 +920,16 @@ primarydef s infont f =
   rawtextext(if f <> "": "\font\temp{"&f&"}\temp "& fi s)
 enddef;
 let normalinfont = infont;
+def fontsize expr f =
+  begingroup
+  save size,pic; numeric size; picture pic;
+  pic := rawtextext(if f <> "": "\font\temp{"&f&"}\temp"& fi
+    "\hskip\pdffontsize\font");
+  size := xpart urcorner pic - xpart llcorner pic;
+  if size = 0: 10pt else: size fi
+  endgroup
+enddef;
+let normalfontsize = fontsize;
 ]]
 
 local function protecttextext(data)
