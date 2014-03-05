@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/03 v2.6.0 Interface for using the mplib library]%
+  [2014/03/05 v2.6.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/03 v2.6.0}
+% \date{2014/03/05 v2.6.0}
 %
 % \maketitle
 %
@@ -315,7 +315,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.6.0",
-    date          = "2014/03/03",
+    date          = "2014/03/05",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -481,8 +481,8 @@ local function replaceinputmpfile (name,file)
     local data = fh:read("*all"); fh:close()
     data = stringgsub(data, "\"[^\n]-\"",
         function(str)
-            str = stringgsub(str,"%%","*****PERCENT*****")
-            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
             return str
         end)
     data = stringgsub(data,"%%.-\n","")
@@ -508,8 +508,8 @@ local function replaceinputmpfile (name,file)
         end
         return file
     end
-    data = stringgsub(data,"([bem])***T***E***X***","%1tex")
-    data = stringgsub(data,"*****PERCENT*****","%%")
+    data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
+    data = stringgsub(data,"!!!!!PERCENT!!!!!","%%")
     fh = ioopen(newfile,"w")
     if not fh then return file end
     fh:write(data); fh:close()
@@ -939,8 +939,8 @@ local function protecttextext(data)
     data = stringgsub(data,"\r","\n")
     data = stringgsub(data, "\"[^\n]-\"",
         function(str)
-            str = stringgsub(str,"%%","****PERCENT****")
-            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1***T***E***X***")
+            str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
+            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
             return str
         end)
     data = stringgsub(data,"%%.-\n","")
@@ -960,11 +960,11 @@ local function protecttextext(data)
         end)
     data = stringgsub(data, "\"[^\n]-\"",
         function(str)
-            str = stringgsub(str,"([bem])***T***E***X***","%1tex")
-            str = stringgsub(str,"{", "****LEFTBRCE****")
-            str = stringgsub(str,"}", "****RGHTBRCE****")
-            str = stringgsub(str,"#", "****SHARPE****")
-            return format("\\unexpanded{%s}",str)
+            str = stringgsub(str,"([bem])!!!T!!!E!!!X!!!","%1tex")
+            str = stringgsub(str,"{", "!!!!!LEFTBRCE!!!!!")
+            str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
+            str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
+            return format("\\detokenize{%s}",str)
         end)
     texsprint(data)
 end
@@ -1007,10 +1007,10 @@ end
 
 local function makeTEXboxes (data)
     data = stringgsub(data, "##", "#") -- restore # doubled in input string
-    data = stringgsub(data, "****PERCENT****", "%%")
-    data = stringgsub(data, "****LEFTBRCE****","{")
-    data = stringgsub(data, "****RGHTBRCE****","}")
-    data = stringgsub(data, "****SHARPE****",  "#" )
+    data = stringgsub(data, "!!!!!PERCENT!!!!!", "%%")
+    data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
+    data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
+    data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
     local preamble = mplibcodepreamble
     if luamplib.textextlabel then
       preamble = textextlabelpreamble .. preamble
@@ -1415,7 +1415,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/03 v2.6.0 mplib package for LuaTeX]
+    [2014/03/05 v2.6.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
