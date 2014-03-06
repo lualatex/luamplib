@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/05 v2.6.0 Interface for using the mplib library]%
+  [2014/03/06 v2.6.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/05 v2.6.0}
+% \date{2014/03/06 v2.6.0}
 %
 % \maketitle
 %
@@ -320,7 +320,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.6.0",
-    date          = "2014/03/05",
+    date          = "2014/03/06",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -865,16 +865,18 @@ vardef rawtextext (expr t) =
     image( special "MPlibmkTEXbox="&t; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
-    image (
-      addto currentpicture doublepath unitsquare
-      xscaled TEXBOX_wd[TEXBOX_]
-      yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-      shifted (0, -TEXBOX_dp[TEXBOX_])
-      withprescript "MPlibTEXboxID=" &
-                    decimal TEXBOX_ & ":" &
-                    decimal TEXBOX_wd[TEXBOX_] & ":" &
-                    decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
-    )
+    if known TEXBOX_wd[TEXBOX_]:
+      image ( addto currentpicture doublepath unitsquare
+        xscaled TEXBOX_wd[TEXBOX_]
+        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+        shifted (0, -TEXBOX_dp[TEXBOX_])
+        withprescript "MPlibTEXboxID=" &
+          decimal TEXBOX_ & ":" &
+          decimal TEXBOX_wd[TEXBOX_] & ":" &
+          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]); )
+    else:
+      image( special "MPlibTEXError=1"; )
+    fi
   fi
 enddef;
 if known context_mlib:
@@ -972,7 +974,7 @@ luamplib.protecttextext = protecttextext
 local TeX_code_t = {}
 
 local function domakeTEXboxes (data)
-    local num = 256 -- output box + 1
+    local num = 255 -- output box
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
@@ -1026,7 +1028,7 @@ luamplib.makeTEXboxes = makeTEXboxes
 local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
-    local num = 256 -- output box + 1
+    local num = 255 -- output box
     local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
         num = num + 1
@@ -1259,6 +1261,9 @@ local function flush(result,flusher)
                                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
                             elseif objecttype == "special" then
                                 -- not supported
+                                if prescript and prescript.MPlibTEXError then
+                                  warn("textext() anomaly. Try disabling \\mplibtextextlabel.")
+                                end
                             elseif objecttype == "text" then
                                 local ot = object.transform -- 3,4,5,6,1,2
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
@@ -1413,7 +1418,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/05 v2.6.0 mplib package for LuaTeX]
+    [2014/03/06 v2.6.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

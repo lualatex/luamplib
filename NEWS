@@ -1,10 +1,9 @@
                        History of the luamplib package
 
-2014/03/05 2.6.0
+2014/03/06 2.6.0
     * new macro \mplibtextextlabel{enable} enables string labels typeset
-      with textext() instead of infont operator. So, writing
-      label("my text",(0,0)) thereafter is exactly the same as
-      label(textext("my text"),(0,0)).
+      with textext() instead of infont operator. Every string label
+      thereafter will be typeset with current TeX font.
     * fixed a bug wrt btex ... etex parsing (issue #39)
     * [doc] added a mention about \MPllx, \MPlly, \MPurx, and \MPury.
 
