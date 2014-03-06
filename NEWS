@@ -6,6 +6,7 @@
       label("my text",(0,0)) thereafter is exactly the same as
       label(textext("my text"),(0,0)).
     * fixed a bug wrt btex ... etex parsing (issue #39)
+    * [doc] added a mention about \MPllx, \MPlly, \MPurx, and \MPury.
 
 2014/03/01 2.5.3
     * using \mplibcachedir{<directory path>}, users can change the

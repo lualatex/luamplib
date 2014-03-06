@@ -187,7 +187,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item a \LaTeX\ environment
-% \item all \TeX\ macros start by \texttt{mplib}
+% \item all \TeX\ macros start by |mplib|
 % \item use of luatexbase for errors, warnings and declaration
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
@@ -215,6 +215,9 @@ See source file '\inFileName' for licencing and contact information.
 %   |verbatimtex ... etex|.
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
+%   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
+%   \cs{MPury} store the bounding box information of latest figure
+%   without the unit |bp|.
 % \item Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
 %   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
 %   which will
@@ -279,7 +282,7 @@ See source file '\inFileName' for licencing and contact information.
 %   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
-%   Frequently used settings such as |\everymplib| or |\mplibcachedir|
+%   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
 %   are suitable for going into this file.
 %   
 % \end{itemize}
