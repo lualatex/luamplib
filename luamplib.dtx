@@ -256,7 +256,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
-%   This would make the compile time longer wastefully, as most |.mp| files 
+%   This would make the compilation time longer wastefully, as most |.mp| files 
 %   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
 %   macros as follows, so that users can give instruction about files
 %   that do not require this functionality.
@@ -275,10 +275,12 @@ See source file '\inFileName' for licencing and contact information.
 %   slashes (|/|) instead.
 % \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
-%   So, |label("my text",(0,0))| thereafter is exactly the same as
-%   |label(textext("my text"),(0,0))|. To typeset string labels with
-%   current \TeX\ font, assign empty string to |defaultfont|, that is
-%   |defaultfont:="";|. \textsc{n.b.} Be careful about |char| operator,
+%   So, |label("my text",origin)| thereafter is exactly the same as
+%   |label(textext("my text"),origin)|. \textsc{n.b.} In the background,
+%   \textsf{luamplib} redefines |infont| operator so that the right side
+%   argument (the font part) is totally ignored. Every string label
+%   therefore will be typeset with current \TeX\ font.
+%   Also take care of |char| operator in the left side argument,
 %   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
@@ -335,6 +337,7 @@ local stringgsub    = string.gsub
 local stringfind    = string.find
 local stringmatch   = string.match
 local stringgmatch  = string.gmatch
+local stringexplode = string.explode
 local tableconcat   = table.concat
 local texsprint     = tex.sprint
 
@@ -842,24 +845,18 @@ local further_split_keys = {
 }
 
 local function script2table(s)
-    local t = {}
-    for i in stringgmatch(s,"[^\13]+") do
-        local k,v = stringmatch(i,"(.-)=(.+)") -- v may contain =.
-        if k and v then
-            local vv = {}
-            if further_split_keys[k] then
-                for j in stringgmatch(v,"[^:]+") do
-                    vv[#vv+1] = j
-                end
-            end
-            if #vv > 0 then
-                t[k] = vv
-            else
-                t[k] = v
-            end
-        end
+  local t = {}
+  for _,i in ipairs(stringexplode(s,"\13+")) do
+    local k,v = stringmatch(i,"(.-)=(.*)") -- v may contain = or empty.
+    if k and v and k ~= "" then
+      if further_split_keys[k] then
+        t[k] = stringexplode(v,":")
+      else
+        t[k] = v
+      end
     end
-    return t
+  end
+  return t
 end
 
 local mplibcodepreamble = [[
@@ -919,9 +916,7 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
 local textextlabelpreamble = [[
-primarydef s infont f =
-  rawtextext(if f <> "": "\font\temp{"&f&"}\temp "& fi s)
-enddef;
+primarydef s infont f = rawtextext(s) enddef;
 let normalinfont = infont;
 def fontsize expr f =
   begingroup
@@ -977,7 +972,7 @@ luamplib.protecttextext = protecttextext
 local TeX_code_t = {}
 
 local function domakeTEXboxes (data)
-    local num = tex.count[14] -- newbox register
+    local num = 256 -- output box + 1
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
@@ -1031,7 +1026,7 @@ luamplib.makeTEXboxes = makeTEXboxes
 local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
-    local num = tex.count[14] -- the same newbox register
+    local num = 256 -- output box + 1
     local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
         num = num + 1
