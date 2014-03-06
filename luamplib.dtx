@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/05 v2.6.0 Interface for using the mplib library]%
+  [2014/03/06 v2.6.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/05 v2.6.0}
+% \date{2014/03/06 v2.6.0}
 %
 % \maketitle
 %
@@ -187,7 +187,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item a \LaTeX\ environment
-% \item all \TeX\ macros start by \texttt{mplib}
+% \item all \TeX\ macros start by |mplib|
 % \item use of luatexbase for errors, warnings and declaration
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
@@ -215,6 +215,9 @@ See source file '\inFileName' for licencing and contact information.
 %   |verbatimtex ... etex|.
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
+%   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
+%   \cs{MPury} store the bounding box information of latest figure
+%   without the unit |bp|.
 % \item Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
 %   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
 %   which will
@@ -253,7 +256,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
-%   This would make the compile time longer wastefully, as most |.mp| files 
+%   This would make the compilation time longer wastefully, as most |.mp| files 
 %   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
 %   macros as follows, so that users can give instruction about files
 %   that do not require this functionality.
@@ -272,14 +275,16 @@ See source file '\inFileName' for licencing and contact information.
 %   slashes (|/|) instead.
 % \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
-%   So, |label("my text",(0,0))| thereafter is exactly the same as
-%   |label(textext("my text"),(0,0))|. To typeset string labels with
-%   current \TeX\ font, assign empty string to |defaultfont|, that is
-%   |defaultfont:="";|. \textsc{n.b.} Be careful about |char| operator,
+%   So, |label("my text",origin)| thereafter is exactly the same as
+%   |label(textext("my text"),origin)|. \textsc{n.b.} In the background,
+%   \textsf{luamplib} redefines |infont| operator so that the right side
+%   argument (the font part) is totally ignored. Every string label
+%   therefore will be typeset with current \TeX\ font.
+%   Also take care of |char| operator in the left side argument,
 %   as this might bring unpermitted characters into \TeX.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
-%   Frequently used settings such as |\everymplib| or |\mplibcachedir|
+%   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
 %   are suitable for going into this file.
 %   
 % \end{itemize}
@@ -315,7 +320,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.6.0",
-    date          = "2014/03/05",
+    date          = "2014/03/06",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -332,6 +337,7 @@ local stringgsub    = string.gsub
 local stringfind    = string.find
 local stringmatch   = string.match
 local stringgmatch  = string.gmatch
+local stringexplode = string.explode
 local tableconcat   = table.concat
 local texsprint     = tex.sprint
 
@@ -839,24 +845,18 @@ local further_split_keys = {
 }
 
 local function script2table(s)
-    local t = {}
-    for i in stringgmatch(s,"[^\13]+") do
-        local k,v = stringmatch(i,"(.-)=(.+)") -- v may contain =.
-        if k and v then
-            local vv = {}
-            if further_split_keys[k] then
-                for j in stringgmatch(v,"[^:]+") do
-                    vv[#vv+1] = j
-                end
-            end
-            if #vv > 0 then
-                t[k] = vv
-            else
-                t[k] = v
-            end
-        end
+  local t = {}
+  for _,i in ipairs(stringexplode(s,"\13+")) do
+    local k,v = stringmatch(i,"(.-)=(.*)") -- v may contain = or empty.
+    if k and v and k ~= "" then
+      if further_split_keys[k] then
+        t[k] = stringexplode(v,":")
+      else
+        t[k] = v
+      end
     end
-    return t
+  end
+  return t
 end
 
 local mplibcodepreamble = [[
@@ -865,16 +865,18 @@ vardef rawtextext (expr t) =
     image( special "MPlibmkTEXbox="&t; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
-    image (
-      addto currentpicture doublepath unitsquare
-      xscaled TEXBOX_wd[TEXBOX_]
-      yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-      shifted (0, -TEXBOX_dp[TEXBOX_])
-      withprescript "MPlibTEXboxID=" &
-                    decimal TEXBOX_ & ":" &
-                    decimal TEXBOX_wd[TEXBOX_] & ":" &
-                    decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]);
-    )
+    if known TEXBOX_wd[TEXBOX_]:
+      image ( addto currentpicture doublepath unitsquare
+        xscaled TEXBOX_wd[TEXBOX_]
+        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
+        shifted (0, -TEXBOX_dp[TEXBOX_])
+        withprescript "MPlibTEXboxID=" &
+          decimal TEXBOX_ & ":" &
+          decimal TEXBOX_wd[TEXBOX_] & ":" &
+          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]); )
+    else:
+      image( special "MPlibTEXError=1"; )
+    fi
   fi
 enddef;
 if known context_mlib:
@@ -916,9 +918,7 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 
 local textextlabelpreamble = [[
-primarydef s infont f =
-  rawtextext(if f <> "": "\font\temp{"&f&"}\temp "& fi s)
-enddef;
+primarydef s infont f = rawtextext(s) enddef;
 let normalinfont = infont;
 def fontsize expr f =
   begingroup
@@ -974,7 +974,7 @@ luamplib.protecttextext = protecttextext
 local TeX_code_t = {}
 
 local function domakeTEXboxes (data)
-    local num = tex.count[14] -- newbox register
+    local num = 255 -- output box
     if data and data.fig then
         local figures = data.fig
         for f=1, #figures do
@@ -1028,7 +1028,7 @@ luamplib.makeTEXboxes = makeTEXboxes
 local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
-    local num = tex.count[14] -- the same newbox register
+    local num = 255 -- output box
     local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
         num = num + 1
@@ -1261,6 +1261,9 @@ local function flush(result,flusher)
                                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
                             elseif objecttype == "special" then
                                 -- not supported
+                                if prescript and prescript.MPlibTEXError then
+                                  warn("textext() anomaly. Try disabling \\mplibtextextlabel.")
+                                end
                             elseif objecttype == "text" then
                                 local ot = object.transform -- 3,4,5,6,1,2
                                 pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
@@ -1415,7 +1418,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/05 v2.6.0 mplib package for LuaTeX]
+    [2014/03/06 v2.6.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
