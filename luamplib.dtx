@@ -865,15 +865,15 @@ vardef rawtextext (expr t) =
     image( special "MPlibmkTEXbox="&t; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
-    if known TEXBOX_wd[TEXBOX_]:
+    if known TEXBOX_wd_[TEXBOX_]:
       image ( addto currentpicture doublepath unitsquare
-        xscaled TEXBOX_wd[TEXBOX_]
-        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-        shifted (0, -TEXBOX_dp[TEXBOX_])
+        xscaled TEXBOX_wd_[TEXBOX_]
+        yscaled (TEXBOX_ht_[TEXBOX_] + TEXBOX_dp_[TEXBOX_])
+        shifted (0, -TEXBOX_dp_[TEXBOX_])
         withprescript "MPlibTEXboxID=" &
           decimal TEXBOX_ & ":" &
-          decimal TEXBOX_wd[TEXBOX_] & ":" &
-          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]); )
+          decimal TEXBOX_wd_[TEXBOX_] & ":" &
+          decimal(TEXBOX_ht_[TEXBOX_]+TEXBOX_dp_[TEXBOX_]); )
     else:
       image( special "MPlibTEXError=1"; )
     fi
@@ -1034,9 +1034,9 @@ local function processwithTEXboxes (data)
         local box = tex.box[num]
         if not box then break end
         prepreamble = prepreamble ..
-        "TEXBOX_wd["..num.."] := "..box.width /factor..";\n"..
-        "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
-        "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
+        "TEXBOX_wd_["..num.."] := "..box.width /factor..";\n"..
+        "TEXBOX_ht_["..num.."] := "..box.height/factor..";\n"..
+        "TEXBOX_dp_["..num.."] := "..box.depth /factor..";\n"
     end
     local preamble = prepreamble .. mplibcodepreamble
     if luamplib.textextlabel then
