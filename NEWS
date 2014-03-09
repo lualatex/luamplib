@@ -1,6 +1,6 @@
                        History of the luamplib package
 
-2014/03/06 2.6.0
+2014/03/08 2.6.0
     * new macro \mplibtextextlabel{enable} enables string labels typeset
       with textext() instead of infont operator. Every string label
       thereafter will be typeset with current TeX font.

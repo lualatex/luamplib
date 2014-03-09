@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/06 v2.6.0 Interface for using the mplib library]%
+  [2014/03/08 v2.6.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/06 v2.6.0}
+% \date{2014/03/08 v2.6.0}
 %
 % \maketitle
 %
@@ -320,7 +320,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.6.0",
-    date          = "2014/03/06",
+    date          = "2014/03/08",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -522,6 +522,8 @@ local function replaceinputmpfile (name,file)
     lfstouch(newfile,currenttime,ofmodify)
     return newfile
 end
+
+local randomseed = nil
 %    \end{macrocode}
 %      As the finder function for |mplib|, use the |kpse| library and
 %      make it behave like as if MetaPost was used (or almost, since the engine
@@ -630,6 +632,7 @@ else
 %    See \url{https://github.com/lualatex/luamplib/issues/21}.
 %    \begin{macrocode}
             math_mode = luamplib.numbersystem,
+            random_seed = randomseed,
         }
         local result
         if not mpx then
@@ -865,15 +868,15 @@ vardef rawtextext (expr t) =
     image( special "MPlibmkTEXbox="&t; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
-    if known TEXBOX_wd[TEXBOX_]:
+    if known TEXBOX_wd_[TEXBOX_]:
       image ( addto currentpicture doublepath unitsquare
-        xscaled TEXBOX_wd[TEXBOX_]
-        yscaled (TEXBOX_ht[TEXBOX_] + TEXBOX_dp[TEXBOX_])
-        shifted (0, -TEXBOX_dp[TEXBOX_])
+        xscaled TEXBOX_wd_[TEXBOX_]
+        yscaled (TEXBOX_ht_[TEXBOX_] + TEXBOX_dp_[TEXBOX_])
+        shifted (0, -TEXBOX_dp_[TEXBOX_])
         withprescript "MPlibTEXboxID=" &
           decimal TEXBOX_ & ":" &
-          decimal TEXBOX_wd[TEXBOX_] & ":" &
-          decimal(TEXBOX_ht[TEXBOX_]+TEXBOX_dp[TEXBOX_]); )
+          decimal TEXBOX_wd_[TEXBOX_] & ":" &
+          decimal(TEXBOX_ht_[TEXBOX_]+TEXBOX_dp_[TEXBOX_]); )
     else:
       image( special "MPlibTEXError=1"; )
     fi
@@ -923,8 +926,7 @@ let normalinfont = infont;
 def fontsize expr f =
   begingroup
   save size,pic; numeric size; picture pic;
-  pic := rawtextext(if f <> "": "\font\temp{"&f&"}\temp"& fi
-    "\hskip\pdffontsize\font");
+  pic := rawtextext("\hskip\pdffontsize\font");
   size := xpart urcorner pic - xpart llcorner pic;
   if size = 0: 10pt else: size fi
   endgroup
@@ -1015,6 +1017,7 @@ local function makeTEXboxes (data)
     if luamplib.textextlabel then
       preamble = textextlabelpreamble .. preamble
     end
+    randomseed = math.random(65535)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(preamble .. data)
@@ -1035,9 +1038,9 @@ local function processwithTEXboxes (data)
         local box = tex.box[num]
         if not box then break end
         prepreamble = prepreamble ..
-        "TEXBOX_wd["..num.."] := "..box.width /factor..";\n"..
-        "TEXBOX_ht["..num.."] := "..box.height/factor..";\n"..
-        "TEXBOX_dp["..num.."] := "..box.depth /factor..";\n"
+        "TEXBOX_wd_["..num.."] := "..box.width /factor..";\n"..
+        "TEXBOX_ht_["..num.."] := "..box.height/factor..";\n"..
+        "TEXBOX_dp_["..num.."] := "..box.depth /factor..";\n"
     end
     local preamble = prepreamble .. mplibcodepreamble
     if luamplib.textextlabel then
@@ -1418,7 +1421,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/06 v2.6.0 mplib package for LuaTeX]
+    [2014/03/08 v2.6.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
