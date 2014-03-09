@@ -1017,7 +1017,7 @@ local function makeTEXboxes (data)
     if luamplib.textextlabel then
       preamble = textextlabelpreamble .. preamble
     end
-    randomseed = math.random(4095)
+    randomseed = math.random(65535)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(preamble .. data)
