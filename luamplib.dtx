@@ -1096,7 +1096,7 @@ local function update_tr_res(res,mode,opaq)
     local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
     local on, new = update_pdfobjs(os)
     if new then
-        res = res .. format("/MPlibTr%s%i %i 0 R",mode,on,on)
+        res = res .. format("/MPlibTr%i %i 0 R",on,on)
     end
     return res,on
 end
@@ -1158,7 +1158,7 @@ local function do_preobj_color(object,prescript)
         local mode = prescript.tr_alternative or 1
         mode = transparancy_modes[tonumber(mode)]
         tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
-        pdf_literalcode("/MPlibTr%s%i gs",mode,tron_no)
+        pdf_literalcode("/MPlibTr%i gs",tron_no)
     end
     -- color
     local cs = object.color
@@ -1212,7 +1212,7 @@ local function do_postobj_color(tr,sh)
         pdf_literalcode("W n /MPlibSh%s sh Q",sh)
     end
     if tr then
-        pdf_literalcode("/MPlibTrNormal%i gs",tr)
+        pdf_literalcode("/MPlibTr%i gs",tr)
     end
 end
 
