@@ -1480,9 +1480,8 @@ luamplib.colorconverter = colorconverter
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\%=12 }
 \def\mplibreplacenewlinebr{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
-\begingroup\lccode`\~=`\^^M \lowercase{%
-  \gdef\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
-\endgroup
+\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
+  \def\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1492,9 +1491,8 @@ luamplib.colorconverter = colorconverter
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibreplacenewlinecs{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
-\begingroup\lccode`\~=`\^^M \lowercase{%
-  \gdef\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
-\endgroup
+\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
+  \def\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
 \def\mplibcode{%
   \mplibstartlineno\inputlineno
   \begingroup
