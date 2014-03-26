@@ -1,5 +1,13 @@
                        History of the luamplib package
 
+2014/03/26 2.6.1
+    * now luamplib does not disregard 'show' command, even if
+      'luamplib.showlog' is false. Incidentally, it does not raise
+      error, but just prints a warning, even if output contains
+      no figure.
+    * fix a bug wrt color, which might come to the fore under
+      math mode 'double' or 'decimal'.
+
 2014/03/08 2.6.0
     * new macro \mplibtextextlabel{enable} enables string labels typeset
       with textext() instead of infont operator. Every string label

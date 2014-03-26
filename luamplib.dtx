@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/08 v2.6.0 Interface for using the mplib library]%
+  [2014/03/26 v2.6.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/08 v2.6.0}
+% \date{2014/03/26 v2.6.1}
 %
 % \maketitle
 %
@@ -319,8 +319,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       = "2.6.0",
-    date          = "2014/03/08",
+    version       = "2.6.1",
+    date          = "2014/03/26",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -681,21 +681,34 @@ local function process_indeed (mpx, data)
     local converted, result = false, {}
     local mpx = luamplib.load(mpx)
     if mpx and data then
-        local result = mpx:execute(data)
-        if not result then
-            err("no result object returned")
-        elseif result.status > 0 then
-            err("%s",(result.term or "no-term") .. "\n" .. (result.error or "no-error"))
+      local result = mpx:execute(data)
+      if not result then
+          err("no result object returned")
+      else
+        local term = stringgsub(result.term or "no-term","^%s+","\n")
+        if result.status > 0 then
+          err("%s",term .. "\n" .. (result.error or ""))
         elseif luamplib.showlog then
-            luamplib.lastlog = luamplib.lastlog .. "\n" .. result.term
-            info("%s",result.term or "no-term")
-        elseif result.fig then
-            converted = luamplib.convert(result)
+          luamplib.lastlog = luamplib.lastlog .. "\n" .. term
+          info("%s",luamplib.lastlog)
+          luamplib.resetlastlog()
         else
-            err("unknown error, maybe no beginfig/endfig")
+%    \end{macrocode}
+%    v2.6.1: now luamplib does not disregard |show| command,
+%    even when |luamplib.showlog| is false.  Incidentally,
+%    it does not raise error, but just prints a warning,
+%    even if output has no figure.
+%    \begin{macrocode}
+          if stringfind(term,"\n>>") then info("%s",term) end
+          if result.fig then
+            converted = luamplib.convert(result)
+          else
+            warn("No figure output. Maybe no beginfig/endfig")
+          end
         end
+      end
     else
-        err("Mem file unloadable. Maybe generated with a different version of mplib?")
+      err("Mem file unloadable. Maybe generated with a different version of mplib?")
     end
     return converted, result
 end
@@ -1093,18 +1106,18 @@ local transparancy_modes = { [0] =  "Normal",
 }
 
 local function update_tr_res(res,mode,opaq)
-    local os = format("<</BM /%s/ca %g/CA %g/AIS false>>",mode,opaq,opaq)
+    local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
     local on, new = update_pdfobjs(os)
     if new then
-        res = res .. format("/MPlibTr%s%g %i 0 R",mode,opaq,on)
+        res = res .. format("/MPlibTr%i %i 0 R",on,on)
     end
-    return res
+    return res,on
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-    local res = ""
-    res = update_tr_res(res, "Normal", 1)
-    res = update_tr_res(res, mode, opaq)
+    local res, on_on, off_on = "", nil, nil
+    res, off_on = update_tr_res(res, "Normal", 1)
+    res, on_on  = update_tr_res(res, mode, opaq)
     if res ~= "" then
         local tpr = tex.pdfpageresources -- respect luaotfload-colors
         if not stringfind(tpr,"/ExtGState<<.*>>") then
@@ -1113,6 +1126,7 @@ local function tr_pdf_pageresources(mode,opaq)
         tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
         tex.set("global","pdfpageresources",tpr)
     end
+    return on_on, off_on
 end
 
 -- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
@@ -1152,11 +1166,12 @@ end
 local function do_preobj_color(object,prescript)
     -- transparency
     local opaq = prescript and prescript.tr_transparency
+    local tron_no, troff_no
     if opaq then
         local mode = prescript.tr_alternative or 1
         mode = transparancy_modes[tonumber(mode)]
-        tr_pdf_pageresources(mode,opaq)
-        pdf_literalcode("/MPlibTr%s%g gs",mode,opaq)
+        tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
+        pdf_literalcode("/MPlibTr%i gs",tron_no)
     end
     -- color
     local cs = object.color
@@ -1171,6 +1186,11 @@ local function do_preobj_color(object,prescript)
         local centerb = prescript.sh_center_b
         local colora  = prescript.sh_color_a or {0};
         local colorb  = prescript.sh_color_b or {1};
+        for _,t in pairs({colora,colorb}) do
+          for i,v in ipairs(t) do
+            t[i] = format("%.3f",v)
+          end
+        end
         if #colora > #colorb then
             color_normalize(colora,colorb)
         elseif #colorb > #colora then
@@ -1180,7 +1200,7 @@ local function do_preobj_color(object,prescript)
         if     #colorb == 1 then colorspace = "DeviceGray"
         elseif #colorb == 3 then colorspace = "DeviceRGB"
         elseif #colorb == 4 then colorspace = "DeviceCMYK"
-        else   return opaq
+        else   return troff_no
         end
         colora = tableconcat(colora, " ")
         colorb = tableconcat(colorb, " ")
@@ -1195,9 +1215,9 @@ local function do_preobj_color(object,prescript)
             shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
         end
         pdf_literalcode("q /Pattern cs")
-        return opaq,shade_no
+        return troff_no,shade_no
     end
-    return opaq
+    return troff_no
 end
 
 local function do_postobj_color(tr,sh)
@@ -1205,7 +1225,7 @@ local function do_postobj_color(tr,sh)
         pdf_literalcode("W n /MPlibSh%s sh Q",sh)
     end
     if tr then
-        pdf_literalcode("/MPlibTrNormal1 gs")
+        pdf_literalcode("/MPlibTr%i gs",tr)
     end
 end
 
@@ -1390,13 +1410,13 @@ local function colorconverter(cr)
     local n = #cr
     if n == 4 then
         local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
-        return format("%.3g %.3g %.3g %.3g k %.3g %.3g %.3g %.3g K",c,m,y,k,c,m,y,k), "0 g 0 G"
+        return format("%.3f %.3f %.3f %.3f k %.3f %.3f %.3f %.3f K",c,m,y,k,c,m,y,k), "0 g 0 G"
     elseif n == 3 then
         local r, g, b = cr[1], cr[2], cr[3]
-        return format("%.3g %.3g %.3g rg %.3g %.3g %.3g RG",r,g,b,r,g,b), "0 g 0 G"
+        return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
     else
         local s = cr[1]
-        return format("%.3g g %.3g G",s,s), "0 g 0 G"
+        return format("%.3f g %.3f G",s,s), "0 g 0 G"
     end
 end
 luamplib.colorconverter = colorconverter
@@ -1421,7 +1441,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/08 v2.6.0 mplib package for LuaTeX]
+    [2014/03/26 v2.6.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1473,9 +1493,8 @@ luamplib.colorconverter = colorconverter
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\%=12 }
 \def\mplibreplacenewlinebr{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
-\begingroup\lccode`\~=`\^^M \lowercase{%
-  \gdef\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
-\endgroup
+\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
+  \def\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1485,9 +1504,8 @@ luamplib.colorconverter = colorconverter
 \expandafter\ifx\csname ProvidesPackage\endcsname\relax
 \def\mplibreplacenewlinecs{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
-\begingroup\lccode`\~=`\^^M \lowercase{%
-  \gdef\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
-\endgroup
+\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
+  \def\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
 \def\mplibcode{%
   \mplibstartlineno\inputlineno
   \begingroup
