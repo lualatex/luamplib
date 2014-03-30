@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/26 v2.6.1 Interface for using the mplib library]%
+  [2014/03/30 v2.6.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/26 v2.6.1}
+% \date{2014/03/30 v2.6.2}
 %
 % \maketitle
 %
@@ -319,8 +319,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
-    version       = "2.6.1",
-    date          = "2014/03/26",
+    version       = "2.6.2",
+    date          = "2014/03/30",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -655,26 +655,20 @@ luamplib.setformat = setformat
 
 
 luamplib.reporterror = function (result)
-    if not result then
-        err("no result object returned")
-    elseif result.status > 0 then
-        local t, e, l = result.term, result.error, result.log
-        if t then
-            info(t)
-        end
-        if e then
-            err(e)
-        end
-        if not t and not e and l then
-            luamplib.lastlog = luamplib.lastlog .. "\n " .. l
-            log(l)
-        else
-            err("unknown, no error, terminal or log messages")
-        end
-    else
-        return false
+  if not result then
+    err("no result object returned")
+  else
+    local t, e, l = result.term, result.error, result.log
+    l = stringgsub(l or t or "no-log","^%s+","\n")
+    luamplib.lastlog = luamplib.lastlog .. "\n " .. l
+    if result.status > 0 then
+      warn(l)
+      if result.status > 1 then
+        err(e or "see above messages")
+      end
     end
-    return true
+    return l
+  end
 end
 
 local function process_indeed (mpx, data)
@@ -682,14 +676,9 @@ local function process_indeed (mpx, data)
     local mpx = luamplib.load(mpx)
     if mpx and data then
       local result = mpx:execute(data)
-      if not result then
-          err("no result object returned")
-      else
-        local term = stringgsub(result.term or "no-term","^%s+","\n")
-        if result.status > 0 then
-          err("%s",term .. "\n" .. (result.error or ""))
-        elseif luamplib.showlog then
-          luamplib.lastlog = luamplib.lastlog .. "\n" .. term
+      local log = luamplib.reporterror(result)
+      if log then
+        if luamplib.showlog then
           info("%s",luamplib.lastlog)
           luamplib.resetlastlog()
         else
@@ -699,7 +688,7 @@ local function process_indeed (mpx, data)
 %    it does not raise error, but just prints a warning,
 %    even if output has no figure.
 %    \begin{macrocode}
-          if stringfind(term,"\n>>") then info("%s",term) end
+          if stringfind(log,"\n>>") then info("%s",log) end
           if result.fig then
             converted = luamplib.convert(result)
           else
@@ -878,7 +867,8 @@ end
 local mplibcodepreamble = [[
 vardef rawtextext (expr t) =
   if unknown TEXBOX_:
-    image( special "MPlibmkTEXbox="&t; )
+    image( special "MPlibmkTEXbox="&t;
+      addto currentpicture doublepath unitsquare; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
     if known TEXBOX_wd_[TEXBOX_]:
@@ -935,7 +925,6 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 
 local textextlabelpreamble = [[
 primarydef s infont f = rawtextext(s) enddef;
-let normalinfont = infont;
 def fontsize expr f =
   begingroup
   save size,pic; numeric size; picture pic;
@@ -944,7 +933,6 @@ def fontsize expr f =
   if size = 0: 10pt else: size fi
   endgroup
 enddef;
-let normalfontsize = fontsize;
 ]]
 
 local function protecttextext(data)
@@ -1028,12 +1016,13 @@ local function makeTEXboxes (data)
     data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
     local preamble = mplibcodepreamble
     if luamplib.textextlabel then
-      preamble = textextlabelpreamble .. preamble
+      preamble = preamble .. textextlabelpreamble
     end
     randomseed = math.random(65535)
     local mpx = luamplib.load(currentformat)
     if mpx and data then
         local result = mpx:execute(preamble .. data)
+        luamplib.reporterror(result)
         domakeTEXboxes(result)
     end
     return data
@@ -1044,6 +1033,7 @@ luamplib.makeTEXboxes = makeTEXboxes
 local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
+    if not data then return end
     local num = 255 -- output box
     local prepreamble = "TEXBOX_ := "..num..";\n"
     while true do
@@ -1057,7 +1047,7 @@ local function processwithTEXboxes (data)
     end
     local preamble = prepreamble .. mplibcodepreamble
     if luamplib.textextlabel then
-      preamble = textextlabelpreamble .. preamble
+      preamble = preamble .. textextlabelpreamble
     end
     process(preamble .. data)
 end
@@ -1441,7 +1431,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/26 v2.6.1 mplib package for LuaTeX]
+    [2014/03/30 v2.6.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

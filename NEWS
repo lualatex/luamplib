@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2014/03/30 2.6.2
+    * [fix] avoid luatex crash under math_mode 'decimal'
+
 2014/03/26 2.6.1
     * now luamplib does not disregard 'show' command, even if
       'luamplib.showlog' is false. Incidentally, it does not raise
