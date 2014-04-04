@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/30 v2.6.2 Interface for using the mplib library]%
+  [2014/04/05 v2.6.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/30 v2.6.2}
+% \date{2014/04/05 v2.6.2}
 %
 % \maketitle
 %
@@ -320,7 +320,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
     name          = "luamplib",
     version       = "2.6.2",
-    date          = "2014/03/30",
+    date          = "2014/04/05",
     description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -662,38 +662,37 @@ luamplib.reporterror = function (result)
     l = stringgsub(l or t or "no-log","^%s+","\n")
     luamplib.lastlog = luamplib.lastlog .. "\n " .. l
     if result.status > 0 then
-      warn(l)
+      warn("%s",l)
       if result.status > 1 then
-        err(e or "see above messages")
+        err("%s",e or "see above messages")
       end
     end
     return l
   end
 end
 
-local function process_indeed (mpx, data)
+local function process_indeed (mpx, data, indeed)
     local converted, result = false, {}
     local mpx = luamplib.load(mpx)
     if mpx and data then
-      local result = mpx:execute(data)
-      local log = luamplib.reporterror(result)
-      if log then
+      result = mpx:execute(data)
+      local msg = luamplib.reporterror(result)
+      if indeed and msg then
         if luamplib.showlog then
           info("%s",luamplib.lastlog)
           luamplib.resetlastlog()
-        else
+        elseif result.fig then
 %    \end{macrocode}
 %    v2.6.1: now luamplib does not disregard |show| command,
 %    even when |luamplib.showlog| is false.  Incidentally,
 %    it does not raise error, but just prints a warning,
 %    even if output has no figure.
 %    \begin{macrocode}
-          if stringfind(log,"\n>>") then info("%s",log) end
-          if result.fig then
-            converted = luamplib.convert(result)
-          else
-            warn("No figure output. Maybe no beginfig/endfig")
-          end
+          if stringfind(msg,"\n>>") then info("%s",msg) end
+          converted = luamplib.convert(result)
+        else
+          info("%s",msg)
+          warn("No figure output. Maybe no beginfig/endfig")
         end
       end
     else
@@ -701,8 +700,11 @@ local function process_indeed (mpx, data)
     end
     return converted, result
 end
-local process = function (data)
-    return process_indeed(currentformat, data)
+local process = function (data,indeed)
+  if not indeed then
+    randomseed = math.random(65535)
+  end
+  return process_indeed(currentformat, data, indeed)
 end
 luamplib.process = process
 
@@ -1018,13 +1020,8 @@ local function makeTEXboxes (data)
     if luamplib.textextlabel then
       preamble = preamble .. textextlabelpreamble
     end
-    randomseed = math.random(65535)
-    local mpx = luamplib.load(currentformat)
-    if mpx and data then
-        local result = mpx:execute(preamble .. data)
-        luamplib.reporterror(result)
-        domakeTEXboxes(result)
-    end
+    local _,result = process(preamble .. data, false)
+    domakeTEXboxes(result)
     return data
 end
 
@@ -1049,7 +1046,7 @@ local function processwithTEXboxes (data)
     if luamplib.textextlabel then
       preamble = preamble .. textextlabelpreamble
     end
-    process(preamble .. data)
+    process(preamble .. data, true)
 end
 
 luamplib.processwithTEXboxes = processwithTEXboxes
@@ -1119,9 +1116,24 @@ local function tr_pdf_pageresources(mode,opaq)
     return on_on, off_on
 end
 
--- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
+local shading_res
+
+local function shading_initialize ()
+  shading_res = {}
+  local shading_obj = pdf.reserveobj()
+  local getpageres = pdf.getpageresources or function() return pdf.pageresources end
+  local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  local ppr = getpageres() or ""
+  setpageres(format("%s/Shading %i 0 R",ppr,shading_obj))
+  require('luatexbase.mcb')
+  luatexbase.add_to_callback("finish_pdffile",
+    function()
+      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
+    end, "luamplib.finish_pdffile")
+end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
+    if not shading_res then shading_initialize() end
     local os, on, new
     os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
                 domain, colora, colorb)
@@ -1129,15 +1141,9 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
     os = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
                 shtype, colorspace, on, coordinates)
     on, new = update_pdfobjs(os)
-    if not new then
-        return on
+    if new then
+      shading_res[#shading_res+1] = format("/MPlibSh%i %i 0 R", on, on)
     end
-    local res = format("/MPlibSh%i %i 0 R", on, on)
-    local ppr = pdf.pageresources or ""
-    if not stringfind(ppr,"/Shading<<.*>>") then
-        ppr = ppr.."/Shading<<>>"
-    end
-    pdf.pageresources = stringgsub(ppr,"/Shading<<","%1"..res)
     return on
 end
 
@@ -1431,7 +1437,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/30 v2.6.2 mplib package for LuaTeX]
+    [2014/04/05 v2.6.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi

@@ -1,6 +1,7 @@
                        History of the luamplib package
 
-2014/03/30 2.6.2
+2014/04/05 2.6.2
+    * internal changes following LuaTeX v0.79 and new luatexbase package
     * [fix] avoid luatex crash under math_mode 'decimal'
 
 2014/03/26 2.6.1
