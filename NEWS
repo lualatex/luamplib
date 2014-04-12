@@ -1,7 +1,8 @@
                        History of the luamplib package
 
 2014/04/05 2.6.2
-    * internal changes following LuaTeX v0.79 and new luatexbase package
+    * internal changes following LuaTeX v0.79 and new luatexbase package.
+      Color shading thus requires luatexbase v0.7 or later.
     * [fix] avoid luatex crash under math_mode 'decimal'
 
 2014/03/26 2.6.1
