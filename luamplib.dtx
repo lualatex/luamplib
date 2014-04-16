@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/04/05 v2.6.2 Interface for using the mplib library]%
+  [2014/04/16 v2.7.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/04/05 v2.6.2}
+% \date{2014/04/16 v2.7.0}
 %
 % \maketitle
 %
@@ -319,8 +319,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.6.2",
-  date          = "2014/04/05",
+  version       = "2.7.0",
+  date          = "2014/04/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -1045,8 +1045,24 @@ local function processwithTEXboxes (data)
   end
   process(preamble .. data, true)
 end
-
 luamplib.processwithTEXboxes = processwithTEXboxes
+
+local pdfmode = tex.pdfoutput > 0 and true or false
+
+local function start_pdf_code()
+  if pdfmode then
+    pdf_literalcode("q")
+  else
+    texsprint("\\special{pdf:bcontent}") -- dvipdfmx
+  end
+end
+local function stop_pdf_code()
+  if pdfmode then
+    pdf_literalcode("Q")
+  else
+    texsprint("\\special{pdf:econtent}") -- dvipdfmx
+  end
+end
 
 local function putTEXboxes (object,prescript)
   local box = prescript.MPlibTEXboxID
@@ -1059,9 +1075,10 @@ local function putTEXboxes (object,prescript)
     local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
     if sx == 0 then sx = 0.00001 end
     if sy == 0 then sy = 0.00001 end
-    pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+    start_pdf_code()
+    pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
     texsprint(format("\\mplibputtextbox{%i}",n))
-    pdf_literalcode("Q")
+    stop_pdf_code()
   end
 end
 
@@ -1076,7 +1093,13 @@ local function update_pdfobjs (os)
   if on then
     return on,false
   end
-  on = pdf.immediateobj(os)
+  if pdfmode then
+    on = pdf.immediateobj(os)
+  else
+    on = pdf_objs.cnt or 0
+    texsprint(format("\\special{pdf:obj @MPlibObj%i %s}",on,os))
+    pdf_objs.cnt = on + 1
+  end
   pdf_objs[os] = on
   return on,true
 end
@@ -1093,7 +1116,15 @@ local function update_tr_res(res,mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
   if new then
-    res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+    if pdfmode then
+      res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+    else
+      if not pdf_objs.tr then
+        texsprint(format("\\special{pdf:obj @MPlibTr<<>>}"))
+        pdf_objs.tr = true
+      end
+      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i @MPlibObj%i>>}",on,on))
+    end
   end
   return res,on
 end
@@ -1102,13 +1133,17 @@ local function tr_pdf_pageresources(mode,opaq)
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
-  if res ~= "" then
-    local tpr = tex.pdfpageresources -- respect luaotfload-colors
-    if not stringfind(tpr,"/ExtGState<<.*>>") then
-      tpr = tpr.."/ExtGState<<>>"
+  if pdfmode then
+    if res ~= "" then
+      local tpr = tex.pdfpageresources -- respect luaotfload-colors
+      if not stringfind(tpr,"/ExtGState<<.*>>") then
+        tpr = tpr.."/ExtGState<<>>"
+      end
+      tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+      tex.set("global","pdfpageresources",tpr)
     end
-    tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
-    tex.set("global","pdfpageresources",tpr)
+  else
+    texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
   end
   return on_on, off_on
 end
@@ -1117,14 +1152,18 @@ local shading_res
 
 local function shading_initialize ()
   shading_res = {}
-  local shading_obj = pdf.reserveobj()
-  local getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-  setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
-  require('luatexbase.mcb')
-  luatexbase.add_to_callback("finish_pdffile", function()
-    pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
-  end, "luamplib.finish_pdffile")
+  if pdfmode then
+    local shading_obj = pdf.reserveobj()
+    local getpageres = pdf.getpageresources or function() return pdf.pageresources end
+    local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+    setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
+    require('luatexbase.mcb')
+    luatexbase.add_to_callback("finish_pdffile", function()
+      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
+    end, "luamplib.finish_pdffile")
+  else
+    texsprint(format("\\special{pdf:obj @MPlibSh<<>>}"))
+  end
 end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
@@ -1133,11 +1172,19 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
   os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
               domain, colora, colorb)
   on = update_pdfobjs(os)
-  os = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
-              shtype, colorspace, on, coordinates)
+  local funcobj = format(pdfmode and "%i 0 R" or "@MPlibObj%i",on)
+  os = format("<</ShadingType %i/ColorSpace /%s/Function %s/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
+              shtype, colorspace, funcobj, coordinates)
   on, new = update_pdfobjs(os)
-  if new then
-    shading_res[#shading_res+1] = format("/MPlibSh%i %i 0 R", on, on)
+  if pdfmode then
+    if new then
+      shading_res[#shading_res+1] = format("/MPlibSh%i %i 0 R", on, on)
+    end
+  else
+    if new then
+      texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i @MPlibObj%i>>}",on,on))
+    end
+    texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
   end
   return on
 end
@@ -1173,8 +1220,15 @@ local function do_preobj_color(object,prescript)
   local sh_type = prescript and prescript.sh_type
   if sh_type then
     local domain  = prescript.sh_domain
-    local centera = prescript.sh_center_a
-    local centerb = prescript.sh_center_b
+    local centera = stringexplode(prescript.sh_center_a)
+    local centerb = stringexplode(prescript.sh_center_b)
+    for _,t in pairs({centera,centerb}) do
+      for i,v in ipairs(t) do
+        t[i] = format("%f",v)
+      end
+    end
+    centera = tableconcat(centera," ")
+    centerb = tableconcat(centerb," ")
     local colora  = prescript.sh_color_a or {0};
     local colorb  = prescript.sh_color_b or {1};
     for _,t in pairs({colora,colorb}) do
@@ -1197,12 +1251,12 @@ local function do_preobj_color(object,prescript)
     colorb = tableconcat(colorb, " ")
     local shade_no
     if sh_type == "linear" then
-      local coordinates = format("%s %s",centera,centerb)
+      local coordinates = tableconcat({centera,centerb}," ")
       shade_no = sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
     elseif sh_type == "circular" then
-      local radiusa = prescript.sh_radius_a
-      local radiusb = prescript.sh_radius_b
-      local coordinates = format("%s %s %s %s",centera,radiusa,centerb,radiusb)
+      local radiusa = format("%f",prescript.sh_radius_a)
+      local radiusb = format("%f",prescript.sh_radius_b)
+      local coordinates = tableconcat({centera,radiusa,centerb,radiusb}," ")
       shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
     end
     pdf_literalcode("q /Pattern cs")
@@ -1249,7 +1303,7 @@ local function flush(result,flusher)
             texsprint(TeX_code_t[f])
           end
           pdf_startfigure(fignum,llx,lly,urx,ury)
-          pdf_literalcode("q")
+          start_pdf_code()
           if objects then
             for o=1,#objects do
               local object        = objects[o]
@@ -1267,11 +1321,11 @@ local function flush(result,flusher)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                 -- skip
               elseif objecttype == "start_clip" then
-                pdf_literalcode("q")
+                start_pdf_code()
                 flushnormalpath(object.path,t,false)
                 pdf_literalcode("W n")
               elseif objecttype == "stop_clip" then
-                pdf_literalcode("Q")
+                stop_pdf_code()
                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
               elseif objecttype == "special" then
                 -- not supported
@@ -1280,9 +1334,10 @@ local function flush(result,flusher)
                 end
               elseif objecttype == "text" then
                 local ot = object.transform -- 3,4,5,6,1,2
-                pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                start_pdf_code()
+                pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
-                pdf_literalcode("Q")
+                stop_pdf_code()
               else
 %    \end{macrocode}
 %     Color stuffs are modified and moved to several lines above.
@@ -1329,7 +1384,7 @@ local function flush(result,flusher)
                   end
                 end
                 if transformed then
-                  pdf_literalcode("q")
+                  start_pdf_code()
                 end
                 if path then
                   if transformed then
@@ -1353,12 +1408,12 @@ local function flush(result,flusher)
                   end
                 end
                 if transformed then
-                  pdf_literalcode("Q")
+                  stop_pdf_code()
                 end
                 local path = object.htap
                 if path then
                   if transformed then
-                    pdf_literalcode("q")
+                    start_pdf_code()
                   end
                   if transformed then
                     flushconcatpath(path,open)
@@ -1373,7 +1428,7 @@ local function flush(result,flusher)
                     pdf_literalcode("h B")
                   end
                   if transformed then
-                    pdf_literalcode("Q")
+                    stop_pdf_code()
                   end
                 end
 --                if cr then
@@ -1388,7 +1443,7 @@ local function flush(result,flusher)
               do_postobj_color(tr_opaq,shade_no)
             end
           end
-          pdf_literalcode("Q")
+          stop_pdf_code()
           pdf_stopfigure()
         end
       end
@@ -1432,7 +1487,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/04/05 v2.6.2 mplib package for LuaTeX]
+    [2014/04/16 v2.7.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1456,17 +1511,16 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \ifnum\pdfoutput>0
-    \let\mplibtoPDF\pdfliteral
+  \let\mplibtoPDF\pdfliteral
 \else
-    %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
-    \def\mplibtoPDF#1{}
-    \expandafter\ifx\csname PackageWarning\endcsname\relax
-      \write16{}
-      \write16{Warning: MPLib only works in PDF mode, no figure will be output.}
-      \write16{}
-    \else
-      \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
-    \fi
+  \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
+  \ifcsname PackageWarning\endcsname
+    \PackageWarning{luamplib}{take dvipdfmx path, no support for dvips currently.}
+  \else
+    \write16{}
+    \write16{luamplib Warning: take dvipdfmx path, no support for dvips currently.}
+    \write16{}
+  \fi
 \fi
 \def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12
