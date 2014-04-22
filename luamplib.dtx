@@ -1153,21 +1153,20 @@ local function tr_pdf_pageresources(mode,opaq)
 end
 
 local shading_res
+local getpageres = pdf.getpageresources or function() return pdf.pageresources end
+local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 
 local function shading_initialize ()
   shading_res = {}
   if pdfmode then
-    local shading_obj = pdf.reserveobj()
-    local getpageres = pdf.getpageresources or function() return pdf.pageresources end
-    local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-    setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
     require('luatexbase.mcb')
-    if luatexbase.get_module_date_int("luatexbase-mcb") > 20130511 then
+    if luatexbase.is_active_callback then -- luatexbase 0.7+
+      local shading_obj = pdf.reserveobj()
+      setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
       luatexbase.add_to_callback("finish_pdffile", function()
         pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
       end, "luamplib.finish_pdffile")
-    else
-      err("luatexbase-mcb v0.7 or higher is required for color shading.")
+      pdf_objs.finishpdf = true
     end
   end
 end
@@ -1182,7 +1181,17 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
   local on, new = update_pdfobjs(os)
   if pdfmode then
     if new then
-      shading_res[#shading_res+1] = format("/MPlibSh%i %i 0 R", on, on)
+      local res = format("/MPlibSh%i %i 0 R", on, on)
+      if pdf_objs.finishpdf then
+        shading_res[#shading_res+1] = res
+      else
+        local pageres = getpageres() or ""
+        if not stringfind(pageres,"/Shading<<.*>>") then
+          pageres = pageres.."/Shading<<>>"
+        end
+        pageres = stringgsub(pageres,"/Shading<<","%1"..res)
+        setpageres(pageres)
+      end
     end
   else
     if new then

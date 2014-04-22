@@ -3,7 +3,6 @@
 2014/04/16 2.7.0
     * support DVIPDFMx
     * internal changes following LuaTeX v0.79 and new luatexbase package.
-      Color shading thus requires luatexbase v0.7 or later.
     * [fix] avoid luatex crash under math_mode 'decimal'
 
 2014/03/26 2.6.1
