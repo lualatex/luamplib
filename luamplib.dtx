@@ -170,8 +170,10 @@ See source file '\inFileName' for licencing and contact information.
 % wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
 % functions to have the output of the \texttt{mplib} functions in the pdf.
 %
-% The package needs to be in PDF mode in order to output something, as PDF
-% specials are not supported by the DVI format and tools.
+% In the past,
+% the package required PDF mode in order to output something.
+% Starting with version 2.7 it works in DVI mode as well, though
+% DVIPDFMx is the only DVI tool currently supported.
 %
 % The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
 % adjusted to the metapost code.
@@ -1029,15 +1031,17 @@ local factor = 65536*(7227/7200)
 local function processwithTEXboxes (data)
   if not data then return end
   local num = 255 -- output box
-  local prepreamble = "TEXBOX_ := "..num..";\n"
+  local prepreamble = format("TEXBOX_:=%i;\n",num)
   while true do
     num = num + 1
     local box = tex.box[num]
     if not box then break end
-    prepreamble = prepreamble ..
-    "TEXBOX_wd_["..num.."] := "..box.width /factor..";\n"..
-    "TEXBOX_ht_["..num.."] := "..box.height/factor..";\n"..
-    "TEXBOX_dp_["..num.."] := "..box.depth /factor..";\n"
+    prepreamble = format(
+      "%sTEXBOX_wd_[%i]:=%f;\nTEXBOX_ht_[%i]:=%f;\nTEXBOX_dp_[%i]:=%f;\n",
+      prepreamble,
+      num, box.width /factor,
+      num, box.height/factor,
+      num, box.depth /factor)
   end
   local preamble = prepreamble .. mplibcodepreamble
   if luamplib.textextlabel then
@@ -1087,6 +1091,11 @@ end
 %    \begin{macrocode}
 local pdf_objs = {}
 
+if not pdfmode then
+  texsprint("\\special{pdf:obj @MPlibTr<<>>}",
+            "\\special{pdf:obj @MPlibSh<<>>}")
+end
+
 -- objstr <string> => obj <number>, new <boolean>
 local function update_pdfobjs (os)
   local on = pdf_objs[os]
@@ -1097,7 +1106,6 @@ local function update_pdfobjs (os)
     on = pdf.immediateobj(os)
   else
     on = pdf_objs.cnt or 0
-    texsprint(format("\\special{pdf:obj @MPlibObj%i %s}",on,os))
     pdf_objs.cnt = on + 1
   end
   pdf_objs[os] = on
@@ -1119,11 +1127,7 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
-      if not pdf_objs.tr then
-        texsprint(format("\\special{pdf:obj @MPlibTr<<>>}"))
-        pdf_objs.tr = true
-      end
-      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i @MPlibObj%i>>}",on,on))
+      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
     end
   end
   return res,on
@@ -1158,31 +1162,31 @@ local function shading_initialize ()
     local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
     setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
     require('luatexbase.mcb')
-    luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
-    end, "luamplib.finish_pdffile")
-  else
-    texsprint(format("\\special{pdf:obj @MPlibSh<<>>}"))
+    if luatexbase.get_module_date_int("luatexbase-mcb") > 20130511 then
+      luatexbase.add_to_callback("finish_pdffile", function()
+        pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
+      end, "luamplib.finish_pdffile")
+    else
+      err("luatexbase-mcb v0.7 or higher is required for color shading.")
+    end
   end
 end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
   if not shading_res then shading_initialize() end
-  local os, on, new
-  os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
-              domain, colora, colorb)
-  on = update_pdfobjs(os)
-  local funcobj = format(pdfmode and "%i 0 R" or "@MPlibObj%i",on)
+  local os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
+                    domain, colora, colorb)
+  local funcobj = pdfmode and format("%i 0 R",update_pdfobjs(os)) or os
   os = format("<</ShadingType %i/ColorSpace /%s/Function %s/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
               shtype, colorspace, funcobj, coordinates)
-  on, new = update_pdfobjs(os)
+  local on, new = update_pdfobjs(os)
   if pdfmode then
     if new then
       shading_res[#shading_res+1] = format("/MPlibSh%i %i 0 R", on, on)
     end
   else
     if new then
-      texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i @MPlibObj%i>>}",on,on))
+      texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i%s>>}",on,os))
     end
     texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
   end
@@ -1506,8 +1510,9 @@ luamplib.colorconverter = colorconverter
   \directlua{luamplib.setformat("\luatexluaescapestring{#1}")}}
 %    \end{macrocode}
 %
-%    MPLib only works in PDF mode, we don't do anything if we are in DVI mode,
-%    and we output a warning.
+%    \textsf{luamplib} works in both PDF and DVI mode,
+%    but only DVIPDFMx is supported currently among a number of DVI tools.
+%    So we output a warning.
 %
 %    \begin{macrocode}
 \ifnum\pdfoutput>0
@@ -1515,10 +1520,10 @@ luamplib.colorconverter = colorconverter
 \else
   \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
   \ifcsname PackageWarning\endcsname
-    \PackageWarning{luamplib}{take dvipdfmx path, no support for dvips currently.}
+    \PackageWarning{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
   \else
     \write16{}
-    \write16{luamplib Warning: take dvipdfmx path, no support for dvips currently.}
+    \write16{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
     \write16{}
   \fi
 \fi
