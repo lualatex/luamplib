@@ -350,6 +350,7 @@ local lfs   = require ('lfs')
 
 local lfsattributes = lfs.attributes
 local lfsisdir      = lfs.isdir
+local lfsmkdir      = lfs.mkdir
 local lfstouch      = lfs.touch
 local ioopen        = io.open
 
@@ -372,23 +373,28 @@ if not file then
   function file.stripsuffix(filename)
     return (stringgsub(filename,"%.[%a%d]+$",""))
   end
-
-  function file.is_writable(name)
-    if lfsisdir(name) then
-      name = name .. "/_luam_plib_temp_file_"
-      local fh = ioopen(name,"w")
-      if fh then
-        fh:close(); os.remove(name)
-        return true
-      end
-    end
-  end
 end
 
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
-local is_writable = file.is_writable
+local is_writable = file.is_writable or function(name)
+  if lfsisdir(name) then
+    name = name .. "/_luam_plib_temp_file_"
+    local fh = ioopen(name,"w")
+    if fh then
+      fh:close(); os.remove(name)
+      return true
+    end
+  end
+end
+local mk_full_path = lfs.mkdirs or function(path)
+  local full = ""
+  for sub in stringgmatch(path,"(/*[^\\/]+)") do
+    full = full .. sub
+    lfsmkdir(full)
+  end
+end
 
 local luamplibtime = kpse.find_file("luamplib.lua")
 luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
@@ -397,16 +403,17 @@ local currenttime = os.time()
 
 local outputdir
 if lfstouch then
-  local texmfvar = kpse.expand_path('$TEXMFVAR')
+  local texmfvar = kpse.expand_var('$TEXMFVAR')
   if texmfvar and texmfvar ~= "" and texmfvar ~= '$TEXMFVAR' then
     for _,dir in next,stringexplode(texmfvar,os.type == "windows" and ";" or ":") do
-      if lfsisdir(dir) then
+      if not lfsisdir(dir) then
+        mk_full_path(dir)
+      end
+      if is_writable(dir) then
         local cached = format("%s/luamplib_cache",dir)
-        lfs.mkdir(cached)
-        if is_writable(cached) then
-          outputdir = cached
-          break
-        end
+        lfsmkdir(cached)
+        outputdir = cached
+        break
       end
     end
   end
