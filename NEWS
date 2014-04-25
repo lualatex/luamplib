@@ -1,8 +1,10 @@
                        History of the luamplib package
 
-2014/04/16 2.7.0
+2014/04/25 2.7.0
     * support DVIPDFMx
-    * internal changes following LuaTeX v0.79 and new luatexbase package.
+    * default directory for cache is now '$TEXMFVAR/luamplib_cache'
+    * internal changes following LuaTeX engine v0.79 and luatexbase
+      package v0.7
     * [fix] avoid luatex crash under math_mode 'decimal'
 
 2014/03/26 2.6.1

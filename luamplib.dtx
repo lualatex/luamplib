@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/04/16 v2.7.0 Interface for using the mplib library]%
+  [2014/04/25 v2.7.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/04/16 v2.7.0}
+% \date{2014/04/25 v2.7.0}
 %
 % \maketitle
 %
@@ -267,13 +267,14 @@ See source file '\inFileName' for licencing and contact information.
 %   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
 %   \end{itemize}
 %   where |<filename>| is a file name excluding |.mp| extension.
-%   Note that |.mp| files under |[TEXMFMAIN]/metapost/base| and
-%   |[TEXMFMAIN]/metapost/context/base| are already registered by default.
-% \item By default, cache files will be stored in the same directory as
-%   pdf output file. This however can be changed by the command
+%   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
+%   |$TEXMFMAIN/metapost/context/base| are already registered by default.
+% \item By default, cache files will be stored in |$TEXMFVAR/luamplib_cache|
+%   or, if it's not available, in the same directory as where pdf/dvi output file
+%   is saved. This however can be changed by the command
 %   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
-%   as the user's home directory (on windows machines as well).
-%   As backslashes (|\|) should be escaped by users, it is easier to use
+%   as the user's home directory (on a windows machine as well).
+%   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
 % \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
@@ -322,7 +323,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.7.0",
-  date          = "2014/04/16",
+  date          = "2014/04/25",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -371,22 +372,53 @@ if not file then
   function file.stripsuffix(filename)
     return (stringgsub(filename,"%.[%a%d]+$",""))
   end
+
+  function file.is_writable(name)
+    if lfsisdir(name) then
+      name = name .. "/_luam_plib_temp_file_"
+      local fh = ioopen(name,"w")
+      if fh then
+        fh:close(); os.remove(name)
+        return true
+      end
+    end
+  end
 end
 
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
+local is_writable = file.is_writable
+
 local luamplibtime = kpse.find_file("luamplib.lua")
 luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
 
 local currenttime = os.time()
 
-local outputdir = "."
-for _,v in ipairs(arg) do
-  local t = stringmatch(v,"%-output%-directory=(.+)")
-  if t then
-    outputdir = t
-    break
+local outputdir
+if lfstouch then
+  local texmfvar = kpse.expand_path('$TEXMFVAR')
+  if texmfvar and texmfvar ~= "" and texmfvar ~= '$TEXMFVAR' then
+    for _,dir in next,stringexplode(texmfvar,os.type == "windows" and ";" or ":") do
+      if lfsisdir(dir) then
+        local cached = format("%s/luamplib_cache",dir)
+        lfs.mkdir(cached)
+        if is_writable(cached) then
+          outputdir = cached
+          break
+        end
+      end
+    end
+  end
+end
+if not outputdir then
+  outputdir = "."
+  for _,v in ipairs(arg) do
+    local t = stringmatch(v,"%-output%-directory=(.+)")
+    if t then
+      outputdir = t
+      break
+    end
   end
 end
 
@@ -396,11 +428,7 @@ function luamplib.getcachedir(dir)
     os.type == "windows" and os.getenv("UserProfile") or os.getenv("HOME"))
   if lfstouch and dir then
     if lfsisdir(dir) then
-      local tmp = dir.."/_luam_plib_temp_file_"
-      local fh = ioopen(tmp,"w")
-      if fh then
-        fh:close(fh)
-        os.remove(tmp)
+      if is_writable(dir) then
         luamplib.cachedir = dir
       else
         warn("Directory '"..dir.."' is not writable!")
@@ -1500,7 +1528,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/04/16 v2.7.0 mplib package for LuaTeX]
+    [2014/04/25 v2.7.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
