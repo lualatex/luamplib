@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/03/26 v2.6.1 Interface for using the mplib library]%
+  [2014/04/25 v2.7.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/03/26 v2.6.1}
+% \date{2014/04/25 v2.7.0}
 %
 % \maketitle
 %
@@ -170,8 +170,10 @@ See source file '\inFileName' for licencing and contact information.
 % wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
 % functions to have the output of the \texttt{mplib} functions in the pdf.
 %
-% The package needs to be in PDF mode in order to output something, as PDF
-% specials are not supported by the DVI format and tools.
+% In the past,
+% the package required PDF mode in order to output something.
+% Starting with version 2.7 it works in DVI mode as well, though
+% DVIPDFMx is the only DVI tool currently supported.
 %
 % The metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
 % adjusted to the metapost code.
@@ -265,13 +267,14 @@ See source file '\inFileName' for licencing and contact information.
 %   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
 %   \end{itemize}
 %   where |<filename>| is a file name excluding |.mp| extension.
-%   Note that |.mp| files under |[TEXMFMAIN]/metapost/base| and
-%   |[TEXMFMAIN]/metapost/context/base| are already registered by default.
-% \item By default, cache files will be stored in the same directory as
-%   pdf output file. This however can be changed by the command
+%   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
+%   |$TEXMFMAIN/metapost/context/base| are already registered by default.
+% \item By default, cache files will be stored in |$TEXMFVAR/luamplib_cache|
+%   or, if it's not available, in the same directory as where pdf/dvi output file
+%   is saved. This however can be changed by the command
 %   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
-%   as the user's home directory (on windows machines as well).
-%   As backslashes (|\|) should be escaped by users, it is easier to use
+%   as the user's home directory (on a windows machine as well).
+%   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
 % \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
@@ -318,10 +321,10 @@ luamplib.showlog  = luamplib.showlog or false
 luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
-    name          = "luamplib",
-    version       = "2.6.1",
-    date          = "2014/03/26",
-    description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
+  name          = "luamplib",
+  version       = "2.7.0",
+  date          = "2014/04/25",
+  description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
 
@@ -347,12 +350,12 @@ local lfs   = require ('lfs')
 
 local lfsattributes = lfs.attributes
 local lfsisdir      = lfs.isdir
+local lfsmkdir      = lfs.mkdir
 local lfstouch      = lfs.touch
 local ioopen        = io.open
 
 local file = file
 if not file then
-
 %    \end{macrocode}
 %    This is a small trick for \LaTeX . In \LaTeX\ we read the metapost code
 %    line by line, but it needs to be passed entirely to |process()|, so we
@@ -361,32 +364,68 @@ if not file then
 %    A few helpers, taken from \verb|l-file.lua|.
 %
 %    \begin{macrocode}
-
   file = { }
 
   function file.replacesuffix(filename, suffix)
-      return (stringgsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
+    return (stringgsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
   end
 
   function file.stripsuffix(filename)
-      return (stringgsub(filename,"%.[%a%d]+$",""))
+    return (stringgsub(filename,"%.[%a%d]+$",""))
   end
 end
 
 %    \end{macrocode}
 %     |btex ... etex| in input .mp files will be replaced in finder.
 %    \begin{macrocode}
+local is_writable = file.is_writable or function(name)
+  if lfsisdir(name) then
+    name = name .. "/_luam_plib_temp_file_"
+    local fh = ioopen(name,"w")
+    if fh then
+      fh:close(); os.remove(name)
+      return true
+    end
+  end
+end
+local mk_full_path = lfs.mkdirs or function(path)
+  local full = ""
+  for sub in stringgmatch(path,"(/*[^\\/]+)") do
+    full = full .. sub
+    lfsmkdir(full)
+  end
+end
+
 local luamplibtime = kpse.find_file("luamplib.lua")
 luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
 
 local currenttime = os.time()
 
-local outputdir = "."
-for _,v in ipairs(arg) do
-  local t = stringmatch(v,"%-output%-directory=(.+)")
-  if t then
-    outputdir = t
-    break
+local outputdir
+if lfstouch then
+  local texmfvar = kpse.expand_var('$TEXMFVAR')
+  if texmfvar and texmfvar ~= "" and texmfvar ~= '$TEXMFVAR' then
+    for _,dir in next,stringexplode(texmfvar,os.type == "windows" and ";" or ":") do
+      if not lfsisdir(dir) then
+        mk_full_path(dir)
+      end
+      if is_writable(dir) then
+        local cached = format("%s/luamplib_cache",dir)
+        lfsmkdir(cached)
+        outputdir = cached
+        break
+      end
+    end
+  end
+end
+if not outputdir then
+  outputdir = "."
+  for _,v in ipairs(arg) do
+    local t = stringmatch(v,"%-output%-directory=(.+)")
+    if t then
+      outputdir = t
+      break
+    end
   end
 end
 
@@ -396,11 +435,7 @@ function luamplib.getcachedir(dir)
     os.type == "windows" and os.getenv("UserProfile") or os.getenv("HOME"))
   if lfstouch and dir then
     if lfsisdir(dir) then
-      local tmp = dir.."/_luam_plib_temp_file_"
-      local fh = ioopen(tmp,"w")
-      if fh then
-        fh:close(fh)
-        os.remove(tmp)
+      if is_writable(dir) then
         luamplib.cachedir = dir
       else
         warn("Directory '"..dir.."' is not writable!")
@@ -412,115 +447,115 @@ function luamplib.getcachedir(dir)
 end
 
 local noneedtoreplace = {
-    ["boxes.mp"] = true,
---  ["format.mp"] = true,
-    ["graph.mp"] = true,
-    ["marith.mp"] = true,
-    ["mfplain.mp"] = true,
-    ["mpost.mp"] = true,
-    ["plain.mp"] = true,
-    ["rboxes.mp"] = true,
-    ["sarith.mp"] = true,
-    ["string.mp"] = true,
-    ["TEX.mp"] = true,
-    ["metafun.mp"] = true,
-    ["metafun.mpiv"] = true,
-    ["mp-abck.mpiv"] = true,
-    ["mp-apos.mpiv"] = true,
-    ["mp-asnc.mpiv"] = true,
-    ["mp-base.mpiv"] = true,
-    ["mp-butt.mpiv"] = true,
-    ["mp-char.mpiv"] = true,
-    ["mp-chem.mpiv"] = true,
-    ["mp-core.mpiv"] = true,
-    ["mp-crop.mpiv"] = true,
-    ["mp-figs.mpiv"] = true,
-    ["mp-form.mpiv"] = true,
-    ["mp-func.mpiv"] = true,
-    ["mp-grap.mpiv"] = true,
-    ["mp-grid.mpiv"] = true,
-    ["mp-grph.mpiv"] = true,
-    ["mp-idea.mpiv"] = true,
-    ["mp-mlib.mpiv"] = true,
-    ["mp-page.mpiv"] = true,
-    ["mp-shap.mpiv"] = true,
-    ["mp-step.mpiv"] = true,
-    ["mp-text.mpiv"] = true,
-    ["mp-tool.mpiv"] = true,
+  ["boxes.mp"] = true,
+  --  ["format.mp"] = true,
+  ["graph.mp"] = true,
+  ["marith.mp"] = true,
+  ["mfplain.mp"] = true,
+  ["mpost.mp"] = true,
+  ["plain.mp"] = true,
+  ["rboxes.mp"] = true,
+  ["sarith.mp"] = true,
+  ["string.mp"] = true,
+  ["TEX.mp"] = true,
+  ["metafun.mp"] = true,
+  ["metafun.mpiv"] = true,
+  ["mp-abck.mpiv"] = true,
+  ["mp-apos.mpiv"] = true,
+  ["mp-asnc.mpiv"] = true,
+  ["mp-base.mpiv"] = true,
+  ["mp-butt.mpiv"] = true,
+  ["mp-char.mpiv"] = true,
+  ["mp-chem.mpiv"] = true,
+  ["mp-core.mpiv"] = true,
+  ["mp-crop.mpiv"] = true,
+  ["mp-figs.mpiv"] = true,
+  ["mp-form.mpiv"] = true,
+  ["mp-func.mpiv"] = true,
+  ["mp-grap.mpiv"] = true,
+  ["mp-grid.mpiv"] = true,
+  ["mp-grph.mpiv"] = true,
+  ["mp-idea.mpiv"] = true,
+  ["mp-mlib.mpiv"] = true,
+  ["mp-page.mpiv"] = true,
+  ["mp-shap.mpiv"] = true,
+  ["mp-step.mpiv"] = true,
+  ["mp-text.mpiv"] = true,
+  ["mp-tool.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
 local function replaceformatmp(file,newfile,ofmodify)
-    local fh = ioopen(file,"r")
-    if not fh then return file end
-    local data = fh:read("*all"); fh:close()
-    fh = ioopen(newfile,"w")
-    if not fh then return file end
-    fh:write(
-        "let normalinfont = infont;\n",
-        "primarydef str infont name = rawtextext(str) enddef;\n",
-        data,
-        "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
-        "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
-        "let infont = normalinfont;\n"
-    ); fh:close()
-    lfstouch(newfile,currenttime,ofmodify)
-    return newfile
+  local fh = ioopen(file,"r")
+  if not fh then return file end
+  local data = fh:read("*all"); fh:close()
+  fh = ioopen(newfile,"w")
+  if not fh then return file end
+  fh:write(
+    "let normalinfont = infont;\n",
+    "primarydef str infont name = rawtextext(str) enddef;\n",
+    data,
+    "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
+    "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
+    "let infont = normalinfont;\n"
+  ); fh:close()
+  lfstouch(newfile,currenttime,ofmodify)
+  return newfile
 end
 
 local function replaceinputmpfile (name,file)
-    local ofmodify = lfsattributes(file,"modification")
-    if not ofmodify then return file end
-    local cachedir = luamplib.cachedir or outputdir
-    local newfile = stringgsub(name,"%W","_")
-    newfile = cachedir .."/luamplib_input_"..newfile
-    if newfile and luamplibtime then
-        local nf = lfsattributes(newfile)
-        if nf and nf.mode == "file" and ofmodify == nf.modification and luamplibtime < nf.access then
-            return nf.size == 0 and file or newfile
-        end
+  local ofmodify = lfsattributes(file,"modification")
+  if not ofmodify then return file end
+  local cachedir = luamplib.cachedir or outputdir
+  local newfile = stringgsub(name,"%W","_")
+  newfile = cachedir .."/luamplib_input_"..newfile
+  if newfile and luamplibtime then
+    local nf = lfsattributes(newfile)
+    if nf and nf.mode == "file" and ofmodify == nf.modification and luamplibtime < nf.access then
+      return nf.size == 0 and file or newfile
     end
-    if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
+  end
+  if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
 
-    local fh = ioopen(file,"r")
-    if not fh then return file end
-    local data = fh:read("*all"); fh:close()
-    data = stringgsub(data, "\"[^\n]-\"",
-        function(str)
-            str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
-            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
-            return str
-        end)
-    data = stringgsub(data,"%%.-\n","")
-    local count,cnt = 0,0
-    data,cnt = stringgsub(data,
-        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        function(str)
-            str = stringgsub(str,"[\n\r]%s*"," ")
-            str = stringgsub(str,'"','"&ditto&"')
-            return format("rawtextext(\"%s\")",str)
-        end)
-    count = count + cnt
-    data,cnt = stringgsub(data,
-        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*.-%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        "")
-    count = count + cnt
-    if count == 0 then
-        noneedtoreplace[name] = true
-        fh = ioopen(newfile,"w");
-        if fh then
-            fh:close()
-            lfstouch(newfile,currenttime,ofmodify)
-        end
-        return file
+  local fh = ioopen(file,"r")
+  if not fh then return file end
+  local data = fh:read("*all"); fh:close()
+  data = stringgsub(data, "\"[^\n]-\"",
+    function(str)
+      str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
+      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      return str
+    end)
+  data = stringgsub(data,"%%.-\n","")
+  local count,cnt = 0,0
+  data,cnt = stringgsub(data,
+    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    function(str)
+      str = stringgsub(str,"[\n\r]%s*"," ")
+      str = stringgsub(str,'"','"&ditto&"')
+      return format("rawtextext(\"%s\")",str)
+    end)
+  count = count + cnt
+  data,cnt = stringgsub(data,
+    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*.-%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    "")
+  count = count + cnt
+  if count == 0 then
+    noneedtoreplace[name] = true
+    fh = ioopen(newfile,"w");
+    if fh then
+      fh:close()
+      lfstouch(newfile,currenttime,ofmodify)
     end
-    data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
-    data = stringgsub(data,"!!!!!PERCENT!!!!!","%%")
-    fh = ioopen(newfile,"w")
-    if not fh then return file end
-    fh:write(data); fh:close()
-    lfstouch(newfile,currenttime,ofmodify)
-    return newfile
+    return file
+  end
+  data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
+  data = stringgsub(data,"!!!!!PERCENT!!!!!","%%")
+  fh = ioopen(newfile,"w")
+  if not fh then return file end
+  fh:write(data); fh:close()
+  lfstouch(newfile,currenttime,ofmodify)
+  return newfile
 end
 
 local randomseed = nil
@@ -534,18 +569,18 @@ local randomseed = nil
 local mpkpse = kpse.new("luatex", "mpost")
 
 local function finder(name, mode, ftype)
-    if mode == "w" then
-        return name
-    else
-        local file = mpkpse:find_file(name,ftype)
-        if file then
-            if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
-                return file
-            end
-            return replaceinputmpfile(name,file)
-        end
-        return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
+  if mode == "w" then
+    return name
+  else
+    local file = mpkpse:find_file(name,ftype)
+    if file then
+      if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
+        return file
+      end
+      return replaceinputmpfile(name,file)
     end
+    return mpkpse:find_file(name,stringmatch(name,"[a-zA-Z]+$"))
+  end
 end
 luamplib.finder = finder
 
@@ -557,7 +592,7 @@ luamplib.finder = finder
 %    \begin{macrocode}
 
 function luamplib.resetlastlog()
-    luamplib.lastlog = ""
+  luamplib.lastlog = ""
 end
 
 %    \end{macrocode}
@@ -569,41 +604,41 @@ local mplibone = tonumber(mplib.version()) <= 1.50
 
 if mplibone then
 
-    luamplib.make = luamplib.make or function(name,mem_name,dump)
-        local t = os.clock()
-        local mpx = mplib.new {
-            ini_version = true,
-            find_file = luamplib.finder,
-            job_name = file.stripsuffix(name)
-        }
-        mpx:execute(format("input %s ;",name))
-        if dump then
-            mpx:execute("dump ;")
-            info("format %s made and dumped for %s in %0.3f seconds",mem_name,name,os.clock()-t)
-        else
-            info("%s read in %0.3f seconds",name,os.clock()-t)
-        end
-        return mpx
+  luamplib.make = luamplib.make or function(name,mem_name,dump)
+    local t = os.clock()
+    local mpx = mplib.new {
+      ini_version = true,
+      find_file = luamplib.finder,
+      job_name = file.stripsuffix(name)
+    }
+    mpx:execute(format("input %s ;",name))
+    if dump then
+      mpx:execute("dump ;")
+      info("format %s made and dumped for %s in %0.3f seconds",mem_name,name,os.clock()-t)
+    else
+      info("%s read in %0.3f seconds",name,os.clock()-t)
     end
+    return mpx
+  end
 
-    function luamplib.load(name)
-        local mem_name = file.replacesuffix(name,"mem")
-        local mpx = mplib.new {
-            ini_version = false,
-            mem_name = mem_name,
-            find_file = luamplib.finder
-        }
-        if not mpx and type(luamplib.make) == "function" then
-            -- when i have time i'll locate the format and dump
-            mpx = luamplib.make(name,mem_name)
-        end
-        if mpx then
-            info("using format %s",mem_name,false)
-            return mpx, nil
-        else
-            return nil, { status = 99, error = "out of memory or invalid format" }
-        end
+  function luamplib.load(name)
+    local mem_name = file.replacesuffix(name,"mem")
+    local mpx = mplib.new {
+      ini_version = false,
+      mem_name = mem_name,
+      find_file = luamplib.finder
+    }
+    if not mpx and type(luamplib.make) == "function" then
+      -- when i have time i'll locate the format and dump
+      mpx = luamplib.make(name,mem_name)
     end
+    if mpx then
+      info("using format %s",mem_name,false)
+      return mpx, nil
+    else
+      return nil, { status = 99, error = "out of memory or invalid format" }
+    end
+  end
 
 else
 
@@ -611,119 +646,109 @@ else
 % These are the versions called with sufficiently recent mplib.
 %
 %    \begin{macrocode}
+  local preamble = [[
+    boolean mplib ; mplib := true ;
+    let dump = endinput ;
+    let normalfontsize = fontsize;
+    input %s ;
+  ]]
 
-    local preamble = [[
-        boolean mplib ; mplib := true ;
-        let dump = endinput ;
-        let normalfontsize = fontsize;
-        input %s ;
-    ]]
+  luamplib.make = luamplib.make or function()
+  end
 
-    luamplib.make = luamplib.make or function()
-    end
-
-    function luamplib.load(name)
-        local mpx = mplib.new {
-            ini_version = true,
-            find_file = luamplib.finder,
+  function luamplib.load(name)
+    local mpx = mplib.new {
+      ini_version = true,
+      find_file = luamplib.finder,
 %    \end{macrocode}
 %    Provides |numbersystem| option since v2.4. Default value |"scaled"|
 %    can be changed by declaring |\mplibnumbersystem{double}|.
 %    See \url{https://github.com/lualatex/luamplib/issues/21}.
 %    \begin{macrocode}
-            math_mode = luamplib.numbersystem,
-            random_seed = randomseed,
-        }
-        local result
-        if not mpx then
-            result = { status = 99, error = "out of memory"}
-        else
-            result = mpx:execute(format(preamble, file.replacesuffix(name,"mp")))
-        end
-        luamplib.reporterror(result)
-        return mpx, result
+      math_mode = luamplib.numbersystem,
+      random_seed = randomseed,
+    }
+    local result
+    if not mpx then
+      result = { status = 99, error = "out of memory"}
+    else
+      result = mpx:execute(format(preamble, file.replacesuffix(name,"mp")))
     end
+    luamplib.reporterror(result)
+    return mpx, result
+  end
 
 end
 
 local currentformat = "plain"
 
 local function setformat (name) --- used in .sty
-    currentformat = name
+  currentformat = name
 end
 luamplib.setformat = setformat
 
 
 luamplib.reporterror = function (result)
-    if not result then
-        err("no result object returned")
-    elseif result.status > 0 then
-        local t, e, l = result.term, result.error, result.log
-        if t then
-            info(t)
-        end
-        if e then
-            err(e)
-        end
-        if not t and not e and l then
-            luamplib.lastlog = luamplib.lastlog .. "\n " .. l
-            log(l)
-        else
-            err("unknown, no error, terminal or log messages")
-        end
-    else
-        return false
+  if not result then
+    err("no result object returned")
+  else
+    local t, e, l = result.term, result.error, result.log
+    local log = stringgsub(t or l or "no-term","^%s+","\n")
+    luamplib.lastlog = luamplib.lastlog .. "\n " .. (l or t or "no-log")
+    if result.status > 0 then
+      warn("%s",log)
+      if result.status > 1 then
+        err("%s",e or "see above messages")
+      end
     end
-    return true
+    return log
+  end
 end
 
-local function process_indeed (mpx, data)
-    local converted, result = false, {}
-    local mpx = luamplib.load(mpx)
-    if mpx and data then
-      local result = mpx:execute(data)
-      if not result then
-          err("no result object returned")
-      else
-        local term = stringgsub(result.term or "no-term","^%s+","\n")
-        if result.status > 0 then
-          err("%s",term .. "\n" .. (result.error or ""))
-        elseif luamplib.showlog then
-          luamplib.lastlog = luamplib.lastlog .. "\n" .. term
-          info("%s",luamplib.lastlog)
-          luamplib.resetlastlog()
-        else
+local function process_indeed (mpx, data, indeed)
+  local converted, result = false, {}
+  local mpx = luamplib.load(mpx)
+  if mpx and data then
+    result = mpx:execute(data)
+    local log = luamplib.reporterror(result)
+    if indeed and log then
+      if luamplib.showlog then
+        info("%s",luamplib.lastlog)
+        luamplib.resetlastlog()
+      elseif result.fig then
 %    \end{macrocode}
 %    v2.6.1: now luamplib does not disregard |show| command,
 %    even when |luamplib.showlog| is false.  Incidentally,
 %    it does not raise error, but just prints a warning,
 %    even if output has no figure.
 %    \begin{macrocode}
-          if stringfind(term,"\n>>") then info("%s",term) end
-          if result.fig then
-            converted = luamplib.convert(result)
-          else
-            warn("No figure output. Maybe no beginfig/endfig")
-          end
-        end
+        if stringfind(log,"\n>>") then info("%s",log) end
+        converted = luamplib.convert(result)
+      else
+        info("%s",log)
+        warn("No figure output. Maybe no beginfig/endfig")
       end
-    else
-      err("Mem file unloadable. Maybe generated with a different version of mplib?")
     end
-    return converted, result
+  else
+    err("Mem file unloadable. Maybe generated with a different version of mplib?")
+  end
+  return converted, result
 end
-local process = function (data)
-    return process_indeed(currentformat, data)
+local process = function (data,indeed)
+  if not indeed then
+    randomseed = math.random(65535)
+  end
+  return process_indeed(currentformat, data, indeed)
 end
 luamplib.process = process
 
 local function getobjects(result,figure,f)
-    return figure:objects()
+  return figure:objects()
 end
 
 local function convert(result, flusher)
-    luamplib.flush(result, flusher)
-    return true -- done
+  luamplib.flush(result, flusher)
+  return true -- done
 end
 luamplib.convert = convert
 
@@ -731,15 +756,15 @@ local function pdf_startfigure(n,llx,lly,urx,ury)
 %    \end{macrocode}
 %     The following line has been slightly modified by Kim.
 %    \begin{macrocode}
-    texsprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
+  texsprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
 end
 
 local function pdf_stopfigure()
-    texsprint("\\mplibstoptoPDF")
+  texsprint("\\mplibstoptoPDF")
 end
 
 local function pdf_literalcode(fmt,...) -- table
-    texsprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
+  texsprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
 end
 luamplib.pdf_literalcode = pdf_literalcode
 
@@ -747,11 +772,11 @@ local function pdf_textfigure(font,size,text,width,height,depth)
 %    \end{macrocode}
 %     The following three lines have been modified by Kim.
 %    \begin{macrocode}
-    -- if text == "" then text = "\0" end -- char(0) has gone
-    text = text:gsub(".",function(c)
-        return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
-    end)
-    texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
+  -- if text == "" then text = "\0" end -- char(0) has gone
+  text = text:gsub(".",function(c)
+    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
+  end)
+  texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
 end
 luamplib.pdf_textfigure = pdf_textfigure
 
@@ -760,86 +785,86 @@ local bend_tolerance = 131/65536
 local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
 
 local function pen_characteristics(object)
-    local t = mplib.pen_info(object)
-    rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
-    divider = sx*sy - rx*ry
-    return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
+  local t = mplib.pen_info(object)
+  rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
+  divider = sx*sy - rx*ry
+  return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
 end
 
 local function concat(px, py) -- no tx, ty here
-    return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
+  return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
 end
 
 local function curved(ith,pth)
-    local d = pth.left_x - ith.right_x
-    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
-        d = pth.left_y - ith.right_y
-        if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
-            return false
-        end
+  local d = pth.left_x - ith.right_x
+  if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+    d = pth.left_y - ith.right_y
+    if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+      return false
     end
-    return true
+  end
+  return true
 end
 
 local function flushnormalpath(path,open)
-    local pth, ith
-    for i=1,#path do
-        pth = path[i]
-        if not ith then
-            pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
-        elseif curved(ith,pth) then
-            pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
-        else
-            pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
-        end
-        ith = pth
+  local pth, ith
+  for i=1,#path do
+    pth = path[i]
+    if not ith then
+      pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
+    elseif curved(ith,pth) then
+      pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+    else
+      pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
     end
-    if not open then
-        local one = path[1]
-        if curved(pth,one) then
-            pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
-        else
-            pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
-        end
-    elseif #path == 1 then
-        -- special case .. draw point
-        local one = path[1]
-        pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+    ith = pth
+  end
+  if not open then
+    local one = path[1]
+    if curved(pth,one) then
+      pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+    else
+      pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
     end
-    return t
+  elseif #path == 1 then
+    -- special case .. draw point
+    local one = path[1]
+    pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+  end
+  return t
 end
 
 local function flushconcatpath(path,open)
-    pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
-    local pth, ith
-    for i=1,#path do
-        pth = path[i]
-        if not ith then
-           pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
-        elseif curved(ith,pth) then
-            local a, b = concat(ith.right_x,ith.right_y)
-            local c, d = concat(pth.left_x,pth.left_y)
-            pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
-        else
-           pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
-        end
-        ith = pth
+  pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
+  local pth, ith
+  for i=1,#path do
+    pth = path[i]
+    if not ith then
+      pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
+    elseif curved(ith,pth) then
+      local a, b = concat(ith.right_x,ith.right_y)
+      local c, d = concat(pth.left_x,pth.left_y)
+      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
+    else
+      pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
     end
-    if not open then
-        local one = path[1]
-        if curved(pth,one) then
-            local a, b = concat(pth.right_x,pth.right_y)
-            local c, d = concat(one.left_x,one.left_y)
-            pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
-        else
-            pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
-        end
-    elseif #path == 1 then
-        -- special case .. draw point
-        local one = path[1]
-        pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+    ith = pth
+  end
+  if not open then
+    local one = path[1]
+    if curved(pth,one) then
+      local a, b = concat(pth.right_x,pth.right_y)
+      local c, d = concat(one.left_x,one.left_y)
+      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
+    else
+      pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
     end
-    return t
+  elseif #path == 1 then
+    -- special case .. draw point
+    local one = path[1]
+    pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+  end
+  return t
 end
 
 %    \end{macrocode}
@@ -855,9 +880,9 @@ end
 %           and allows naked \TeX\ commands.
 %    \begin{macrocode}
 local further_split_keys = {
-    ["MPlibTEXboxID"] = true,
-    ["sh_color_a"]    = true,
-    ["sh_color_b"]    = true,
+  ["MPlibTEXboxID"] = true,
+  ["sh_color_a"]    = true,
+  ["sh_color_b"]    = true,
 }
 
 local function script2table(s)
@@ -878,7 +903,8 @@ end
 local mplibcodepreamble = [[
 vardef rawtextext (expr t) =
   if unknown TEXBOX_:
-    image( special "MPlibmkTEXbox="&t; )
+    image( special "MPlibmkTEXbox="&t;
+      addto currentpicture doublepath unitsquare; )
   else:
     TEXBOX_ := TEXBOX_ + 1;
     if known TEXBOX_wd_[TEXBOX_]:
@@ -935,7 +961,6 @@ extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 
 local textextlabelpreamble = [[
 primarydef s infont f = rawtextext(s) enddef;
-let normalinfont = infont;
 def fontsize expr f =
   begingroup
   save size,pic; numeric size; picture pic;
@@ -944,44 +969,43 @@ def fontsize expr f =
   if size = 0: 10pt else: size fi
   endgroup
 enddef;
-let normalfontsize = fontsize;
 ]]
 
 local function protecttextext(data)
-    local everymplib    = tex.toks['everymplibtoks']    or ''
-    local everyendmplib = tex.toks['everyendmplibtoks'] or ''
-    data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
-    data = stringgsub(data,"\r","\n")
-    data = stringgsub(data, "\"[^\n]-\"",
-        function(str)
-            str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
-            str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
-            return str
-        end)
-    data = stringgsub(data,"%%.-\n","")
-    data = stringgsub(data,
-        "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        function(str)
-            str = stringgsub(str,'"','"&ditto&"')
-            str = stringgsub(str,"\n%s*"," ")
-            return format("rawtextext(\"%s\")",str)
-        end)
-    data = stringgsub(data,
-        "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
-        function(str)
-            str = stringgsub(str,'"','"&ditto&"')
-            str = stringgsub(str,"\n%s*"," ")
-            return format("VerbatimTeX(\"%s\")",str)
-        end)
-    data = stringgsub(data, "\"[^\n]-\"",
-        function(str)
-            str = stringgsub(str,"([bem])!!!T!!!E!!!X!!!","%1tex")
-            str = stringgsub(str,"{", "!!!!!LEFTBRCE!!!!!")
-            str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
-            str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
-            return format("\\detokenize{%s}",str)
-        end)
-    texsprint(data)
+  local everymplib    = tex.toks['everymplibtoks']    or ''
+  local everyendmplib = tex.toks['everyendmplibtoks'] or ''
+  data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
+  data = stringgsub(data,"\r","\n")
+  data = stringgsub(data, "\"[^\n]-\"",
+    function(str)
+      str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
+      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      return str
+    end)
+  data = stringgsub(data,"%%.-\n","")
+  data = stringgsub(data,
+    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    function(str)
+      str = stringgsub(str,'"','"&ditto&"')
+      str = stringgsub(str,"\n%s*"," ")
+      return format("rawtextext(\"%s\")",str)
+    end)
+  data = stringgsub(data,
+    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    function(str)
+      str = stringgsub(str,'"','"&ditto&"')
+      str = stringgsub(str,"\n%s*"," ")
+      return format("VerbatimTeX(\"%s\")",str)
+    end)
+  data = stringgsub(data, "\"[^\n]-\"",
+    function(str)
+      str = stringgsub(str,"([bem])!!!T!!!E!!!X!!!","%1tex")
+      str = stringgsub(str,"{", "!!!!!LEFTBRCE!!!!!")
+      str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
+      str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
+      return format("\\detokenize{%s}",str)
+    end)
+  texsprint(data)
 end
 
 luamplib.protecttextext = protecttextext
@@ -989,54 +1013,50 @@ luamplib.protecttextext = protecttextext
 local TeX_code_t = {}
 
 local function domakeTEXboxes (data)
-    local num = 255 -- output box
-    if data and data.fig then
-        local figures = data.fig
-        for f=1, #figures do
-            TeX_code_t[f] = nil
-            local figure = figures[f]
-            local objects = getobjects(data,figure,f)
-            if objects then
-                for o=1,#objects do
-                    local object    = objects[o]
-                    local prescript = object.prescript
-                    prescript = prescript and script2table(prescript)
-                    local str = prescript and prescript.MPlibmkTEXbox
-                    if str then
-                        num = num + 1
-                        texsprint(format("\\setbox%i\\hbox{%s}",num,str))
-                    end
+  local num = 255 -- output box
+  if data and data.fig then
+    local figures = data.fig
+    for f=1, #figures do
+      TeX_code_t[f] = nil
+      local figure = figures[f]
+      local objects = getobjects(data,figure,f)
+      if objects then
+        for o=1,#objects do
+          local object    = objects[o]
+          local prescript = object.prescript
+          prescript = prescript and script2table(prescript)
+          local str = prescript and prescript.MPlibmkTEXbox
+          if str then
+            num = num + 1
+            texsprint(format("\\setbox%i\\hbox{%s}",num,str))
+          end
 %    \end{macrocode}
 %     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
 %     but the \TeX\ code inbetween is inserted before the mplib box.
 %    \begin{macrocode}
-                    local texcode = prescript and prescript.MPlibVerbTeX
-                    if texcode and texcode ~= "" then
-                        TeX_code_t[f] = texcode
-                    end
-                end
-            end
+          local texcode = prescript and prescript.MPlibVerbTeX
+          if texcode and texcode ~= "" then
+            TeX_code_t[f] = texcode
+          end
         end
+      end
     end
+  end
 end
 
 local function makeTEXboxes (data)
-    data = stringgsub(data, "##", "#") -- restore # doubled in input string
-    data = stringgsub(data, "!!!!!PERCENT!!!!!", "%%")
-    data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
-    data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
-    data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
-    local preamble = mplibcodepreamble
-    if luamplib.textextlabel then
-      preamble = textextlabelpreamble .. preamble
-    end
-    randomseed = math.random(65535)
-    local mpx = luamplib.load(currentformat)
-    if mpx and data then
-        local result = mpx:execute(preamble .. data)
-        domakeTEXboxes(result)
-    end
-    return data
+  data = stringgsub(data, "##", "#") -- restore # doubled in input string
+  data = stringgsub(data, "!!!!!PERCENT!!!!!", "%%")
+  data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
+  data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
+  data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
+  local preamble = mplibcodepreamble
+  if luamplib.textextlabel then
+    preamble = preamble .. textextlabelpreamble
+  end
+  local _,result = process(preamble .. data, false)
+  domakeTEXboxes(result)
+  return data
 end
 
 luamplib.makeTEXboxes = makeTEXboxes
@@ -1044,41 +1064,61 @@ luamplib.makeTEXboxes = makeTEXboxes
 local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
-    local num = 255 -- output box
-    local prepreamble = "TEXBOX_ := "..num..";\n"
-    while true do
-        num = num + 1
-        local box = tex.box[num]
-        if not box then break end
-        prepreamble = prepreamble ..
-        "TEXBOX_wd_["..num.."] := "..box.width /factor..";\n"..
-        "TEXBOX_ht_["..num.."] := "..box.height/factor..";\n"..
-        "TEXBOX_dp_["..num.."] := "..box.depth /factor..";\n"
-    end
-    local preamble = prepreamble .. mplibcodepreamble
-    if luamplib.textextlabel then
-      preamble = textextlabelpreamble .. preamble
-    end
-    process(preamble .. data)
+  if not data then return end
+  local num = 255 -- output box
+  local prepreamble = format("TEXBOX_:=%i;\n",num)
+  while true do
+    num = num + 1
+    local box = tex.box[num]
+    if not box then break end
+    prepreamble = format(
+      "%sTEXBOX_wd_[%i]:=%f;\nTEXBOX_ht_[%i]:=%f;\nTEXBOX_dp_[%i]:=%f;\n",
+      prepreamble,
+      num, box.width /factor,
+      num, box.height/factor,
+      num, box.depth /factor)
+  end
+  local preamble = prepreamble .. mplibcodepreamble
+  if luamplib.textextlabel then
+    preamble = preamble .. textextlabelpreamble
+  end
+  process(preamble .. data, true)
 end
-
 luamplib.processwithTEXboxes = processwithTEXboxes
 
+local pdfmode = tex.pdfoutput > 0 and true or false
+
+local function start_pdf_code()
+  if pdfmode then
+    pdf_literalcode("q")
+  else
+    texsprint("\\special{pdf:bcontent}") -- dvipdfmx
+  end
+end
+local function stop_pdf_code()
+  if pdfmode then
+    pdf_literalcode("Q")
+  else
+    texsprint("\\special{pdf:econtent}") -- dvipdfmx
+  end
+end
+
 local function putTEXboxes (object,prescript)
-    local box = prescript.MPlibTEXboxID
-    local n,tw,th = box[1],box[2],box[3]
-    if n and tw and th then
-        local op = object.path
-        local first, second, fourth = op[1], op[2], op[4]
-        local tx, ty = first.x_coord, first.y_coord
-        local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
-        local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
-        if sx == 0 then sx = 0.00001 end
-        if sy == 0 then sy = 0.00001 end
-        pdf_literalcode("q %f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-        texsprint(format("\\mplibputtextbox{%i}",n))
-        pdf_literalcode("Q")
-    end
+  local box = prescript.MPlibTEXboxID
+  local n,tw,th = box[1],box[2],box[3]
+  if n and tw and th then
+    local op = object.path
+    local first, second, fourth = op[1], op[2], op[4]
+    local tx, ty = first.x_coord, first.y_coord
+    local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
+    local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
+    if sx == 0 then sx = 0.00001 end
+    if sy == 0 then sy = 0.00001 end
+    start_pdf_code()
+    pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
+    texsprint(format("\\mplibputtextbox{%i}",n))
+    stop_pdf_code()
+  end
 end
 
 %    \end{macrocode}
@@ -1086,147 +1126,200 @@ end
 %    \begin{macrocode}
 local pdf_objs = {}
 
--- objstr <string> => obj <number>, new <boolean>
-local function update_pdfobjs (os)
-    local on = pdf_objs[os]
-    if on then
-        return on,false
-    end
-    on = pdf.immediateobj(os)
-    pdf_objs[os] = on
-    return on,true
+if not pdfmode then
+  texsprint("\\special{pdf:obj @MPlibTr<<>>}",
+            "\\special{pdf:obj @MPlibSh<<>>}")
 end
 
-local transparancy_modes = { [0] =  "Normal",
-    "Normal",       "Multiply",     "Screen",       "Overlay",
-    "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
-    "Darken",       "Lighten",      "Difference",   "Exclusion",
-    "Hue",          "Saturation",   "Color",        "Luminosity",
-    "Compatible",
+-- objstr <string> => obj <number>, new <boolean>
+local function update_pdfobjs (os)
+  local on = pdf_objs[os]
+  if on then
+    return on,false
+  end
+  if pdfmode then
+    on = pdf.immediateobj(os)
+  else
+    on = pdf_objs.cnt or 0
+    pdf_objs.cnt = on + 1
+  end
+  pdf_objs[os] = on
+  return on,true
+end
+
+local transparancy_modes = { [0] = "Normal",
+  "Normal",       "Multiply",     "Screen",       "Overlay",
+  "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
+  "Darken",       "Lighten",      "Difference",   "Exclusion",
+  "Hue",          "Saturation",   "Color",        "Luminosity",
+  "Compatible",
 }
 
 local function update_tr_res(res,mode,opaq)
-    local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
-    local on, new = update_pdfobjs(os)
-    if new then
-        res = res .. format("/MPlibTr%i %i 0 R",on,on)
+  local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
+  local on, new = update_pdfobjs(os)
+  if new then
+    if pdfmode then
+      res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+    else
+      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
     end
-    return res,on
+  end
+  return res,on
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-    local res, on_on, off_on = "", nil, nil
-    res, off_on = update_tr_res(res, "Normal", 1)
-    res, on_on  = update_tr_res(res, mode, opaq)
+  local res, on_on, off_on = "", nil, nil
+  res, off_on = update_tr_res(res, "Normal", 1)
+  res, on_on  = update_tr_res(res, mode, opaq)
+  if pdfmode then
     if res ~= "" then
-        local tpr = tex.pdfpageresources -- respect luaotfload-colors
-        if not stringfind(tpr,"/ExtGState<<.*>>") then
-            tpr = tpr.."/ExtGState<<>>"
-        end
-        tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
-        tex.set("global","pdfpageresources",tpr)
+      local tpr = tex.pdfpageresources -- respect luaotfload-colors
+      if not stringfind(tpr,"/ExtGState<<.*>>") then
+        tpr = tpr.."/ExtGState<<>>"
+      end
+      tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+      tex.set("global","pdfpageresources",tpr)
     end
-    return on_on, off_on
+  else
+    texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
+  end
+  return on_on, off_on
 end
 
--- luatexbase.mcb is not yet updated: "finish_pdffile" callback is missing
+local shading_res
+local getpageres = pdf.getpageresources or function() return pdf.pageresources end
+local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+
+local function shading_initialize ()
+  shading_res = {}
+  if pdfmode then
+    require('luatexbase.mcb')
+    if luatexbase.is_active_callback then -- luatexbase 0.7+
+      local shading_obj = pdf.reserveobj()
+      setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
+      luatexbase.add_to_callback("finish_pdffile", function()
+        pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
+      end, "luamplib.finish_pdffile")
+      pdf_objs.finishpdf = true
+    end
+  end
+end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
-    local os, on, new
-    os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
-                domain, colora, colorb)
-    on = update_pdfobjs(os)
-    os = format("<</ShadingType %i/ColorSpace /%s/Function %i 0 R/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
-                shtype, colorspace, on, coordinates)
-    on, new = update_pdfobjs(os)
-    if not new then
-        return on
+  if not shading_res then shading_initialize() end
+  local os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
+                    domain, colora, colorb)
+  local funcobj = pdfmode and format("%i 0 R",update_pdfobjs(os)) or os
+  os = format("<</ShadingType %i/ColorSpace /%s/Function %s/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
+              shtype, colorspace, funcobj, coordinates)
+  local on, new = update_pdfobjs(os)
+  if pdfmode then
+    if new then
+      local res = format("/MPlibSh%i %i 0 R", on, on)
+      if pdf_objs.finishpdf then
+        shading_res[#shading_res+1] = res
+      else
+        local pageres = getpageres() or ""
+        if not stringfind(pageres,"/Shading<<.*>>") then
+          pageres = pageres.."/Shading<<>>"
+        end
+        pageres = stringgsub(pageres,"/Shading<<","%1"..res)
+        setpageres(pageres)
+      end
     end
-    local res = format("/MPlibSh%i %i 0 R", on, on)
-    local ppr = pdf.pageresources or ""
-    if not stringfind(ppr,"/Shading<<.*>>") then
-        ppr = ppr.."/Shading<<>>"
+  else
+    if new then
+      texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i%s>>}",on,os))
     end
-    pdf.pageresources = stringgsub(ppr,"/Shading<<","%1"..res)
-    return on
+    texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
+  end
+  return on
 end
 
 local function color_normalize(ca,cb)
-    if #cb == 1 then
-        if #ca == 4 then
-            cb[1], cb[2], cb[3], cb[4] = 0, 0, 0, 1-cb[1]
-        else -- #ca = 3
-            cb[1], cb[2], cb[3] = cb[1], cb[1], cb[1]
-        end
-    elseif #cb == 3 then -- #ca == 4
-        cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
+  if #cb == 1 then
+    if #ca == 4 then
+      cb[1], cb[2], cb[3], cb[4] = 0, 0, 0, 1-cb[1]
+    else -- #ca = 3
+      cb[1], cb[2], cb[3] = cb[1], cb[1], cb[1]
     end
+  elseif #cb == 3 then -- #ca == 4
+    cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
+  end
 end
 
 local function do_preobj_color(object,prescript)
-    -- transparency
-    local opaq = prescript and prescript.tr_transparency
-    local tron_no, troff_no
-    if opaq then
-        local mode = prescript.tr_alternative or 1
-        mode = transparancy_modes[tonumber(mode)]
-        tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
-        pdf_literalcode("/MPlibTr%i gs",tron_no)
+  -- transparency
+  local opaq = prescript and prescript.tr_transparency
+  local tron_no, troff_no
+  if opaq then
+    local mode = prescript.tr_alternative or 1
+    mode = transparancy_modes[tonumber(mode)]
+    tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
+    pdf_literalcode("/MPlibTr%i gs",tron_no)
+  end
+  -- color
+  local cs = object.color
+  if cs and #cs > 0 then
+    pdf_literalcode(luamplib.colorconverter(cs))
+  end
+  -- shading
+  local sh_type = prescript and prescript.sh_type
+  if sh_type then
+    local domain  = prescript.sh_domain
+    local centera = stringexplode(prescript.sh_center_a)
+    local centerb = stringexplode(prescript.sh_center_b)
+    for _,t in pairs({centera,centerb}) do
+      for i,v in ipairs(t) do
+        t[i] = format("%f",v)
+      end
     end
-    -- color
-    local cs = object.color
-    if cs and #cs > 0 then
-        pdf_literalcode(luamplib.colorconverter(cs))
+    centera = tableconcat(centera," ")
+    centerb = tableconcat(centerb," ")
+    local colora  = prescript.sh_color_a or {0};
+    local colorb  = prescript.sh_color_b or {1};
+    for _,t in pairs({colora,colorb}) do
+      for i,v in ipairs(t) do
+        t[i] = format("%.3f",v)
+      end
     end
-    -- shading
-    local sh_type = prescript and prescript.sh_type
-    if sh_type then
-        local domain  = prescript.sh_domain
-        local centera = prescript.sh_center_a
-        local centerb = prescript.sh_center_b
-        local colora  = prescript.sh_color_a or {0};
-        local colorb  = prescript.sh_color_b or {1};
-        for _,t in pairs({colora,colorb}) do
-          for i,v in ipairs(t) do
-            t[i] = format("%.3f",v)
-          end
-        end
-        if #colora > #colorb then
-            color_normalize(colora,colorb)
-        elseif #colorb > #colora then
-            color_normalize(colorb,colora)
-        end
-        local colorspace
-        if     #colorb == 1 then colorspace = "DeviceGray"
-        elseif #colorb == 3 then colorspace = "DeviceRGB"
-        elseif #colorb == 4 then colorspace = "DeviceCMYK"
-        else   return troff_no
-        end
-        colora = tableconcat(colora, " ")
-        colorb = tableconcat(colorb, " ")
-        local shade_no
-        if sh_type == "linear" then
-            local coordinates = format("%s %s",centera,centerb)
-            shade_no = sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
-        elseif sh_type == "circular" then
-            local radiusa = prescript.sh_radius_a
-            local radiusb = prescript.sh_radius_b
-            local coordinates = format("%s %s %s %s",centera,radiusa,centerb,radiusb)
-            shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
-        end
-        pdf_literalcode("q /Pattern cs")
-        return troff_no,shade_no
+    if #colora > #colorb then
+      color_normalize(colora,colorb)
+    elseif #colorb > #colora then
+      color_normalize(colorb,colora)
     end
-    return troff_no
+    local colorspace
+    if     #colorb == 1 then colorspace = "DeviceGray"
+    elseif #colorb == 3 then colorspace = "DeviceRGB"
+    elseif #colorb == 4 then colorspace = "DeviceCMYK"
+    else   return troff_no
+    end
+    colora = tableconcat(colora, " ")
+    colorb = tableconcat(colorb, " ")
+    local shade_no
+    if sh_type == "linear" then
+      local coordinates = tableconcat({centera,centerb}," ")
+      shade_no = sh_pdfpageresources(2,domain,colorspace,colora,colorb,coordinates)
+    elseif sh_type == "circular" then
+      local radiusa = format("%f",prescript.sh_radius_a)
+      local radiusb = format("%f",prescript.sh_radius_b)
+      local coordinates = tableconcat({centera,radiusa,centerb,radiusb}," ")
+      shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
+    end
+    pdf_literalcode("q /Pattern cs")
+    return troff_no,shade_no
+  end
+  return troff_no
 end
 
 local function do_postobj_color(tr,sh)
-    if sh then
-        pdf_literalcode("W n /MPlibSh%s sh Q",sh)
-    end
-    if tr then
-        pdf_literalcode("/MPlibTr%i gs",tr)
-    end
+  if sh then
+    pdf_literalcode("W n /MPlibSh%s sh Q",sh)
+  end
+  if tr then
+    pdf_literalcode("/MPlibTr%i gs",tr)
+  end
 end
 
 %    \end{macrocode}
@@ -1235,189 +1328,190 @@ end
 %    \begin{macrocode}
 
 local function flush(result,flusher)
-    if result then
-        local figures = result.fig
-        if figures then
-            for f=1, #figures do
-                info("flushing figure %s",f)
-                local figure = figures[f]
-                local objects = getobjects(result,figure,f)
-                local fignum = tonumber(stringmatch(figure:filename(),"([%d]+)$") or figure:charcode() or 0)
-                local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-                local bbox = figure:boundingbox()
-                local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
-                if urx < llx then
-                    -- invalid
-                    pdf_startfigure(fignum,0,0,0,0)
-                    pdf_stopfigure()
-                else
+  if result then
+    local figures = result.fig
+    if figures then
+      for f=1, #figures do
+        info("flushing figure %s",f)
+        local figure = figures[f]
+        local objects = getobjects(result,figure,f)
+        local fignum = tonumber(stringmatch(figure:filename(),"([%d]+)$") or figure:charcode() or 0)
+        local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+        local bbox = figure:boundingbox()
+        local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
+        if urx < llx then
+          -- invalid
+          pdf_startfigure(fignum,0,0,0,0)
+          pdf_stopfigure()
+        else
 %    \end{macrocode}
 %    Insert \verb|verbatimtex| code before mplib box.
 %    \begin{macrocode}
-                    if TeX_code_t[f] then
-                        texsprint(TeX_code_t[f])
-                    end
-                    pdf_startfigure(fignum,llx,lly,urx,ury)
-                    pdf_literalcode("q")
-                    if objects then
-                        for o=1,#objects do
-                            local object        = objects[o]
-                            local objecttype    = object.type
+          if TeX_code_t[f] then
+            texsprint(TeX_code_t[f])
+          end
+          pdf_startfigure(fignum,llx,lly,urx,ury)
+          start_pdf_code()
+          if objects then
+            for o=1,#objects do
+              local object        = objects[o]
+              local objecttype    = object.type
 %    \end{macrocode}
 %     Change from \ConTeXt{} code: the following 5 lines are part of the
 %     |btex...etex| patch. Again, colors are processed at this stage.
 %
 %    \begin{macrocode}
-                            local prescript     = object.prescript
-                            prescript = prescript and script2table(prescript) -- prescript is now a table
-                            local tr_opaq,shade_no = do_preobj_color(object,prescript)
-                            if prescript and prescript.MPlibTEXboxID then
-                                putTEXboxes(object,prescript)
-                            elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
-                                -- skip
-                            elseif objecttype == "start_clip" then
-                                pdf_literalcode("q")
-                                flushnormalpath(object.path,t,false)
-                                pdf_literalcode("W n")
-                            elseif objecttype == "stop_clip" then
-                                pdf_literalcode("Q")
-                                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-                            elseif objecttype == "special" then
-                                -- not supported
-                                if prescript and prescript.MPlibTEXError then
-                                  warn("textext() anomaly. Try disabling \\mplibtextextlabel.")
-                                end
-                            elseif objecttype == "text" then
-                                local ot = object.transform -- 3,4,5,6,1,2
-                                pdf_literalcode("q %f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
-                                pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
-                                pdf_literalcode("Q")
-                            else
+              local prescript     = object.prescript
+              prescript = prescript and script2table(prescript) -- prescript is now a table
+              local tr_opaq,shade_no = do_preobj_color(object,prescript)
+              if prescript and prescript.MPlibTEXboxID then
+                putTEXboxes(object,prescript)
+              elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
+                -- skip
+              elseif objecttype == "start_clip" then
+                start_pdf_code()
+                flushnormalpath(object.path,t,false)
+                pdf_literalcode("W n")
+              elseif objecttype == "stop_clip" then
+                stop_pdf_code()
+                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+              elseif objecttype == "special" then
+                -- not supported
+                if prescript and prescript.MPlibTEXError then
+                  warn("textext() anomaly. Try disabling \\mplibtextextlabel.")
+                end
+              elseif objecttype == "text" then
+                local ot = object.transform -- 3,4,5,6,1,2
+                start_pdf_code()
+                pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
+                stop_pdf_code()
+              else
 %    \end{macrocode}
 %     Color stuffs are modified and moved to several lines above.
 %    \begin{macrocode}
-                                local ml = object.miterlimit
-                                if ml and ml ~= miterlimit then
-                                    miterlimit = ml
-                                    pdf_literalcode("%f M",ml)
-                                end
-                                local lj = object.linejoin
-                                if lj and lj ~= linejoin then
-                                    linejoin = lj
-                                    pdf_literalcode("%i j",lj)
-                                end
-                                local lc = object.linecap
-                                if lc and lc ~= linecap then
-                                    linecap = lc
-                                    pdf_literalcode("%i J",lc)
-                                end
-                                local dl = object.dash
-                                if dl then
-                                    local d = format("[%s] %i d",tableconcat(dl.dashes or {}," "),dl.offset)
-                                    if d ~= dashed then
-                                        dashed = d
-                                        pdf_literalcode(dashed)
-                                    end
-                                elseif dashed then
-                                   pdf_literalcode("[] 0 d")
-                                   dashed = false
-                                end
-                                local path = object.path
-                                local transformed, penwidth = false, 1
-                                local open = path and path[1].left_type and path[#path].right_type
-                                local pen = object.pen
-                                if pen then
-                                   if pen.type == 'elliptical' then
-                                        transformed, penwidth = pen_characteristics(object) -- boolean, value
-                                        pdf_literalcode("%f w",penwidth)
-                                        if objecttype == 'fill' then
-                                            objecttype = 'both'
-                                        end
-                                   else -- calculated by mplib itself
-                                        objecttype = 'fill'
-                                   end
-                                end
-                                if transformed then
-                                    pdf_literalcode("q")
-                                end
-                                if path then
-                                    if transformed then
-                                        flushconcatpath(path,open)
-                                    else
-                                        flushnormalpath(path,open)
-                                    end
+                local ml = object.miterlimit
+                if ml and ml ~= miterlimit then
+                  miterlimit = ml
+                  pdf_literalcode("%f M",ml)
+                end
+                local lj = object.linejoin
+                if lj and lj ~= linejoin then
+                  linejoin = lj
+                  pdf_literalcode("%i j",lj)
+                end
+                local lc = object.linecap
+                if lc and lc ~= linecap then
+                  linecap = lc
+                  pdf_literalcode("%i J",lc)
+                end
+                local dl = object.dash
+                if dl then
+                  local d = format("[%s] %i d",tableconcat(dl.dashes or {}," "),dl.offset)
+                  if d ~= dashed then
+                    dashed = d
+                    pdf_literalcode(dashed)
+                  end
+                elseif dashed then
+                  pdf_literalcode("[] 0 d")
+                  dashed = false
+                end
+                local path = object.path
+                local transformed, penwidth = false, 1
+                local open = path and path[1].left_type and path[#path].right_type
+                local pen = object.pen
+                if pen then
+                  if pen.type == 'elliptical' then
+                    transformed, penwidth = pen_characteristics(object) -- boolean, value
+                    pdf_literalcode("%f w",penwidth)
+                    if objecttype == 'fill' then
+                      objecttype = 'both'
+                    end
+                  else -- calculated by mplib itself
+                    objecttype = 'fill'
+                  end
+                end
+                if transformed then
+                  start_pdf_code()
+                end
+                if path then
+                  if transformed then
+                    flushconcatpath(path,open)
+                  else
+                    flushnormalpath(path,open)
+                  end
 %    \end{macrocode}
 %
 %     Change from \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-                                    if not shade_no then ----- conflict with shading
-                                        if objecttype == "fill" then
-                                            pdf_literalcode("h f")
-                                        elseif objecttype == "outline" then
-                                            pdf_literalcode((open and "S") or "h S")
-                                        elseif objecttype == "both" then
-                                            pdf_literalcode("h B")
-                                        end
-                                    end
-                                end
-                                if transformed then
-                                    pdf_literalcode("Q")
-                                end
-                                local path = object.htap
-                                if path then
-                                    if transformed then
-                                        pdf_literalcode("q")
-                                    end
-                                    if transformed then
-                                        flushconcatpath(path,open)
-                                    else
-                                        flushnormalpath(path,open)
-                                    end
-                                    if objecttype == "fill" then
-                                        pdf_literalcode("h f")
-                                    elseif objecttype == "outline" then
-                                        pdf_literalcode((open and "S") or "h S")
-                                    elseif objecttype == "both" then
-                                        pdf_literalcode("h B")
-                                    end
-                                    if transformed then
-                                        pdf_literalcode("Q")
-                                    end
-                                end
---                              if cr then
---                                  pdf_literalcode(cr)
---                              end
-                            end
+                  if not shade_no then ----- conflict with shading
+                    if objecttype == "fill" then
+                      pdf_literalcode("h f")
+                    elseif objecttype == "outline" then
+                      pdf_literalcode((open and "S") or "h S")
+                    elseif objecttype == "both" then
+                      pdf_literalcode("h B")
+                    end
+                  end
+                end
+                if transformed then
+                  stop_pdf_code()
+                end
+                local path = object.htap
+                if path then
+                  if transformed then
+                    start_pdf_code()
+                  end
+                  if transformed then
+                    flushconcatpath(path,open)
+                  else
+                    flushnormalpath(path,open)
+                  end
+                  if objecttype == "fill" then
+                    pdf_literalcode("h f")
+                  elseif objecttype == "outline" then
+                    pdf_literalcode((open and "S") or "h S")
+                  elseif objecttype == "both" then
+                    pdf_literalcode("h B")
+                  end
+                  if transformed then
+                    stop_pdf_code()
+                  end
+                end
+--                if cr then
+--                  pdf_literalcode(cr)
+--                end
+              end
 %    \end{macrocode}
 %
 %     Added to \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-                            do_postobj_color(tr_opaq,shade_no)
-                       end
-                    end
-                    pdf_literalcode("Q")
-                    pdf_stopfigure()
-                end
+              do_postobj_color(tr_opaq,shade_no)
             end
+          end
+          stop_pdf_code()
+          pdf_stopfigure()
         end
+      end
     end
+  end
 end
 luamplib.flush = flush
 
 local function colorconverter(cr)
-    local n = #cr
-    if n == 4 then
-        local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
-        return format("%.3f %.3f %.3f %.3f k %.3f %.3f %.3f %.3f K",c,m,y,k,c,m,y,k), "0 g 0 G"
-    elseif n == 3 then
-        local r, g, b = cr[1], cr[2], cr[3]
-        return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
-    else
-        local s = cr[1]
-        return format("%.3f g %.3f G",s,s), "0 g 0 G"
-    end
+  local n = #cr
+  if n == 4 then
+    local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
+    return format("%.3f %.3f %.3f %.3f k %.3f %.3f %.3f %.3f K",c,m,y,k,c,m,y,k), "0 g 0 G"
+  elseif n == 3 then
+    local r, g, b = cr[1], cr[2], cr[3]
+    return format("%.3f %.3f %.3f rg %.3f %.3f %.3f RG",r,g,b,r,g,b), "0 g 0 G"
+  else
+    local s = cr[1]
+    return format("%.3f g %.3f G",s,s), "0 g 0 G"
+  end
 end
 luamplib.colorconverter = colorconverter
 %    \end{macrocode}
@@ -1441,7 +1535,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/03/26 v2.6.1 mplib package for LuaTeX]
+    [2014/04/25 v2.7.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1460,22 +1554,22 @@ luamplib.colorconverter = colorconverter
   \directlua{luamplib.setformat("\luatexluaescapestring{#1}")}}
 %    \end{macrocode}
 %
-%    MPLib only works in PDF mode, we don't do anything if we are in DVI mode,
-%    and we output a warning.
+%    \textsf{luamplib} works in both PDF and DVI mode,
+%    but only DVIPDFMx is supported currently among a number of DVI tools.
+%    So we output a warning.
 %
 %    \begin{macrocode}
 \ifnum\pdfoutput>0
-    \let\mplibtoPDF\pdfliteral
+  \let\mplibtoPDF\pdfliteral
 \else
-    %\def\MPLIBtoPDF#1{\special{pdf:literal direct #1}} % not ok yet
-    \def\mplibtoPDF#1{}
-    \expandafter\ifx\csname PackageWarning\endcsname\relax
-      \write16{}
-      \write16{Warning: MPLib only works in PDF mode, no figure will be output.}
-      \write16{}
-    \else
-      \PackageWarning{mplib}{MPLib only works in PDF mode, no figure will be output.}
-    \fi
+  \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
+  \ifcsname PackageWarning\endcsname
+    \PackageWarning{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
+  \else
+    \write16{}
+    \write16{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
+    \write16{}
+  \fi
 \fi
 \def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12

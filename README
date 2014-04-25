@@ -2,7 +2,8 @@
 
 
 This package allows typesetting of metapost natively in the TeX documents
-thanks to the LuaTeX mplib library. It only works in PDF mode.
+thanks to the LuaTeX mplib library. It works in PDF or DVI mode, but
+DVIPDFMx is the only DVI tool currently supported.
 
 This package is developed on <http://github.com/lualatex/luamplib>.
 

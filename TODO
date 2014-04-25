@@ -1,6 +1,1 @@
-- make variants of mplibcode with \ { } still special?
-    - actually, also make commands not changing the catcode as requested by
-      Arno T.
-- expand doc?
-- add a figure with mpfun in the test files
-
+-- support dvips and other dvi tools (?)
