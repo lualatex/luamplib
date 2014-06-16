@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/04/25 v2.7.0 Interface for using the mplib library]%
+  [2014/06/16 v2.8.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/04/25 v2.7.0}
+% \date{2014/06/16 v2.8.0}
 %
 % \maketitle
 %
@@ -244,13 +244,17 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{verbatim}
 %     \begin{mplibcode}
 %       draw origin--(\mpdim{\linewidth},0) withpen pencircle scaled 4
-%       dashed evenly scaled 4 withcolor \myrulecolor;
+%       dashed evenly scaled 4 withcolor \mpxcolor{orange};
 %     \end{mplibcode}
 %   \end{verbatim}
 %   \textsc{n.b.} Users should not use the protected variant of
 %   |btex ... etex| as provided by gmp package. As \textsf{luamplib}
 %   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
 %   here.
+% \item With \cs{mpxcolor} command, color expressions of
+%   \textsf{xcolor} package can be used inside mplibcode enviroment.
+%   This is a \LaTeX-only funtionality and \textsf{xcolor} package has to be
+%   loaded by users.  See the example code of the previous item.
 % \item Users can choose |numbersystem| option since v2.4.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
@@ -322,8 +326,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.7.0",
-  date          = "2014/04/25",
+  version       = "2.8.0",
+  date          = "2014/06/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -972,6 +976,9 @@ def fontsize expr f =
 enddef;
 ]]
 
+mpxcolors = {}
+luamplib.mpxcolors = mpxcolors
+
 local function protecttextext(data)
   local everymplib    = tex.toks['everymplibtoks']    or ''
   local everyendmplib = tex.toks['everyendmplibtoks'] or ''
@@ -1005,6 +1012,15 @@ local function protecttextext(data)
       str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
       str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
       return format("\\detokenize{%s}",str)
+    end)
+  mpxcolor = {}
+  data = stringgsub(data, "\\mpxcolor%s*{(.-)}",
+    function(str)
+      local cnt = #mpxcolors + 1
+      mpxcolors[cnt] =
+        format("\\expandafter\\mplibxcolor\\csname mpxcolor%i\\endcsname{%s}",
+          cnt,str)
+      return format("\\noexpand\\csname mpxcolor%i\\noexpand\\endcsname",cnt)
     end)
   texsprint(data)
 end
@@ -1536,7 +1552,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/04/25 v2.7.0 mplib package for LuaTeX]
+    [2014/06/16 v2.8.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
   \RequirePackage{pdftexcmds}
 \fi
@@ -1635,8 +1651,9 @@ luamplib.colorconverter = colorconverter
   \endgroup
   \toks@\expandafter{\the\toks@#1}%
   \ifnum\pdf@strcmp{#2}{mplibcode}=\z@
-    \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
+    \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
+    \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
     \ifnum\mplibstartlineno<\inputlineno
@@ -1645,6 +1662,15 @@ luamplib.colorconverter = colorconverter
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
+}
+%    \end{macrocode}
+%     Support xcolor package on \LaTeX.
+%     User interface is: \verb|\mpxcolor{teal}|, for example.
+%    \begin{macrocode}
+\def\mplibxcolor#1#2{%
+  \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
+  \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
+  \edef#1{(\mplibtemp@c)}%
 }
 \fi
 %    \end{macrocode}

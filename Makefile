@@ -53,7 +53,7 @@ $(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@mkdir -p $(NAME)
 	@cp -f $(SOURCES) $(DOC) $(NAME)
 	@zip -q -9 -r $@ $(TDS_ZIP) $(NAME)
-	@$(RM) -rf $(NAME)
+	@$(RM) -r $(NAME)
 
 define run-install
 @mkdir -p $(RUNDIR) && cp $(RUNFILES) $(RUNDIR)
