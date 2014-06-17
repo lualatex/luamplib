@@ -26,8 +26,8 @@ A%
 \begin{mplibcode}
 verbatimtex \lower.2em etex
 beginfig(0);
-draw origin--(1cm,0) withcolor \mpxcolor{teal};
-draw btex g\begin{huge}g\end{huge}etex withcolor \mpxcolor{orange};
+draw origin--(1cm,0) withcolor \mpcolor{teal};
+draw btex g\begin{huge}g\end{huge}etex withcolor \mpcolor{orange};
 draw bbox currentpicture;
 endfig;
 
@@ -52,7 +52,7 @@ z1=-z2=(-u,0);
 for i = 1 upto 3:
   draw z1..(0, i*u)..z2;
   label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u))
-  withcolor \mpxcolor{red!70!blue};
+  withcolor \mpcolor{red!70!blue};
 endfor;
 endfig;
 \end{mplibcode}%
