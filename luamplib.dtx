@@ -1277,7 +1277,12 @@ local function do_preobj_color(object,prescript)
   -- color
   local override = prescript and prescript.MPlibOverrideColor
   if override then
-    pdf_literalcode(override)
+    if pdfmode then
+      pdf_literalcode(override)
+      override = nil
+    else
+      texsprint(format("\\special{color push %s}",override))
+    end
   else
     local cs = object.color
     if cs and #cs > 0 then
@@ -1313,7 +1318,7 @@ local function do_preobj_color(object,prescript)
     if     #colorb == 1 then colorspace = "DeviceGray"
     elseif #colorb == 3 then colorspace = "DeviceRGB"
     elseif #colorb == 4 then colorspace = "DeviceCMYK"
-    else   return troff_no
+    else   return troff_no,override
     end
     colora = tableconcat(colora, " ")
     colorb = tableconcat(colorb, " ")
@@ -1328,14 +1333,17 @@ local function do_preobj_color(object,prescript)
       shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
     end
     pdf_literalcode("q /Pattern cs")
-    return troff_no,shade_no
+    return troff_no,override,shade_no
   end
-  return troff_no
+  return troff_no,override
 end
 
-local function do_postobj_color(tr,sh)
+local function do_postobj_color(tr,over,sh)
   if sh then
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
+  end
+  if over then
+    texsprint("\\special{color pop}")
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
@@ -1383,7 +1391,7 @@ local function flush(result,flusher)
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
-              local tr_opaq,shade_no = do_preobj_color(object,prescript)
+              local tr_opaq,cr_over,shade_no = do_preobj_color(object,prescript)
               if prescript and prescript.MPlibTEXboxID then
                 putTEXboxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
@@ -1508,7 +1516,7 @@ local function flush(result,flusher)
 %     Added to \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-              do_postobj_color(tr_opaq,shade_no)
+              do_postobj_color(tr_opaq,cr_over,shade_no)
             end
           end
           stop_pdf_code()
