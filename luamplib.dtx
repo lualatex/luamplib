@@ -1020,7 +1020,7 @@ local function protecttextext(data)
       mpxcolors[cnt] =
         format("\\expandafter\\mplibxcolor\\csname mpxcolor%i\\endcsname{%s}",
           cnt,str)
-      return format("\\noexpand\\csname mpxcolor%i\\noexpand\\endcsname",cnt)
+      return format("\\csname mpxcolor%i\\endcsname",cnt)
     end)
   texsprint(data)
 end
