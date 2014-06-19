@@ -1264,6 +1264,8 @@ local function color_normalize(ca,cb)
   end
 end
 
+local prev_override_color
+
 local function do_preobj_color(object,prescript)
   -- transparency
   local opaq = prescript and prescript.tr_transparency
@@ -1282,11 +1284,18 @@ local function do_preobj_color(object,prescript)
       override = nil
     else
       texsprint(format("\\special{color push %s}",override))
+      prev_override_color = override
     end
   else
     local cs = object.color
     if cs and #cs > 0 then
       pdf_literalcode(luamplib.colorconverter(cs))
+      prev_override_color = nil
+    elseif not pdfmode then
+      override = prev_override_color
+      if override then
+        texsprint(format("\\special{color push %s}",override))
+      end
     end
   end
   -- shading
