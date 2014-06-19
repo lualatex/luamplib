@@ -17,10 +17,10 @@ RUNFILES  = $(STY) $(LUA)
 
 ALL       = $(SRCFILES) $(DOCFILES) $(RUNFILES)
 
-TEXMFDIR  = ./texmf
 RUNDIR    = $(TEXMFDIR)/tex/$(FORMAT)/$(NAME)
 DOCDIR    = $(TEXMFDIR)/doc/$(FORMAT)/$(NAME)
 SRCDIR    = $(TEXMFDIR)/source/$(FORMAT)/$(NAME)
+TEXMFDIR  = $(shell kpsewhich --var-value TEXMFHOME)
 
 CTAN_ZIP  = $(NAME).zip
 TDS_ZIP   = $(NAME).tds.zip
@@ -52,8 +52,8 @@ $(CTAN_ZIP): $(SOURCES) $(DOC) $(TDS_ZIP)
 	@$(RM) -- $@
 	@mkdir -p $(NAME)
 	@cp -f $(SOURCES) $(DOC) $(NAME)
-	@zip -9 -r $@ $(TDS_ZIP) $(NAME) >/dev/null
-	@rm -rf $(NAME)
+	@zip -q -9 -r $@ $(TDS_ZIP) $(NAME)
+	@$(RM) -r $(NAME)
 
 define run-install
 @mkdir -p $(RUNDIR) && cp $(RUNFILES) $(RUNDIR)

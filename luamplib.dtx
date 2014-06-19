@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/04/25 v2.7.0 Interface for using the mplib library]%
+  [2014/06/17 v2.8.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/04/25 v2.7.0}
+% \date{2014/06/17 v2.8.0}
 %
 % \maketitle
 %
@@ -244,13 +244,19 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{verbatim}
 %     \begin{mplibcode}
 %       draw origin--(\mpdim{\linewidth},0) withpen pencircle scaled 4
-%       dashed evenly scaled 4 withcolor \myrulecolor;
+%       dashed evenly scaled 4 withcolor \mpcolor{orange};
 %     \end{mplibcode}
 %   \end{verbatim}
 %   \textsc{n.b.} Users should not use the protected variant of
 %   |btex ... etex| as provided by gmp package. As \textsf{luamplib}
 %   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
 %   here.
+% \item With \cs{mpcolor} command, color names or expressions of
+%   \textsf{color} or \textsf{xcolor} package can be used inside mplibcode
+%   enviroment. In PDF mode, \textsf{spotcolor} package is supported
+%   as well.  This is a \LaTeX-only functionality and \textsf{color} or
+%   \textsf{xcolor} package should be loaded by users.
+%   See the example code of the previous item.
 % \item Users can choose |numbersystem| option since v2.4.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
@@ -322,8 +328,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.7.0",
-  date          = "2014/04/25",
+  version       = "2.8.0",
+  date          = "2014/06/17",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -482,6 +488,7 @@ local noneedtoreplace = {
   ["mp-step.mpiv"] = true,
   ["mp-text.mpiv"] = true,
   ["mp-tool.mpiv"] = true,
+  ["mp-luas.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
@@ -1005,6 +1012,14 @@ local function protecttextext(data)
       str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
       return format("\\detokenize{%s}",str)
     end)
+  luamplib.mpxcolors = {}
+  data = stringgsub(data, "\\mpcolor%s*{(.-)}",
+    function(str)
+      local cnt = #luamplib.mpxcolors + 1
+      luamplib.mpxcolors[cnt] = format(
+        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname{%s}",cnt,str)
+      return format("\\csname mpxcolor%i\\endcsname",cnt)
+    end)
   texsprint(data)
 end
 
@@ -1249,6 +1264,8 @@ local function color_normalize(ca,cb)
   end
 end
 
+local prev_override_color
+
 local function do_preobj_color(object,prescript)
   -- transparency
   local opaq = prescript and prescript.tr_transparency
@@ -1260,9 +1277,26 @@ local function do_preobj_color(object,prescript)
     pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
   -- color
-  local cs = object.color
-  if cs and #cs > 0 then
-    pdf_literalcode(luamplib.colorconverter(cs))
+  local override = prescript and prescript.MPlibOverrideColor
+  if override then
+    if pdfmode then
+      pdf_literalcode(override)
+      override = nil
+    else
+      texsprint(format("\\special{color push %s}",override))
+      prev_override_color = override
+    end
+  else
+    local cs = object.color
+    if cs and #cs > 0 then
+      pdf_literalcode(luamplib.colorconverter(cs))
+      prev_override_color = nil
+    elseif not pdfmode then
+      override = prev_override_color
+      if override then
+        texsprint(format("\\special{color push %s}",override))
+      end
+    end
   end
   -- shading
   local sh_type = prescript and prescript.sh_type
@@ -1293,7 +1327,7 @@ local function do_preobj_color(object,prescript)
     if     #colorb == 1 then colorspace = "DeviceGray"
     elseif #colorb == 3 then colorspace = "DeviceRGB"
     elseif #colorb == 4 then colorspace = "DeviceCMYK"
-    else   return troff_no
+    else   return troff_no,override
     end
     colora = tableconcat(colora, " ")
     colorb = tableconcat(colorb, " ")
@@ -1308,14 +1342,17 @@ local function do_preobj_color(object,prescript)
       shade_no = sh_pdfpageresources(3,domain,colorspace,colora,colorb,coordinates)
     end
     pdf_literalcode("q /Pattern cs")
-    return troff_no,shade_no
+    return troff_no,override,shade_no
   end
-  return troff_no
+  return troff_no,override
 end
 
-local function do_postobj_color(tr,sh)
+local function do_postobj_color(tr,over,sh)
   if sh then
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
+  end
+  if over then
+    texsprint("\\special{color pop}")
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
@@ -1363,7 +1400,7 @@ local function flush(result,flusher)
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
-              local tr_opaq,shade_no = do_preobj_color(object,prescript)
+              local tr_opaq,cr_over,shade_no = do_preobj_color(object,prescript)
               if prescript and prescript.MPlibTEXboxID then
                 putTEXboxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
@@ -1488,7 +1525,7 @@ local function flush(result,flusher)
 %     Added to \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-              do_postobj_color(tr_opaq,shade_no)
+              do_postobj_color(tr_opaq,cr_over,shade_no)
             end
           end
           stop_pdf_code()
@@ -1535,9 +1572,8 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/04/25 v2.7.0 mplib package for LuaTeX]
+    [2014/06/17 v2.8.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
-  \RequirePackage{pdftexcmds}
 \fi
 %    \end{macrocode}
 %
@@ -1630,12 +1666,14 @@ luamplib.colorconverter = colorconverter
   \mplibsetupcatcodes
   \ltxdomplibcodeindeed
 }
+\def\mplib@mplibcode{mplibcode}
 \long\def\ltxdomplibcodeindeed#1\end#2{%
   \endgroup
   \toks@\expandafter{\the\toks@#1}%
-  \ifnum\pdf@strcmp{#2}{mplibcode}=\z@
-    \def\reserved@a{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\reserved@a]===])}%
+  \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
+    \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
+    \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
     \ifnum\mplibstartlineno<\inputlineno
@@ -1643,6 +1681,20 @@ luamplib.colorconverter = colorconverter
     \fi
   \else
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
+  \fi
+}
+%    \end{macrocode}
+%     Support color/xcolor package on \LaTeX.
+%     User interface is: \verb|\mpcolor{teal}|, for example.
+%    \begin{macrocode}
+\def\mplibcolor#1#2{%
+  \ifcsname\string\color @#2\endcsname
+    \edef#1{1 withprescript
+      "MPlibOverrideColor=\csname\string\color @#2\endcsname"}%
+  \else
+    \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
+    \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
+    \edef#1{(\mplibtemp@c)}%
   \fi
 }
 \fi
