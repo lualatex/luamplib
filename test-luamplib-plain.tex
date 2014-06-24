@@ -1,3 +1,6 @@
+\input miniltx
+\input color
+\definecolor{orange}{rgb}{1,0.5,0}
 \input luamplib.sty
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
 \tracingcommands1
@@ -52,7 +55,7 @@ numeric u; u=1cm;
 z1=-z2=(-u,0);
 for i = 1 upto 3:
   draw z1..(0, i*u)..z2;
-  label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u)) withcolor blue;
+  label.top(TEX("$e_{" & decimal(i) & "}$"), (0, i*u)) withcolor \mpcolor{orange};
 endfor;
 endfig;
 \endmplibcode
