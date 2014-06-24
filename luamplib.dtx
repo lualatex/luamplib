@@ -1631,7 +1631,7 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\expandafter\ifx\csname selectfont\endcsname\relax
 \def\mplibreplacenewlinecs{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
 \begingroup\lccode`\~=`\^^M \lowercase{\endgroup
@@ -1645,7 +1645,8 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \def\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
@@ -1683,6 +1684,7 @@ luamplib.colorconverter = colorconverter
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
 }
+\fi
 %    \end{macrocode}
 %     Support color/xcolor package on \LaTeX.
 %     User interface is: \verb|\mpcolor{teal}|, for example.
@@ -1692,12 +1694,15 @@ luamplib.colorconverter = colorconverter
     \edef#1{1 withprescript
       "MPlibOverrideColor=\csname\string\color @#2\endcsname"}%
   \else
-    \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
-    \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
-    \edef#1{(\mplibtemp@c)}%
+    \ifdefined\extractcolorspecs
+      \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
+      \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
+      \edef#1{(\mplibtemp@c)}%
+    \else
+      \errmessage{color `#2' seems to be invalid}
+    \fi
   \fi
 }
-\fi
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
