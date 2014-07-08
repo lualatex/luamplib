@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2014/07/04 2.8.1
+    * support color package on plain tex.
+    * fix a failure at `btex \% etex'.
+
 2014/06/17 2.8.0
     * support color/xcolor/spotcolor packages.
       On LaTeX, color names or expressions of color/xcolor packages

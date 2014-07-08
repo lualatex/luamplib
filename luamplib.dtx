@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/06/17 v2.8.0 Interface for using the mplib library]%
+  [2014/07/04 v2.8.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/06/17 v2.8.0}
+% \date{2014/07/04 v2.8.1}
 %
 % \maketitle
 %
@@ -252,11 +252,10 @@ See source file '\inFileName' for licencing and contact information.
 %   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
 %   here.
 % \item With \cs{mpcolor} command, color names or expressions of
-%   \textsf{color} or \textsf{xcolor} package can be used inside mplibcode
-%   enviroment. In PDF mode, \textsf{spotcolor} package is supported
-%   as well.  This is a \LaTeX-only functionality and \textsf{color} or
-%   \textsf{xcolor} package should be loaded by users.
-%   See the example code of the previous item.
+%   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
+%   enviroment, though \textsf{luamplib} does not automatically load these
+%   packages. See the example code above. In PDF mode, \textsf{(x)spotcolor}
+%   package is supported as well.
 % \item Users can choose |numbersystem| option since v2.4.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
@@ -328,8 +327,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.8.0",
-  date          = "2014/06/17",
+  version       = "2.8.1",
+  date          = "2014/07/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -529,15 +528,17 @@ local function replaceinputmpfile (name,file)
   local data = fh:read("*all"); fh:close()
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
       str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
       return str
     end)
-  data = stringgsub(data,"%%.-\n","")
   local count,cnt = 0,0
   data,cnt = stringgsub(data,
     "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
     function(str)
+      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
+      str = stringgsub(str,"%%.-\n", "")
+      str = stringgsub(str,"%%.-$", "")
+      str = stringgsub(str,"\\!!!!!PERCENT!!!!!","\\%%")
       str = stringgsub(str,"[\n\r]%s*"," ")
       str = stringgsub(str,'"','"&ditto&"')
       return format("rawtextext(\"%s\")",str)
@@ -557,7 +558,6 @@ local function replaceinputmpfile (name,file)
     return file
   end
   data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
-  data = stringgsub(data,"!!!!!PERCENT!!!!!","%%")
   fh = ioopen(newfile,"w")
   if not fh then return file end
   fh:write(data); fh:close()
@@ -989,10 +989,12 @@ local function protecttextext(data)
       str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
       return str
     end)
-  data = stringgsub(data,"%%.-\n","")
   data = stringgsub(data,
     "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
     function(str)
+      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
+      str = stringgsub(str,"%%.-\n", "")
+      str = stringgsub(str,"%%.-$", "")
       str = stringgsub(str,'"','"&ditto&"')
       str = stringgsub(str,"\n%s*"," ")
       return format("rawtextext(\"%s\")",str)
@@ -1000,6 +1002,9 @@ local function protecttextext(data)
   data = stringgsub(data,
     "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
     function(str)
+      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
+      str = stringgsub(str,"%%.-\n", "")
+      str = stringgsub(str,"%%.-$", "")
       str = stringgsub(str,'"','"&ditto&"')
       str = stringgsub(str,"\n%s*"," ")
       return format("VerbatimTeX(\"%s\")",str)
@@ -1012,6 +1017,7 @@ local function protecttextext(data)
       str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
       return format("\\detokenize{%s}",str)
     end)
+  data = stringgsub(data,"%%.-\n", "")
   luamplib.mpxcolors = {}
   data = stringgsub(data, "\\mpcolor%s*{(.-)}",
     function(str)
@@ -1572,7 +1578,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/06/17 v2.8.0 mplib package for LuaTeX]
+    [2014/07/04 v2.8.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1631,7 +1637,7 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\expandafter\ifx\csname selectfont\endcsname\relax
 \def\mplibreplacenewlinecs{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
 \begingroup\lccode`\~=`\^^M \lowercase{\endgroup
@@ -1645,7 +1651,8 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \def\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+  \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
@@ -1683,8 +1690,10 @@ luamplib.colorconverter = colorconverter
     \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
   \fi
 }
+\fi
 %    \end{macrocode}
-%     Support color/xcolor package on \LaTeX.
+%
+%     Support color/xcolor packages.
 %     User interface is: \verb|\mpcolor{teal}|, for example.
 %    \begin{macrocode}
 \def\mplibcolor#1#2{%
@@ -1692,12 +1701,15 @@ luamplib.colorconverter = colorconverter
     \edef#1{1 withprescript
       "MPlibOverrideColor=\csname\string\color @#2\endcsname"}%
   \else
-    \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
-    \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
-    \edef#1{(\mplibtemp@c)}%
+    \ifdefined\extractcolorspecs
+      \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
+      \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
+      \edef#1{(\mplibtemp@c)}%
+    \else
+      \errmessage{Undefined color `#2'}%
+    \fi
   \fi
 }
-\fi
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
