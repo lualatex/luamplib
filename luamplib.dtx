@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2014 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2015 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2014/07/04 v2.8.1 Interface for using the mplib library]%
+  [2015/01/05 v2.9.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2014/07/04 v2.8.1}
+% \date{2015/01/05 v2.9.0}
 %
 % \maketitle
 %
@@ -290,6 +290,24 @@ See source file '\inFileName' for licencing and contact information.
 %   therefore will be typeset with current \TeX\ font.
 %   Also take care of |char| operator in the left side argument,
 %   as this might bring unpermitted characters into \TeX.
+% \item Starting with v2.9, |\mplibcodeinherit{enable}| enables the inheritance
+%   of variables, constants, and macros defined by previous |mplibcode| chunks.
+%   On the contrary, the default value |\mplibcodeinherit{disable}| will make
+%   each code chunks being treated as an independent instance, and never
+%   affected by previous code chunks.  \textsc{e.g.}
+%   \begin{verbatim}
+%   \mplibcodeinherit{enable}
+%   \everymplib{ beginfig(0);} \everyendmplib{ endfig;}
+%   A circle
+%   \mplibcode
+%     u := 10;
+%     draw fullcircle scaled u;
+%   \endmplibcode
+%   and twice the size
+%   \mplibcode
+%     draw fullcircle scaled 2u;
+%   \endmplibcode
+%   \end{verbatim}
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
@@ -327,8 +345,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.8.1",
-  date          = "2014/07/04",
+  version       = "2.9.0",
+  date          = "2015/01/05",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -675,6 +693,13 @@ else
       math_mode = luamplib.numbersystem,
       random_seed = randomseed,
     }
+%    \end{macrocode}
+%     Append our own preamble to the preamble above.
+%    \begin{macrocode}
+    local preamble = preamble .. luamplib.mplibcodepreamble
+    if luamplib.textextlabel then
+      preamble = preamble .. luamplib.textextlabelpreamble
+    end
     local result
     if not mpx then
       result = { status = 99, error = "out of memory"}
@@ -714,7 +739,6 @@ end
 
 local function process_indeed (mpx, data, indeed)
   local converted, result = false, {}
-  local mpx = luamplib.load(mpx)
   if mpx and data then
     result = mpx:execute(data)
     local log = luamplib.reporterror(result)
@@ -741,11 +765,23 @@ local function process_indeed (mpx, data, indeed)
   end
   return converted, result
 end
+
+%    \end{macrocode}
+%     v2.9 has introduced the concept of `code inherit'
+%    \begin{macrocode}
+luamplib.codeinherit = false
+local mplibinstances = {}
 local process = function (data,indeed)
-  if not indeed then
-    randomseed = math.random(65535)
+  local standalone, firstpass = not luamplib.codeinherit, not indeed
+  local currfmt = currentformat .. luamplib.numbersystem
+  currfmt = firstpass and currfmt or (currfmt.."2")
+  local mpx = mplibinstances[currfmt]
+  if standalone or not mpx then
+    randomseed = firstpass and math.random(65535) or randomseed
+    mpx = luamplib.load(currentformat)
+    mplibinstances[currfmt] = mpx
   end
-  return process_indeed(currentformat, data, indeed)
+  return process_indeed(mpx, data, indeed)
 end
 luamplib.process = process
 
@@ -965,6 +1001,7 @@ let VerbatimTeX = specialVerbatimTeX;
 extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
+luamplib.mplibcodepreamble = mplibcodepreamble
 
 local textextlabelpreamble = [[
 primarydef s infont f = rawtextext(s) enddef;
@@ -977,6 +1014,7 @@ def fontsize expr f =
   endgroup
 enddef;
 ]]
+luamplib.textextlabelpreamble = textextlabelpreamble
 
 local function protecttextext(data)
   local everymplib    = tex.toks['everymplibtoks']    or ''
@@ -1071,11 +1109,7 @@ local function makeTEXboxes (data)
   data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
   data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
   data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
-  local preamble = mplibcodepreamble
-  if luamplib.textextlabel then
-    preamble = preamble .. textextlabelpreamble
-  end
-  local _,result = process(preamble .. data, false)
+  local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
 end
@@ -1099,11 +1133,7 @@ local function processwithTEXboxes (data)
       num, box.height/factor,
       num, box.depth /factor)
   end
-  local preamble = prepreamble .. mplibcodepreamble
-  if luamplib.textextlabel then
-    preamble = preamble .. textextlabelpreamble
-  end
-  process(preamble .. data, true)
+  process(prepreamble .. data, true)
 end
 luamplib.processwithTEXboxes = processwithTEXboxes
 
@@ -1578,7 +1608,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2014/07/04 v2.8.1 mplib package for LuaTeX]
+    [2015/01/05 v2.9.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1772,6 +1802,16 @@ luamplib.colorconverter = colorconverter
     \directlua{luamplib.textextlabel = true}%
   \else
     \directlua{luamplib.textextlabel = false}%
+  \fi
+  \endgroup
+}
+\def\mplibcodeinherit#1{%
+  \begingroup
+  \def\tempa{enable}\def\tempb{#1}%
+  \ifx\tempa\tempb
+    \directlua{luamplib.codeinherit = true}%
+  \else
+    \directlua{luamplib.codeinherit = false}%
   \fi
   \endgroup
 }

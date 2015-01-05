@@ -1,5 +1,12 @@
                        History of the luamplib package
 
+2015/01/05 2.9.0
+    * after declaring `\mplibcodeinherit{enable}', each mplib code chunks
+      will inherit variables/constants/macros defined by previous chunks.
+      On the contrary, the default value `\mplibcodeinherit{disable}' will
+      treat each code chunks as an independent instance, never being affected
+      by other code chunks.
+
 2014/07/04 2.8.1
     * support color package on plain tex.
     * fix a failure at `btex \% etex'.
