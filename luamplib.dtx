@@ -294,7 +294,12 @@ See source file '\inFileName' for licencing and contact information.
 %   of variables, constants, and macros defined by previous |mplibcode| chunks.
 %   On the contrary, the default value |\mplibcodeinherit{disable}| will make
 %   each code chunks being treated as an independent instance, and never
-%   affected by previous code chunks.  \textsc{e.g.}
+%   affected by previous code chunks.
+%
+%   \textsc{n.b.} It does not work to pass across code chunks those variables
+%   containing |btex ... etex| pictures, as these are not METAPOST, but \TeX\
+%   elements from the standpoint of \textsf{luamplib}. Likewise, |graph.mp|
+%   does not work properly with the inheritance functionality.
 %   \begin{verbatim}
 %   \mplibcodeinherit{enable}
 %   \everymplib{ beginfig(0);} \everyendmplib{ endfig;}
