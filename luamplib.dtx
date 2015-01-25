@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/01/05 v2.9.0 Interface for using the mplib library]%
+  [2015/01/26 v2.9.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/01/05 v2.9.0}
+% \date{2015/01/26 v2.9.1}
 %
 % \maketitle
 %
@@ -350,8 +350,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.9.0",
-  date          = "2015/01/05",
+  version       = "2.9.1",
+  date          = "2015/01/26",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -778,7 +778,7 @@ luamplib.codeinherit = false
 local mplibinstances = {}
 local process = function (data,indeed)
   local standalone, firstpass = not luamplib.codeinherit, not indeed
-  local currfmt = currentformat .. luamplib.numbersystem
+  local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
   currfmt = firstpass and currfmt or (currfmt.."2")
   local mpx = mplibinstances[currfmt]
   if standalone or not mpx then
@@ -1613,7 +1613,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/01/05 v2.9.0 mplib package for LuaTeX]
+    [2015/01/26 v2.9.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}

@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2015/01/26 2.9.1
+    * fix a bug reported by Herbert Schulz via luatex mailing list
+      (http://tug.org/pipermail/luatex/2015-January/005054.html)
+
 2015/01/05 2.9.0
     * after declaring `\mplibcodeinherit{enable}', each mplib code chunks
       will inherit variables/constants/macros defined by previous chunks.
