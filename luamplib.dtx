@@ -532,6 +532,23 @@ local function replaceformatmp(file,newfile,ofmodify)
   return newfile
 end
 
+local esctex = "!!!T!!!E!!!X!!!"
+local esclbr = "!!!!!LEFTBRCE!!!!!"
+local escrbr = "!!!!!RGHTBRCE!!!!!"
+local escshar = "!!!!!SHARPE!!!!!"
+local escpcnt = "\\!!!!!PERCENT!!!!!"
+local begname = "%f[A-Z_a-z]"
+local endname = "%f[^A-Z_a-z]"
+
+local function protecttexcontents(str)
+  str = stringgsub(str,"\\%%","\\"..escpcnt)
+  str = stringgsub(str,"%%.-\n", "")
+  str = stringgsub(str,"%%.-$", "")
+  str = stringgsub(str,'"','"&ditto&"')
+  str = stringgsub(str,"\n%s*"," ")
+  return str
+end
+
 local function replaceinputmpfile (name,file)
   local ofmodify = lfsattributes(file,"modification")
   if not ofmodify then return file end
@@ -551,24 +568,20 @@ local function replaceinputmpfile (name,file)
   local data = fh:read("*all"); fh:close()
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
       return str
     end)
   local count,cnt = 0,0
   data,cnt = stringgsub(data,
-    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,"\\!!!!!PERCENT!!!!!","\\%%")
-      str = stringgsub(str,"[\n\r]%s*"," ")
-      str = stringgsub(str,'"','"&ditto&"')
+      str = protecttexcontents(str)
+      str = stringgsub(str,"\\"..escpcnt,"\\%%")
       return format("rawtextext(\"%s\")",str)
     end)
   count = count + cnt
   data,cnt = stringgsub(data,
-    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*.-%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."verbatimtex"..endname.."%s*.-%s*"..begname.."etex"..endname,
     "")
   count = count + cnt
   if count == 0 then
@@ -580,7 +593,7 @@ local function replaceinputmpfile (name,file)
     end
     return file
   end
-  data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
+  data = stringgsub(data,"([bem])"..esctex,"%1tex")
   fh = ioopen(newfile,"w")
   if not fh then return file end
   fh:write(data); fh:close()
@@ -1028,36 +1041,28 @@ local function protecttextext(data)
   data = stringgsub(data,"\r","\n")
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      str = stringgsub(str,"%%",escpcnt)
+      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
       return str
     end)
   data = stringgsub(data,
-    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,'"','"&ditto&"')
-      str = stringgsub(str,"\n%s*"," ")
+      str = protecttexcontents(str)
       return format("rawtextext(\"%s\")",str)
     end)
   data = stringgsub(data,
-    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,'"','"&ditto&"')
-      str = stringgsub(str,"\n%s*"," ")
+      str = protecttexcontents(str)
       return format("VerbatimTeX(\"%s\")",str)
     end)
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"([bem])!!!T!!!E!!!X!!!","%1tex")
-      str = stringgsub(str,"{", "!!!!!LEFTBRCE!!!!!")
-      str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
-      str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
+      str = stringgsub(str,"([bem])"..esctex,"%1tex")
+      str = stringgsub(str,"{", esclbr)
+      str = stringgsub(str,"}", escrbr)
+      str = stringgsub(str,"#", escshar)
       return format("\\detokenize{%s}",str)
     end)
   data = stringgsub(data,"%%.-\n", "")
@@ -1110,10 +1115,10 @@ end
 
 local function makeTEXboxes (data)
   data = stringgsub(data, "##", "#") -- restore # doubled in input string
-  data = stringgsub(data, "!!!!!PERCENT!!!!!", "%%")
-  data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
-  data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
-  data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
+  data = stringgsub(data, escpcnt, "%%")
+  data = stringgsub(data, esclbr,"{")
+  data = stringgsub(data, escrbr,"}")
+  data = stringgsub(data, escshar,  "#" )
   local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
