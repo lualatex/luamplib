@@ -203,7 +203,6 @@ See source file '\inFileName' for licencing and contact information.
 %   each mplib box can be freely moved horizontally and/or vertically.
 %   Also, a box number might be assigned to mplib box, allowing it to be
 %   reused later (see test files).
-%   All other |verbatimtex ... etex|'s are ignored.
 %   \textsc{e.g.}
 %   \begin{verbatim}
 %     \mplibcode
@@ -215,6 +214,21 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
 %   |verbatimtex ... etex|.
+% \item
+%   \TeX\ code in |VerbatimTeX(...)| or |verbatimtex ... etex| (in \TeX\ file)
+%   between |beginfig()| and |endfig| will be inserted
+%   after flushing out the mplib figure.
+%   \textsc{e.g.}
+%   \begin{verbatim}
+%     \mplibcode
+%       D := sqrt(2)**7;
+%       beginfig(0);
+%       draw fullcircle scaled D;
+%       VerbatimTeX("\gdef\Dia{" & decimal D & "}");
+%       endfig;
+%     \endmplibcode
+%     diameter: \Dia bp.
+%   \end{verbatim}
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
 %   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
@@ -1014,9 +1028,9 @@ enddef;
 def TEX = textext enddef;
 def fontmapfile primary filename = enddef;
 def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
-def ignoreVerbatimTeX  (text t) = enddef;
+def normalVerbatimTeX  (text t) = special "PostMPlibVerbTeX="&t; enddef;
 let VerbatimTeX = specialVerbatimTeX;
-extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
+extra_beginfig := extra_beginfig & " let VerbatimTeX = normalVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 luamplib.mplibcodepreamble = mplibcodepreamble
@@ -1429,10 +1443,12 @@ local function flush(result,flusher)
         else
 %    \end{macrocode}
 %    Insert \verb|verbatimtex| code before mplib box.
+%    And prepare for those codes that will be executed afterwards.
 %    \begin{macrocode}
           if TeX_code_t[f] then
             texsprint(TeX_code_t[f])
           end
+          local TeX_code_bot = {} -- PostVerbatimTeX
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
           if objects then
@@ -1440,8 +1456,9 @@ local function flush(result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 5 lines are part of the
+%     Change from \ConTeXt{} code: the following 7 lines are part of the
 %     |btex...etex| patch. Again, colors are processed at this stage.
+%     Also, we collect \TeX\ codes that will be executed after flushing.
 %
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -1449,6 +1466,8 @@ local function flush(result,flusher)
               local tr_opaq,cr_over,shade_no = do_preobj_color(object,prescript)
               if prescript and prescript.MPlibTEXboxID then
                 putTEXboxes(object,prescript)
+              elseif prescript and prescript.PostMPlibVerbTeX then
+                TeX_code_bot[#TeX_code_bot+1] = prescript.PostMPlibVerbTeX
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                 -- skip
               elseif objecttype == "start_clip" then
@@ -1569,6 +1588,7 @@ local function flush(result,flusher)
 %    \end{macrocode}
 %
 %     Added to \ConTeXt{} code: color stuff
+%     And execute \verb|verbatimtex| codes.
 %
 %    \begin{macrocode}
               do_postobj_color(tr_opaq,cr_over,shade_no)
@@ -1576,6 +1596,9 @@ local function flush(result,flusher)
           end
           stop_pdf_code()
           pdf_stopfigure()
+          if #TeX_code_bot > 0 then
+            texsprint(tableconcat(TeX_code_bot))
+          end
         end
       end
     end
