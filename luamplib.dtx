@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/01/26 v2.9.1 Interface for using the mplib library]%
+  [2015/03/18 v2.10.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/01/26 v2.9.1}
+% \date{2015/03/18 v2.10.0}
 %
 % \maketitle
 %
@@ -364,8 +364,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.9.1",
-  date          = "2015/01/26",
+  version       = "2.10.0",
+  date          = "2015/03/18",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -1180,13 +1180,15 @@ end
 
 local function putTEXboxes (object,prescript)
   local box = prescript.MPlibTEXboxID
-  local n,tw,th = box[1],box[2],box[3]
+  local n,tw,th = box[1],tonumber(box[2]),tonumber(box[3])
   if n and tw and th then
     local op = object.path
     local first, second, fourth = op[1], op[2], op[4]
     local tx, ty = first.x_coord, first.y_coord
-    local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
-    local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
+    local sx = tw == 0 and 1 or (second.x_coord - tx)/tw
+    local sy = th == 0 and 1 or (fourth.y_coord - ty)/th
+    local rx = tw == 0 and 0 or (second.y_coord - ty)/tw
+    local ry = th == 0 and 0 or (fourth.x_coord - tx)/th
     if sx == 0 then sx = 0.00001 end
     if sy == 0 then sy = 0.00001 end
     start_pdf_code()
@@ -1641,7 +1643,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/01/26 v2.9.1 mplib package for LuaTeX]
+    [2015/03/18 v2.10.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
