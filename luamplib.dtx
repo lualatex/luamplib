@@ -505,6 +505,7 @@ local noneedtoreplace = {
   ["mp-abck.mpiv"] = true,
   ["mp-apos.mpiv"] = true,
   ["mp-asnc.mpiv"] = true,
+  ["mp-bare.mpiv"] = true,
   ["mp-base.mpiv"] = true,
   ["mp-butt.mpiv"] = true,
   ["mp-char.mpiv"] = true,
@@ -518,13 +519,13 @@ local noneedtoreplace = {
   ["mp-grid.mpiv"] = true,
   ["mp-grph.mpiv"] = true,
   ["mp-idea.mpiv"] = true,
+  ["mp-luas.mpiv"] = true,
   ["mp-mlib.mpiv"] = true,
   ["mp-page.mpiv"] = true,
   ["mp-shap.mpiv"] = true,
   ["mp-step.mpiv"] = true,
   ["mp-text.mpiv"] = true,
   ["mp-tool.mpiv"] = true,
-  ["mp-luas.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
@@ -550,7 +551,7 @@ local esctex = "!!!T!!!E!!!X!!!"
 local esclbr = "!!!!!LEFTBRCE!!!!!"
 local escrbr = "!!!!!RGHTBRCE!!!!!"
 local escshar = "!!!!!SHARPE!!!!!"
-local escpcnt = "\\!!!!!PERCENT!!!!!"
+local escpcnt = "!!!!!PERCENT!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
@@ -1185,12 +1186,17 @@ local function putTEXboxes (object,prescript)
     local op = object.path
     local first, second, fourth = op[1], op[2], op[4]
     local tx, ty = first.x_coord, first.y_coord
-    local sx = tw == 0 and 1 or (second.x_coord - tx)/tw
-    local sy = th == 0 and 1 or (fourth.y_coord - ty)/th
-    local rx = tw == 0 and 0 or (second.y_coord - ty)/tw
-    local ry = th == 0 and 0 or (fourth.x_coord - tx)/th
-    if sx == 0 then sx = 0.00001 end
-    if sy == 0 then sy = 0.00001 end
+    local sx, rx, ry, sy = 1, 0, 0, 1
+    if tw ~= 0 then
+      sx = (second.x_coord - tx)/tw
+      rx = (second.y_coord - ty)/tw
+      if sx == 0 then sx = 0.00001 end
+    end
+    if th ~= 0 then
+      sy = (fourth.y_coord - ty)/th
+      ry = (fourth.x_coord - tx)/th
+      if sy == 0 then sy = 0.00001 end
+    end
     start_pdf_code()
     pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
     texsprint(format("\\mplibputtextbox{%i}",n))
