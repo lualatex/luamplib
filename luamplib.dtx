@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/03/18 v2.10.0 Interface for using the mplib library]%
+  [2015/03/20 v2.10.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/03/18 v2.10.0}
+% \date{2015/03/20 v2.10.0}
 %
 % \maketitle
 %
@@ -251,7 +251,7 @@ See source file '\inFileName' for licencing and contact information.
 %   That's because \textsf{luamplib} does not force horizontal or vertical mode.
 %   If you want all mplib figures center- (or right-) aligned, please use
 %   \cs{everymplib} command with \cs{leavevmode} as shown above.
-% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
+% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed
 %   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
 %   \textsc{e.g.}
@@ -268,8 +268,9 @@ See source file '\inFileName' for licencing and contact information.
 % \item With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
 %   enviroment, though \textsf{luamplib} does not automatically load these
-%   packages. See the example code above. In PDF mode, \textsf{(x)spotcolor}
-%   package is supported as well.
+%   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
+%   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
+%   as well.
 % \item Users can choose |numbersystem| option since v2.4.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
@@ -277,7 +278,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
-%   This would make the compilation time longer wastefully, as most |.mp| files 
+%   This would make the compilation time longer wastefully, as most |.mp| files
 %   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
 %   macros as follows, so that users can give instruction about files
 %   that do not require this functionality.
@@ -331,7 +332,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
 %   are suitable for going into this file.
-%   
+%
 % \end{itemize}
 %
 % There are (basically) two formats for metapost: \emph{plain} and
@@ -365,7 +366,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.10.0",
-  date          = "2015/03/18",
+  date          = "2015/03/20",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -403,7 +404,7 @@ if not file then
 %    line by line, but it needs to be passed entirely to |process()|, so we
 %    simply add the lines in |data| and at the end we call |process(data)|.
 %
-%    A few helpers, taken from \verb|l-file.lua|.
+%    A few helpers, taken from |l-file.lua|.
 %
 %    \begin{macrocode}
   file = { }
@@ -945,10 +946,10 @@ end
 
 %    \end{macrocode}
 %     Below code has been contributed by Dohyun Kim.
-%     It implements \verb|btex| / \verb|etex| functions.
+%     It implements |btex| / |etex| functions.
 %
-%     v2.1: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
-%           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
+%     v2.1: |textext()| is now available, which is equivalent to |TEX()| macro from TEX.mp.
+%           |TEX()| is synonym of |textext()| unless TEX.mp is loaded.
 %
 %     v2.2: Transparency and Shading
 %
@@ -1082,11 +1083,12 @@ local function protecttextext(data)
     end)
   data = stringgsub(data,"%%.-\n", "")
   luamplib.mpxcolors = {}
-  data = stringgsub(data, "\\mpcolor%s*{(.-)}",
-    function(str)
+  data = stringgsub(data, "\\mpcolor(.-){(.-)}",
+    function(opt,str)
       local cnt = #luamplib.mpxcolors + 1
       luamplib.mpxcolors[cnt] = format(
-        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname{%s}",cnt,str)
+        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
+        cnt,opt,str)
       return format("\\csname mpxcolor%i\\endcsname",cnt)
     end)
   texsprint(data)
@@ -1115,7 +1117,7 @@ local function domakeTEXboxes (data)
             texsprint(format("\\setbox%i\\hbox{%s}",num,str))
           end
 %    \end{macrocode}
-%     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%     |verbatimtex ... etex| before |beginfig()| is not ignored,
 %     but the \TeX\ code inbetween is inserted before the mplib box.
 %    \begin{macrocode}
           local texcode = prescript and prescript.MPlibVerbTeX
@@ -1428,7 +1430,7 @@ local function do_postobj_color(tr,over,sh)
 end
 
 %    \end{macrocode}
-%     End of \verb|btex| -- \verb|etex| and Transparency/Shading patch.
+%     End of |btex| -- |etex| and Transparency/Shading patch.
 %
 %    \begin{macrocode}
 
@@ -1450,7 +1452,7 @@ local function flush(result,flusher)
           pdf_stopfigure()
         else
 %    \end{macrocode}
-%    Insert \verb|verbatimtex| code before mplib box.
+%    Insert |verbatimtex| code before mplib box.
 %    And prepare for those codes that will be executed afterwards.
 %    \begin{macrocode}
           if TeX_code_t[f] then
@@ -1595,8 +1597,8 @@ local function flush(result,flusher)
               end
 %    \end{macrocode}
 %
-%     Added to \ConTeXt{} code: color stuff
-%     And execute \verb|verbatimtex| codes.
+%     Added to \ConTeXt{} code: color stuff.
+%     And execute |verbatimtex| codes.
 %
 %    \begin{macrocode}
               do_postobj_color(tr_opaq,cr_over,shade_no)
@@ -1649,7 +1651,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/03/18 v2.10.0 mplib package for LuaTeX]
+    [2015/03/20 v2.10.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1691,7 +1693,7 @@ luamplib.colorconverter = colorconverter
 }
 %    \end{macrocode}
 %
-%    Make \verb|btex...etex| box zero-metric.
+%    Make |btex...etex| box zero-metric.
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
@@ -1723,7 +1725,7 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
   \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-  \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+  \directlua{ tex.sprint(luamplib.mpxcolors) }%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
@@ -1750,7 +1752,7 @@ luamplib.colorconverter = colorconverter
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-    \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+    \directlua{ tex.sprint(luamplib.mpxcolors) }%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
@@ -1762,25 +1764,6 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \fi
-%    \end{macrocode}
-%
-%     Support color/xcolor packages.
-%     User interface is: \verb|\mpcolor{teal}|, for example.
-%    \begin{macrocode}
-\def\mplibcolor#1#2{%
-  \ifcsname\string\color @#2\endcsname
-    \edef#1{1 withprescript
-      "MPlibOverrideColor=\csname\string\color @#2\endcsname"}%
-  \else
-    \ifdefined\extractcolorspecs
-      \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
-      \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
-      \edef#1{(\mplibtemp@c)}%
-    \else
-      \errmessage{Undefined color `#2'}%
-    \fi
-  \fi
-}
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
@@ -1812,6 +1795,16 @@ luamplib.colorconverter = colorconverter
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
+%    \end{macrocode}
+%
+%     Support color/xcolor packages.
+%     User interface is: |\mpcolor{teal}| or |\mpcolor[HTML]{008080}|,
+%     for example.
+%    \begin{macrocode}
+\def\mplibcolor#1{%
+  \def\set@color{\edef#1{1 withprescript "MPlibOverrideColor=\current@color"}}%
+  \color
+}
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
 \def\mplibmakenocache#1{\mplibdomakenocache #1,*,}
 \def\mplibdomakenocache#1,{%
