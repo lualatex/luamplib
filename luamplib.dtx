@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/01/26 v2.9.1 Interface for using the mplib library]%
+  [2015/03/20 v2.10.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/01/26 v2.9.1}
+% \date{2015/03/20 v2.10.0}
 %
 % \maketitle
 %
@@ -203,7 +203,6 @@ See source file '\inFileName' for licencing and contact information.
 %   each mplib box can be freely moved horizontally and/or vertically.
 %   Also, a box number might be assigned to mplib box, allowing it to be
 %   reused later (see test files).
-%   All other |verbatimtex ... etex|'s are ignored.
 %   \textsc{e.g.}
 %   \begin{verbatim}
 %     \mplibcode
@@ -215,6 +214,21 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
 %   |verbatimtex ... etex|.
+% \item
+%   \TeX\ code in |VerbatimTeX(...)| or |verbatimtex ... etex| (in \TeX\ file)
+%   between |beginfig()| and |endfig| will be inserted
+%   after flushing out the mplib figure.
+%   \textsc{e.g.}
+%   \begin{verbatim}
+%     \mplibcode
+%       D := sqrt(2)**7;
+%       beginfig(0);
+%       draw fullcircle scaled D;
+%       VerbatimTeX("\gdef\Dia{" & decimal D & "}");
+%       endfig;
+%     \endmplibcode
+%     diameter: \Dia bp.
+%   \end{verbatim}
 % \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
 %   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
@@ -237,7 +251,7 @@ See source file '\inFileName' for licencing and contact information.
 %   That's because \textsf{luamplib} does not force horizontal or vertical mode.
 %   If you want all mplib figures center- (or right-) aligned, please use
 %   \cs{everymplib} command with \cs{leavevmode} as shown above.
-% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed 
+% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed
 %   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
 %   \textsc{e.g.}
@@ -254,8 +268,9 @@ See source file '\inFileName' for licencing and contact information.
 % \item With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
 %   enviroment, though \textsf{luamplib} does not automatically load these
-%   packages. See the example code above. In PDF mode, \textsf{(x)spotcolor}
-%   package is supported as well.
+%   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
+%   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
+%   as well.
 % \item Users can choose |numbersystem| option since v2.4.
 %   The default value |scaled| can be changed to |double| by declaring
 %   |\mplibnumbersystem{double}|. For details see
@@ -263,7 +278,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
-%   This would make the compilation time longer wastefully, as most |.mp| files 
+%   This would make the compilation time longer wastefully, as most |.mp| files
 %   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
 %   macros as follows, so that users can give instruction about files
 %   that do not require this functionality.
@@ -317,7 +332,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
 %   are suitable for going into this file.
-%   
+%
 % \end{itemize}
 %
 % There are (basically) two formats for metapost: \emph{plain} and
@@ -350,8 +365,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.9.1",
-  date          = "2015/01/26",
+  version       = "2.10.0",
+  date          = "2015/03/20",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -389,7 +404,7 @@ if not file then
 %    line by line, but it needs to be passed entirely to |process()|, so we
 %    simply add the lines in |data| and at the end we call |process(data)|.
 %
-%    A few helpers, taken from \verb|l-file.lua|.
+%    A few helpers, taken from |l-file.lua|.
 %
 %    \begin{macrocode}
   file = { }
@@ -491,6 +506,7 @@ local noneedtoreplace = {
   ["mp-abck.mpiv"] = true,
   ["mp-apos.mpiv"] = true,
   ["mp-asnc.mpiv"] = true,
+  ["mp-bare.mpiv"] = true,
   ["mp-base.mpiv"] = true,
   ["mp-butt.mpiv"] = true,
   ["mp-char.mpiv"] = true,
@@ -504,13 +520,13 @@ local noneedtoreplace = {
   ["mp-grid.mpiv"] = true,
   ["mp-grph.mpiv"] = true,
   ["mp-idea.mpiv"] = true,
+  ["mp-luas.mpiv"] = true,
   ["mp-mlib.mpiv"] = true,
   ["mp-page.mpiv"] = true,
   ["mp-shap.mpiv"] = true,
   ["mp-step.mpiv"] = true,
   ["mp-text.mpiv"] = true,
   ["mp-tool.mpiv"] = true,
-  ["mp-luas.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
@@ -532,6 +548,23 @@ local function replaceformatmp(file,newfile,ofmodify)
   return newfile
 end
 
+local esctex = "!!!T!!!E!!!X!!!"
+local esclbr = "!!!!!LEFTBRCE!!!!!"
+local escrbr = "!!!!!RGHTBRCE!!!!!"
+local escshar = "!!!!!SHARPE!!!!!"
+local escpcnt = "!!!!!PERCENT!!!!!"
+local begname = "%f[A-Z_a-z]"
+local endname = "%f[^A-Z_a-z]"
+
+local function protecttexcontents(str)
+  str = stringgsub(str,"\\%%","\\"..escpcnt)
+  str = stringgsub(str,"%%.-\n", "")
+  str = stringgsub(str,"%%.-$", "")
+  str = stringgsub(str,'"','"&ditto&"')
+  str = stringgsub(str,"\n%s*"," ")
+  return str
+end
+
 local function replaceinputmpfile (name,file)
   local ofmodify = lfsattributes(file,"modification")
   if not ofmodify then return file end
@@ -551,24 +584,20 @@ local function replaceinputmpfile (name,file)
   local data = fh:read("*all"); fh:close()
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
       return str
     end)
   local count,cnt = 0,0
   data,cnt = stringgsub(data,
-    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,"\\!!!!!PERCENT!!!!!","\\%%")
-      str = stringgsub(str,"[\n\r]%s*"," ")
-      str = stringgsub(str,'"','"&ditto&"')
+      str = protecttexcontents(str)
+      str = stringgsub(str,"\\"..escpcnt,"\\%%")
       return format("rawtextext(\"%s\")",str)
     end)
   count = count + cnt
   data,cnt = stringgsub(data,
-    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*.-%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."verbatimtex"..endname.."%s*.-%s*"..begname.."etex"..endname,
     "")
   count = count + cnt
   if count == 0 then
@@ -580,7 +609,7 @@ local function replaceinputmpfile (name,file)
     end
     return file
   end
-  data = stringgsub(data,"([bem])!!!T!!!E!!!X!!!","%1tex")
+  data = stringgsub(data,"([bem])"..esctex,"%1tex")
   fh = ioopen(newfile,"w")
   if not fh then return file end
   fh:write(data); fh:close()
@@ -917,10 +946,10 @@ end
 
 %    \end{macrocode}
 %     Below code has been contributed by Dohyun Kim.
-%     It implements \verb|btex| / \verb|etex| functions.
+%     It implements |btex| / |etex| functions.
 %
-%     v2.1: \verb|textext()| is now available, which is equivalent to \verb|TEX()| macro from TEX.mp.
-%           \verb|TEX()| is synonym of \verb|textext()| unless TEX.mp is loaded.
+%     v2.1: |textext()| is now available, which is equivalent to |TEX()| macro from TEX.mp.
+%           |TEX()| is synonym of |textext()| unless TEX.mp is loaded.
 %
 %     v2.2: Transparency and Shading
 %
@@ -1001,9 +1030,9 @@ enddef;
 def TEX = textext enddef;
 def fontmapfile primary filename = enddef;
 def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
-def ignoreVerbatimTeX  (text t) = enddef;
+def normalVerbatimTeX  (text t) = special "PostMPlibVerbTeX="&t; enddef;
 let VerbatimTeX = specialVerbatimTeX;
-extra_beginfig := extra_beginfig & " let VerbatimTeX = ignoreVerbatimTeX;" ;
+extra_beginfig := extra_beginfig & " let VerbatimTeX = normalVerbatimTeX;" ;
 extra_endfig   := extra_endfig   & " let VerbatimTeX = specialVerbatimTeX;" ;
 ]]
 luamplib.mplibcodepreamble = mplibcodepreamble
@@ -1028,45 +1057,38 @@ local function protecttextext(data)
   data = stringgsub(data,"\r","\n")
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"%%","!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"([bem])tex%f[^A-Z_a-z]","%1!!!T!!!E!!!X!!!")
+      str = stringgsub(str,"%%",escpcnt)
+      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
       return str
     end)
   data = stringgsub(data,
-    "%f[A-Z_a-z]btex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,'"','"&ditto&"')
-      str = stringgsub(str,"\n%s*"," ")
+      str = protecttexcontents(str)
       return format("rawtextext(\"%s\")",str)
     end)
   data = stringgsub(data,
-    "%f[A-Z_a-z]verbatimtex%f[^A-Z_a-z]%s*(.-)%s*%f[A-Z_a-z]etex%f[^A-Z_a-z]",
+    begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
     function(str)
-      str = stringgsub(str,"\\%%","\\!!!!!PERCENT!!!!!")
-      str = stringgsub(str,"%%.-\n", "")
-      str = stringgsub(str,"%%.-$", "")
-      str = stringgsub(str,'"','"&ditto&"')
-      str = stringgsub(str,"\n%s*"," ")
+      str = protecttexcontents(str)
       return format("VerbatimTeX(\"%s\")",str)
     end)
   data = stringgsub(data, "\"[^\n]-\"",
     function(str)
-      str = stringgsub(str,"([bem])!!!T!!!E!!!X!!!","%1tex")
-      str = stringgsub(str,"{", "!!!!!LEFTBRCE!!!!!")
-      str = stringgsub(str,"}", "!!!!!RGHTBRCE!!!!!")
-      str = stringgsub(str,"#", "!!!!!SHARPE!!!!!")
+      str = stringgsub(str,"([bem])"..esctex,"%1tex")
+      str = stringgsub(str,"{", esclbr)
+      str = stringgsub(str,"}", escrbr)
+      str = stringgsub(str,"#", escshar)
       return format("\\detokenize{%s}",str)
     end)
   data = stringgsub(data,"%%.-\n", "")
   luamplib.mpxcolors = {}
-  data = stringgsub(data, "\\mpcolor%s*{(.-)}",
-    function(str)
+  data = stringgsub(data, "\\mpcolor"..endname.."(.-){(.-)}",
+    function(opt,str)
       local cnt = #luamplib.mpxcolors + 1
       luamplib.mpxcolors[cnt] = format(
-        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname{%s}",cnt,str)
+        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
+        cnt,opt,str)
       return format("\\csname mpxcolor%i\\endcsname",cnt)
     end)
   texsprint(data)
@@ -1095,7 +1117,7 @@ local function domakeTEXboxes (data)
             texsprint(format("\\setbox%i\\hbox{%s}",num,str))
           end
 %    \end{macrocode}
-%     \verb|verbatimtex ... etex| before \verb|beginfig()| is not ignored,
+%     |verbatimtex ... etex| before |beginfig()| is not ignored,
 %     but the \TeX\ code inbetween is inserted before the mplib box.
 %    \begin{macrocode}
           local texcode = prescript and prescript.MPlibVerbTeX
@@ -1110,10 +1132,10 @@ end
 
 local function makeTEXboxes (data)
   data = stringgsub(data, "##", "#") -- restore # doubled in input string
-  data = stringgsub(data, "!!!!!PERCENT!!!!!", "%%")
-  data = stringgsub(data, "!!!!!LEFTBRCE!!!!!","{")
-  data = stringgsub(data, "!!!!!RGHTBRCE!!!!!","}")
-  data = stringgsub(data, "!!!!!SHARPE!!!!!",  "#" )
+  data = stringgsub(data, escpcnt, "%%")
+  data = stringgsub(data, esclbr,"{")
+  data = stringgsub(data, escrbr,"}")
+  data = stringgsub(data, escshar,  "#" )
   local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
@@ -1161,15 +1183,22 @@ end
 
 local function putTEXboxes (object,prescript)
   local box = prescript.MPlibTEXboxID
-  local n,tw,th = box[1],box[2],box[3]
+  local n,tw,th = box[1],tonumber(box[2]),tonumber(box[3])
   if n and tw and th then
     local op = object.path
     local first, second, fourth = op[1], op[2], op[4]
     local tx, ty = first.x_coord, first.y_coord
-    local sx, sy = (second.x_coord - tx)/tw, (fourth.y_coord - ty)/th
-    local rx, ry = (second.y_coord - ty)/tw, (fourth.x_coord - tx)/th
-    if sx == 0 then sx = 0.00001 end
-    if sy == 0 then sy = 0.00001 end
+    local sx, rx, ry, sy = 1, 0, 0, 1
+    if tw ~= 0 then
+      sx = (second.x_coord - tx)/tw
+      rx = (second.y_coord - ty)/tw
+      if sx == 0 then sx = 0.00001 end
+    end
+    if th ~= 0 then
+      sy = (fourth.y_coord - ty)/th
+      ry = (fourth.x_coord - tx)/th
+      if sy == 0 then sy = 0.00001 end
+    end
     start_pdf_code()
     pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
     texsprint(format("\\mplibputtextbox{%i}",n))
@@ -1401,7 +1430,7 @@ local function do_postobj_color(tr,over,sh)
 end
 
 %    \end{macrocode}
-%     End of \verb|btex| -- \verb|etex| and Transparency/Shading patch.
+%     End of |btex| -- |etex| and Transparency/Shading patch.
 %
 %    \begin{macrocode}
 
@@ -1423,11 +1452,13 @@ local function flush(result,flusher)
           pdf_stopfigure()
         else
 %    \end{macrocode}
-%    Insert \verb|verbatimtex| code before mplib box.
+%    Insert |verbatimtex| code before mplib box.
+%    And prepare for those codes that will be executed afterwards.
 %    \begin{macrocode}
           if TeX_code_t[f] then
             texsprint(TeX_code_t[f])
           end
+          local TeX_code_bot = {} -- PostVerbatimTeX
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
           if objects then
@@ -1435,8 +1466,9 @@ local function flush(result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%     Change from \ConTeXt{} code: the following 5 lines are part of the
+%     Change from \ConTeXt{} code: the following 7 lines are part of the
 %     |btex...etex| patch. Again, colors are processed at this stage.
+%     Also, we collect \TeX\ codes that will be executed after flushing.
 %
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -1444,6 +1476,8 @@ local function flush(result,flusher)
               local tr_opaq,cr_over,shade_no = do_preobj_color(object,prescript)
               if prescript and prescript.MPlibTEXboxID then
                 putTEXboxes(object,prescript)
+              elseif prescript and prescript.PostMPlibVerbTeX then
+                TeX_code_bot[#TeX_code_bot+1] = prescript.PostMPlibVerbTeX
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                 -- skip
               elseif objecttype == "start_clip" then
@@ -1563,7 +1597,8 @@ local function flush(result,flusher)
               end
 %    \end{macrocode}
 %
-%     Added to \ConTeXt{} code: color stuff
+%     Added to \ConTeXt{} code: color stuff.
+%     And execute |verbatimtex| codes.
 %
 %    \begin{macrocode}
               do_postobj_color(tr_opaq,cr_over,shade_no)
@@ -1571,6 +1606,9 @@ local function flush(result,flusher)
           end
           stop_pdf_code()
           pdf_stopfigure()
+          if #TeX_code_bot > 0 then
+            texsprint(TeX_code_bot)
+          end
         end
       end
     end
@@ -1613,7 +1651,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/01/26 v2.9.1 mplib package for LuaTeX]
+    [2015/03/20 v2.10.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1655,7 +1693,7 @@ luamplib.colorconverter = colorconverter
 }
 %    \end{macrocode}
 %
-%    Make \verb|btex...etex| box zero-metric.
+%    Make |btex...etex| box zero-metric.
 %
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
@@ -1687,7 +1725,7 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
   \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-  \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+  \directlua{ tex.sprint(luamplib.mpxcolors) }%
   \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
   \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \endgroup
@@ -1714,7 +1752,7 @@ luamplib.colorconverter = colorconverter
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-    \directlua{ tex.sprint(table.concat(luamplib.mpxcolors)) }%
+    \directlua{ tex.sprint(luamplib.mpxcolors) }%
     \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \end{mplibcode}%
@@ -1726,25 +1764,6 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \fi
-%    \end{macrocode}
-%
-%     Support color/xcolor packages.
-%     User interface is: \verb|\mpcolor{teal}|, for example.
-%    \begin{macrocode}
-\def\mplibcolor#1#2{%
-  \ifcsname\string\color @#2\endcsname
-    \edef#1{1 withprescript
-      "MPlibOverrideColor=\csname\string\color @#2\endcsname"}%
-  \else
-    \ifdefined\extractcolorspecs
-      \extractcolorspecs{#2}\mplibtemp@a\mplibtemp@b
-      \convertcolorspec\mplibtemp@a\mplibtemp@b{cmyk}\mplibtemp@c
-      \edef#1{(\mplibtemp@c)}%
-    \else
-      \errmessage{Undefined color `#2'}%
-    \fi
-  \fi
-}
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
@@ -1776,6 +1795,16 @@ luamplib.colorconverter = colorconverter
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
+%    \end{macrocode}
+%
+%     Support color/xcolor packages.
+%     User interface is: |\mpcolor{teal}| or |\mpcolor[HTML]{008080}|,
+%     for example.
+%    \begin{macrocode}
+\def\mplibcolor#1{%
+  \def\set@color{\edef#1{1 withprescript "MPlibOverrideColor=\current@color"}}%
+  \color
+}
 \def\mplibnumbersystem#1{\directlua{luamplib.numbersystem = "#1"}}
 \def\mplibmakenocache#1{\mplibdomakenocache #1,*,}
 \def\mplibdomakenocache#1,{%

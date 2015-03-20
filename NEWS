@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2015/03/20 2.10.0
+    * TeX code in `VerbatimTeX()' between `beginfig();' and `endfig;'
+      will be inserted after flushing out the mplib figure.
+    * `\mpcolor' command accepts optional argument: for instance,
+      `\mpcolor[HTML]{FF0000}'.
+
 2015/01/26 2.9.1
     * fix a bug reported by Herbert Schulz via luatex mailing list
       (http://tug.org/pipermail/luatex/2015-January/005054.html)

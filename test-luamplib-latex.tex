@@ -128,4 +128,13 @@ beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
 endfig;
 \end{mplibcode}%
+\leavevmode
+\begin{mplibcode}
+   D := sqrt(2)**7;
+   beginfig(0);
+   draw fullcircle scaled D;
+   VerbatimTeX("\gdef\Dia{" & decimal D & "}");
+   endfig;
+\end{mplibcode}%
+diameter:\Dia bp.%
 \end{document}
