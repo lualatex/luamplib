@@ -1,7 +1,7 @@
                        History of the luamplib package
 
-xxxx/xx/xx 2.10.0
-    * TeX code in `VerbatimTeX()' between `beginfig();' and `endfig'
+2015/03/20 2.10.0
+    * TeX code in `VerbatimTeX()' between `beginfig();' and `endfig;'
       will be inserted after flushing out the mplib figure.
     * `\mpcolor' command accepts optional argument: for instance,
       `\mpcolor[HTML]{FF0000}'.
