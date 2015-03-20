@@ -1083,7 +1083,7 @@ local function protecttextext(data)
     end)
   data = stringgsub(data,"%%.-\n", "")
   luamplib.mpxcolors = {}
-  data = stringgsub(data, "\\mpcolor(.-){(.-)}",
+  data = stringgsub(data, "\\mpcolor"..endname.."(.-){(.-)}",
     function(opt,str)
       local cnt = #luamplib.mpxcolors + 1
       luamplib.mpxcolors[cnt] = format(
@@ -1607,7 +1607,7 @@ local function flush(result,flusher)
           stop_pdf_code()
           pdf_stopfigure()
           if #TeX_code_bot > 0 then
-            texsprint(tableconcat(TeX_code_bot))
+            texsprint(TeX_code_bot)
           end
         end
       end
