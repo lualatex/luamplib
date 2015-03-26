@@ -553,6 +553,7 @@ local esclbr = "!!!!!LEFTBRCE!!!!!"
 local escrbr = "!!!!!RGHTBRCE!!!!!"
 local escshar = "!!!!!SHARPE!!!!!"
 local escpcnt = "!!!!!PERCENT!!!!!"
+local eschash = "!!!!!HASH!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
@@ -1078,10 +1079,10 @@ local function protecttextext(data)
       str = stringgsub(str,"([bem])"..esctex,"%1tex")
       str = stringgsub(str,"{", esclbr)
       str = stringgsub(str,"}", escrbr)
+      str = stringgsub(str,"#", escshar)
       return format("\\detokenize{%s}",str)
     end)
   data = stringgsub(data,"%%.-\n", "")
-  data = stringgsub(data,"#", escshar)
   luamplib.mpxcolors = {}
   data = stringgsub(data, "\\mpcolor"..endname.."(.-){(.-)}",
     function(opt,str)
@@ -1091,6 +1092,12 @@ local function protecttextext(data)
         cnt,opt,str)
       return format("\\csname mpxcolor%i\\endcsname",cnt)
     end)
+%    \end{macrocode}
+%    Next three lines to address bug \#55
+%    \begin{macrocode}
+  data = stringgsub(data, "([`\\])#", "%1"..eschash)
+  data = stringgsub(data, "#", "##")
+  data = stringgsub(data, eschash, "#")
   texsprint(data)
 end
 

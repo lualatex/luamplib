@@ -137,4 +137,13 @@ endfig;
    endfig;
 \end{mplibcode}%
 diameter:\Dia bp.%
+\begin{mplibcode}
+  vardef rotatedlabel@#(expr str, loc, angl) =
+    draw thelabel@#(str, loc) rotatedaround(loc, angl)
+  enddef;
+
+  beginfig(1);
+    rotatedlabel.top(textext("Rotated!"), origin, 45);
+  endfig;
+\end{mplibcode}%
 \end{document}
