@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2015/03/26 2.10.1
+    * fix bug #55 regarding hash token
+
 2015/03/20 2.10.0
     * TeX code in `VerbatimTeX()' between `beginfig();' and `endfig;'
       will be inserted after flushing out the mplib figure.
