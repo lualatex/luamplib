@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2015/05/04 2.10.2
+    * transparency is now compatible with pgf package, including
+      beamer class. Upon plain TeX, tikz should be loaded before
+      luamplib package.
+
 2015/03/26 2.10.1
     * fix bug #55 regarding hash token
 

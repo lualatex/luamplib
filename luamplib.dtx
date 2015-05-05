@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/03/26 v2.10.1 Interface for using the mplib library]%
+  [2015/05/04 v2.10.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/03/26 v2.10.1}
+% \date{2015/05/04 v2.10.2}
 %
 % \maketitle
 %
@@ -365,8 +365,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.10.1",
-  date          = "2015/03/26",
+  version       = "2.10.2",
+  date          = "2015/05/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -386,6 +386,12 @@ local stringgmatch  = string.gmatch
 local stringexplode = string.explode
 local tableconcat   = table.concat
 local texsprint     = tex.sprint
+
+local texget      = tex.get
+local texset      = tex.set
+local texgettoks  = tex.gettoks
+local texsettoks  = tex.settoks
+local texgetbox   = tex.getbox
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -1052,8 +1058,8 @@ enddef;
 luamplib.textextlabelpreamble = textextlabelpreamble
 
 local function protecttextext(data)
-  local everymplib    = tex.toks['everymplibtoks']    or ''
-  local everyendmplib = tex.toks['everyendmplibtoks'] or ''
+  local everymplib    = texgettoks('everymplibtoks')    or ''
+  local everyendmplib = texgettoks('everyendmplibtoks') or ''
   data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
   data = stringgsub(data,"\r","\n")
   data = stringgsub(data, "\"[^\n]-\"",
@@ -1158,7 +1164,7 @@ local function processwithTEXboxes (data)
   local prepreamble = format("TEXBOX_:=%i;\n",num)
   while true do
     num = num + 1
-    local box = tex.box[num]
+    local box = texgetbox(num)
     if not box then break end
     prepreamble = format(
       "%sTEXBOX_wd_[%i]:=%f;\nTEXBOX_ht_[%i]:=%f;\nTEXBOX_dp_[%i]:=%f;\n",
@@ -1171,7 +1177,7 @@ local function processwithTEXboxes (data)
 end
 luamplib.processwithTEXboxes = processwithTEXboxes
 
-local pdfmode = tex.pdfoutput > 0 and true or false
+local pdfmode = texget("pdfoutput") > 0 and true or false
 
 local function start_pdf_code()
   if pdfmode then
@@ -1254,7 +1260,11 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
-      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
+      if luamplib.pgf_loaded then
+        texsprint(format("\\special{pdf:put @pgfextgs<</MPlibTr%i%s>>}",on,os))
+      else
+        texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
+      end
     end
   end
   return res,on
@@ -1266,15 +1276,22 @@ local function tr_pdf_pageresources(mode,opaq)
   res, on_on  = update_tr_res(res, mode, opaq)
   if pdfmode then
     if res ~= "" then
-      local tpr = tex.pdfpageresources -- respect luaotfload-colors
-      if not stringfind(tpr,"/ExtGState<<.*>>") then
-        tpr = tpr.."/ExtGState<<>>"
+      if luamplib.pgf_loaded then
+        local res_toks = texgettoks("pgf@sys@pgf@resource@list@extgs@toks")
+        texsettoks("global", "pgf@sys@pgf@resource@list@extgs@toks", res_toks..res)
+      else
+        local tpr = texget("pdfpageresources") -- respect luaotfload-colors
+        if not stringfind(tpr,"/ExtGState<<.*>>") then
+          tpr = tpr.."/ExtGState<<>>"
+        end
+        tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+        texset("global","pdfpageresources",tpr)
       end
-      tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
-      tex.set("global","pdfpageresources",tpr)
     end
   else
-    texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
+    if not luamplib.pgf_loaded then
+      texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
+    end
   end
   return on_on, off_on
 end
@@ -1653,12 +1670,12 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\expandafter\ifx\csname selectfont\endcsname\relax
   \input luatexbase-modutils.sty
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/03/26 v2.10.1 mplib package for LuaTeX]
+    [2015/05/04 v2.10.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1932,6 +1949,41 @@ luamplib.colorconverter = colorconverter
   \closein0
   \input luamplib.cfg
 \fi
+%    \end{macrocode}
+%
+%    For compatibility with beamer class, which loads pgf package.
+%    \begin{macrocode}
+\ifcsname selectfont\endcsname
+  \AtBeginDocument{\@ifpackageloaded{pgfsys}{
+    \directlua{luamplib.pgf_loaded=true}
+    \ifcase\pdfoutput\else\ifcsname pgf@sys@pgf@resource@list@extgs@toks\endcsname\else
+      \csname newtoks\endcsname\pgf@sys@pgf@resource@list@extgs@toks
+      \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
+      \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
+        \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}
+    \fi\fi
+  }{}}
+\endinput\fi
+\ifcsname pgf@sys@addpdfresource@extgs@plain\endcsname\else\endinput\fi
+%    \end{macrocode}
+%    for plain tex, pgf loaded.
+%    \begin{macrocode}
+\directlua{luamplib.pgf_loaded=true}
+\ifcsname pgf@sys@pgf@resource@list@extgs\endcsname\else\endinput\fi
+%    \end{macrocode}
+%    pgfsys-pdftex.def loaded. Not dvi mode
+%    \begin{macrocode}
+\ifcsname pgf@sys@pgf@resource@list@extgs@toks\endcsname\endinput\fi
+%    \end{macrocode}
+%    luaotfload.sty not loaded. So copied from it.
+%    \begin{macrocode}
+\count255=\the\catcode`@\relax
+\catcode`@=11\relax
+\newtoks\pgf@sys@pgf@resource@list@extgs@toks
+\def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
+\def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
+  \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}
+\catcode`@=\the\count255\relax
 %    \end{macrocode}
 %
 %    That's all folks!
