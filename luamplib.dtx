@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/05/04 v2.10.2 Interface for using the mplib library]%
+  [2015/05/06 v2.10.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/05/04 v2.10.2}
+% \date{2015/05/06 v2.10.2}
 %
 % \maketitle
 %
@@ -366,7 +366,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.10.2",
-  date          = "2015/05/04",
+  date          = "2015/05/06",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -1675,7 +1675,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/05/04 v2.10.2 mplib package for LuaTeX]
+    [2015/05/06 v2.10.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1956,12 +1956,13 @@ luamplib.colorconverter = colorconverter
 \ifcsname selectfont\endcsname
   \AtBeginDocument{\@ifpackageloaded{pgfsys}{
     \directlua{luamplib.pgf_loaded=true}
-    \ifcase\pdfoutput\else\ifcsname pgf@sys@pgf@resource@list@extgs@toks\endcsname\else
-      \csname newtoks\endcsname\pgf@sys@pgf@resource@list@extgs@toks
-      \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
-      \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
-        \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}
-    \fi\fi
+    \ifcase\pdfoutput\else
+      \@ifpackageloaded{luaotfload}{}{
+        \csname newtoks\endcsname\pgf@sys@pgf@resource@list@extgs@toks
+        \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
+        \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
+          \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}}
+    \fi
   }{}}
 \endinput\fi
 \ifcsname pgf@sys@addpdfresource@extgs@plain\endcsname\else\endinput\fi
