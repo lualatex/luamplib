@@ -1266,7 +1266,7 @@ local function update_tr_res(res,mode,opaq)
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
       if luamplib.pgf_loaded then
-        texsprint(format("\\special{pdf:put @pgfextgs<</MPlibTr%i%s>>}",on,os))
+        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{/MPlibTr%i%s}",on,os))
       else
         texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
       end
@@ -1281,12 +1281,14 @@ local function tr_pdf_pageresources(mode,opaq)
   res, on_on  = update_tr_res(res, mode, opaq)
   if pdfmode then
     if res ~= "" then
-      if luamplib.pgf_loaded then
-        local res_toks = texgettoks("pgf@sys@pgf@resource@list@extgs@toks")
-        texsettoks("global", "pgf@sys@pgf@resource@list@extgs@toks", res_toks..res)
+      local tpr = texget("pdfpageresources") -- respect luaotfload-colors
+      local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
+      local pgf_loaded = no_extgs and (luaotfload and luaotfload.pgf_loaded or luamplib.pgf_loaded)
+      if pgf_loaded and type(pgf_loaded) == "number" then
+        local res_toks = texgettoks(pgf_loaded)
+        texsettoks("global", pgf_loaded, res_toks..res)
       else
-        local tpr = texget("pdfpageresources") -- respect luaotfload-colors
-        if not stringfind(tpr,"/ExtGState<<.*>>") then
+        if no_extgs then
           tpr = tpr.."/ExtGState<<>>"
         end
         tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
@@ -1964,6 +1966,7 @@ luamplib.colorconverter = colorconverter
     \ifcase\pdfoutput\else
       \@ifpackageloaded{luaotfload}{}{
         \csname newtoks\endcsname\pgf@sys@pgf@resource@list@extgs@toks
+        \directlua{luamplib.pgf_loaded=\the\allocationnumber}
         \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
         \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
           \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}}
@@ -1975,7 +1978,7 @@ luamplib.colorconverter = colorconverter
 %    for plain tex, pgf loaded.
 %    \begin{macrocode}
 \directlua{luamplib.pgf_loaded=true}
-\ifcsname pgf@sys@pgf@resource@list@extgs\endcsname\else\endinput\fi
+\ifcase\pdfoutput\endinput\fi
 %    \end{macrocode}
 %    pgfsys-pdftex.def loaded. Not dvi mode
 %    \begin{macrocode}
@@ -1986,6 +1989,7 @@ luamplib.colorconverter = colorconverter
 \count255=\the\catcode`@\relax
 \catcode`@=11\relax
 \newtoks\pgf@sys@pgf@resource@list@extgs@toks
+\directlua{luamplib.pgf_loaded=\the\allocationnumber}
 \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
 \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
   \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}
