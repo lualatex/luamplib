@@ -1,6 +1,8 @@
                        History of the luamplib package
 
-2015/06/03 2.10.2
+2015/06/09 2.10.2
+    * allow access to type1 fonts, which means we can use glyph
+      operator now (rev 5266)
     * transparency is now compatible with pgf package, including
       beamer class. Upon plain TeX, tikz should be loaded before
       luamplib package.

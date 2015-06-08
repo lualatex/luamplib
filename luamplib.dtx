@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/06/03 v2.10.2 Interface for using the mplib library]%
+  [2015/06/09 v2.10.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/06/03 v2.10.2}
+% \date{2015/06/09 v2.10.2}
 %
 % \maketitle
 %
@@ -366,7 +366,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.10.2",
-  date          = "2015/06/03",
+  date          = "2015/06/09",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -635,10 +635,16 @@ local randomseed = nil
 
 local mpkpse = kpse.new("luatex", "mpost")
 
+local special_ftype = {
+  pfb = "type1 fonts",
+  enc = "enc files",
+}
+
 local function finder(name, mode, ftype)
   if mode == "w" then
     return name
   else
+    ftype = special_ftype[ftype] or ftype
     local file = mpkpse:find_file(name,ftype)
     if file then
       if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
@@ -1040,7 +1046,6 @@ def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
-def fontmapfile primary filename = enddef;
 def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
 def normalVerbatimTeX  (text t) = special "PostMPlibVerbTeX="&t; enddef;
 let VerbatimTeX = specialVerbatimTeX;
@@ -1682,7 +1687,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/06/03 v2.10.2 mplib package for LuaTeX]
+    [2015/06/09 v2.10.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
