@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/06/09 v2.10.2 Interface for using the mplib library]%
+  [2015/06/27 v2.10.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/06/09 v2.10.2}
+% \date{2015/06/27 v2.10.2}
 %
 % \maketitle
 %
@@ -366,7 +366,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.10.2",
-  date          = "2015/06/09",
+  date          = "2015/06/27",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -1288,10 +1288,9 @@ local function tr_pdf_pageresources(mode,opaq)
     if res ~= "" then
       local tpr = texget("pdfpageresources") -- respect luaotfload-colors
       local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
-      local pgf_loaded = no_extgs and (luaotfload and luaotfload.pgf_loaded or luamplib.pgf_loaded)
-      if pgf_loaded and type(pgf_loaded) == "number" then
-        local res_toks = texgettoks(pgf_loaded)
-        texsettoks("global", pgf_loaded, res_toks..res)
+      local pgf_loaded = no_extgs and luamplib.pgf_loaded
+      if pgf_loaded then
+        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{%s}",res))
       else
         if no_extgs then
           tpr = tpr.."/ExtGState<<>>"
@@ -1687,7 +1686,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/06/09 v2.10.2 mplib package for LuaTeX]
+    [2015/06/27 v2.10.2 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1965,40 +1964,10 @@ luamplib.colorconverter = colorconverter
 %
 %    For compatibility with beamer class, which loads pgf package.
 %    \begin{macrocode}
-\ifcsname selectfont\endcsname
-  \AtBeginDocument{\@ifpackageloaded{pgfsys}{
-    \directlua{luamplib.pgf_loaded=true}
-    \ifcase\pdfoutput\else
-      \@ifpackageloaded{luaotfload}{}{
-        \csname newtoks\endcsname\pgf@sys@pgf@resource@list@extgs@toks
-        \directlua{luamplib.pgf_loaded=\the\allocationnumber}
-        \def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
-        \def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
-          \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}}
-    \fi
-  }{}}
-\endinput\fi
-\ifcsname pgf@sys@addpdfresource@extgs@plain\endcsname\else\endinput\fi
-%    \end{macrocode}
-%    for plain tex, pgf loaded.
-%    \begin{macrocode}
-\directlua{luamplib.pgf_loaded=true}
-\ifcase\pdfoutput\endinput\fi
-%    \end{macrocode}
-%    pgfsys-pdftex.def loaded. Not dvi mode
-%    \begin{macrocode}
-\ifcsname pgf@sys@pgf@resource@list@extgs@toks\endcsname\endinput\fi
-%    \end{macrocode}
-%    luaotfload.sty not loaded. So copied from it.
-%    \begin{macrocode}
-\count255=\the\catcode`@\relax
-\catcode`@=11\relax
-\newtoks\pgf@sys@pgf@resource@list@extgs@toks
-\directlua{luamplib.pgf_loaded=\the\allocationnumber}
-\def\pgf@sys@pgf@resource@list@extgs{\the\pgf@sys@pgf@resource@list@extgs@toks}
-\def\pgf@sys@addpdfresource@extgs@plain#1{\global\pgf@sys@pgf@resource@list@extgs@toks
-  \expandafter{\the\pgf@sys@pgf@resource@list@extgs@toks #1}}
-\catcode`@=\the\count255\relax
+\ifdefined\AtBeginDocument\else\def\AtBeginDocument#1{#1}\fi
+\AtBeginDocument{%
+  \ifcsname pgfutil@everybye\endcsname \directlua{luamplib.pgf_loaded=true}\fi
+}
 %    \end{macrocode}
 %
 %    That's all folks!
