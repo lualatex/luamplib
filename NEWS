@@ -4,8 +4,7 @@
     * allow access to type1 fonts, which means we can use glyph
       operator now (rev 5266)
     * transparency is now compatible with pgf package, including
-      beamer class. Upon plain TeX, tikz should be loaded before
-      luamplib package.
+      beamer class. (LuaTeX 0.80+ is recommended)
 
 2015/03/26 2.10.1
     * fix bug #55 regarding hash token

@@ -1263,6 +1263,8 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
+local pgf_loaded
+
 local function update_tr_res(res,mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
@@ -1270,7 +1272,7 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
-      if luamplib.pgf_loaded then
+      if pgf_loaded then
         texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{/MPlibTr%i%s}",on,os))
       else
         texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
@@ -1281,6 +1283,7 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
+  pgf_loaded = pgf_loaded or (newtoken and newtoken.create("pgfutil@everybye").cmdname == "assign_toks")
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
@@ -1288,8 +1291,8 @@ local function tr_pdf_pageresources(mode,opaq)
     if res ~= "" then
       local tpr = texget("pdfpageresources") -- respect luaotfload-colors
       local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
-      local pgf_loaded = no_extgs and luamplib.pgf_loaded
-      if pgf_loaded then
+      local pgf_pdf_loaded = no_extgs and pgf_loaded
+      if pgf_pdf_loaded then
         texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{%s}",res))
       else
         if no_extgs then
@@ -1300,7 +1303,7 @@ local function tr_pdf_pageresources(mode,opaq)
       end
     end
   else
-    if not luamplib.pgf_loaded then
+    if not pgf_loaded then
       texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
     end
   end
@@ -1960,14 +1963,6 @@ luamplib.colorconverter = colorconverter
   \closein0
   \input luamplib.cfg
 \fi
-%    \end{macrocode}
-%
-%    For compatibility with beamer class, which loads pgf package.
-%    \begin{macrocode}
-\ifdefined\AtBeginDocument\else\def\AtBeginDocument#1{#1}\fi
-\AtBeginDocument{%
-  \ifcsname pgfutil@everybye\endcsname \directlua{luamplib.pgf_loaded=true}\fi
-}
 %    \end{macrocode}
 %
 %    That's all folks!
