@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/03/26 v2.10.1 Interface for using the mplib library]%
+  [2015/08/01 v2.11.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/03/26 v2.10.1}
+% \date{2015/08/01 v2.11.0}
 %
 % \maketitle
 %
@@ -328,6 +328,10 @@ See source file '\inFileName' for licencing and contact information.
 %     draw fullcircle scaled 2u;
 %   \endmplibcode
 %   \end{verbatim}
+% \item Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
+%   the contents of mplibcode environment will be read verbatim. As a result,
+%   users cannot use |btex| ... |etex|, |verbatimtex| ... |etex|, |\mpdim|, |\mpcolor|
+%   etc. All \TeX\ commands are not expanded and will be fed literally into the mplib process. 
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
@@ -365,8 +369,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.10.1",
-  date          = "2015/03/26",
+  version       = "2.11.0",
+  date          = "2015/08/01",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -386,6 +390,13 @@ local stringgmatch  = string.gmatch
 local stringexplode = string.explode
 local tableconcat   = table.concat
 local texsprint     = tex.sprint
+local textprint     = tex.tprint
+
+local texget      = tex.get
+local texset      = tex.set
+local texgettoks  = tex.gettoks
+local texsettoks  = tex.settoks
+local texgetbox   = tex.getbox
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -628,10 +639,16 @@ local randomseed = nil
 
 local mpkpse = kpse.new("luatex", "mpost")
 
+local special_ftype = {
+  pfb = "type1 fonts",
+  enc = "enc files",
+}
+
 local function finder(name, mode, ftype)
   if mode == "w" then
     return name
   else
+    ftype = special_ftype[ftype] or ftype
     local file = mpkpse:find_file(name,ftype)
     if file then
       if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
@@ -841,8 +858,12 @@ local function pdf_stopfigure()
   texsprint("\\mplibstoptoPDF")
 end
 
+%    \end{macrocode}
+%    |tex.tprint| and catcode regime -2, as sometimes |#| gets doubled
+%    in the argument of pdfliteral. --- modified by Kim
+%    \begin{macrocode}
 local function pdf_literalcode(fmt,...) -- table
-  texsprint(format("\\mplibtoPDF{%s}",format(fmt,...)))
+  textprint({"\\mplibtoPDF{"},{-2,format(fmt,...)},{"}"})
 end
 luamplib.pdf_literalcode = pdf_literalcode
 
@@ -1029,7 +1050,6 @@ def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
-def fontmapfile primary filename = enddef;
 def specialVerbatimTeX (text t) = special "MPlibVerbTeX="&t; enddef;
 def normalVerbatimTeX  (text t) = special "PostMPlibVerbTeX="&t; enddef;
 let VerbatimTeX = specialVerbatimTeX;
@@ -1052,8 +1072,8 @@ enddef;
 luamplib.textextlabelpreamble = textextlabelpreamble
 
 local function protecttextext(data)
-  local everymplib    = tex.toks['everymplibtoks']    or ''
-  local everyendmplib = tex.toks['everyendmplibtoks'] or ''
+  local everymplib    = texgettoks('everymplibtoks')    or ''
+  local everyendmplib = texgettoks('everyendmplibtoks') or ''
   data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
   data = stringgsub(data,"\r","\n")
   data = stringgsub(data, "\"[^\n]-\"",
@@ -1158,7 +1178,7 @@ local function processwithTEXboxes (data)
   local prepreamble = format("TEXBOX_:=%i;\n",num)
   while true do
     num = num + 1
-    local box = tex.box[num]
+    local box = texgetbox(num)
     if not box then break end
     prepreamble = format(
       "%sTEXBOX_wd_[%i]:=%f;\nTEXBOX_ht_[%i]:=%f;\nTEXBOX_dp_[%i]:=%f;\n",
@@ -1171,7 +1191,7 @@ local function processwithTEXboxes (data)
 end
 luamplib.processwithTEXboxes = processwithTEXboxes
 
-local pdfmode = tex.pdfoutput > 0 and true or false
+local pdfmode = texget("pdfoutput") > 0 and true or false
 
 local function start_pdf_code()
   if pdfmode then
@@ -1247,6 +1267,8 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
+local pgf_loaded
+
 local function update_tr_res(res,mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
@@ -1254,27 +1276,40 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
-      texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
+      if pgf_loaded then
+        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{/MPlibTr%i%s}",on,os))
+      else
+        texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
+      end
     end
   end
   return res,on
 end
 
 local function tr_pdf_pageresources(mode,opaq)
+  pgf_loaded = pgf_loaded or (newtoken and newtoken.create("pgfutil@everybye").cmdname == "assign_toks")
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
   if pdfmode then
     if res ~= "" then
-      local tpr = tex.pdfpageresources -- respect luaotfload-colors
-      if not stringfind(tpr,"/ExtGState<<.*>>") then
-        tpr = tpr.."/ExtGState<<>>"
+      local tpr = texget("pdfpageresources") -- respect luaotfload-colors
+      local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
+      local pgf_pdf_loaded = no_extgs and pgf_loaded
+      if pgf_pdf_loaded then
+        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{%s}",res))
+      else
+        if no_extgs then
+          tpr = tpr.."/ExtGState<<>>"
+        end
+        tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+        texset("global","pdfpageresources",tpr)
       end
-      tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
-      tex.set("global","pdfpageresources",tpr)
     end
   else
-    texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
+    if not pgf_loaded then
+      texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
+    end
   end
   return on_on, off_on
 end
@@ -1653,12 +1688,12 @@ luamplib.colorconverter = colorconverter
 %
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname ProvidesPackage\endcsname\relax
+\expandafter\ifx\csname selectfont\endcsname\relax
   \input luatexbase-modutils.sty
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/03/26 v2.10.1 mplib package for LuaTeX]
+    [2015/08/01 v2.11.0 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1731,10 +1766,14 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-  \directlua{ tex.sprint(luamplib.mpxcolors) }%
-  \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
-  \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+  \ifdefined\mplibverbatimYes
+    \directlua{luamplib.process([===[\the\everymplibtoks\detokenize{#1}\the\everyendmplibtoks]===],true)}%
+  \else
+    \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
+    \directlua{ tex.sprint(luamplib.mpxcolors) }%
+    \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
+    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+  \fi
   \endgroup
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinecs\fi
 }
@@ -1758,10 +1797,14 @@ luamplib.colorconverter = colorconverter
   \endgroup
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
-    \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-    \directlua{ tex.sprint(luamplib.mpxcolors) }%
-    \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
-    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+    \ifdefined\mplibverbatimYes
+      \directlua{luamplib.process([===[\the\everymplibtoks\the\toks@\the\everyendmplibtoks]===],true)}%
+    \else
+      \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
+      \directlua{ tex.sprint(luamplib.mpxcolors) }%
+      \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
+      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+    \fi
     \end{mplibcode}%
     \ifnum\mplibstartlineno<\inputlineno
       \expandafter\expandafter\expandafter\mplibreplacenewlinebr
@@ -1771,6 +1814,16 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \fi
+\def\mplibverbatim#1{%
+  \begingroup
+  \def\mplibtempa{#1}\def\mplibtempb{enable}%
+  \expandafter\endgroup
+  \ifx\mplibtempa\mplibtempb
+    \let\mplibverbatimYes\relax
+  \else
+    \let\mplibverbatimYes\undefined
+  \fi
+}
 %    \end{macrocode}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
