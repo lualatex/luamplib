@@ -733,7 +733,7 @@ else
   luamplib.make = luamplib.make or function()
   end
 
-  function luamplib.load(name)
+  function luamplib.load(name,verbatim)
     local mpx = mplib.new {
       ini_version = true,
       find_file = luamplib.finder,
@@ -748,9 +748,9 @@ else
 %    \end{macrocode}
 %     Append our own preamble to the preamble above.
 %    \begin{macrocode}
-    local preamble = preamble .. luamplib.mplibcodepreamble
+    local preamble = preamble .. (verbatim and "" or luamplib.mplibcodepreamble)
     if luamplib.textextlabel then
-      preamble = preamble .. luamplib.textextlabelpreamble
+      preamble = preamble .. (verbatim and "" or luamplib.textextlabelpreamble)
     end
     local result
     if not mpx then
@@ -823,14 +823,14 @@ end
 %    \begin{macrocode}
 luamplib.codeinherit = false
 local mplibinstances = {}
-local process = function (data,indeed)
+local process = function (data,indeed,verbatim)
   local standalone, firstpass = not luamplib.codeinherit, not indeed
   local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
   currfmt = firstpass and currfmt or (currfmt.."2")
   local mpx = mplibinstances[currfmt]
   if standalone or not mpx then
     randomseed = firstpass and math.random(65535) or randomseed
-    mpx = luamplib.load(currentformat)
+    mpx = luamplib.load(currentformat,verbatim)
     mplibinstances[currfmt] = mpx
   end
   return process_indeed(mpx, data, indeed)
@@ -1320,16 +1320,13 @@ local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 
 local function shading_initialize ()
   shading_res = {}
-  if pdfmode then
-    require('luatexbase.mcb')
-    if luatexbase.is_active_callback then -- luatexbase 0.7+
-      local shading_obj = pdf.reserveobj()
-      setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
-      luatexbase.add_to_callback("finish_pdffile", function()
-        pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
+  if pdfmode and luatexbase.is_active_callback then -- luatexbase 0.7+
+    local shading_obj = pdf.reserveobj()
+    setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
+    luatexbase.add_to_callback("finish_pdffile", function()
+      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(shading_res)))
       end, "luamplib.finish_pdffile")
-      pdf_objs.finishpdf = true
-    end
+    pdf_objs.finishpdf = true
   end
 end
 
@@ -1767,7 +1764,7 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
   \ifdefined\mplibverbatimYes
-    \directlua{luamplib.process([===[\the\everymplibtoks\detokenize{#1}\the\everyendmplibtoks]===],true)}%
+    \directlua{luamplib.process([===[\the\everymplibtoks\detokenize{#1}\the\everyendmplibtoks]===],true,true)}%
   \else
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
     \directlua{ tex.sprint(luamplib.mpxcolors) }%
@@ -1798,7 +1795,7 @@ luamplib.colorconverter = colorconverter
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
     \ifdefined\mplibverbatimYes
-      \directlua{luamplib.process([===[\the\everymplibtoks\the\toks@\the\everyendmplibtoks]===],true)}%
+      \directlua{luamplib.process([===[\the\everymplibtoks\the\toks@\the\everyendmplibtoks]===],true,true)}%
     \else
       \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
       \directlua{ tex.sprint(luamplib.mpxcolors) }%
