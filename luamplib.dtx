@@ -569,7 +569,8 @@ local eschash = "!!!!!HASH!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
-local function protecttexcontentsVerbatim(str)
+local function protecttexcontents(str)
+  str = str:gsub("\\%%","\\"..escpcnt)
   str = str:gsub("%%.-\n", "")
   str = str:gsub("%%.-$", "")
   str = str:gsub('"', '"&ditto&"')
@@ -577,9 +578,9 @@ local function protecttexcontentsVerbatim(str)
   return str
 end
 
-local function protecttexcontents(str)
-  str = str:gsub("\\%%","\\"..escpcnt)
-  str = protecttexcontentsVerbatim(str)
+local function protecttexcontentsVerbatim(str)
+  str = protecttexcontents(str)
+  str = str:gsub("\\"..escpcnt,"\\%%")
   return str
 end
 
