@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/08/01 v2.11.0 Interface for using the mplib library]%
+  [2015/09/17 v2.11.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -154,7 +154,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/08/01 v2.11.0}
+% \date{2015/09/17 v2.11.1}
 %
 % \maketitle
 %
@@ -330,8 +330,9 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 % \item Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   users cannot use |btex| ... |etex|, |verbatimtex| ... |etex|, |\mpdim|, |\mpcolor|
-%   etc. All \TeX\ commands are not expanded and will be fed literally into the mplib process. 
+%   users cannot use |\mpdim|, |\mpcolor| etc. All \TeX\ commands outside of
+%   |btex ... etex| or |verbatimtex ... etex| are not expanded and will be fed
+%   literally into the mplib process.
 % \item At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
@@ -369,8 +370,8 @@ luamplib.lastlog  = ""
 
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
-  version       = "2.11.0",
-  date          = "2015/08/01",
+  version       = "2.11.1",
+  date          = "2015/09/17",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -484,8 +485,8 @@ if not outputdir then
 end
 
 function luamplib.getcachedir(dir)
-  dir = stringgsub(dir,"##","#")
-  dir = stringgsub(dir,"^~",
+  dir = dir:gsub("##","#")
+  dir = dir:gsub("^~",
     os.type == "windows" and os.getenv("UserProfile") or os.getenv("HOME"))
   if lfstouch and dir then
     if lfsisdir(dir) then
@@ -568,20 +569,36 @@ local eschash = "!!!!!HASH!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
-local function protecttexcontents(str)
-  str = stringgsub(str,"\\%%","\\"..escpcnt)
-  str = stringgsub(str,"%%.-\n", "")
-  str = stringgsub(str,"%%.-$", "")
-  str = stringgsub(str,'"','"&ditto&"')
-  str = stringgsub(str,"\n%s*"," ")
+local function protecttexcontentsVerbatim(str)
+  str = str:gsub("%%.-\n", "")
+  str = str:gsub("%%.-$", "")
+  str = str:gsub('"', '"&ditto&"')
+  str = str:gsub("\n%s*", " ")
   return str
+end
+
+local function protecttexcontents(str)
+  str = str:gsub("\\%%","\\"..escpcnt)
+  str = protecttexcontentsVerbatim(str)
+  return str
+end
+
+local function splitbystring(data)
+  local t = { }
+  data = data:gsub("(.-)(\"[^\n]-\")", function(aa,bb)
+    t[#t+1] = aa
+    t[#t+1] = bb
+    return ""
+  end)
+  t[#t+1] = data
+  return t
 end
 
 local function replaceinputmpfile (name,file)
   local ofmodify = lfsattributes(file,"modification")
   if not ofmodify then return file end
   local cachedir = luamplib.cachedir or outputdir
-  local newfile = stringgsub(name,"%W","_")
+  local newfile = name:gsub("%W","_")
   newfile = cachedir .."/luamplib_input_"..newfile
   if newfile and luamplibtime then
     local nf = lfsattributes(newfile)
@@ -594,24 +611,29 @@ local function replaceinputmpfile (name,file)
   local fh = ioopen(file,"r")
   if not fh then return file end
   local data = fh:read("*all"); fh:close()
-  data = stringgsub(data, "\"[^\n]-\"",
-    function(str)
-      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
-      return str
-    end)
+
   local count,cnt = 0,0
-  data,cnt = stringgsub(data,
-    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-    function(str)
-      str = protecttexcontents(str)
-      str = stringgsub(str,"\\"..escpcnt,"\\%%")
-      return format("rawtextext(\"%s\")",str)
-    end)
-  count = count + cnt
-  data,cnt = stringgsub(data,
-    begname.."verbatimtex"..endname.."%s*.-%s*"..begname.."etex"..endname,
-    "")
-  count = count + cnt
+  local t = splitbystring(data)
+
+  for i,v in ipairs(t) do
+    if i % 2 == 1 then -- this is not string "..."
+      v,cnt = v:gsub(
+        begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
+        function(str)
+          str = protecttexcontentsVerbatim(str)
+          return format("rawtextext(\"%s\")",str)
+        end)
+      count = count + cnt
+      v,cnt = v:gsub(
+        begname.."verbatimtex"..endname.."%s*.-%s*"..begname.."etex"..endname,
+        "")
+      count = count + cnt
+    end
+    t[i] = v
+  end
+
+  data = tableconcat(t)
+
   if count == 0 then
     noneedtoreplace[name] = true
     fh = ioopen(newfile,"w");
@@ -621,7 +643,6 @@ local function replaceinputmpfile (name,file)
     end
     return file
   end
-  data = stringgsub(data,"([bem])"..esctex,"%1tex")
   fh = ioopen(newfile,"w")
   if not fh then return file end
   fh:write(data); fh:close()
@@ -1071,58 +1092,6 @@ enddef;
 ]]
 luamplib.textextlabelpreamble = textextlabelpreamble
 
-local function protecttextext(data)
-  local everymplib    = texgettoks('everymplibtoks')    or ''
-  local everyendmplib = texgettoks('everyendmplibtoks') or ''
-  data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
-  data = stringgsub(data,"\r","\n")
-  data = stringgsub(data, "\"[^\n]-\"",
-    function(str)
-      str = stringgsub(str,"%%",escpcnt)
-      str = stringgsub(str,"([bem])tex"..endname,"%1"..esctex)
-      return str
-    end)
-  data = stringgsub(data,
-    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-    function(str)
-      str = protecttexcontents(str)
-      return format("rawtextext(\"%s\")",str)
-    end)
-  data = stringgsub(data,
-    begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-    function(str)
-      str = protecttexcontents(str)
-      return format("VerbatimTeX(\"%s\")",str)
-    end)
-  data = stringgsub(data, "\"[^\n]-\"",
-    function(str)
-      str = stringgsub(str,"([bem])"..esctex,"%1tex")
-      str = stringgsub(str,"{", esclbr)
-      str = stringgsub(str,"}", escrbr)
-      str = stringgsub(str,"#", escshar)
-      return format("\\detokenize{%s}",str)
-    end)
-  data = stringgsub(data,"%%.-\n", "")
-  luamplib.mpxcolors = {}
-  data = stringgsub(data, "\\mpcolor"..endname.."(.-){(.-)}",
-    function(opt,str)
-      local cnt = #luamplib.mpxcolors + 1
-      luamplib.mpxcolors[cnt] = format(
-        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
-        cnt,opt,str)
-      return format("\\csname mpxcolor%i\\endcsname",cnt)
-    end)
-%    \end{macrocode}
-%    Next three lines to address bug \#55
-%    \begin{macrocode}
-  data = stringgsub(data, "([`\\])#", "%1"..eschash)
-  data = stringgsub(data, "#", "##")
-  data = stringgsub(data, eschash, "#")
-  texsprint(data)
-end
-
-luamplib.protecttextext = protecttextext
-
 local TeX_code_t = {}
 
 local function domakeTEXboxes (data)
@@ -1157,12 +1126,97 @@ local function domakeTEXboxes (data)
   end
 end
 
+local function preprotecttextext(data)
+  local everymplib    = texgettoks('everymplibtoks')    or ''
+  local everyendmplib = texgettoks('everyendmplibtoks') or ''
+  data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
+  data = data:gsub("\r","\n")
+  return data
+end
+
+local function replace_btex_etex(tstr,func)
+  tstr = tstr:gsub(
+    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
+    function(str)
+      str = func(str)
+      return format("rawtextext(\"%s\")",str)
+    end)
+  tstr = tstr:gsub(
+    begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
+    function(str)
+      str = func(str)
+      return format("VerbatimTeX(\"%s\")",str)
+    end)
+  return tstr
+end
+
+local function protecttextextVerbatim(data)
+  local t = splitbystring(preprotecttextext(data))
+
+  for i,v in ipairs(t) do
+    if i % 2 == 1 then -- this is not string "..."
+      v = replace_btex_etex(v, protecttexcontentsVerbatim)
+      t[i] = v
+    end
+  end
+
+  data = tableconcat(t)
+
+  local _,result = process(data, false)
+  domakeTEXboxes(result)
+  return data
+end
+
+luamplib.protecttextextVerbatim = protecttextextVerbatim
+
+local function protecttextext(data)
+  local t = splitbystring(preprotecttextext(data))
+
+  for i,v in ipairs(t) do
+    if i % 2 == 0 then -- string "..."
+      v = v:gsub("%%", escpcnt)
+    else
+      v = replace_btex_etex(v, protecttexcontents)
+    end
+    t[i] = v
+  end
+
+  data = tableconcat(t)
+
+  data = data:gsub("\"[^\n]-\"",
+    function(str)
+      str = str:gsub("{", esclbr)
+      str = str:gsub("}", escrbr)
+      str = str:gsub("#", escshar)
+      return format("\\detokenize{%s}",str)
+    end)
+  data = data:gsub("%%.-\n", "")
+  luamplib.mpxcolors = {}
+  data = data:gsub("\\mpcolor"..endname.."(.-){(.-)}",
+    function(opt,str)
+      local cnt = #luamplib.mpxcolors + 1
+      luamplib.mpxcolors[cnt] = format(
+        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
+        cnt,opt,str)
+      return format("\\csname mpxcolor%i\\endcsname",cnt)
+    end)
+%    \end{macrocode}
+%    Next three lines to address bug \#55
+%    \begin{macrocode}
+  data = data:gsub("([`\\])#", "%1"..eschash)
+  data = data:gsub("#", "##")
+  data = data:gsub(eschash, "#")
+  texsprint(data)
+end
+
+luamplib.protecttextext = protecttextext
+
 local function makeTEXboxes (data)
-  data = stringgsub(data, "##", "#") -- restore # doubled in input string
-  data = stringgsub(data, escpcnt, "%%")
-  data = stringgsub(data, esclbr,"{")
-  data = stringgsub(data, escrbr,"}")
-  data = stringgsub(data, escshar,  "#" )
+  data = data:gsub("##", "#") -- restore # doubled in input string
+  data = data:gsub(escpcnt, "%%")
+  data = data:gsub(esclbr,"{")
+  data = data:gsub(escrbr,"}")
+  data = data:gsub(escshar,  "#" )
   local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
@@ -1302,7 +1356,7 @@ local function tr_pdf_pageresources(mode,opaq)
         if no_extgs then
           tpr = tpr.."/ExtGState<<>>"
         end
-        tpr = stringgsub(tpr,"/ExtGState<<","%1"..res)
+        tpr = tpr:gsub("/ExtGState<<","%1"..res)
         texset("global","pdfpageresources",tpr)
       end
     end
@@ -1348,7 +1402,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
         if not stringfind(pageres,"/Shading<<.*>>") then
           pageres = pageres.."/Shading<<>>"
         end
-        pageres = stringgsub(pageres,"/Shading<<","%1"..res)
+        pageres = pageres:gsub("/Shading<<","%1"..res)
         setpageres(pageres)
       end
     end
@@ -1690,7 +1744,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/08/01 v2.11.0 mplib package for LuaTeX]
+    [2015/09/17 v2.11.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}
@@ -1764,7 +1818,8 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
   \ifdefined\mplibverbatimYes
-    \directlua{luamplib.process([===[\the\everymplibtoks\detokenize{#1}\the\everyendmplibtoks]===],true,true)}%
+    \directlua{luamplib.tempdata = luamplib.protecttextextVerbatim([===[\detokenize{#1}]===])}%
+    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
   \else
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
     \directlua{ tex.sprint(luamplib.mpxcolors) }%
@@ -1795,7 +1850,8 @@ luamplib.colorconverter = colorconverter
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
     \ifdefined\mplibverbatimYes
-      \directlua{luamplib.process([===[\the\everymplibtoks\the\toks@\the\everyendmplibtoks]===],true,true)}%
+      \directlua{luamplib.tempdata = luamplib.protecttextextVerbatim([===[\the\toks@]===])}%
+      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
     \else
       \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
       \directlua{ tex.sprint(luamplib.mpxcolors) }%
