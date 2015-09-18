@@ -396,7 +396,6 @@ local textprint     = tex.tprint
 local texget      = tex.get
 local texset      = tex.set
 local texgettoks  = tex.gettoks
-local texsettoks  = tex.settoks
 local texgetbox   = tex.getbox
 
 local mplib = require ('mplib')
@@ -560,28 +559,20 @@ local function replaceformatmp(file,newfile,ofmodify)
   return newfile
 end
 
-local esctex = "!!!T!!!E!!!X!!!"
-local esclbr = "!!!!!LEFTBRCE!!!!!"
-local escrbr = "!!!!!RGHTBRCE!!!!!"
-local escshar = "!!!!!SHARPE!!!!!"
+local esclbr  = "!!!!!LEFTBRCE!!!!!"
+local escrbr  = "!!!!!RGHTBRCE!!!!!"
 local escpcnt = "!!!!!PERCENT!!!!!"
 local eschash = "!!!!!HASH!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
 local function protecttexcontents(str)
-  str = str:gsub("\\%%","\\"..escpcnt)
-  str = str:gsub("%%.-\n", "")
-  str = str:gsub("%%.-$", "")
-  str = str:gsub('"', '"&ditto&"')
-  str = str:gsub("\n%s*", " ")
-  return str
+  return str:gsub("\\%%","\\"..escpcnt):gsub("%%.-\n", ""):gsub("%%.-$", ""):gsub('"', '"&ditto&"'):gsub("\n%s*", " ")
 end
 
 local function protecttexcontentsVerbatim(str)
   str = protecttexcontents(str)
-  str = str:gsub("\\"..escpcnt,"\\%%")
-  return str
+  return str:gsub("\\"..escpcnt,"\\%%")
 end
 
 local function splitbystring(data)
@@ -1127,7 +1118,7 @@ local function domakeTEXboxes (data)
   end
 end
 
-local function preprotecttextext(data)
+local function insert_everymplib(data)
   local everymplib    = texgettoks('everymplibtoks')    or ''
   local everyendmplib = texgettoks('everyendmplibtoks') or ''
   data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
@@ -1152,7 +1143,7 @@ local function replace_btex_etex(tstr,func)
 end
 
 local function protecttextextVerbatim(data)
-  local t = splitbystring(preprotecttextext(data))
+  local t = splitbystring(insert_everymplib(data))
 
   for i,v in ipairs(t) do
     if i % 2 == 1 then -- this is not string "..."
@@ -1171,7 +1162,7 @@ end
 luamplib.protecttextextVerbatim = protecttextextVerbatim
 
 local function protecttextext(data)
-  local t = splitbystring(preprotecttextext(data))
+  local t = splitbystring(insert_everymplib(data))
 
   for i,v in ipairs(t) do
     if i % 2 == 0 then -- string "..."
@@ -1184,40 +1175,36 @@ local function protecttextext(data)
 
   data = tableconcat(t)
 
-  data = data:gsub("\"[^\n]-\"",
-    function(str)
-      str = str:gsub("{", esclbr)
-      str = str:gsub("}", escrbr)
-      str = str:gsub("#", escshar)
-      return format("\\detokenize{%s}",str)
-    end)
+  data = data:gsub("\"[^\n]-\"", function(str)
+    str = str:gsub("{", esclbr):gsub("}", escrbr):gsub("#", eschash)
+    return format("\\detokenize{%s}",str)
+  end)
+
   data = data:gsub("%%.-\n", "")
+
   luamplib.mpxcolors = {}
-  data = data:gsub("\\mpcolor"..endname.."(.-){(.-)}",
-    function(opt,str)
-      local cnt = #luamplib.mpxcolors + 1
-      luamplib.mpxcolors[cnt] = format(
-        "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
-        cnt,opt,str)
-      return format("\\csname mpxcolor%i\\endcsname",cnt)
-    end)
+  data = data:gsub("\\mpcolor"..endname.."(.-){(.-)}", function(opt,str)
+    local cnt = #luamplib.mpxcolors + 1
+    luamplib.mpxcolors[cnt] = format(
+      "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
+      cnt,opt,str)
+    return format("\\csname mpxcolor%i\\endcsname",cnt)
+  end)
+
 %    \end{macrocode}
 %    Next three lines to address bug \#55
 %    \begin{macrocode}
-  data = data:gsub("([`\\])#", "%1"..eschash)
-  data = data:gsub("#", "##")
-  data = data:gsub(eschash, "#")
+  data = data:gsub("(.)#", function (aa)
+    if aa ~= "`" and aa ~= "\\" then return aa .. "##" end
+  end)
+
   texsprint(data)
 end
 
 luamplib.protecttextext = protecttextext
 
 local function makeTEXboxes (data)
-  data = data:gsub("##", "#") -- restore # doubled in input string
-  data = data:gsub(escpcnt, "%%")
-  data = data:gsub(esclbr,"{")
-  data = data:gsub(escrbr,"}")
-  data = data:gsub(escshar,  "#" )
+  data = data:gsub("##","#"):gsub(escpcnt,"%%"):gsub(esclbr,"{"):gsub(escrbr,"}"):gsub(eschash,"#")
   local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
