@@ -408,8 +408,7 @@ local lfsmkdir      = lfs.mkdir
 local lfstouch      = lfs.touch
 local ioopen        = io.open
 
-local file = file
-if not file then
+local file = file or { }
 %    \end{macrocode}
 %    This is a small trick for \LaTeX . In \LaTeX\ we read the metapost code
 %    line by line, but it needs to be passed entirely to |process()|, so we
@@ -418,15 +417,11 @@ if not file then
 %    A few helpers, taken from |l-file.lua|.
 %
 %    \begin{macrocode}
-  file = { }
-
-  function file.replacesuffix(filename, suffix)
-    return (stringgsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
-  end
-
-  function file.stripsuffix(filename)
-    return (stringgsub(filename,"%.[%a%d]+$",""))
-  end
+local replacesuffix = file.replacesuffix or function(filename, suffix)
+  return (stringgsub(filename,"%.[%a%d]+$","")) .. "." .. suffix
+end
+local stripsuffix = file.stripsuffix or function(filename)
+  return (stringgsub(filename,"%.[%a%d]+$",""))
 end
 
 %    \end{macrocode}
@@ -559,6 +554,7 @@ local function replaceformatmp(file,newfile,ofmodify)
   return newfile
 end
 
+local esctex  = "!!!T!!!E!!!X!!!"
 local esclbr  = "!!!!!LEFTBRCE!!!!!"
 local escrbr  = "!!!!!RGHTBRCE!!!!!"
 local escpcnt = "!!!!!PERCENT!!!!!"
@@ -566,24 +562,16 @@ local eschash = "!!!!!HASH!!!!!"
 local begname = "%f[A-Z_a-z]"
 local endname = "%f[^A-Z_a-z]"
 
+local btex_etex        = begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname
+local verbatimtex_etex = begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname
+
 local function protecttexcontents(str)
-  return str:gsub("\\%%","\\"..escpcnt):gsub("%%.-\n", ""):gsub("%%.-$", ""):gsub('"', '"&ditto&"'):gsub("\n%s*", " ")
-end
-
-local function protecttexcontentsVerbatim(str)
-  str = protecttexcontents(str)
-  return str:gsub("\\"..escpcnt,"\\%%")
-end
-
-local function splitbystring(data)
-  local t = { }
-  data = data:gsub("(.-)(\"[^\n]-\")", function(aa,bb)
-    t[#t+1] = aa
-    t[#t+1] = bb
-    return ""
-  end)
-  t[#t+1] = data
-  return t
+  return str:gsub("\\%%", "\\"..escpcnt)
+            :gsub("%%.-\n", "")
+            :gsub("%%.-$",  "")
+            :gsub('"', '"&ditto&"')
+            :gsub("\n%s*", " ")
+            :gsub(escpcnt, "%%")
 end
 
 local function replaceinputmpfile (name,file)
@@ -605,26 +593,21 @@ local function replaceinputmpfile (name,file)
   local data = fh:read("*all"); fh:close()
 
   local count,cnt = 0,0
-  local t = splitbystring(data)
 
-  for i,v in ipairs(t) do
-    if i % 2 == 1 then -- this is not string "..."
-      v,cnt = v:gsub(
-        begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-        function(str)
-          str = protecttexcontentsVerbatim(str)
-          return format("rawtextext(\"%s\")",str)
-        end)
-      count = count + cnt
-      v,cnt = v:gsub(
-        begname.."verbatimtex"..endname.."%s*.-%s*"..begname.."etex"..endname,
-        "")
-      count = count + cnt
-    end
-    t[i] = v
-  end
+  data = data:gsub("\"[^\n]-\"", function(str)
+    return str:gsub("([bem])tex"..endname,"%1"..esctex)
+  end)
 
-  data = tableconcat(t)
+  data, cnt = data:gsub(btex_etex, function(str)
+    return format("rawtextext(\"%s\")",protecttexcontents(str))
+  end)
+  count = count + cnt
+  data, cnt = data:gsub(verbatimtex_etex, "")
+  count = count + cnt
+
+  data = data:gsub("\"[^\n]-\"", function(str) -- restore string btex .. etex
+    return str:gsub("([bem])"..esctex, "%1tex")
+  end)
 
   if count == 0 then
     noneedtoreplace[name] = true
@@ -699,7 +682,7 @@ if mplibone then
     local mpx = mplib.new {
       ini_version = true,
       find_file = luamplib.finder,
-      job_name = file.stripsuffix(name)
+      job_name = stripsuffix(name)
     }
     mpx:execute(format("input %s ;",name))
     if dump then
@@ -712,7 +695,7 @@ if mplibone then
   end
 
   function luamplib.load(name)
-    local mem_name = file.replacesuffix(name,"mem")
+    local mem_name = replacesuffix(name,"mem")
     local mpx = mplib.new {
       ini_version = false,
       mem_name = mem_name,
@@ -769,7 +752,7 @@ else
     if not mpx then
       result = { status = 99, error = "out of memory"}
     else
-      result = mpx:execute(format(preamble, file.replacesuffix(name,"mp")))
+      result = mpx:execute(format(preamble, replacesuffix(name,"mp")))
     end
     luamplib.reporterror(result)
     return mpx, result
@@ -1118,41 +1101,32 @@ local function domakeTEXboxes (data)
   end
 end
 
-local function insert_everymplib(data)
+local function protect_tex_text_common (data)
   local everymplib    = texgettoks('everymplibtoks')    or ''
   local everyendmplib = texgettoks('everyendmplibtoks') or ''
-  data = "\n" .. everymplib .."\n".. data .."\n".. everyendmplib
+  data = format("\n%s\n%s\n%s",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
+
+  data = data:gsub("\"[^\n]-\"", function(str)
+    return str:gsub("([bem])tex"..endname,"%1"..esctex)
+  end)
+
+  data = data:gsub(btex_etex, function(str)
+    return format("rawtextext(\"%s\")",protecttexcontents(str))
+  end)
+  data = data:gsub(verbatimtex_etex, function(str)
+    return format("VerbatimTeX(\"%s\")",protecttexcontents(str))
+  end)
+
   return data
 end
 
-local function replace_btex_etex(tstr,func)
-  tstr = tstr:gsub(
-    begname.."btex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-    function(str)
-      str = func(str)
-      return format("rawtextext(\"%s\")",str)
-    end)
-  tstr = tstr:gsub(
-    begname.."verbatimtex"..endname.."%s*(.-)%s*"..begname.."etex"..endname,
-    function(str)
-      str = func(str)
-      return format("VerbatimTeX(\"%s\")",str)
-    end)
-  return tstr
-end
-
 local function protecttextextVerbatim(data)
-  local t = splitbystring(insert_everymplib(data))
+  data = protect_tex_text_common(data)
 
-  for i,v in ipairs(t) do
-    if i % 2 == 1 then -- this is not string "..."
-      v = replace_btex_etex(v, protecttexcontentsVerbatim)
-      t[i] = v
-    end
-  end
-
-  data = tableconcat(t)
+  data = data:gsub("\"[^\n]-\"", function(str) -- restore string btex .. etex
+    return str:gsub("([bem])"..esctex, "%1tex")
+  end)
 
   local _,result = process(data, false)
   domakeTEXboxes(result)
@@ -1162,21 +1136,14 @@ end
 luamplib.protecttextextVerbatim = protecttextextVerbatim
 
 local function protecttextext(data)
-  local t = splitbystring(insert_everymplib(data))
-
-  for i,v in ipairs(t) do
-    if i % 2 == 0 then -- string "..."
-      v = v:gsub("%%", escpcnt)
-    else
-      v = replace_btex_etex(v, protecttexcontents)
-    end
-    t[i] = v
-  end
-
-  data = tableconcat(t)
+  data = protect_tex_text_common(data)
 
   data = data:gsub("\"[^\n]-\"", function(str)
-    str = str:gsub("{", esclbr):gsub("}", escrbr):gsub("#", eschash)
+    str = str:gsub("([bem])"..esctex, "%1tex")
+             :gsub("%%", escpcnt)
+             :gsub("{",  esclbr)
+             :gsub("}",  escrbr)
+             :gsub("#",  eschash)
     return format("\\detokenize{%s}",str)
   end)
 
@@ -1204,7 +1171,11 @@ end
 luamplib.protecttextext = protecttextext
 
 local function makeTEXboxes (data)
-  data = data:gsub("##","#"):gsub(escpcnt,"%%"):gsub(esclbr,"{"):gsub(escrbr,"}"):gsub(eschash,"#")
+  data = data:gsub("##","#")
+             :gsub(escpcnt,"%%")
+             :gsub(esclbr,"{")
+             :gsub(escrbr,"}")
+             :gsub(eschash,"#")
   local _,result = process(data, false)
   domakeTEXboxes(result)
   return data
