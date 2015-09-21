@@ -1159,11 +1159,9 @@ local function protecttextext(data)
   end)
 
 %    \end{macrocode}
-%    Next three lines to address bug \#55
+%    Next line to address bug \#55
 %    \begin{macrocode}
-  data = data:gsub("(.)#", function (aa)
-    if aa ~= "`" and aa ~= "\\" then return aa .. "##" end
-  end)
+  data = data:gsub("([^`\\])#","%1##")
 
   texsprint(data)
 end
