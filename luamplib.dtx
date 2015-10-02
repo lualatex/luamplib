@@ -367,13 +367,12 @@ local luamplib    = luamplib
 luamplib.showlog  = luamplib.showlog or false
 luamplib.lastlog  = ""
 
-local err, warn, info, log = luatexbase.provides_module({
+luatexbase.provides_module {
   name          = "luamplib",
   version       = "2.11.1",
   date          = "2015/10/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
-})
-
+}
 
 %    \end{macrocode}
 %    This module is a stripped down version of libraries that are used by
@@ -382,6 +381,10 @@ local err, warn, info, log = luatexbase.provides_module({
 %    \begin{macrocode}
 
 local format, abs = string.format, math.abs
+
+local err  = function(...) return luatexbase.module_error  ("luamplib", format(...)) end
+local warn = function(...) return luatexbase.module_warning("luamplib", format(...)) end
+local info = function(...) return luatexbase.module_info   ("luamplib", format(...)) end
 
 local stringgsub    = string.gsub
 local stringfind    = string.find
