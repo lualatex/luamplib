@@ -105,7 +105,6 @@ See source file '\inFileName' for licencing and contact information.
   pdfkeywords={luatex, lualatex, mplib, metapost}
 ]{hyperref}
 \usepackage{fontspec}
-\usepackage{unicode-math}
 \setmainfont[
   Numbers     = OldStyle,
   Ligatures   = TeX,
@@ -1331,7 +1330,7 @@ local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 
 local function shading_initialize ()
   shading_res = {}
-  if pdfmode and luatexbase.is_active_callback then -- luatexbase 0.7+
+  if pdfmode and luatexbase.callback_descriptions then -- ltluatex
     local shading_obj = pdf.reserveobj()
     setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
     luatexbase.add_to_callback("finish_pdffile", function()
