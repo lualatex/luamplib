@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/09/17 v2.11.1 Interface for using the mplib library]%
+  [2015/10/02 v2.11.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/09/17 v2.11.1}
+% \date{2015/10/02 v2.11.1}
 %
 % \maketitle
 %
@@ -370,7 +370,7 @@ luamplib.lastlog  = ""
 local err, warn, info, log = luatexbase.provides_module({
   name          = "luamplib",
   version       = "2.11.1",
-  date          = "2015/09/17",
+  date          = "2015/10/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 })
 
@@ -1330,7 +1330,7 @@ local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 
 local function shading_initialize ()
   shading_res = {}
-  if pdfmode and luatexbase.callback_descriptions then -- ltluatex
+  if pdfmode and luatexbase.callbacktypes and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
     local shading_obj = pdf.reserveobj()
     setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
     luatexbase.add_to_callback("finish_pdffile", function()
@@ -1700,7 +1700,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/09/17 v2.11.1 mplib package for LuaTeX]
+    [2015/10/02 v2.11.1 mplib package for LuaTeX]
   \RequirePackage{luatexbase-modutils}
 \fi
 %    \end{macrocode}

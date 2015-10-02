@@ -1,6 +1,7 @@
                        History of the luamplib package
 
-2015/xx/xx 2.11.1
+2015/10/02 2.11.1
+    * adapts to latex 2015/10/01 and luatexbase v1.0
     * allows `btex ... etex' and `verbatimtex ... etex' even when
       `\mplibverbatim{enable}' is declared.
 
