@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2015/10/02 v2.11.1 Interface for using the mplib library]%
+  [2016/01/02 v2.11.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -1204,7 +1204,8 @@ local function processwithTEXboxes (data)
 end
 luamplib.processwithTEXboxes = processwithTEXboxes
 
-local pdfmode = texget("pdfoutput") > 0 and true or false
+local pdfoutput = texget("outputmode") or texget("pdfoutput")
+local pdfmode = pdfoutput > 0 and true or false
 
 local function start_pdf_code()
   if pdfmode then
@@ -1300,13 +1301,17 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  pgf_loaded = pgf_loaded or (newtoken and newtoken.create("pgfutil@everybye").cmdname == "assign_toks")
+  pgf_loaded = pgf_loaded
+              or (newtoken and newtoken.create("pgfutil@everybye").cmdname == "assign_toks")
+              or (token and token.create("pgfutil@everybye").cmdname == "assign_toks")
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
   if pdfmode then
     if res ~= "" then
-      local tpr = texget("pdfpageresources") -- respect luaotfload-colors
+      local tpr = (tex.luatexversion <87 and texget("pdfpageresources"))
+                  or pdf.getpageresources()
+                  or ""  -- respect luaotfload-colors
       local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
       local pgf_pdf_loaded = no_extgs and pgf_loaded
       if pgf_pdf_loaded then
@@ -1316,7 +1321,11 @@ local function tr_pdf_pageresources(mode,opaq)
           tpr = tpr.."/ExtGState<<>>"
         end
         tpr = tpr:gsub("/ExtGState<<","%1"..res)
-        texset("global","pdfpageresources",tpr)
+        if (tex.luatexversion <87) then
+          texset("global","pageresources",tpr)
+        else
+          pdf.setpageresources(tpr)
+        end
       end
     end
   else
@@ -1699,26 +1708,41 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname selectfont\endcsname\relax
-  \input luatexbase-modutils.sty
+  \input ltluatex
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2015/10/02 v2.11.1 mplib package for LuaTeX]
-  \RequirePackage{luatexbase-modutils}
+    [2016/01/02 v2.11.2 mplib package for LuaTeX]
+  \ifx\newluafunction\@undefined
+  \input ltluatex
+  \fi
 \fi
 %    \end{macrocode}
 %
 %    Loading of lua code.
 %
 %    \begin{macrocode}
-\RequireLuaModule{luamplib}
+\directlua{require("luamplib")}
 %    \end{macrocode}
+%
+% Support older formats
+%    \begin{macrocode}
+\ifx\luaescapestring\@undefined
+  \let\luaescapestring\luatexluaescapestring
+  \let\luatexscantextokens\scantextokens
+\fi
+\ifx\pdfoutput\@undefined
+  \let\pdfoutput\outputmode
+  \protected\def\pdfliteral{\pdfextension literal}
+\fi
+%    \end{macrocode}
+
 %
 %    Set the format for metapost.
 %
 %    \begin{macrocode}
 \def\mplibsetformat#1{%
-  \directlua{luamplib.setformat("\luatexluaescapestring{#1}")}}
+  \directlua{luamplib.setformat("\luaescapestring{#1}")}}
 %    \end{macrocode}
 %
 %    \textsf{luamplib} works in both PDF and DVI mode,
@@ -1755,7 +1779,7 @@ luamplib.colorconverter = colorconverter
 \def\mplibreplacenewlinebr{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
 \begingroup\lccode`\~=`\^^M \lowercase{\endgroup
-  \def\mplibdoreplacenewlinebr#1^^J{\endgroup\luatexscantextokens{{}#1~}}}
+  \def\mplibdoreplacenewlinebr#1^^J{\endgroup\scantextokens{{}#1~}}}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -1766,7 +1790,7 @@ luamplib.colorconverter = colorconverter
 \def\mplibreplacenewlinecs{%
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
 \begingroup\lccode`\~=`\^^M \lowercase{\endgroup
-  \def\mplibdoreplacenewlinecs#1^^J{\endgroup\luatexscantextokens{\relax#1~}}}
+  \def\mplibdoreplacenewlinecs#1^^J{\endgroup\scantextokens{\relax#1~}}}
 \def\mplibcode{%
   \mplibstartlineno\inputlineno
   \begingroup
