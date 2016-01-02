@@ -1301,8 +1301,8 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
+  local token = newtoken or token 
   pgf_loaded = pgf_loaded
-              or (newtoken and newtoken.create("pgfutil@everybye").cmdname == "assign_toks")
               or (token and token.create("pgfutil@everybye").cmdname == "assign_toks")
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
