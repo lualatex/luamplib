@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2015 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2016 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2015/10/02 v2.11.1}
+% \date{2016/01/02 v2.11.2}
 %
 % \maketitle
 %
@@ -369,8 +369,8 @@ luamplib.lastlog  = ""
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.11.1",
-  date          = "2015/10/02",
+  version       = "2.11.2",
+  date          = "2016/01/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -396,7 +396,6 @@ local texsprint     = tex.sprint
 local textprint     = tex.tprint
 
 local texget      = tex.get
-local texset      = tex.set
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 
@@ -1204,8 +1203,8 @@ local function processwithTEXboxes (data)
 end
 luamplib.processwithTEXboxes = processwithTEXboxes
 
-local pdfoutput = texget("outputmode") or texget("pdfoutput")
-local pdfmode = pdfoutput > 0 and true or false
+local pdfoutput = tonumber(texget("outputmode")) or tonumber(texget("pdfoutput"))
+local pdfmode = pdfoutput > 0
 
 local function start_pdf_code()
   if pdfmode then
@@ -1251,8 +1250,13 @@ end
 %    Transparency and Shading
 %    \begin{macrocode}
 local pdf_objs = {}
+local token, getpageres, setpageres = newtoken or token
+local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
-if not pdfmode then
+if pdfmode then -- repect luaotfload-colors
+  getpageres = pdf.getpageresources or function() return pdf.pageresources end
+  setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+else
   texsprint("\\special{pdf:obj @MPlibTr<<>>}",
             "\\special{pdf:obj @MPlibSh<<>>}")
 end
@@ -1281,8 +1285,6 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
-local pgf_loaded
-
 local function update_tr_res(res,mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
@@ -1290,8 +1292,8 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       res = format("%s/MPlibTr%i %i 0 R",res,on,on)
     else
-      if pgf_loaded then
-        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{/MPlibTr%i%s}",on,os))
+      if pgf.loaded then
+        texsprint(format("\\csname %s\\endcsname{/MPlibTr%i%s}", pgf.extgs, on, os))
       else
         texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
       end
@@ -1301,35 +1303,28 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  local token = newtoken or token 
-  pgf_loaded = pgf_loaded
-              or (token and token.create("pgfutil@everybye").cmdname == "assign_toks")
+  if token and pgf.bye and not pgf.loaded then
+    pgf.loaded = token.create(pgf.bye).cmdname == "assign_toks"
+    pgf.bye    = pgf.loaded and pgf.bye
+  end
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
   if pdfmode then
     if res ~= "" then
-      local tpr = (tex.luatexversion <87 and texget("pdfpageresources"))
-                  or pdf.getpageresources()
-                  or ""  -- respect luaotfload-colors
-      local no_extgs = not stringfind(tpr,"/ExtGState<<.*>>")
-      local pgf_pdf_loaded = no_extgs and pgf_loaded
-      if pgf_pdf_loaded then
-        texsprint(format("\\csname pgf@sys@addpdfresource@extgs@plain\\endcsname{%s}",res))
+      if pgf.loaded then
+        texsprint(format("\\csname %s\\endcsname{%s}", pgf.extgs, res))
       else
-        if no_extgs then
-          tpr = tpr.."/ExtGState<<>>"
+        local tpr, n = getpageres() or "", 0
+        tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
+        if n == 0 then
+          tpr = format("%s/ExtGState<<%s>>", tpr, res)
         end
-        tpr = tpr:gsub("/ExtGState<<","%1"..res)
-        if (tex.luatexversion <87) then
-          texset("global","pageresources",tpr)
-        else
-          pdf.setpageresources(tpr)
-        end
+        setpageres(tpr)
       end
     end
   else
-    if not pgf_loaded then
+    if not pgf.loaded then
       texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
     end
   end
@@ -1337,8 +1332,6 @@ local function tr_pdf_pageresources(mode,opaq)
 end
 
 local shading_res
-local getpageres = pdf.getpageresources or function() return pdf.pageresources end
-local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 
 local function shading_initialize ()
   shading_res = {}
@@ -1727,11 +1720,10 @@ luamplib.colorconverter = colorconverter
 %
 % Support older formats
 %    \begin{macrocode}
-\ifx\luaescapestring\@undefined
-  \let\luaescapestring\luatexluaescapestring
-  \let\luatexscantextokens\scantextokens
+\ifx\scantextokens\undefined
+  \let\scantextokens\luatexscantextokens
 \fi
-\ifx\pdfoutput\@undefined
+\ifx\pdfoutput\undefined
   \let\pdfoutput\outputmode
   \protected\def\pdfliteral{\pdfextension literal}
 \fi
@@ -1741,8 +1733,7 @@ luamplib.colorconverter = colorconverter
 %    Set the format for metapost.
 %
 %    \begin{macrocode}
-\def\mplibsetformat#1{%
-  \directlua{luamplib.setformat("\luaescapestring{#1}")}}
+\def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
 %    \end{macrocode}
 %
 %    \textsf{luamplib} works in both PDF and DVI mode,
@@ -1757,9 +1748,9 @@ luamplib.colorconverter = colorconverter
   \ifcsname PackageWarning\endcsname
     \PackageWarning{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
   \else
-    \write16{}
-    \write16{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
-    \write16{}
+    \write128{}
+    \write128{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
+    \write128{}
   \fi
 \fi
 \def\mplibsetupcatcodes{%
