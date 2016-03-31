@@ -1136,6 +1136,8 @@ end
 
 luamplib.protecttextextVerbatim = protecttextextVerbatim
 
+luamplib.mpxcolors = {}
+
 local function protecttextext(data)
   data = protect_tex_text_common(data)
 
@@ -1150,13 +1152,14 @@ local function protecttextext(data)
 
   data = data:gsub("%%.-\n", "")
 
-  luamplib.mpxcolors = {}
+  local grouplevel = tex.currentgrouplevel
+  luamplib.mpxcolors[grouplevel] = {}
   data = data:gsub("\\mpcolor"..endname.."(.-){(.-)}", function(opt,str)
-    local cnt = #luamplib.mpxcolors + 1
-    luamplib.mpxcolors[cnt] = format(
-      "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
-      cnt,opt,str)
-    return format("\\csname mpxcolor%i\\endcsname",cnt)
+    local cnt = #luamplib.mpxcolors[grouplevel] + 1
+    luamplib.mpxcolors[grouplevel][cnt] = format(
+      "\\expandafter\\mplibcolor\\csname mpxcolor%i:%i\\endcsname%s{%s}",
+      grouplevel,cnt,opt,str)
+    return format("\\csname mpxcolor%i:%i\\endcsname",grouplevel,cnt)
   end)
 
 %    \end{macrocode}
@@ -1796,7 +1799,7 @@ luamplib.colorconverter = colorconverter
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \else
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-    \directlua{ tex.sprint(luamplib.mpxcolors) }%
+    \directlua{ tex.sprint(luamplib.mpxcolors[\the\currentgrouplevel]) }%
     \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \fi
@@ -1828,7 +1831,7 @@ luamplib.colorconverter = colorconverter
       \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \else
       \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-      \directlua{ tex.sprint(luamplib.mpxcolors) }%
+      \directlua{ tex.sprint(luamplib.mpxcolors[\the\currentgrouplevel]) }%
       \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
       \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \fi
