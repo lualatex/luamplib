@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2016/03/31 2.11.3
+    * fix a bug regarding nested mplibcode environments (issue #63)
+
 2016/01/02 2.11.2
     * updates for luatex 0.87
 

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2016/01/02 v2.11.2 Interface for using the mplib library]%
+  [2016/03/31 v2.11.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2016/01/02 v2.11.2}
+% \date{2016/03/31 v2.11.3}
 %
 % \maketitle
 %
@@ -369,8 +369,8 @@ luamplib.lastlog  = ""
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.11.2",
-  date          = "2016/01/02",
+  version       = "2.11.3",
+  date          = "2016/03/31",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1136,6 +1136,8 @@ end
 
 luamplib.protecttextextVerbatim = protecttextextVerbatim
 
+luamplib.mpxcolors = {}
+
 local function protecttextext(data)
   data = protect_tex_text_common(data)
 
@@ -1150,13 +1152,14 @@ local function protecttextext(data)
 
   data = data:gsub("%%.-\n", "")
 
-  luamplib.mpxcolors = {}
+  local grouplevel = tex.currentgrouplevel
+  luamplib.mpxcolors[grouplevel] = {}
   data = data:gsub("\\mpcolor"..endname.."(.-){(.-)}", function(opt,str)
-    local cnt = #luamplib.mpxcolors + 1
-    luamplib.mpxcolors[cnt] = format(
-      "\\expandafter\\mplibcolor\\csname mpxcolor%i\\endcsname%s{%s}",
-      cnt,opt,str)
-    return format("\\csname mpxcolor%i\\endcsname",cnt)
+    local cnt = #luamplib.mpxcolors[grouplevel] + 1
+    luamplib.mpxcolors[grouplevel][cnt] = format(
+      "\\expandafter\\mplibcolor\\csname mpxcolor%i:%i\\endcsname%s{%s}",
+      grouplevel,cnt,opt,str)
+    return format("\\csname mpxcolor%i:%i\\endcsname",grouplevel,cnt)
   end)
 
 %    \end{macrocode}
@@ -1705,7 +1708,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2016/01/02 v2.11.2 mplib package for LuaTeX]
+    [2016/03/31 v2.11.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -1796,7 +1799,7 @@ luamplib.colorconverter = colorconverter
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \else
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
-    \directlua{ tex.sprint(luamplib.mpxcolors) }%
+    \directlua{ tex.sprint(luamplib.mpxcolors[\the\currentgrouplevel]) }%
     \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
     \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \fi
@@ -1828,7 +1831,7 @@ luamplib.colorconverter = colorconverter
       \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \else
       \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
-      \directlua{ tex.sprint(luamplib.mpxcolors) }%
+      \directlua{ tex.sprint(luamplib.mpxcolors[\the\currentgrouplevel]) }%
       \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
       \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \fi
