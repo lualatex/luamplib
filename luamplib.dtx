@@ -1792,13 +1792,13 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
   \ifdefined\mplibverbatimYes
-    \directlua{luamplib.tempdata = luamplib.protecttextextVerbatim([===[\detokenize{#1}]===])}%
-    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+    \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.protecttextextVerbatim([===[\detokenize{#1}]===])}%
+    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \else
     \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\unexpanded{#1}]===])}}%
     \directlua{ tex.sprint(luamplib.mpxcolors) }%
-    \directlua{luamplib.tempdata = luamplib.makeTEXboxes([===[\mplibtemp]===])}%
-    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+    \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
+    \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
   \fi
   \endgroup
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinecs\fi
@@ -1824,13 +1824,13 @@ luamplib.colorconverter = colorconverter
   \toks@\expandafter{\the\toks@#1}%
   \def\mplibtemp@a{#2}\ifx\mplib@mplibcode\mplibtemp@a
     \ifdefined\mplibverbatimYes
-      \directlua{luamplib.tempdata = luamplib.protecttextextVerbatim([===[\the\toks@]===])}%
-      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+      \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.protecttextextVerbatim([===[\the\toks@]===])}%
+      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \else
       \edef\mplibtemp{\directlua{luamplib.protecttextext([===[\the\toks@]===])}}%
       \directlua{ tex.sprint(luamplib.mpxcolors) }%
-      \directlua{luamplib.tempdata=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
-      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata)}%
+      \directlua{luamplib.tempdata\the\currentgrouplevel=luamplib.makeTEXboxes([===[\mplibtemp]===])}%
+      \directlua{luamplib.processwithTEXboxes(luamplib.tempdata\the\currentgrouplevel)}%
     \fi
     \end{mplibcode}%
     \ifnum\mplibstartlineno<\inputlineno
