@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2016 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2017 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2016/03/31 v2.11.3 Interface for using the mplib library]%
+  [2017/06/01 v2.12.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2016/03/31 v2.11.3}
+% \date{2017/06/01 v2.12.0}
 %
 % \maketitle
 %
@@ -310,21 +310,25 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
-%   \textsc{n.b.} It does not work to pass across code chunks those variables
-%   containing |btex ... etex| pictures, as these are not METAPOST, but \TeX\
-%   elements from the standpoint of \textsf{luamplib}. Likewise, |graph.mp|
-%   does not work properly with the inheritance functionality.
+%   \textsc{n.b.}
+%   To inherit |btex ... etex| labels as well as metapost variables,
+%   it is necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
+%   On this case, be careful that normal \TeX\ boxes can conflict with
+%   |btex ... etex| boxes, though this would occur very rarely.
+%   Notwithstanding the danger, it is a `must' option to activate
+%   \cs{mplibglobaltextext} if you want to use |graph.mp|
+%   with \cs{mplibcodeinherit} functionality.
 %   \begin{verbatim}
 %   \mplibcodeinherit{enable}
+%   \mplibglobaltextext{enable}
 %   \everymplib{ beginfig(0);} \everyendmplib{ endfig;}
-%   A circle
 %   \mplibcode
-%     u := 10;
-%     draw fullcircle scaled u;
+%     label(btex $\sqrt{2}$ etex, origin);
+%     draw fullcircle scaled 20;
+%     picture pic; pic := currentpicture;
 %   \endmplibcode
-%   and twice the size
 %   \mplibcode
-%     draw fullcircle scaled 2u;
+%     currentpicture := pic scaled 2;
 %   \endmplibcode
 %   \end{verbatim}
 % \item Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
@@ -369,8 +373,8 @@ luamplib.lastlog  = ""
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.11.3",
-  date          = "2016/03/31",
+  version       = "2.12.0",
+  date          = "2017/06/01",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1069,9 +1073,11 @@ enddef;
 luamplib.textextlabelpreamble = textextlabelpreamble
 
 local TeX_code_t = {}
+local texboxnum = { 2047, 2047 }
 
 local function domakeTEXboxes (data)
-  local num = 255 -- output box
+  local num = texboxnum[1]
+  local global = luamplib.globaltextext and "\\global" or ""
   if data and data.fig then
     local figures = data.fig
     for f=1, #figures do
@@ -1086,7 +1092,7 @@ local function domakeTEXboxes (data)
           local str = prescript and prescript.MPlibmkTEXbox
           if str then
             num = num + 1
-            texsprint(format("\\setbox%i\\hbox{%s}",num,str))
+            texsprint(format("%s\\setbox%i\\hbox{%s}", global, num, str))
           end
 %    \end{macrocode}
 %     |verbatimtex ... etex| before |beginfig()| is not ignored,
@@ -1099,6 +1105,9 @@ local function domakeTEXboxes (data)
         end
       end
     end
+  end
+  if luamplib.globaltextext then
+    texboxnum = { num, texboxnum[1] }
   end
 end
 
@@ -1189,7 +1198,7 @@ local factor = 65536*(7227/7200)
 
 local function processwithTEXboxes (data)
   if not data then return end
-  local num = 255 -- output box
+  local num = texboxnum[2]
   local prepreamble = format("TEXBOX_:=%i;\n",num)
   while true do
     num = num + 1
@@ -1708,7 +1717,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2016/03/31 v2.11.3 mplib package for LuaTeX]
+    [2017/06/01 v2.12.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -1936,6 +1945,16 @@ luamplib.colorconverter = colorconverter
     \directlua{luamplib.codeinherit = true}%
   \else
     \directlua{luamplib.codeinherit = false}%
+  \fi
+  \endgroup
+}
+\def\mplibglobaltextext#1{%
+  \begingroup
+  \def\tempa{enable}\def\tempb{#1}%
+  \ifx\tempa\tempb
+    \directlua{luamplib.globaltextext = true}%
+  \else
+    \directlua{luamplib.globaltextext = false}%
   \fi
   \endgroup
 }
