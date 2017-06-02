@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2017/06/02 2.12.1
+    * when \mplibglobaltextext{enable} is declared, metapost variables
+    containing btex ... etex labels can be inherited across code chunks.
+    Of course, \mplibcodeinherit should also be switched on.
+
 2016/03/31 2.11.3
     * fix a bug regarding nested mplibcode environments (issue #63)
 
