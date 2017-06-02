@@ -1073,10 +1073,11 @@ enddef;
 luamplib.textextlabelpreamble = textextlabelpreamble
 
 local TeX_code_t = {}
-local texboxnum = { 2047, 2047 }
+local texboxnum = { 2047 }
 
 local function domakeTEXboxes (data)
   local num = texboxnum[1]
+  texboxnum[2] = num
   local global = luamplib.globaltextext and "\\global" or ""
   if data and data.fig then
     local figures = data.fig
@@ -1107,7 +1108,7 @@ local function domakeTEXboxes (data)
     end
   end
   if luamplib.globaltextext then
-    texboxnum = { num, texboxnum[1] }
+    texboxnum[1] = num
   end
 end
 
