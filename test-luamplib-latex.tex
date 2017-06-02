@@ -62,7 +62,21 @@ for i = 1 upto 3:
 endfor;
 endfig;
 \end{mplibcode}%
-B\par
+B\par\leavevmode
+\mplibcodeinherit{enable}%
+\mplibglobaltextext{enable}%
+\everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
+\begin{mplibcode}
+ label(btex $\sqrt{2}$ etex, origin);
+ draw fullcircle scaled 20;
+ picture pic; pic := currentpicture;
+\end{mplibcode}%
+\begin{mplibcode}
+ currentpicture := pic scaled 2;
+\end{mplibcode}%
+\everymplib{}\everyendmplib{}%
+\mplibcodeinherit{disable}%
+\mplibglobaltextext{disable}\par
 \mplibsetformat{metafun}%
 \begin{mplibcode}
 verbatimtex \moveright 0.4\hsize etex
