@@ -825,8 +825,11 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 local process = function (data,indeed,verbatim)
+%    \end{macrocode}
+%     workaround issue \#70
+%    \begin{macrocode}
   if not stringfind(data, begname.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
-    data = data .. "beginfig(0);endfig;" -- workaround issue #70
+    data = data .. "beginfig(-1);endfig;"
   end
   local standalone, firstpass = not luamplib.codeinherit, not indeed
   local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
@@ -1517,9 +1520,13 @@ local function flush(result,flusher)
         local bbox = figure:boundingbox()
         local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
         if urx < llx then
+%    \end{macrocode}
+%    \textsf{luamplib} silently ignores this invalid figure for those codes
+%    that do not contain |beginfig ... endfig|. (issue \#70)
+%    \begin{macrocode}
           -- invalid
-          pdf_startfigure(fignum,0,0,0,0)
-          pdf_stopfigure()
+          -- pdf_startfigure(fignum,0,0,0,0)
+          -- pdf_stopfigure()
         else
 %    \end{macrocode}
 %    Insert |verbatimtex| code before mplib box.
@@ -1569,6 +1576,7 @@ local function flush(result,flusher)
                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                 stop_pdf_code()
               else
+                if object.postscript == "both" then objecttype = "both" end -- temporary fix #71
 %    \end{macrocode}
 %     Color stuffs are modified and moved to several lines above.
 %    \begin{macrocode}
