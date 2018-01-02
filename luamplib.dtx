@@ -825,6 +825,9 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 local process = function (data,indeed,verbatim)
+  if not stringfind(data, begname.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
+    data = data .. "beginfig(0);endfig;" -- workaround issue #70
+  end
   local standalone, firstpass = not luamplib.codeinherit, not indeed
   local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
   currfmt = firstpass and currfmt or (currfmt.."2")
