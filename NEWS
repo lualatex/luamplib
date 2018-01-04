@@ -1,7 +1,9 @@
                        History of the luamplib package
 
-2018/01/02 2.12.2
+2018/01/04 2.12.2
     * workaround issue #70 "Labels outside beginfig...endfig are not inherited"
+    * address issue #71 "metafun problem: arrow tips are not filled"
+    by importing luatex-mplib.lua from context beta.
 
 2017/06/02 2.12.1
     * when \mplibglobaltextext{enable} is declared, metapost variables
