@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2017/06/02 v2.12.1 Interface for using the mplib library]%
+  [2018/01/04 v2.12.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2017/06/02 v2.12.1}
+% \date{2018/01/04 v2.12.2}
 %
 % \maketitle
 %
@@ -373,8 +373,8 @@ luamplib.lastlog  = ""
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.12.1",
-  date          = "2017/06/02",
+  version       = "2.12.2",
+  date          = "2018/01/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -825,6 +825,12 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 local process = function (data,indeed,verbatim)
+%    \end{macrocode}
+%     workaround issue \#70
+%    \begin{macrocode}
+  if not stringfind(data, begname.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
+    data = data .. "beginfig(-1);endfig;"
+  end
   local standalone, firstpass = not luamplib.codeinherit, not indeed
   local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
   currfmt = firstpass and currfmt or (currfmt.."2")
@@ -1514,9 +1520,13 @@ local function flush(result,flusher)
         local bbox = figure:boundingbox()
         local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
         if urx < llx then
+%    \end{macrocode}
+%    \textsf{luamplib} silently ignores this invalid figure for those codes
+%    that do not contain |beginfig ... endfig|. (issue \#70)
+%    \begin{macrocode}
           -- invalid
-          pdf_startfigure(fignum,0,0,0,0)
-          pdf_stopfigure()
+          -- pdf_startfigure(fignum,0,0,0,0)
+          -- pdf_stopfigure()
         else
 %    \end{macrocode}
 %    Insert |verbatimtex| code before mplib box.
@@ -1529,6 +1539,8 @@ local function flush(result,flusher)
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
           if objects then
+            local savedpath = nil
+            local savedhtap = nil
             for o=1,#objects do
               local object        = objects[o]
               local objecttype    = object.type
@@ -1548,9 +1560,10 @@ local function flush(result,flusher)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                 -- skip
               elseif objecttype == "start_clip" then
+                local evenodd = not object.istext and object.postscript == "evenodd"
                 start_pdf_code()
                 flushnormalpath(object.path,t,false)
-                pdf_literalcode("W n")
+                pdf_literalcode(evenodd and "W* n" or "W n")
               elseif objecttype == "stop_clip" then
                 stop_pdf_code()
                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
@@ -1569,98 +1582,146 @@ local function flush(result,flusher)
 %    \end{macrocode}
 %     Color stuffs are modified and moved to several lines above.
 %    \begin{macrocode}
-                local ml = object.miterlimit
-                if ml and ml ~= miterlimit then
-                  miterlimit = ml
-                  pdf_literalcode("%f M",ml)
-                end
-                local lj = object.linejoin
-                if lj and lj ~= linejoin then
-                  linejoin = lj
-                  pdf_literalcode("%i j",lj)
-                end
-                local lc = object.linecap
-                if lc and lc ~= linecap then
-                  linecap = lc
-                  pdf_literalcode("%i J",lc)
-                end
-                local dl = object.dash
-                if dl then
-                  local d = format("[%s] %i d",tableconcat(dl.dashes or {}," "),dl.offset)
-                  if d ~= dashed then
-                    dashed = d
-                    pdf_literalcode(dashed)
-                  end
-                elseif dashed then
-                  pdf_literalcode("[] 0 d")
-                  dashed = false
-                end
-                local path = object.path
-                local transformed, penwidth = false, 1
-                local open = path and path[1].left_type and path[#path].right_type
-                local pen = object.pen
-                if pen then
-                  if pen.type == 'elliptical' then
-                    transformed, penwidth = pen_characteristics(object) -- boolean, value
-                    pdf_literalcode("%f w",penwidth)
-                    if objecttype == 'fill' then
-                      objecttype = 'both'
-                    end
-                  else -- calculated by mplib itself
-                    objecttype = 'fill'
+                local evenodd, collect, both = false, false, false
+                local postscript = object.postscript
+                if not object.istext then
+                  if postscript == "evenodd" then
+                    evenodd = true
+                  elseif postscript == "collect" then
+                    collect = true
+                  elseif postscript == "both" then
+                    both = true
+                  elseif postscript == "eoboth" then
+                    evenodd = true
+                    both    = true
                   end
                 end
-                if transformed then
-                  start_pdf_code()
-                end
-                if path then
-                  if transformed then
-                    flushconcatpath(path,open)
+                if collect then
+                  if not savedpath then
+                    savedpath = { object.path or false }
+                    savedhtap = { object.htap or false }
                   else
-                    flushnormalpath(path,open)
+                    savedpath[#savedpath+1] = object.path or false
+                    savedhtap[#savedhtap+1] = object.htap or false
                   end
+                else
+                  local ml = object.miterlimit
+                  if ml and ml ~= miterlimit then
+                    miterlimit = ml
+                    pdf_literalcode("%f M",ml)
+                  end
+                  local lj = object.linejoin
+                  if lj and lj ~= linejoin then
+                    linejoin = lj
+                    pdf_literalcode("%i j",lj)
+                  end
+                  local lc = object.linecap
+                  if lc and lc ~= linecap then
+                    linecap = lc
+                    pdf_literalcode("%i J",lc)
+                  end
+                  local dl = object.dash
+                  if dl then
+                    local d = format("[%s] %i d",tableconcat(dl.dashes or {}," "),dl.offset)
+                    if d ~= dashed then
+                      dashed = d
+                      pdf_literalcode(dashed)
+                    end
+                  elseif dashed then
+                    pdf_literalcode("[] 0 d")
+                    dashed = false
+                  end
+                  local path = object.path
+                  local transformed, penwidth = false, 1
+                  local open = path and path[1].left_type and path[#path].right_type
+                  local pen = object.pen
+                  if pen then
+                    if pen.type == 'elliptical' then
+                      transformed, penwidth = pen_characteristics(object) -- boolean, value
+                      pdf_literalcode("%f w",penwidth)
+                      if objecttype == 'fill' then
+                        objecttype = 'both'
+                      end
+                    else -- calculated by mplib itself
+                      objecttype = 'fill'
+                    end
+                  end
+                  if transformed then
+                    start_pdf_code()
+                  end
+                  if path then
+                    if savedpath then
+                      for i=1,#savedpath do
+                        local path = savedpath[i]
+                        if transformed then
+                          flushconcatpath(path,open)
+                        else
+                          flushnormalpath(path,open)
+                        end
+                      end
+                      savedpath = nil
+                    end
+                    if transformed then
+                      flushconcatpath(path,open)
+                    else
+                      flushnormalpath(path,open)
+                    end
 %    \end{macrocode}
 %
 %     Change from \ConTeXt{} code: color stuff
 %
 %    \begin{macrocode}
-                  if not shade_no then ----- conflict with shading
-                    if objecttype == "fill" then
-                      pdf_literalcode("h f")
-                    elseif objecttype == "outline" then
-                      pdf_literalcode((open and "S") or "h S")
-                    elseif objecttype == "both" then
-                      pdf_literalcode("h B")
+                    if not shade_no then ----- conflict with shading
+                      if objecttype == "fill" then
+                        pdf_literalcode(evenodd and "h f*" or "h f")
+                      elseif objecttype == "outline" then
+                        if both then
+                          pdf_literalcode(evenodd and "h B*" or "h B")
+                        else
+                          pdf_literalcode(open and "S" or "h S")
+                        end
+                      elseif objecttype == "both" then
+                        pdf_literalcode(evenodd and "h B*" or "h B")
+                      end
                     end
-                  end
-                end
-                if transformed then
-                  stop_pdf_code()
-                end
-                local path = object.htap
-                if path then
-                  if transformed then
-                    start_pdf_code()
-                  end
-                  if transformed then
-                    flushconcatpath(path,open)
-                  else
-                    flushnormalpath(path,open)
-                  end
-                  if objecttype == "fill" then
-                    pdf_literalcode("h f")
-                  elseif objecttype == "outline" then
-                    pdf_literalcode((open and "S") or "h S")
-                  elseif objecttype == "both" then
-                    pdf_literalcode("h B")
                   end
                   if transformed then
                     stop_pdf_code()
                   end
+                  local path = object.htap
+                  if path then
+                    if transformed then
+                      start_pdf_code()
+                    end
+                    if savedhtap then
+                      for i=1,#savedhtap do
+                        local path = savedhtap[i]
+                        if transformed then
+                          flushconcatpath(path,open)
+                        else
+                          flushnormalpath(path,open)
+                        end
+                      end
+                      savedhtap = nil
+                      evenodd   = true
+                    end
+                    if transformed then
+                      flushconcatpath(path,open)
+                    else
+                      flushnormalpath(path,open)
+                    end
+                    if objecttype == "fill" then
+                      pdf_literalcode(evenodd and "h f*" or "h f")
+                    elseif objecttype == "outline" then
+                      pdf_literalcode(open and "S" or "h S")
+                    elseif objecttype == "both" then
+                      pdf_literalcode(evenodd and "h B*" or "h B")
+                    end
+                    if transformed then
+                      stop_pdf_code()
+                    end
+                  end
                 end
---                if cr then
---                  pdf_literalcode(cr)
---                end
               end
 %    \end{macrocode}
 %
@@ -1718,7 +1779,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2017/06/02 v2.12.1 mplib package for LuaTeX]
+    [2018/01/04 v2.12.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
