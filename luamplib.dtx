@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2017 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2018 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -1049,7 +1049,6 @@ if known context_mlib:
     def data_mpy_file = filename enddef;
     mfun_do_graphic_text (filename)
   enddef;
-  if unknown TEXBOX_: def mfun_do_graphic_text text t = enddef; fi
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
 fi
