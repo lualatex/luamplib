@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2018/04/06 2.12.3
+    * step copyright year
+    * remove a line relating graphictext hindrance
+
 2018/01/04 2.12.2
     * workaround issue #70 "Labels outside beginfig...endfig are not inherited"
     * address issue #71 "metafun problem: arrow tips are not filled"
