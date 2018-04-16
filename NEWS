@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2018/04/16 2.12.4
+    * workaround issue #74 relating to PATH limitation
+    * substitute InconsolataN font for Liberation Mono in the manual
+
 2018/04/06 2.12.3
     * step copyright year
     * remove a line relating graphictext hindrance
