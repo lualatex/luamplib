@@ -938,7 +938,6 @@ local function flushnormalpath(path,open)
     local one = path[1]
     pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
   end
-  return t
 end
 
 local function flushconcatpath(path,open)
@@ -971,7 +970,6 @@ local function flushconcatpath(path,open)
     local one = path[1]
     pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
   end
-  return t
 end
 
 %    \end{macrocode}
@@ -1562,7 +1560,7 @@ local function flush(result,flusher)
               elseif objecttype == "start_clip" then
                 local evenodd = not object.istext and object.postscript == "evenodd"
                 start_pdf_code()
-                flushnormalpath(object.path,t,false)
+                flushnormalpath(object.path,false)
                 pdf_literalcode(evenodd and "W* n" or "W n")
               elseif objecttype == "stop_clip" then
                 stop_pdf_code()
