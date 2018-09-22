@@ -1622,7 +1622,7 @@ local function flush(result,flusher)
                   end
                   local dl = object.dash
                   if dl then
-                    local d = format("[%s] %i d",tableconcat(dl.dashes or {}," "),dl.offset)
+                    local d = format("[%s] %f d",tableconcat(dl.dashes or {}," "),dl.offset)
                     if d ~= dashed then
                       dashed = d
                       pdf_literalcode(dashed)
