@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2018/09/27 2.12.5
+    * change dash.offset pattern from "%i" to "%f" (PR #77)
+    * remove unnecessary variables that go back to context (issue #76)
+
 2018/04/16 2.12.4
     * workaround issue #74 relating to PATH limitation
     * substitute InconsolataN font for Liberation Mono in the manual
