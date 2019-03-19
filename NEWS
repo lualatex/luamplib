@@ -1,5 +1,17 @@
                        History of the luamplib package
 
+2019/03/20 2.20.0
+    * huge changes, but mostly internal, so not much differ from old one
+    * '\mpliblegacybehavior{disable}' triggers a new mode of processing
+      verbatimtex .. etex: along with btex .. etex, they will be processed
+      sequentially one by one. By contrast, Old behavior, being default,
+      processes all btex .. etex things first; after that,
+      verbatimtex .. etex before beginfig() is processed just before mplib
+      figure box; finally verbatimtex .. etex inside beginfig() .. endfig
+      is processed. Incidentally, verbatimtex .. etex in input mp files
+      is honored from now on, save when they contain '\documentclass' or
+      '\begin{document}' etc.
+
 2018/09/27 2.12.5
     * change dash.offset pattern from "%i" to "%f" (PR #77)
     * remove unnecessary variables that go back to context (issue #76)
