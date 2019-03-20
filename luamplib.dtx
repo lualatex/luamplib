@@ -1678,7 +1678,11 @@ luamplib.colorconverter = colorconverter
     \write128{}
   \fi
 \fi
+\def\mplibforcehmode{\let\mplibhmodeornot\leavevmode}
+\def\mplibnoforcehmode{\let\mplibhmodeornot\relax}
+\mplibnoforcehmode
 \def\mplibsetupcatcodes{%
+  \mplibhmodeornot
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12 \endlinechar=10
