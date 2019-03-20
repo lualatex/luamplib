@@ -389,6 +389,10 @@ local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
 local texscantoks = tex.scantoks
 
+if not texruntoks then
+  err("Your LuaTeX version is too old. Please upgrade it to the latest")
+end
+
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
 local lfs   = require ('lfs')
@@ -1732,26 +1736,22 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \fi
-\def\mpliblegacybehavior#1{%
-  \begingroup
-  \def\mplibtempa{#1}\def\mplibtempb{enable}%
-  \expandafter\endgroup
-  \ifx\mplibtempa\mplibtempb
-    \directlua{luamplib.legacy_verbatimtex = true}%
-  \else
-    \directlua{luamplib.legacy_verbatimtex = false}%
-  \fi
-}
-\def\mplibverbatim#1{%
-  \begingroup
-  \def\mplibtempa{#1}\def\mplibtempb{enable}%
-  \expandafter\endgroup
-  \ifx\mplibtempa\mplibtempb
-    \directlua{luamplib.verbatiminput = true}%
-  \else
-    \directlua{luamplib.verbatiminput = false}%
-  \fi
-}
+\def\mpliblegacybehavior#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.legacy_verbatimtex = true
+    else
+      luamplib.legacy_verbatimtex = false
+    end
+}}
+\def\mplibverbatim#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.verbatiminput = true
+    else
+      luamplib.verbatiminput = false
+    end
+}}
 \newtoks\mplibtmptoks
 \newtoks\everymplibtoks
 \newtoks\everyendmplibtoks
@@ -1806,36 +1806,30 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
-\def\mplibtextextlabel#1{%
-  \begingroup
-  \def\tempa{enable}\def\tempb{#1}%
-  \ifx\tempa\tempb
-    \directlua{luamplib.textextlabel = true}%
-  \else
-    \directlua{luamplib.textextlabel = false}%
-  \fi
-  \endgroup
-}
-\def\mplibcodeinherit#1{%
-  \begingroup
-  \def\tempa{enable}\def\tempb{#1}%
-  \ifx\tempa\tempb
-    \directlua{luamplib.codeinherit = true}%
-  \else
-    \directlua{luamplib.codeinherit = false}%
-  \fi
-  \endgroup
-}
-\def\mplibglobaltextext#1{%
-  \begingroup
-  \def\tempa{enable}\def\tempb{#1}%
-  \ifx\tempa\tempb
-    \directlua{luamplib.globaltextext = true}%
-  \else
-    \directlua{luamplib.globaltextext = false}%
-  \fi
-  \endgroup
-}
+\def\mplibtextextlabel#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.textextlabel = true
+    else
+      luamplib.textextlabel = false
+    end
+}}
+\def\mplibcodeinherit#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.codeinherit = true
+    else
+      luamplib.codeinherit = false
+    end
+}}
+\def\mplibglobaltextext#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.globaltextext = true
+    else
+      luamplib.globaltextext = false
+    end
+}}
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 \def\mplibstarttoPDF#1#2#3#4{%
   \hbox\bgroup
