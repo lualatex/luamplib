@@ -2,14 +2,13 @@
 
 2019/03/20 2.20.0
     * huge changes, but mostly internal, so apparently not much difference
-      from the old.
+      from previous version.
+    * '\mplibforcehmode' makes mplibcode typeset in horizontal mode.
+      '\mplibnoforcehmode' reverts the setting. The latter is default.
     * '\mpliblegacybehavior{disable}' triggers a new mode of processing
       verbatimtex .. etex: along with btex .. etex, they will be processed
-      sequentially one by one.
-      By contrast, old behavior, being default, processes all btex .. etex
-      things first; after that, verbatimtex .. etex before beginfig() is
-      processed just before mplib figure box; finally verbatimtex .. etex
-      inside beginfig() .. endfig is processed after the box.
+      sequentially one by one. Old behavior, being default, can be restored
+      by declaring '\mpliblegacybehavior{enable}'.
       Incidentally, verbatimtex .. etex in MP input files is honored
       from this version, save those that contain '\documentclass'
       or '\begin{document}' etc, which is totally ignored.

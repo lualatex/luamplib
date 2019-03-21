@@ -158,13 +158,13 @@ See source file '\inFileName' for licencing and contact information.
 % \maketitle
 %
 % \begin{abstract}
-% Package to have metapost code typeset directly in a document with Lua\TeX .
+% Package to have metapost code typeset directly in a document with \LuaTeX.
 % \end{abstract}
 %
 % \section{Documentation}
 %
 % This packages aims at providing a simple way to typeset directly metapost
-% code in a document with \LuaTeX . \LuaTeX\ is built with the lua
+% code in a document with \LuaTeX. \LuaTeX\ is built with the lua
 % \texttt{mplib} library, that runs metapost code. This package is basically a
 % wrapper (in Lua) for the Lua \texttt{mplib} functions and some \TeX\
 % functions to have the output of the \texttt{mplib} functions in the pdf.
@@ -194,15 +194,29 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed and is a synomym of |textext()|.\par\smallskip
 %   \textsc{n.b.} Since v2.5, |btex ... etex| input from external |mp| files
-%   will also be processed by \textsf{luamplib}. However,
-%   |verbatimtex ... etex| will be entirely ignored in this case.
-% \item |verbatimtex ... etex| (in \TeX\ file) that comes just before |beginfig()|
-%   is not ignored, but the \TeX\ code inbetween will be inserted before the
+%   will also be processed by \textsf{luamplib}.\par\smallskip
+%   \textsc{n.b.} Since v2.20, |verbatimtex ... etex| from external |mp| files
+%    will be also processed by \textsf{luamplib}. Warning: This is a change
+%   from previous version.
+% \end{itemize}
+%
+% Some more changes and cuations are:
+%
+% \paragraph{\cs{mplibforcehmode}}
+%   When this macro is declared, every mplibcode figure box will be
+%   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
+%   will have effects. |\mplibnoforcehmode|, being default, reverts this
+%   setting.
+%
+% \paragraph{\cs{mpliblegacybehavior\{enable\}}}
+%   By default, |\mpliblegacybehavior{enable}| is already declared,
+%   in which case
+%   a |verbatimtex ... etex| that comes just before |beginfig()|
+%   is not ignored, but the \TeX\ code will be inserted before the
 %   following mplib hbox.  Using this command,
 %   each mplib box can be freely moved horizontally and/or vertically.
 %   Also, a box number might be assigned to mplib box, allowing it to be
 %   reused later (see test files).
-%   \textsc{e.g.}
 %   \begin{verbatim}
 %     \mplibcode
 %     verbatimtex \moveright 3cm etex; beginfig(0); ... endfig;
@@ -213,11 +227,10 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
 %   |verbatimtex ... etex|.
-% \item
-%   \TeX\ code in |VerbatimTeX(...)| or |verbatimtex ... etex| (in \TeX\ file)
+%
+%   By contrast, \TeX\ code in |VerbatimTeX(...)| or |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
 %   after flushing out the mplib figure.
-%   \textsc{e.g.}
 %   \begin{verbatim}
 %     \mplibcode
 %       D := sqrt(2)**7;
@@ -228,32 +241,48 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmplibcode
 %     diameter: \Dia bp.
 %   \end{verbatim}
-% \item Notice that, after each figure is processed, macro \cs{MPwidth} stores
+%
+% \paragraph{\cs{mpliblegacybehavior\{disable\}}}
+%   If |\mpliblegacybehavior{disabled}| is declared by user, any
+%   |verbatimtex ... etex| will be executed, along with |btex ... etex|,
+%   sequentially one by one.
+%   So, some \TeX\ code in |verbatimtex ... etex| will have effects on
+%   |btex ... etex| codes that follows.
+%   \begin{verbatim}
+%     \begin{mplibcode}
+%       beginfig(0);
+%       draw btex ABC etex;
+%       verbatimtex \bfseries etex;
+%       draw btex DEF etex shifted (1cm,0); % bold face
+%       draw btex GHI etex shifted (2cm,0); % bold face
+%       endfig;
+%     \end{mplibcode}
+%   \end{verbatim}
+%
+% \paragraph{About figure box metrics}
+%   Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
 %   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
 %   \cs{MPury} store the bounding box information of latest figure
 %   without the unit |bp|.
-% \item Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
+%
+% \paragraph{\cs{everymplib}, \cs{everyendmplib}}
+%   Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
 %   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
 %   which will
 %   be automatically inserted at the beginning and ending of each mplib code.
-%   \textsc{e.g.}
 %   \begin{verbatim}
-%     \everymplib{ verbatimtex \leavevmode etex; beginfig(0); }
+%     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
-%     \mplibcode % beginfig/endfig not needed; always in horizontal mode
+%     \mplibcode % beginfig/endfig not needed
 %       draw fullcircle scaled 1cm;
 %     \endmplibcode
 %   \end{verbatim}
-%   \textsc{n.b.} Many users have complained that mplib figures do not
-%   respect alignment commands such as \cs{centering} or \cs{raggedleft}.
-%   That's because \textsf{luamplib} does not force horizontal or vertical mode.
-%   If you want all mplib figures center- (or right-) aligned, please use
-%   \cs{everymplib} command with \cs{leavevmode} as shown above.
-% \item Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed
+%
+% \paragraph{\cs{mpdim}}
+%   Since v2.3, \cs{mpdim} and other raw \TeX\ commands are allowed
 %   inside mplib code. This feature is inpired by gmp.sty authored by
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
-%   \textsc{e.g.}
 %   \begin{verbatim}
 %     \begin{mplibcode}
 %       draw origin--(\mpdim{\linewidth},0) withpen pencircle scaled 4
@@ -264,17 +293,24 @@ See source file '\inFileName' for licencing and contact information.
 %   |btex ... etex| as provided by gmp package. As \textsf{luamplib}
 %   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
 %   here.
-% \item With \cs{mpcolor} command, color names or expressions of
+%
+% \paragraph{\cs{mpcolor}}
+%   With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
 %   enviroment, though \textsf{luamplib} does not automatically load these
 %   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
 %   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
 %   as well.
-% \item Users can choose |numbersystem| option since v2.4.
-%   The default value |scaled| can be changed to |double| by declaring
-%   |\mplibnumbersystem{double}|. For details see
+%
+% \paragraph{\cs{mplibnumbersystem}}
+%   Users can choose |numbersystem| option since v2.4.
+%   The default value |scaled| can be changed to |double| or |decimal|
+%   by declaring |\mplibnumbersystem{double}| or |\mplibnumbersystem{decimal}|.
+%   For details see
 %   \url{http://github.com/lualatex/luamplib/issues/21}.
-% \item To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
+%
+% \paragraph{Settings regarding cache files}
+%   To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
 %   This would make the compilation time longer wastefully, as most |.mp| files
@@ -288,14 +324,17 @@ See source file '\inFileName' for licencing and contact information.
 %   where |<filename>| is a file name excluding |.mp| extension.
 %   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
 %   |$TEXMFMAIN/metapost/context/base| are already registered by default.
-% \item By default, cache files will be stored in |$TEXMFVAR/luamplib_cache|
-%   or, if it's not available, in the same directory as where pdf/dvi output file
+%
+%   By default, cache files will be stored in |$TEXMFVAR/luamplib_cache| or,
+%   if it's not available, in the same directory as where pdf/dvi output file
 %   is saved. This however can be changed by the command
 %   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
 %   as the user's home directory (on a windows machine as well).
 %   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
-% \item Starting with v2.6, |\mplibtextextlabel{enable}| enables
+%
+% \paragraph{\cs{mplibtextextlabel}}
+%   Starting with v2.6, |\mplibtextextlabel{enable}| enables
 %   string labels typeset via |textext()| instead of |infont| operator.
 %   So, |label("my text",origin)| thereafter is exactly the same as
 %   |label(textext("my text"),origin)|. \textsc{n.b.} In the background,
@@ -304,13 +343,15 @@ See source file '\inFileName' for licencing and contact information.
 %   therefore will be typeset with current \TeX\ font.
 %   Also take care of |char| operator in the left side argument,
 %   as this might bring unpermitted characters into \TeX.
-% \item Starting with v2.9, |\mplibcodeinherit{enable}| enables the inheritance
+%
+% \paragraph{\cs{mplibcodeinherit}}
+%   Starting with v2.9, |\mplibcodeinherit{enable}| enables the inheritance
 %   of variables, constants, and macros defined by previous |mplibcode| chunks.
 %   On the contrary, the default value |\mplibcodeinherit{disable}| will make
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
-%   \textsc{n.b.}
+% \paragraph{\cs{mplibglobaltextext}}
 %   To inherit |btex ... etex| labels as well as metapost variables,
 %   it is necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
 %   On this case, be careful that normal \TeX\ boxes can conflict with
@@ -331,17 +372,22 @@ See source file '\inFileName' for licencing and contact information.
 %     currentpicture := pic scaled 2;
 %   \endmplibcode
 %   \end{verbatim}
-% \item Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
+%
+% \paragraph{\cs{mplibverbatim}}
+%   Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   users cannot use |\mpdim|, |\mpcolor| etc. All \TeX\ commands outside of
+%   users cannot use |\mpdim|, but |\mpcolor| is OK.
+%   All other \TeX\ commands outside
 %   |btex ... etex| or |verbatimtex ... etex| are not expanded and will be fed
 %   literally into the mplib process.
-% \item At the end of package loading, \textsf{luamplib} searches
+%
+% \paragraph{luamplib.cfg}
+%   At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
-%   Frequently used settings such as \cs{everymplib} or \cs{mplibcachedir}
+%   Frequently used settings such as \cs{everymplib} or \cs{mplibforcehmode}
 %   are suitable for going into this file.
 %
-% \end{itemize}
+% \bigskip
 %
 % There are (basically) two formats for metapost: \emph{plain} and
 % \emph{metafun}. By default, the \emph{plain} format is used, but you can set
@@ -355,16 +401,8 @@ See source file '\inFileName' for licencing and contact information.
 % \iffalse
 %<*lua>
 % \fi
-%    Use the |luamplib| namespace, since |mplib| is for the metapost library
-%    itself. \ConTeXt{} uses |metapost|.
 %
 %    \begin{macrocode}
-
-luamplib          = luamplib or { }
-local luamplib    = luamplib
-
-luamplib.showlog  = luamplib.showlog or false
-luamplib.lastlog  = ""
 
 luatexbase.provides_module {
   name          = "luamplib",
@@ -379,6 +417,22 @@ local err  = function(...) return luatexbase.module_error  ("luamplib", format(.
 local warn = function(...) return luatexbase.module_warning("luamplib", format(...)) end
 local info = function(...) return luatexbase.module_info   ("luamplib", format(...)) end
 
+%    \end{macrocode}
+%
+%    Use the |luamplib| namespace, since |mplib| is for the metapost library
+%    itself. \ConTeXt{} uses |metapost|.
+%    \begin{macrocode}
+luamplib          = luamplib or { }
+local luamplib    = luamplib
+
+luamplib.showlog  = luamplib.showlog or false
+luamplib.lastlog  = ""
+
+%    \end{macrocode}
+%
+%    This module is a stripped down version of libraries that are used by
+%    \ConTeXt. Provide a few ``shortcuts'' expected by the imported code.
+%    \begin{macrocode}
 local tableconcat   = table.concat
 local texsprint     = tex.sprint
 local textprint     = tex.tprint
@@ -403,6 +457,11 @@ local lfsmkdir      = lfs.mkdir
 local lfstouch      = lfs.touch
 local ioopen        = io.open
 
+%    \end{macrocode}
+%
+%    Some helper functions, prepared for the case when |l-file| etc
+%    is not loaded.
+%    \begin{macrocode}
 local file = file or { }
 local replacesuffix = file.replacesuffix or function(filename, suffix)
   return (filename:gsub("%.[%a%d]+$","")) .. "." .. suffix
@@ -429,6 +488,12 @@ local mk_full_path = lfs.mkdirs or function(path)
   end
 end
 
+%    \end{macrocode}
+%
+%    |btex ... etex| in input |.mp| files will be replaced in finder.
+%    Because of the limitation of MPLib regarding |make_text|,
+%    we might have to make cache files modified from input files.
+%    \begin{macrocode}
 local luamplibtime = kpse.find_file("luamplib.lua")
 luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
 
@@ -479,6 +544,10 @@ function luamplib.getcachedir(dir)
   end
 end
 
+%    \end{macrocode}
+%
+%    Some basic MetaPost files not necessary to make cache files.
+%    \begin{macrocode}
 local noneedtoreplace = {
   ["boxes.mp"] = true, --  ["format.mp"] = true,
   ["graph.mp"] = true, ["marith.mp"] = true, ["mfplain.mp"] = true,
@@ -497,6 +566,10 @@ local noneedtoreplace = {
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
+%    \end{macrocode}
+%
+%    |format.mp| is much complicated, so specially treated.
+%    \begin{macrocode}
 local function replaceformatmp(file,newfile,ofmodify)
   local fh = ioopen(file,"r")
   if not fh then return file end
@@ -515,6 +588,11 @@ local function replaceformatmp(file,newfile,ofmodify)
   return newfile
 end
 
+%    \end{macrocode}
+%
+%    Replace |btex ... etex| and |verbatimtex ... etex| in input files,
+%    if needed.
+%    \begin{macrocode}
 local name_b = "%f[A-Z_a-z]"
 local name_e = "%f[^A-Z_a-z]"
 local btex_etex = name_b.."btex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
@@ -540,6 +618,11 @@ local function replaceinputmpfile (name,file)
   if not fh then return file end
   local data = fh:read("*all"); fh:close()
 
+%    \end{macrocode}
+%
+%    ``|etex|'' must be followed by a space or semicolon as specified in
+%    \LuaTeX\ manual, which is not the case of standalone MetaPost though.
+%    \begin{macrocode}
   local count,cnt = 0,0
   data, cnt = data:gsub(btex_etex, "btex %1 etex ") -- space
   count = count + cnt
@@ -563,6 +646,12 @@ local function replaceinputmpfile (name,file)
   return newfile
 end
 
+%    \end{macrocode}
+%
+%    As the finder function for MPLib, use the |kpse| library and
+%    make it behave like as if MetaPost was used. And replace it with
+%    cache files if needed.
+%    \begin{macrocode}
 local mpkpse = kpse.new(arg[0], "mpost")
 
 local special_ftype = {
@@ -587,12 +676,16 @@ local function finder(name, mode, ftype)
 end
 luamplib.finder = finder
 
-function luamplib.resetlastlog()
-  luamplib.lastlog = ""
-end
-
+%    \end{macrocode}
+%
+%    Create and load MPLib instances.
+%    We do not support ancient version of MPLib any more.
+%    (Don't know which version of MPLib started to support
+%    |make_text| and |run_script|; let the users find it.)
+%    \begin{macrocode}
 if tonumber(mplib.version()) <= 1.50 then
-  err("luamplib no longer supports mplib v1.50 or lower")
+  err("luamplib no longer supports mplib v1.50 or lower. "..
+  "Please upgrade to the latest version of LuaTeX")
 end
 
 local preamble = [[
@@ -601,6 +694,10 @@ local preamble = [[
   let normalfontsize = fontsize;
   input %s ;
 ]]
+
+local function luamplibresetlastlog()
+  luamplib.lastlog = ""
+end
 
 local function reporterror (result)
   if not result then
@@ -624,11 +721,24 @@ local function luamplibload (name)
   local mpx = mplib.new {
     ini_version = true,
     find_file   = luamplib.finder,
+%    \end{macrocode}
+%
+%    Make use of |make_text| and |run_script|, which will co-operate
+%    with \LuaTeX's |tex.runtoks|. And we
+%    provide |numbersystem| option since v2.4. Default value ``|scaled|''
+%    can be changed by declaring |\mplibnumbersystem{double}|
+%    or |\mplibnumbersystem{decimal}|.
+%    See \url{https://github.com/lualatex/luamplib/issues/21}.
+%    \begin{macrocode}
     make_text   = luamplib.maketext,
     run_script  = luamplib.runscript,
     math_mode   = luamplib.numbersystem,
     extensions  = 1,
   }
+%    \end{macrocode}
+%
+%    Append our own MetaPost preamble to the preamble above.
+%    \begin{macrocode}
   local preamble = preamble .. luamplib.mplibcodepreamble
   if luamplib.legacy_verbatimtex then
     preamble = preamble .. luamplib.legacyverbatimtexpreamble
@@ -646,6 +756,11 @@ local function luamplibload (name)
   return mpx, result
 end
 
+%    \end{macrocode}
+%
+%    |plain| or |metafun|,
+%    though we cannot support |metafun| format fully.
+%    \begin{macrocode}
 local currentformat = "plain"
 
 local function setformat (name)
@@ -653,6 +768,11 @@ local function setformat (name)
 end
 luamplib.setformat = setformat
 
+%    \end{macrocode}
+%
+%    Here, excute each |mplibcode| data,
+%    ie |\begin{mplibcode} ... \end{mplibcode}|.
+%    \begin{macrocode}
 local function process_indeed (mpx, data)
   local converted, result = false, {}
   if mpx and data then
@@ -661,8 +781,15 @@ local function process_indeed (mpx, data)
     if log then
       if luamplib.showlog then
         info("%s",luamplib.lastlog)
-        luamplib.resetlastlog()
+        luamplibresetlastlog()
       elseif result.fig then
+%    \end{macrocode}
+%
+%    v2.6.1: now luamplib does not disregard |show| command,
+%    even when |luamplib.showlog| is false.  Incidentally,
+%    it does not raise error but just prints a warning,
+%    even if output has no figure.
+%    \begin{macrocode}
         if log:find("\n>>") then info("%s",log) end
         converted = luamplib.convert(result)
       else
@@ -676,10 +803,18 @@ local function process_indeed (mpx, data)
   return converted, result
 end
 
+%    \end{macrocode}
+%
+%    v2.9 has introduced the concept of ``code inherit''
+%    \begin{macrocode}
 luamplib.codeinherit = false
 local mplibinstances = {}
 
 local function process (data)
+%    \end{macrocode}
+%
+%    Workaround issue \#70
+%    \begin{macrocode}
   if not data:find(name_b.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
     data = data .. "beginfig(-1);endfig;"
   end
@@ -697,9 +832,20 @@ local function process (data)
   return process_indeed(mpx, data)
 end
 
+%    \end{macrocode}
+%
+%    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|,
+%    which made possible running \TeX\ code snippets inside |\directlua|.
+%    \begin{macrocode}
 local catlatex = luatexbase.registernumber("catcodetable@latex")
 local catat11  = luatexbase.registernumber("catcodetable@atletter")
 
+%    \end{macrocode}
+%
+%    |tex.scantoks| sometimes fail to read catcode properly, especially
+%    |\#|, |\&|, or |\%|. After some experiment, we dropped using it.
+%    Instead, a function containing |tex.script| seems to work nicely.
+%    \begin{macrocode}
 local function run_tex_code_no_use (str, cat)
   cat = cat or catlatex
   texscantoks("mplibtmptoks", cat, str)
@@ -711,7 +857,19 @@ local function run_tex_code (str, cat)
   texruntoks(function() texsprint(cat, str) end)
 end
 
+%    \end{macrocode}
+%
+%    Indefinite number of boxes are needed for |btex ... etex|.
+%    So starts at somewhat huge number of box registry. Of course,
+%    this may conflict with other packages using many many boxes.
+%    (When |codeinherit| feature is enabled, boxes must be globally defined.)
+%    But I don't know any reliable way to escape this danger.
+%    \begin{macrocode}
 local tex_box_id = 2047
+%    \end{macrocode}
+%
+%    For conversion of |sp| to |bp|.
+%    \begin{macrocode}
 local factor = 65536*(7227/7200)
 
 local function process_tex_text (str)
@@ -731,6 +889,11 @@ local function process_tex_text (str)
   return ""
 end
 
+%    \end{macrocode}
+%
+%    Make |color| or |xcolor|'s color expressions usable,
+%    with \cs{mpcolor} or |mplibcolor|
+%    \begin{macrocode}
 local function process_color (str)
   if str then
     if not str:find("{.-}") then
@@ -744,6 +907,13 @@ local function process_color (str)
   return ""
 end
 
+%    \end{macrocode}
+%
+%    \cs{mpdim} is expanded before MPLib process, so code below will not be
+%    used for |mplibcode| data. But who knows anyone would want it
+%    in |.mp| input file. If then, you can say |mplibdimen(".5\textwidth")|
+%    for example.
+%    \begin{macrocode}
 local function process_dimen (str)
   if str then
     str = str:gsub("{(.+)}","%1")
@@ -753,6 +923,11 @@ local function process_dimen (str)
   return ""
 end
 
+%    \end{macrocode}
+%
+%    Newly introduced method of processing |verbatimtex ... etex|.
+%    Used when |\mpliblegacybehavior{false}| is declared.
+%    \begin{macrocode}
 local function process_verbatimtex_text (str)
   if str then
     run_tex_code(str)
@@ -760,7 +935,13 @@ local function process_verbatimtex_text (str)
   return ""
 end
 
--- for legacy verbatimtex process
+%    \end{macrocode}
+%
+%    For legacy verbatimtex process.
+%    |verbatimtex ... etex| before |beginfig()| is not ignored,
+%    but the \TeX\ code is inserted just before the mplib box. And
+%    \TeX\ code inside |beginfig() ... endfig| is inserted after the mplib box.
+%    \begin{macrocode}
 local tex_code_pre_mplib = {}
 luamplib.figid = 1
 luamplib.in_the_fig = false
@@ -793,6 +974,21 @@ local runscript_funcs = {
   luamplibverbtex = process_verbatimtex_text,
 }
 
+%    \end{macrocode}
+%
+%    As of 2019-03, |metafun| format is not usable (issue \#79).
+%    This might workarounds the problem.
+%    \begin{macrocode}
+mp = mp or {}
+local mp = mp
+mp.mf_path_reset = mp.mf_path_reset or function() end
+mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
+LUATEXFUNCTIONALITY = LUATEXFUNCTIONALITY or 0
+
+%    \end{macrocode}
+%
+%    A function from \ConTeXt\ general.
+%    \begin{macrocode}
 local function mpprint(buffer,...)
   for i=1,select("#",...) do
     local value = select(i,...)
@@ -810,13 +1006,6 @@ local function mpprint(buffer,...)
     end
   end
 end
-
--- for metafun
-mp = mp or {}
-local mp = mp
-mp.mf_path_reset = mp.mf_path_reset or function() end
-mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
-LUATEXFUNCTIONALITY = LUATEXFUNCTIONALITY or 0
 
 function luamplib.runscript (code)
   local id, str = code:match("(.-){(.+)}")
@@ -839,6 +1028,10 @@ function luamplib.runscript (code)
   return ""
 end
 
+%    \end{macrocode}
+%
+%    |make_text| must be one liner, so comment sign is not allowed.
+%    \begin{macrocode}
 local function protecttexcontents (str)
   return str:gsub("\\%%", "\0PerCent\0")
             :gsub("%%.-\n", "")
@@ -874,6 +1067,10 @@ function luamplib.maketext (str, what)
   return ""
 end
 
+%    \end{macrocode}
+%
+%    Our MetaPost preambles
+%    \begin{macrocode}
 local mplibcodepreamble = [[
 texscriptmode := 2;
 def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
@@ -937,8 +1134,17 @@ enddef;
 ]]
 luamplib.textextlabelpreamble = textextlabelpreamble
 
+%    \end{macrocode}
+%
+%    When \cs{mplibverbatim} is enabled, do not expand |mplibcode| data.
+%    \begin{macrocode}
 luamplib.verbatiminput = false
 
+%    \end{macrocode}
+%
+%    Do not expand |btex ... etex|, |verbatimtex ... etex|, and
+%    string expressions.
+%    \begin{macrocode}
 local function protect_expansion (str)
   if str then
     str = str:gsub("\\","\1Control\1")
@@ -961,6 +1167,10 @@ local function unprotect_expansion (str)
 end
 
 local function process_mplibcode (data)
+%    \end{macrocode}
+%
+%    This is needed for legacy behavior regarding |verbatimtex|
+%    \begin{macrocode}
   legacy_mplibcode_reset()
 
   local everymplib    = texgettoks('everymplibtoks')    or ''
@@ -979,11 +1189,21 @@ local function process_mplibcode (data)
       luamplib.verbatiminput and str or protect_expansion(str))
   end)
 
+%    \end{macrocode}
+%
+%    If not |mplibverbatim|, expand |mplibcode| data,
+%    so that users can use \TeX\ codes in it.
+%    It has turned out that no comment sign is allowed.
+%    \begin{macrocode}
   if not luamplib.verbatiminput then
     data = data:gsub("\".-\"", protect_expansion)
     data = data:gsub("%%.-\n","")
     run_tex_code(format("\\toks0\\expanded{{%s}}",data))
     data = texgettoks(0)
+%    \end{macrocode}
+%
+%    Next line to address issue \#55
+%    \begin{macrocode}
     data = data:gsub("##", "#")
     data = data:gsub("\".-\"", unprotect_expansion)
     data = data:gsub(btex_etex, function(str)
@@ -998,6 +1218,10 @@ local function process_mplibcode (data)
 end
 luamplib.process_mplibcode = process_mplibcode
 
+%    \end{macrocode}
+%
+%    For parsing |prescript| materials.
+%    \begin{macrocode}
 local further_split_keys = {
   ["mplibtexboxid"] = true,
   ["sh_color_a"]    = true,
@@ -1019,6 +1243,11 @@ local function script2table(s)
   return t
 end
 
+%    \end{macrocode}
+%
+%    Codes below for inserting PDF lieterals are mostly from ConTeXt general,
+%    with small changes when needed.
+%    \begin{macrocode}
 local function getobjects(result,figure,f)
   return figure:objects()
 end
@@ -1037,12 +1266,16 @@ local function pdf_stopfigure()
   texsprint("\\mplibstoptoPDF")
 end
 
+%    \end{macrocode}
+%
+%    |tex.tprint| with catcode regime -2, as sometimes |#| gets doubled
+%    in the argument of pdfliteral.
+%    \begin{macrocode}
 local function pdf_literalcode(fmt,...) -- table
   textprint({"\\mplibtoPDF{"},{-2,format(fmt,...)},{"}"})
 end
 
 local function pdf_textfigure(font,size,text,width,height,depth)
-  -- if text == "" then text = "\0" end -- char(0) has gone
   text = text:gsub(".",function(c)
     return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
   end)
@@ -1095,8 +1328,7 @@ local function flushnormalpath(path,open)
     else
       pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
     end
-  elseif #path == 1 then
-    -- special case .. draw point
+  elseif #path == 1 then -- special case .. draw point
     local one = path[1]
     pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
   end
@@ -1127,13 +1359,16 @@ local function flushconcatpath(path,open)
     else
       pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
     end
-  elseif #path == 1 then
-    -- special case .. draw point
+  elseif #path == 1 then -- special case .. draw point
     local one = path[1]
     pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
   end
 end
 
+%    \end{macrocode}
+%
+%    |dvipdfmx| is supported, though nobody seems to use it.
+%    \begin{macrocode}
 local pdfoutput = tonumber(texget("outputmode")) or tonumber(texget("pdfoutput"))
 local pdfmode = pdfoutput > 0
 
@@ -1152,6 +1387,11 @@ local function stop_pdf_code()
   end
 end
 
+%    \end{macrocode}
+%
+%    Now we process hboxes created from |btex ... etex| or
+%    |textext(...)| or |TEX(...)|, all being the same internally.
+%    \begin{macrocode}
 local function put_tex_boxes (object,prescript)
   local box = prescript.mplibtexboxid
   local n,tw,th = box[1],tonumber(box[2]),tonumber(box[3])
@@ -1177,6 +1417,10 @@ local function put_tex_boxes (object,prescript)
   end
 end
 
+%    \end{macrocode}
+%
+%    Colors and Transparency
+%    \begin{macrocode}
 local pdf_objs = {}
 local token, getpageres, setpageres = newtoken or token
 local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
@@ -1189,7 +1433,6 @@ else
             "\\special{pdf:obj @MPlibSh<<>>}")
 end
 
--- objstr <string> => obj <number>, new <boolean>
 local function update_pdfobjs (os)
   local on = pdf_objs[os]
   if on then
@@ -1259,11 +1502,15 @@ local function tr_pdf_pageresources(mode,opaq)
   return on_on, off_on
 end
 
+%    \end{macrocode}
+%
+%    Shading with |metafun| format. (maybe legacy way)
+%    \begin{macrocode}
 local shading_res
 
 local function shading_initialize ()
   shading_res = {}
-  if pdfmode and luatexbase.callbacktypes and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
+  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
     local shading_obj = pdf.reserveobj()
     setpageres(format("%s/Shading %i 0 R",getpageres() or "",shading_obj))
     luatexbase.add_to_callback("finish_pdffile", function()
@@ -1319,7 +1566,10 @@ end
 local prev_override_color
 
 local function do_preobj_color(object,prescript)
-  -- transparency
+%    \end{macrocode}
+%
+%    transparency
+%    \begin{macrocode}
   local opaq = prescript and prescript.tr_transparency
   local tron_no, troff_no
   if opaq then
@@ -1328,7 +1578,10 @@ local function do_preobj_color(object,prescript)
     tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
     pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
-  -- color
+%    \end{macrocode}
+%
+%    color
+%    \begin{macrocode}
   local override = prescript and prescript.MPlibOverrideColor
   if override then
     if pdfmode then
@@ -1350,7 +1603,10 @@ local function do_preobj_color(object,prescript)
       end
     end
   end
-  -- shading
+%    \end{macrocode}
+%
+%    shading
+%    \begin{macrocode}
   local sh_type = prescript and prescript.sh_type
   if sh_type then
     local domain  = prescript.sh_domain
@@ -1411,6 +1667,10 @@ local function do_postobj_color(tr,over,sh)
   end
 end
 
+%    \end{macrocode}
+%
+%    Finally, flush figures by inserting PDF literals.
+%    \begin{macrocode}
 local function flush(result,flusher)
   if result then
     local figures = result.fig
@@ -1424,14 +1684,27 @@ local function flush(result,flusher)
         local bbox = figure:boundingbox()
         local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
         if urx < llx then
-          -- invalid
-          -- pdf_startfigure(fignum,0,0,0,0)
-          -- pdf_stopfigure()
+%    \end{macrocode}
+%
+%    luamplib silently ignores this invalid figure for those
+%    that do not contain |beginfig ... endfig|. (issue \#70)
+%    Original code of ConTeXt general was:
+%    \begin{verbatim}
+%    -- invalid
+%    pdf_startfigure(fignum,0,0,0,0)
+%    pdf_stopfigure()
+%    \end{verbatim}
+%    \begin{macrocode}
         else
+%    \end{macrocode}
+%
+%    For legacy behavior. Insert `pre-fig' \TeX\ code here, and
+%    prepare a table for `in-fig' codes.
+%    \begin{macrocode}
           if tex_code_pre_mplib[f] then
             texsprint(tex_code_pre_mplib[f])
           end
-          local TeX_code_bot = {} -- PostVerbatimTeX
+          local TeX_code_bot = {}
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
           if objects then
@@ -1440,13 +1713,17 @@ local function flush(result,flusher)
             for o=1,#objects do
               local object        = objects[o]
               local objecttype    = object.type
+%    \end{macrocode}
+%
+%    The following 5 lines are part of |btex...etex| patch.
+%    Again, colors are processed at this stage.
+%    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
               local tr_opaq,cr_over,shade_no = do_preobj_color(object,prescript)
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
-              elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
-                -- skip
+              elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
               elseif objecttype == "start_clip" then
                 local evenodd = not object.istext and object.postscript == "evenodd"
                 start_pdf_code()
@@ -1456,6 +1733,11 @@ local function flush(result,flusher)
                 stop_pdf_code()
                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
               elseif objecttype == "special" then
+%    \end{macrocode}
+%
+%    Collect \TeX\ codes that will be executed after flushing.
+%    Legacy behavior.
+%    \begin{macrocode}
                 if prescript and prescript.postmplibverbtex then
                   TeX_code_bot[#TeX_code_bot+1] = prescript.postmplibverbtex
                 end
@@ -1550,7 +1832,11 @@ local function flush(result,flusher)
                     else
                       flushnormalpath(path,open)
                     end
-                    if not shade_no then ----- conflict with shading
+%    \end{macrocode}
+%
+%    Change from ConTeXt general: there was color stuffs.
+%    \begin{macrocode}
+                    if not shade_no then -- conflict with shading
                       if objecttype == "fill" then
                         pdf_literalcode(evenodd and "h f*" or "h f")
                       elseif objecttype == "outline" then
@@ -1602,6 +1888,11 @@ local function flush(result,flusher)
                   end
                 end
               end
+%    \end{macrocode}
+%
+%    Added to ConTeXt general: color stuff.
+%    And execute legacy |verbatimtex| code.
+%    \begin{macrocode}
               do_postobj_color(tr_opaq,cr_over,shade_no)
             end
           end
@@ -1637,6 +1928,7 @@ luamplib.colorconverter = colorconverter
 %
 %    \subsection{\texorpdfstring{\TeX}{TeX} package}
 %
+%
 %    \begin{macrocode}
 %<*package>
 %    \end{macrocode}
@@ -1655,7 +1947,15 @@ luamplib.colorconverter = colorconverter
   \input ltluatex
   \fi
 \fi
+%    \end{macrocode}
+%
+%    Loading of lua code.
+%    \begin{macrocode}
 \directlua{require("luamplib")}
+%    \end{macrocode}
+%
+%    Support older engine. Seems we don't need it, but no harm.
+%    \begin{macrocode}
 \ifx\scantextokens\undefined
   \let\scantextokens\luatexscantextokens
 \fi
@@ -1664,8 +1964,17 @@ luamplib.colorconverter = colorconverter
   \protected\def\pdfliteral{\pdfextension literal}
   \def\pdffontsize{\dimexpr\pdffeedback fontsize\relax}
 \fi
-
+%    \end{macrocode}
+%
+%    Set the format for metapost.
+%    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
+%    \end{macrocode}
+%
+%    luamplib works in both PDF and DVI mode,
+%    but only DVIPDFMx is supported currently among a number of DVI tools.
+%    So we output a warning.
+%    \begin{macrocode}
 \ifnum\pdfoutput>0
   \let\mplibtoPDF\pdfliteral
 \else
@@ -1678,16 +1987,32 @@ luamplib.colorconverter = colorconverter
     \write128{}
   \fi
 \fi
+%    \end{macrocode}
+%
+%    Make |mplibcode| typesetted always in horizontal mode.
+%    \begin{macrocode}
 \def\mplibforcehmode{\let\mplibhmodeornot\leavevmode}
 \def\mplibnoforcehmode{\let\mplibhmodeornot\relax}
 \mplibnoforcehmode
+%    \end{macrocode}
+%
+%    Catcode. We want to allow comment sign in |mplibcode|.
+%    \begin{macrocode}
 \def\mplibsetupcatcodes{%
-  \mplibhmodeornot
-  %catcode`\{=12 %catcode`\}=12
+  \mplibhmodeornot %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12 \endlinechar=10
 }
+%    \end{macrocode}
+%
+%    Make |btex...etex| box zero-metric.
+%    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+%    \end{macrocode}
+%
+%    As we have changed |^^J| catcode, the last line containing
+%    |\end{mplibcode}| has |\n| at the end. Replace it with |^^M|.
+%    \begin{macrocode}
 \newcount\mplibstartlineno
 \def\mplibpostmpcatcodes{%
   \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\%=12 }
@@ -1695,6 +2020,10 @@ luamplib.colorconverter = colorconverter
   \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
 \begingroup\lccode`\~=`\^^M \lowercase{\endgroup
   \def\mplibdoreplacenewlinebr#1^^J{\endgroup\scantextokens{{}#1~}}}
+%    \end{macrocode}
+%
+%    The Plain-specific stuff.
+%    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname selectfont\endcsname\relax
 \def\mplibreplacenewlinecs{%
@@ -1715,6 +2044,10 @@ luamplib.colorconverter = colorconverter
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinecs\fi
 }
 \else
+%    \end{macrocode}
+%
+%    The \LaTeX-specific part: a new environment.
+%    \begin{macrocode}
 \newenvironment{mplibcode}{%
   \global\mplibstartlineno\inputlineno
   \toks@{}\ltxdomplibcode
@@ -1740,6 +2073,10 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \fi
+%    \end{macrocode}
+%
+%    User settings.
+%    \begin{macrocode}
 \def\mpliblegacybehavior#1{\directlua{
     local s = string.lower("#1")
     if s == "enable" or s == "true" or s == "yes" then
@@ -1756,6 +2093,11 @@ luamplib.colorconverter = colorconverter
       luamplib.verbatiminput = false
     end
 }}
+%    \end{macrocode}
+%
+%    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
+%    \cs{everymplibtoks} \& \cs{everyendmplibtoks} respectively
+%    \begin{macrocode}
 \newtoks\mplibtmptoks
 \newtoks\everymplibtoks
 \newtoks\everyendmplibtoks
@@ -1781,12 +2123,24 @@ luamplib.colorconverter = colorconverter
   \everyendmplibtoks{#1}%
   \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
+%    \end{macrocode}
+%
+%    Allow \TeX\ dimen macros in |mplibcode|.
+%    \begin{macrocode}
 \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
+%    \end{macrocode}
+%
+%    MPLib's number system. Now |binary| has gone away.
+%    \begin{macrocode}
 \def\mplibnumbersystem#1{\directlua{
   local t = "#1"
   if t == "binary" then t = "decimal" end
   luamplib.numbersystem = t
 }}
+%    \end{macrocode}
+%
+%    Settings for |.mp| cache files.
+%    \begin{macrocode}
 \def\mplibmakenocache#1{\mplibdomakenocache #1,*,}
 \def\mplibdomakenocache#1,{%
   \ifx\empty#1\empty
@@ -1810,6 +2164,10 @@ luamplib.colorconverter = colorconverter
   \fi
 }
 \def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
+%    \end{macrocode}
+%
+%    More user settings.
+%    \begin{macrocode}
 \def\mplibtextextlabel#1{\directlua{
     local s = string.lower("#1")
     if s == "enable" or s == "true" or s == "yes" then
@@ -1834,7 +2192,16 @@ luamplib.colorconverter = colorconverter
       luamplib.globaltextext = false
     end
 }}
+%    \end{macrocode}
+%
+%    The followings are from ConTeXt general, mostly.
+%    %    We use a dedicated scratchbox.
+%    \begin{macrocode}
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
+%    \end{macrocode}
+%
+%    We encapsulate the litterals.
+%    \begin{macrocode}
 \def\mplibstarttoPDF#1#2#3#4{%
   \hbox\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
@@ -1866,6 +2233,10 @@ luamplib.colorconverter = colorconverter
   \box\mplibscratchbox
   \egroup
 }
+%    \end{macrocode}
+%
+%    Text items have a special handler.
+%    \begin{macrocode}
 \def\mplibtextext#1#2#3#4#5{%
   \begingroup
   \setbox\mplibscratchbox\hbox
@@ -1882,6 +2253,10 @@ luamplib.colorconverter = colorconverter
   \box\mplibscratchbox
   \endgroup
 }
+%    \end{macrocode}
+%
+%    Input |luamplib.cfg| when it exists.
+%    \begin{macrocode}
 \openin0=luamplib.cfg
 \ifeof0 \else
   \closein0
