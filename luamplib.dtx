@@ -200,7 +200,7 @@ See source file '\inFileName' for licencing and contact information.
 %   from previous version.
 % \end{itemize}
 %
-% Some more changes and cuations are:
+% Some more changes and cautions are:
 %
 % \paragraph{\cs{mplibforcehmode}}
 %   When this macro is declared, every mplibcode figure box will be
@@ -813,11 +813,14 @@ local mplibinstances = {}
 local function process (data)
 %    \end{macrocode}
 %
-%    Workaround issue \#70
+%    The workaround of issue \#70 seems to be unnecessary, as we use
+%    |make_text| now.
+%    \begin{verbatim}
+%    if not data:find(name_b.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
+%      data = data .. "beginfig(-1);endfig;"
+%    end
+%    \end{verbatim}
 %    \begin{macrocode}
-  if not data:find(name_b.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
-    data = data .. "beginfig(-1);endfig;"
-  end
   local standalone = not luamplib.codeinherit
   local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
     .. tostring(luamplib.textextlabel) .. tostring(luamplib.legacy_verbatimtex)
@@ -1929,9 +1932,9 @@ luamplib.colorconverter = colorconverter
 %    \subsection{\texorpdfstring{\TeX}{TeX} package}
 %
 %
-%    \begin{macrocode}
+% \iffalse
 %<*package>
-%    \end{macrocode}
+% \fi
 %
 %    First we need to load some packages.
 %
@@ -2266,9 +2269,9 @@ luamplib.colorconverter = colorconverter
 %
 %    That's all folks!
 %
-%    \begin{macrocode}
+% \iffalse
 %</package>
-%    \end{macrocode}
+% \fi
 %
 % \clearpage
 % \section{The GNU GPL License v2}
