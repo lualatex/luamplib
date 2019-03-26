@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2019/03/26 2.20.1
+    * '\mpdim' and '\mpcolor' are allowed, even if '\mplibverbatim' is enabled.
+
 2019/03/20 2.20.0
     * huge changes, but mostly internal, so apparently not much difference
       from previous version.

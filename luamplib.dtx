@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2019/03/20 v2.20.0 Interface for using the mplib library]%
+  [2019/03/26 v2.20.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2019/03/20 v2.20.0}
+% \date{2019/03/26 v2.20.1}
 %
 % \maketitle
 %
@@ -376,8 +376,7 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mplibverbatim}}
 %   Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   users cannot use |\mpdim|, but |\mpcolor| is OK.
-%   All other \TeX\ commands outside
+%   except for |\mpdim| and |\mpcolor|, all other \TeX\ commands outside
 %   |btex ... etex| or |verbatimtex ... etex| are not expanded and will be fed
 %   literally into the mplib process.
 %
@@ -406,8 +405,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.0",
-  date          = "2019/03/20",
+  version       = "2.20.1",
+  date          = "2019/03/26",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -441,7 +440,13 @@ local texget      = tex.get
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
-local texscantoks = tex.scantoks
+%    \end{macrocode}
+%
+%    We don't use |tex.scantoks| anymore. See below reagrding |tex.runtoks|.
+%    \begin{verbatim}
+%      local texscantoks = tex.scantoks
+%    \end{verbatim}
+%    \begin{macrocode}
 
 if not texruntoks then
   err("Your LuaTeX version is too old. Please upgrade it to the latest")
@@ -593,8 +598,8 @@ end
 %    Replace |btex ... etex| and |verbatimtex ... etex| in input files,
 %    if needed.
 %    \begin{macrocode}
-local name_b = "%f[A-Z_a-z]"
-local name_e = "%f[^A-Z_a-z]"
+local name_b = "%f[%a_]"
+local name_e = "%f[^%a_]"
 local btex_etex = name_b.."btex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
 local verbatimtex_etex = name_b.."verbatimtex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
 
@@ -671,7 +676,7 @@ local function finder(name, mode, ftype)
       end
       return replaceinputmpfile(name,file)
     end
-    return mpkpse:find_file(name, name:match("[a-zA-Z]+$"))
+    return mpkpse:find_file(name, name:match("%a+$"))
   end
 end
 luamplib.finder = finder
@@ -848,13 +853,14 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 %    |tex.scantoks| sometimes fail to read catcode properly, especially
 %    |\#|, |\&|, or |\%|. After some experiment, we dropped using it.
 %    Instead, a function containing |tex.script| seems to work nicely.
+%    \begin{verbatim}
+%      local function run_tex_code_no_use (str, cat)
+%        cat = cat or catlatex
+%        texscantoks("mplibtmptoks", cat, str)
+%        texruntoks("mplibtmptoks")
+%      end
+%    \end{verbatim}
 %    \begin{macrocode}
-local function run_tex_code_no_use (str, cat)
-  cat = cat or catlatex
-  texscantoks("mplibtmptoks", cat, str)
-  texruntoks("mplibtmptoks")
-end
-
 local function run_tex_code (str, cat)
   cat = cat or catlatex
   texruntoks(function() texsprint(cat, str) end)
@@ -979,14 +985,12 @@ local runscript_funcs = {
 
 %    \end{macrocode}
 %
-%    As of 2019-03, |metafun| format is not usable (issue \#79).
-%    This might workarounds the problem.
+%    For |metafun| format. see issue \#79.
 %    \begin{macrocode}
 mp = mp or {}
 local mp = mp
 mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
-LUATEXFUNCTIONALITY = LUATEXFUNCTIONALITY or 0
 
 %    \end{macrocode}
 %
@@ -1002,7 +1006,7 @@ local function mpprint(buffer,...)
       elseif t == "string" then
         buffer[#buffer+1] = value
       elseif t == "table" then
-        buffer[#buffer+1] = "(" .. concat(value,",") .. ")"
+        buffer[#buffer+1] = "(" .. tableconcat(value,",") .. ")"
       else -- boolean or whatever
         buffer[#buffer+1] = tostring(value)
       end
@@ -1128,9 +1132,8 @@ local textextlabelpreamble = [[
 primarydef s infont f = rawtextext(s) enddef;
 def fontsize expr f =
   begingroup
-  save size,pic; numeric size; picture pic;
-  pic := rawtextext("\hskip\pdffontsize\font");
-  size := xpart urcorner pic - xpart llcorner pic;
+  save size; numeric size;
+  size := mplibdimen("1em");
   if size = 0: 10pt else: size fi
   endgroup
 enddef;
@@ -1182,6 +1185,8 @@ local function process_mplibcode (data)
   data = data:gsub("\r","\n")
 
   data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
+  data = data:gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
+  data = data:gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
 
   data = data:gsub(btex_etex, function(str)
     return format("btex %s etex ", -- space
@@ -1945,7 +1950,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2019/03/20 v2.20.0 mplib package for LuaTeX]
+    [2019/03/26 v2.20.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -1965,7 +1970,6 @@ luamplib.colorconverter = colorconverter
 \ifx\pdfoutput\undefined
   \let\pdfoutput\outputmode
   \protected\def\pdfliteral{\pdfextension literal}
-  \def\pdffontsize{\dimexpr\pdffeedback fontsize\relax}
 \fi
 %    \end{macrocode}
 %
@@ -2128,10 +2132,10 @@ luamplib.colorconverter = colorconverter
 }
 %    \end{macrocode}
 %
-%    Allow \TeX\ dimen macros in |mplibcode|.
-%    \begin{macrocode}
-\def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup } % gmp.sty
-%    \end{macrocode}
+%    Allow \TeX\ dimen macros in |mplibcode|. But now |runscript| does the job.
+%    \begin{verbatim}
+%      \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup }% gmp.sty
+%    \end{verbatim}
 %
 %    MPLib's number system. Now |binary| has gone away.
 %    \begin{macrocode}
