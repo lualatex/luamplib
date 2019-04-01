@@ -664,34 +664,12 @@ local special_ftype = {
   enc = "enc files",
 }
 
-local http, ltn12
-
 local function finder(name, mode, ftype)
   if mode == "w" then
     return name
   else
     ftype = special_ftype[ftype] or ftype
-    local file
-%    \end{macrocode}
-%
-%    To address a part of issue \#82:
-%    The following code makes in possible to input |.mp| file from HTTP URL.
-%    \begin{macrocode}
-    if name:find("^http://") then
-      if not http then
-        http  = require"socket.http"
-        ltn12 = require"ltn12"
-      end
-      file = (luamplib.cachedir or outputdir).."/"..name:gsub("%W","_")
-      local fh = ioopen(file,"wb")
-      local r, e = http.request{
-        url  = name,
-        sink = ltn12.sink.file(fh),
-      }
-      if not r then err(format("`%s': %s",name,e)) end
-    else
-      file = mpkpse:find_file(name,ftype)
-    end
+    local file = mpkpse:find_file(name,ftype)
     if file then
       if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
         return file
