@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2019/10/11 2.20.2
+    * fix issue #84 (pgf package hinders \mpcolor process)
+
 2019/03/26 2.20.1
     * '\mpdim' and '\mpcolor' are allowed, even if '\mplibverbatim' is enabled.
 

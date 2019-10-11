@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2019/03/26 v2.20.1 Interface for using the mplib library]%
+  [2019/10/11 v2.20.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2019/03/26 v2.20.1}
+% \date{2019/10/11 v2.20.2}
 %
 % \maketitle
 %
@@ -297,7 +297,8 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mpcolor}}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
-%   enviroment, though \textsf{luamplib} does not automatically load these
+%   enviroment (after |withcolor| operator),
+%   though \textsf{luamplib} does not automatically load these
 %   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
 %   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
 %   as well.
@@ -405,8 +406,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.1",
-  date          = "2019/03/26",
+  version       = "2.20.2",
+  date          = "2019/10/11",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -881,6 +882,10 @@ local tex_box_id = 2047
 %    \begin{macrocode}
 local factor = 65536*(7227/7200)
 
+local textext_fmt = [[image(addto currentpicture doublepath unitsquare ]]..
+  [[xscaled %f yscaled %f shifted (0,-%f) ]]..
+  [[withprescript "mplibtexboxid=%i:%f:%f")]]
+
 local function process_tex_text (str)
   if str then
     tex_box_id = tex_box_id + 1
@@ -890,10 +895,7 @@ local function process_tex_text (str)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
-    return format("image(addto currentpicture doublepath unitsquare "..
-    "xscaled %f yscaled %f shifted (0,-%f) "..
-    "withprescript \"mplibtexboxid=%i:%f:%f\")",
-    wd, ht+dp, dp, tex_box_id, wd, ht+dp)
+    return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
   end
   return ""
 end
@@ -901,17 +903,20 @@ end
 %    \end{macrocode}
 %
 %    Make |color| or |xcolor|'s color expressions usable,
-%    with \cs{mpcolor} or |mplibcolor|
+%    with \cs{mpcolor} or |mplibcolor|. These commands should be used
+%    with graphical objects.
 %    \begin{macrocode}
+local mplibcolor_fmt = [[\begingroup\let\XC@mcolor\relax]]..
+  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
+  [[\color %s \endgroup]]
+
 local function process_color (str)
   if str then
     if not str:find("{.-}") then
       str = format("{%s}",str)
     end
-    run_tex_code(format(
-      "\\def\\set@color{\\toks0\\expandafter{\\current@color}}\\color %s", str),
-      catat11)
-    return format("1 withprescript \"MPlibOverrideColor=%s\"", texgettoks(0))
+    run_tex_code(mplibcolor_fmt:format(str), catat11)
+    return format('1 withprescript "MPlibOverrideColor=%s"', texgettoks"mplibtmptoks")
   end
   return ""
 end
@@ -926,8 +931,8 @@ end
 local function process_dimen (str)
   if str then
     str = str:gsub("{(.+)}","%1")
-    run_tex_code(format("\\toks0\\expandafter{\\the\\dimexpr %s\\relax}", str))
-    return format("begingroup %s endgroup", texgettoks(0))
+    run_tex_code(format([[\mplibtmptoks\expandafter{\the\dimexpr %s\relax}]], str))
+    return format("begingroup %s endgroup", texgettoks"mplibtmptoks")
   end
   return ""
 end
@@ -969,7 +974,7 @@ end
 
 local function process_verbatimtex_infig (str)
   if str then
-    return format("special \"postmplibverbtex=%s\";", str)
+    return format('special "postmplibverbtex=%s";', str)
   end
   return ""
 end
@@ -1179,8 +1184,8 @@ local function process_mplibcode (data)
 %    \begin{macrocode}
   legacy_mplibcode_reset()
 
-  local everymplib    = texgettoks('everymplibtoks')    or ''
-  local everyendmplib = texgettoks('everyendmplibtoks') or ''
+  local everymplib    = texgettoks'everymplibtoks'    or ''
+  local everyendmplib = texgettoks'everyendmplibtoks' or ''
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
@@ -1206,8 +1211,8 @@ local function process_mplibcode (data)
   if not luamplib.verbatiminput then
     data = data:gsub("\".-\"", protect_expansion)
     data = data:gsub("%%.-\n","")
-    run_tex_code(format("\\toks0\\expanded{{%s}}",data))
-    data = texgettoks(0)
+    run_tex_code(format("\\mplibtmptoks\\expanded{{%s}}",data))
+    data = texgettoks"mplibtmptoks"
 %    \end{macrocode}
 %
 %    Next line to address issue \#55
@@ -1231,9 +1236,9 @@ luamplib.process_mplibcode = process_mplibcode
 %    For parsing |prescript| materials.
 %    \begin{macrocode}
 local further_split_keys = {
-  ["mplibtexboxid"] = true,
-  ["sh_color_a"]    = true,
-  ["sh_color_b"]    = true,
+  mplibtexboxid = true,
+  sh_color_a    = true,
+  sh_color_b    = true,
 }
 
 local function script2table(s)
@@ -1950,7 +1955,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2019/03/26 v2.20.1 mplib package for LuaTeX]
+    [2019/10/11 v2.20.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2100,10 +2105,8 @@ luamplib.colorconverter = colorconverter
       luamplib.verbatiminput = false
     end
 }}
+\newtoks\mplibtmptoks
 %    \end{macrocode}
-%    \begin{verbatim}
-%      \newtoks\mplibtmptoks
-%    \end{verbatim}
 %
 %    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
 %    \cs{everymplibtoks} \& \cs{everyendmplibtoks} respectively
