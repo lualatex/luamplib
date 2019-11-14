@@ -1158,22 +1158,22 @@ luamplib.verbatiminput = false
 %    \begin{macrocode}
 local function protect_expansion (str)
   if str then
-    str = str:gsub("\\","\1Control\1")
-             :gsub("%%","\1Comment\1")
-             :gsub("#", "\1HashSign\1")
-             :gsub("{", "\1LBrace\1")
-             :gsub("}", "\1RBrace\1")
+    str = str:gsub("\\","!!!Control!!!")
+             :gsub("%%","!!!Comment!!!")
+             :gsub("#", "!!!HashSign!!!")
+             :gsub("{", "!!!LBrace!!!")
+             :gsub("}", "!!!RBrace!!!")
     return format("\\unexpanded{%s}",str)
   end
 end
 
 local function unprotect_expansion (str)
   if str then
-    return str:gsub("\1Control\1", "\\")
-              :gsub("\1Comment\1", "%%")
-              :gsub("\1HashSign\1","#")
-              :gsub("\1LBrace\1",  "{")
-              :gsub("\1RBrace\1",  "}")
+    return str:gsub("!!!Control!!!", "\\")
+              :gsub("!!!Comment!!!", "%%")
+              :gsub("!!!HashSign!!!","#")
+              :gsub("!!!LBrace!!!",  "{")
+              :gsub("!!!RBrace!!!",  "}")
   end
 end
 
@@ -1210,7 +1210,11 @@ local function process_mplibcode (data)
 %    \begin{macrocode}
   if not luamplib.verbatiminput then
     data = data:gsub("\".-\"", protect_expansion)
+
+    data = data:gsub("\\%%", "\0PerCent\0")
     data = data:gsub("%%.-\n","")
+    data = data:gsub("%zPerCent%z", "\\%%")
+
     run_tex_code(format("\\mplibtmptoks\\expanded{{%s}}",data))
     data = texgettoks"mplibtmptoks"
 %    \end{macrocode}
