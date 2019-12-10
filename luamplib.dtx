@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2019/10/11 v2.20.2 Interface for using the mplib library]%
+  [2019/12/11 v2.20.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2019/10/11 v2.20.2}
+% \date{2019/12/11 v2.20.4}
 %
 % \maketitle
 %
@@ -406,8 +406,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.2",
-  date          = "2019/10/11",
+  version       = "2.20.4",
+  date          = "2019/12/11",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1959,7 +1959,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2019/10/11 v2.20.2 mplib package for LuaTeX]
+    [2019/12/11 v2.20.4 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2015,9 +2015,9 @@ luamplib.colorconverter = colorconverter
 %    Catcode. We want to allow comment sign in |mplibcode|.
 %    \begin{macrocode}
 \def\mplibsetupcatcodes{%
-  \mplibhmodeornot %catcode`\{=12 %catcode`\}=12
+  %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
-  \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12 \endlinechar=10
+  \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12
 }
 %    \end{macrocode}
 %
@@ -2026,28 +2026,11 @@ luamplib.colorconverter = colorconverter
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
 %    \end{macrocode}
 %
-%    As we have changed |^^J| catcode, the last line containing
-%    |\end{mplibcode}| has |\n| at the end. Replace it with |^^M|.
-%    \begin{macrocode}
-\newcount\mplibstartlineno
-\def\mplibpostmpcatcodes{%
-  \catcode`\{=12 \catcode`\}=12 \catcode`\#=12 \catcode`\%=12 }
-\def\mplibreplacenewlinebr{%
-  \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinebr}
-\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
-  \def\mplibdoreplacenewlinebr#1^^J{\endgroup\scantextokens{{}#1~}}}
-%    \end{macrocode}
-%
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \bgroup\expandafter\expandafter\expandafter\egroup
 \expandafter\ifx\csname selectfont\endcsname\relax
-\def\mplibreplacenewlinecs{%
-  \begingroup \mplibpostmpcatcodes \mplibdoreplacenewlinecs}
-\begingroup\lccode`\~=`\^^M \lowercase{\endgroup
-  \def\mplibdoreplacenewlinecs#1^^J{\endgroup\scantextokens{\relax#1~}}}
 \def\mplibcode{%
-  \mplibstartlineno\inputlineno
   \begingroup
   \begingroup
   \mplibsetupcatcodes
@@ -2055,9 +2038,9 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
+  \mplibhmodeornot
   \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===])}%
   \endgroup
-  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinecs\fi
 }
 \else
 %    \end{macrocode}
@@ -2065,8 +2048,7 @@ luamplib.colorconverter = colorconverter
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
 \newenvironment{mplibcode}{%
-  \global\mplibstartlineno\inputlineno
-  \toks@{}\ltxdomplibcode
+  \mplibtmptoks{}\ltxdomplibcode
 }{}
 \def\ltxdomplibcode{%
   \begingroup
@@ -2076,16 +2058,15 @@ luamplib.colorconverter = colorconverter
 \def\mplib@mplibcode{mplibcode}
 \long\def\ltxdomplibcodeindeed#1\end#2{%
   \endgroup
-  \toks@\expandafter{\the\toks@#1}%
+  \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
   \def\mplibtemp@a{#2}%
   \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\toks@]===])}%
+    \mplibhmodeornot
+    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===])}%
     \end{mplibcode}%
-    \ifnum\mplibstartlineno<\inputlineno
-      \expandafter\expandafter\expandafter\mplibreplacenewlinebr
-    \fi
   \else
-    \toks@\expandafter{\the\toks@\end{#2}}\expandafter\ltxdomplibcode
+    \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
+    \expandafter\ltxdomplibcode
   \fi
 }
 \fi
@@ -2119,7 +2100,6 @@ luamplib.colorconverter = colorconverter
 \newtoks\everymplibtoks
 \newtoks\everyendmplibtoks
 \protected\def\everymplib{%
-  \mplibstartlineno\inputlineno
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeverymplib
@@ -2127,10 +2107,8 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdoeverymplib#1{%
   \endgroup
   \everymplibtoks{#1}%
-  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 \protected\def\everyendmplib{%
-  \mplibstartlineno\inputlineno
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeveryendmplib
@@ -2138,7 +2116,6 @@ luamplib.colorconverter = colorconverter
 \long\def\mplibdoeveryendmplib#1{%
   \endgroup
   \everyendmplibtoks{#1}%
-  \ifnum\mplibstartlineno<\inputlineno\expandafter\mplibreplacenewlinebr\fi
 }
 %    \end{macrocode}
 %
