@@ -206,7 +206,8 @@ See source file '\inFileName' for licencing and contact information.
 %   When this macro is declared, every mplibcode figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
 %   will have effects. |\mplibnoforcehmode|, being default, reverts this
-%   setting.
+%   setting. (Actually these commands redefine |\prependtomplibbox|. You
+%   can define this command with anything suitable before a box.)
 %
 % \paragraph{\cs{mpliblegacybehavior\{enable\}}}
 %   By default, |\mpliblegacybehavior{enable}| is already declared,
@@ -2007,8 +2008,8 @@ luamplib.colorconverter = colorconverter
 %
 %    Make |mplibcode| typesetted always in horizontal mode.
 %    \begin{macrocode}
-\def\mplibforcehmode{\let\mplibhmodeornot\leavevmode}
-\def\mplibnoforcehmode{\let\mplibhmodeornot\relax}
+\def\mplibforcehmode{\let\prependtomplibbox\leavevmode}
+\def\mplibnoforcehmode{\let\prependtomplibbox\relax}
 \mplibnoforcehmode
 %    \end{macrocode}
 %
@@ -2038,7 +2039,6 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \mplibhmodeornot
   \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===])}%
   \endgroup
 }
@@ -2061,7 +2061,6 @@ luamplib.colorconverter = colorconverter
   \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
   \def\mplibtemp@a{#2}%
   \ifx\mplib@mplibcode\mplibtemp@a
-    \mplibhmodeornot
     \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===])}%
     \end{mplibcode}%
   \else
@@ -2197,6 +2196,7 @@ luamplib.colorconverter = colorconverter
 %    We encapsulate the litterals.
 %    \begin{macrocode}
 \def\mplibstarttoPDF#1#2#3#4{%
+  \prependtomplibbox
   \hbox\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
   \xdef\MPurx{#3}\xdef\MPury{#4}%
