@@ -31,7 +31,7 @@ draw origin--(1cm,0) withcolor \mpcolor{teal};
 draw btex g etex withcolor \mpcolor{orange};
 draw btex\tracingcommands0
   multi%
-  \begin{huge}line\end{huge}%
+  \begin{huge}line\end{huge}
   texcode
   with \%
   etex shifted (10,0);
@@ -63,7 +63,7 @@ for i = 1 upto 3:
 endfor;
 endfig;
 \end{mplibcode}%
-B\par\leavevmode
+B\par\mplibforcehmode
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
@@ -75,6 +75,7 @@ B\par\leavevmode
 \begin{mplibcode}
  currentpicture := pic scaled 2;
 \end{mplibcode}%
+\mplibnoforcehmode
 \everymplib{}\everyendmplib{}%
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
@@ -101,8 +102,9 @@ endfig;
 \end{mplibcode}%
 
 \newbox\mympbox
+\def\prependtomplibbox{\global\setbox\mympbox}%
 \begin{mplibcode}
-verbatimtex \global\setbox\mympbox etex
+%verbatimtex \global\setbox\mympbox etex
 beginfig(0);
 breadth=.667\mpdim\linewidth;
 height=2pt;
@@ -117,6 +119,7 @@ endfig;
 \copy\mympbox
 \copy\mympbox
 
+\mplibnoforcehmode
 \mplibnumbersystem{double}%
 \begin{mplibcode}
 beginfig(0);

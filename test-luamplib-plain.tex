@@ -61,7 +61,7 @@ for i = 1 upto 3:
 endfor;
 endfig;
 \endmplibcode
-B\par\leavevmode
+B\par\mplibforcehmode
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
@@ -73,6 +73,7 @@ B\par\leavevmode
 \mplibcode
  currentpicture := pic scaled 2;
 \endmplibcode
+\mplibnoforcehmode
 \everymplib{}\everyendmplib{}%
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
@@ -99,8 +100,9 @@ endfig;
 \endmplibcode
 
 \newbox\mympbox
+\def\prependtomplibbox{\global\setbox\mympbox}%
 \mplibcode
-verbatimtex \global\setbox\mympbox etex
+%verbatimtex \global\setbox\mympbox etex
 beginfig(0);
 breadth=.667\mpdim\hsize;
 height=2pt;
@@ -115,6 +117,7 @@ endfig;
 \copy\mympbox
 \copy\mympbox
 
+\mplibnoforcehmode
 \mplibnumbersystem{double}%
 \mplibcode
 beginfig(0);
