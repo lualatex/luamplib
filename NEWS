@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2020/02/24 2.20.5
+    * Extra check for \pdfliteral (PR #89)
+
 2019/12/11 2.20.4
     * remove unnecessary setting of endlinechar
     * \prependtomplibbox instead of \mplibhmodeornot

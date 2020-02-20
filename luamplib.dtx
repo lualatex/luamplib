@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2019 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2020 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2019/12/11 v2.20.4 Interface for using the mplib library]%
+  [2020/02/24 v2.20.5 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2019/12/11 v2.20.4}
+% \date{2020/02/24 v2.20.5}
 %
 % \maketitle
 %
@@ -407,8 +407,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.4",
-  date          = "2019/12/11",
+  version       = "2.20.5",
+  date          = "2020/02/24",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1960,7 +1960,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2019/12/11 v2.20.4 mplib package for LuaTeX]
+    [2020/02/24 v2.20.5 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -1974,9 +1974,6 @@ luamplib.colorconverter = colorconverter
 %
 %    Support older engine. Seems we don't need it, but no harm.
 %    \begin{macrocode}
-\ifx\scantextokens\undefined
-  \let\scantextokens\luatexscantextokens
-\fi
 \ifx\pdfoutput\undefined
   \let\pdfoutput\outputmode
   \protected\def\pdfliteral{\pdfextension literal}
