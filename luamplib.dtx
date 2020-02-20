@@ -1983,6 +1983,15 @@ luamplib.colorconverter = colorconverter
 \fi
 %    \end{macrocode}
 %
+%    Unfortuantely there are still packages out there that think it is a good
+%    idea to manually set \cs{pdfoutput} which defeats the above branch that
+%    defines \cs{pdfliteral}.  To cover that case we need an extra check.
+%    \begin{macrocode}
+\ifx\pdfliteral\undefined
+  \protected\def\pdfliteral{\pdfextension literal}
+\fi
+%    \end{macrocode}
+%
 %    Set the format for metapost.
 %    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
