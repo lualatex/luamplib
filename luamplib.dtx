@@ -2124,10 +2124,14 @@ luamplib.colorconverter = colorconverter
 }
 %    \end{macrocode}
 %
-%    Allow \TeX\ dimen macros in |mplibcode|. But now |runscript| does the job.
-%    \begin{verbatim}
-%      \def\mpdim#1{ begingroup \the\dimexpr #1\relax\space endgroup }% gmp.sty
-%    \end{verbatim}
+%    Allow \TeX\ dimen/color macros. Now |runscript| does the job,
+%    so the following lines are not needed for most cases.
+%    But the macros will be expanded when they are used in another macro.
+%    \begin{macrocode}
+\def\mpdim#1{ mplibdimen("#1") }
+\def\mpcolor#1#{\domplibcolor{#1}}
+\def\domplibcolor#1#2{ mplibcolor("#1{#2}") }
+%    \end{macrocode}
 %
 %    MPLib's number system. Now |binary| has gone away.
 %    \begin{macrocode}
