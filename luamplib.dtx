@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2020/02/24 v2.20.5 Interface for using the mplib library]%
+  [2020/12/30 v2.20.6 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2020/02/24 v2.20.5}
+% \date{2020/12/30 v2.20.6}
 %
 % \maketitle
 %
@@ -407,8 +407,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.5",
-  date          = "2020/02/24",
+  version       = "2.20.6",
+  date          = "2020/12/30",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -427,7 +427,6 @@ luamplib          = luamplib or { }
 local luamplib    = luamplib
 
 luamplib.showlog  = luamplib.showlog or false
-luamplib.lastlog  = ""
 
 %    \end{macrocode}
 %
@@ -702,22 +701,34 @@ local preamble = [[
   input %s ;
 ]]
 
-local function luamplibresetlastlog()
-  luamplib.lastlog = ""
-end
-
-local function reporterror (result)
+local function reporterror (result, indeed)
   if not result then
     err("no result object returned")
   else
     local t, e, l = result.term, result.error, result.log
     local log = t or l or "no-term"
-    log = log:gsub("^%s+","\n")
-    luamplib.lastlog = luamplib.lastlog .. "\n" .. (l or t or "no-log")
+    log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
     if result.status > 0 then
-      warn("%s",log)
+      warn(log)
       if result.status > 1 then
-        err("%s",e or "see above messages")
+        err(e or "see above messages")
+      end
+    else
+%    \end{macrocode}
+%
+%    v2.6.1: now luamplib does not disregard |show| command,
+%    even when |luamplib.showlog| is false.  Incidentally,
+%    it does not raise error but just prints a warning,
+%    even if output has no figure.
+%    \begin{macrocode}
+      if log:find"\n>>" then
+        warn(log)
+      elseif log:find"%g" then
+        if luamplib.showlog then
+          info(log)
+        elseif indeed and not result.fig then
+          info(log)
+        end
       end
     end
     return log
@@ -784,23 +795,11 @@ local function process_indeed (mpx, data)
   local converted, result = false, {}
   if mpx and data then
     result = mpx:execute(data)
-    local log = reporterror(result)
+    local log = reporterror(result, true)
     if log then
-      if luamplib.showlog then
-        info("%s",luamplib.lastlog)
-        luamplibresetlastlog()
-      elseif result.fig then
-%    \end{macrocode}
-%
-%    v2.6.1: now luamplib does not disregard |show| command,
-%    even when |luamplib.showlog| is false.  Incidentally,
-%    it does not raise error but just prints a warning,
-%    even if output has no figure.
-%    \begin{macrocode}
-        if log:find("\n>>") then info("%s",log) end
+      if result.fig then
         converted = luamplib.convert(result)
       else
-        info("%s",log)
         warn("No figure output. Maybe no beginfig/endfig")
       end
     end
@@ -1960,7 +1959,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2020/02/24 v2.20.5 mplib package for LuaTeX]
+    [2020/12/30 v2.20.6 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
