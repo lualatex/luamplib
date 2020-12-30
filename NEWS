@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2020/12/30 2.20.6
+    * fix a bug regarding no figure output when luamplib.showlog is
+      true. (#91)
+    * now metapost `show' command triggers a warning message, so that
+      it could be shown on the console. (#91)
+
 2020/02/24 2.20.5
     * Extra check for \pdfliteral (PR #89)
     * allow expansion of \mpdim and \mpcolor when they are used in
