@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2021/03/11 2.20.7
+    * emegency patch for context metafun 2021-03-06
+
 2020/12/30 2.20.6
     * fix a bug regarding no figure output when luamplib.showlog is
       true. (#91)

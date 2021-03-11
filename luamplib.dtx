@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2020 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2021 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2020/12/30 v2.20.6 Interface for using the mplib library]%
+  [2021/03/11 v2.20.7 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2020/12/30 v2.20.6}
+% \date{2021/03/11 v2.20.7}
 %
 % \maketitle
 %
@@ -407,8 +407,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.6",
-  date          = "2020/12/30",
+  version       = "2.20.7",
+  date          = "2021/03/11",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -999,6 +999,21 @@ mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 
 %    \end{macrocode}
 %
+%    metafun 2021-03-09 changes crashes luamplib.
+%    \begin{macrocode}
+catcodes = catcodes or {}
+local catcodes = catcodes
+catcodes.numbers = catcodes.numbers or {}
+catcodes.numbers.ctxcatcodes = catcodes.numbers.ctxcatcodes or "0"
+catcodes.numbers.texcatcodes = catcodes.numbers.texcatcodes or "0"
+catcodes.numbers.luacatcodes = catcodes.numbers.luacatcodes or "0"
+catcodes.numbers.notcatcodes = catcodes.numbers.notcatcodes or "0"
+catcodes.numbers.vrbcatcodes = catcodes.numbers.vrbcatcodes or "0"
+catcodes.numbers.prtcatcodes = catcodes.numbers.prtcatcodes or "0"
+catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or "0"
+
+%    \end{macrocode}
+%
 %    A function from \ConTeXt\ general.
 %    \begin{macrocode}
 local function mpprint(buffer,...)
@@ -1034,8 +1049,12 @@ function luamplib.runscript (code)
     function mp.print(...)
       mpprint(buffer,...)
     end
-    f()
-    return tableconcat(buffer,"")
+    local result = f()
+    buffer = tableconcat(buffer,"")
+    if buffer and buffer ~= "" then
+      return buffer
+    end
+    return result or ""
   end
   return ""
 end
@@ -1959,7 +1978,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2020/12/30 v2.20.6 mplib package for LuaTeX]
+    [2021/03/11 v2.20.7 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
