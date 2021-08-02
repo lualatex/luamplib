@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2021/03/11 v2.20.7 Interface for using the mplib library]%
+  [2021/08/02 v2.20.8 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2021/03/11 v2.20.7}
+% \date{2021/08/02 v2.20.8}
 %
 % \maketitle
 %
@@ -382,6 +382,12 @@ See source file '\inFileName' for licencing and contact information.
 %   |btex ... etex| or |verbatimtex ... etex| are not expanded and will be fed
 %   literally into the mplib process.
 %
+% \paragraph{\cs{mplibshowlog}}
+%   When |\mplibshowlog{enable}| is declared, log messages returned by
+%   |mplib| instance will be printed into the |.log| file.
+%   |\mplibshowlog{disable}| will revert this functionality.
+%   This is a \TeX{} side interface for |luamplib.showlog|. (v2.20.8)
+%
 % \paragraph{luamplib.cfg}
 %   At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
@@ -407,8 +413,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.20.7",
-  date          = "2021/03/11",
+  version       = "2.20.8",
+  date          = "2021/08/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -701,19 +707,25 @@ local preamble = [[
   input %s ;
 ]]
 
+local logatload
 local function reporterror (result, indeed)
   if not result then
     err("no result object returned")
   else
     local t, e, l = result.term, result.error, result.log
-    local log = t or l or "no-term"
+%    \end{macrocode}
+%
+%    log has more information than term, so log first (2021/08/02)
+%    \begin{macrocode}
+    local log = l or t or "no-term"
     log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
     if result.status > 0 then
       warn(log)
       if result.status > 1 then
         err(e or "see above messages")
       end
-    else
+    elseif indeed then
+      local log = logatload..log
 %    \end{macrocode}
 %
 %    v2.6.1: now luamplib does not disregard |show| command,
@@ -726,10 +738,13 @@ local function reporterror (result, indeed)
       elseif log:find"%g" then
         if luamplib.showlog then
           info(log)
-        elseif indeed and not result.fig then
+        elseif not result.fig then
           info(log)
         end
       end
+      logatload = ""
+    else
+      logatload = log
     end
     return log
   end
@@ -1054,7 +1069,10 @@ function luamplib.runscript (code)
     if buffer and buffer ~= "" then
       return buffer
     end
-    return result or ""
+    buffer = {}
+    mpprint(buffer, result)
+    buffer = tableconcat(buffer)
+    return buffer
   end
   return ""
 end
@@ -1978,7 +1996,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2021/03/11 v2.20.7 mplib package for LuaTeX]
+    [2021/08/02 v2.20.8 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2053,8 +2071,7 @@ luamplib.colorconverter = colorconverter
 %
 %    The Plain-specific stuff.
 %    \begin{macrocode}
-\bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname selectfont\endcsname\relax
+\unless\ifcsname ver@luamplib.sty\endcsname
 \def\mplibcode{%
   \begingroup
   \begingroup
@@ -2097,6 +2114,14 @@ luamplib.colorconverter = colorconverter
 %
 %    User settings.
 %    \begin{macrocode}
+\def\mplibshowlog#1{\directlua{
+    local s = string.lower("#1")
+    if s == "enable" or s == "true" or s == "yes" then
+      luamplib.showlog = true
+    else
+      luamplib.showlog = false
+    end
+}}
 \def\mpliblegacybehavior#1{\directlua{
     local s = string.lower("#1")
     if s == "enable" or s == "true" or s == "yes" then
