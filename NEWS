@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2021/08/02 2.20.8
+    * when \mplibshowlog{enable} is declared, log (not term) messages
+      returned by mplib instance will be printed into the .log file.
+
 2021/03/11 2.20.7
     * emegency patch for context metafun 2021-03-06
 
