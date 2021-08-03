@@ -420,9 +420,15 @@ luatexbase.provides_module {
 
 local format, abs = string.format, math.abs
 
-local err  = function(...) return luatexbase.module_error  ("luamplib", format(...)) end
-local warn = function(...) return luatexbase.module_warning("luamplib", format(...)) end
-local info = function(...) return luatexbase.module_info   ("luamplib", format(...)) end
+local err  = function(...)
+  return luatexbase.module_error  ("luamplib", select("#",...) > 1 and format(...) or ...)
+end
+local warn = function(...)
+  return luatexbase.module_warning("luamplib", select("#",...) > 1 and format(...) or ...)
+end
+local info = function(...)
+  return luatexbase.module_info   ("luamplib", select("#",...) > 1 and format(...) or ...)
+end
 
 %    \end{macrocode}
 %
@@ -548,10 +554,10 @@ function luamplib.getcachedir(dir)
       if is_writable(dir) then
         luamplib.cachedir = dir
       else
-        warn("Directory '"..dir.."' is not writable!")
+        warn("Directory '%s' is not writable!", dir)
       end
     else
-      warn("Directory '"..dir.."' does not exist!")
+      warn("Directory '%s' does not exist!", dir)
     end
   end
 end
@@ -1020,13 +1026,13 @@ mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 catcodes = catcodes or {}
 local catcodes = catcodes
 catcodes.numbers = catcodes.numbers or {}
-catcodes.numbers.ctxcatcodes = catcodes.numbers.ctxcatcodes or "0"
-catcodes.numbers.texcatcodes = catcodes.numbers.texcatcodes or "0"
-catcodes.numbers.luacatcodes = catcodes.numbers.luacatcodes or "0"
-catcodes.numbers.notcatcodes = catcodes.numbers.notcatcodes or "0"
-catcodes.numbers.vrbcatcodes = catcodes.numbers.vrbcatcodes or "0"
-catcodes.numbers.prtcatcodes = catcodes.numbers.prtcatcodes or "0"
-catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or "0"
+catcodes.numbers.ctxcatcodes = catcodes.numbers.ctxcatcodes or catlatex
+catcodes.numbers.texcatcodes = catcodes.numbers.texcatcodes or catlatex
+catcodes.numbers.luacatcodes = catcodes.numbers.luacatcodes or catlatex
+catcodes.numbers.notcatcodes = catcodes.numbers.notcatcodes or catlatex
+catcodes.numbers.vrbcatcodes = catcodes.numbers.vrbcatcodes or catlatex
+catcodes.numbers.prtcatcodes = catcodes.numbers.prtcatcodes or catlatex
+catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or catlatex
 
 %    \end{macrocode}
 %
@@ -1065,15 +1071,14 @@ function luamplib.runscript (code)
     function mp.print(...)
       mpprint(buffer,...)
     end
-    local result = f()
-    buffer = tableconcat(buffer,"")
+    f()
+    buffer = tableconcat(buffer)
     if buffer and buffer ~= "" then
       return buffer
     end
     buffer = {}
-    mpprint(buffer, result)
-    buffer = tableconcat(buffer)
-    return buffer
+    mpprint(buffer, f())
+    return tableconcat(buffer)
   end
   return ""
 end
