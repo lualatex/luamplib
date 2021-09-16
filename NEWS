@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2021/09/16 2.21.0
+    * allow empty string in textext()
+
 2021/08/03 2.20.9
     * initialize every mplib instance with random integer seed values
 
