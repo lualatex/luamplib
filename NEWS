@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2021/11/23 2.21.1
+    * address #97 (typesetting fails with "--lua" option)
+
 2021/09/16 2.21.0
     * allow empty string in textext()
 
