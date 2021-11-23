@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2021/09/16 v2.21.0 Interface for using the mplib library]%
+  [2021/11/23 v2.21.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2021/09/16 v2.21.0}
+% \date{2021/11/23 v2.21.1}
 %
 % \maketitle
 %
@@ -413,8 +413,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.21.0",
-  date          = "2021/09/16",
+  version       = "2.21.1",
+  date          = "2021/11/23",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -669,8 +669,16 @@ end
 %    As the finder function for MPLib, use the |kpse| library and
 %    make it behave like as if MetaPost was used. And replace it with
 %    cache files if needed.
+%    See also \#74, \#97.
 %    \begin{macrocode}
-local mpkpse = kpse.new(arg[0], "mpost")
+local mpkpse
+do
+  local exe = 0
+  while arg[exe-1] do
+    exe = exe-1
+  end
+  mpkpse = kpse.new(arg[exe], "mpost")
+end
 
 local special_ftype = {
   pfb = "type1 fonts",
@@ -2003,7 +2011,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2021/09/16 v2.21.0 mplib package for LuaTeX]
+    [2021/11/23 v2.21.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
