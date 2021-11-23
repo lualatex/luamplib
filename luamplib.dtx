@@ -669,8 +669,16 @@ end
 %    As the finder function for MPLib, use the |kpse| library and
 %    make it behave like as if MetaPost was used. And replace it with
 %    cache files if needed.
+%    See also \#74, \#97.
 %    \begin{macrocode}
-local mpkpse = kpse.new(arg[0], "mpost")
+local mpkpse
+do
+  local exe = 0
+  while arg[exe-1] do
+    exe = exe-1
+  end
+  mpkpse = kpse.new(arg[exe], "mpost")
+end
 
 local special_ftype = {
   pfb = "type1 fonts",
