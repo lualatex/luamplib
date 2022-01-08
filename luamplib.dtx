@@ -846,7 +846,7 @@ end
 luamplib.codeinherit = false
 local mplibinstances = {}
 
-local function process (data)
+local function process (data, instancename)
 %    \end{macrocode}
 %
 %    The workaround of issue \#70 seems to be unnecessary, as we use
@@ -857,10 +857,17 @@ local function process (data)
 %    end
 %    \end{verbatim}
 %    \begin{macrocode}
-  local standalone = not luamplib.codeinherit
-  local currfmt = currentformat .. (luamplib.numbersystem or "scaled")
+  local defaultinstancename = currentformat .. (luamplib.numbersystem or "scaled")
     .. tostring(luamplib.textextlabel) .. tostring(luamplib.legacy_verbatimtex)
+  local currfmt = instancename or defaultinstancename
+  if #currfmt == 0 then
+    currfmt = defaultinstancename
+  end
   local mpx = mplibinstances[currfmt]
+  local standalone = false
+  if currfmt == defaultinstancename then
+    standalone = not luamplib.codeinherit
+  end
   if mpx and standalone then
     mpx:finish()
   end
@@ -1229,7 +1236,7 @@ local function unprotect_expansion (str)
   end
 end
 
-local function process_mplibcode (data)
+local function process_mplibcode (data, instancename)
 %    \end{macrocode}
 %
 %    This is needed for legacy behavior regarding |verbatimtex|
@@ -1283,7 +1290,7 @@ local function process_mplibcode (data)
     end)
   end
 
-  process(data)
+  process(data, instancename)
 end
 luamplib.process_mplibcode = process_mplibcode
 
@@ -2103,7 +2110,8 @@ luamplib.colorconverter = colorconverter
 %
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
-\newenvironment{mplibcode}{%
+\newenvironment{mplibcode}[1][]{%
+  \global\def\currentmpinstancename{#1}%
   \mplibtmptoks{}\ltxdomplibcode
 }{}
 \def\ltxdomplibcode{%
@@ -2117,7 +2125,7 @@ luamplib.colorconverter = colorconverter
   \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
   \def\mplibtemp@a{#2}%
   \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===])}%
+    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
     \end{mplibcode}%
   \else
     \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
