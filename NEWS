@@ -1,5 +1,13 @@
                        History of the luamplib package
 
+2022/01/09 2.22.0
+    * Sergey Slyusarev (@jemmybutton) has suggested and contributed
+    a new feature for LaTeX mplibcode environment, which now supports
+    separately named MetaPost instances.  Using this feature,
+    all the variables and functions are shared only among
+    all the environments belonging to the same instance.
+    (#99 and #100)
+
 2021/11/23 2.21.1
     * address #97 (typesetting fails with "--lua" option)
 

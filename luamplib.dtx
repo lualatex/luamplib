@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2021 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2022 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2021/11/23 v2.21.1 Interface for using the mplib library]%
+  [2022/01/09 v2.22.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2021/11/23 v2.21.1}
+% \date{2022/01/09 v2.22.0}
 %
 % \maketitle
 %
@@ -353,6 +353,28 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
+% \paragraph{Separate instances for \LaTeX{} environment}
+%   v2.22 has added the support for several named MetaPost instances
+%   in \LaTeX{} |mplibcode| environment.
+%   Syntax is like so:
+%   \begin{verbatim}
+%   \begin{mplibcode}[instanceName]
+%     % some mp code
+%   \end{mplibcode}
+%   \end{verbatim}
+%   Behaviour is as follows.
+%   \begin{itemize}
+%   \item  All the variables and functions are shared
+%     only among all the environments belonging to the same instance.
+%   \item  |\mplibcodeinherit| only affects environments
+%     with no instance name set (since if a name is set,
+%     the code is intended to be reused at some point).
+%   \item  |btex ... etex| labels still exist separately and
+%     require |\mplibglobaltextext|.
+%   \item  When an instance names is set,
+%     respective |\currentmpinstancename| is set.
+%   \end{itemize}
+%
 % \paragraph{\cs{mplibglobaltextext}}
 %   To inherit |btex ... etex| labels as well as metapost variables,
 %   it is necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
@@ -413,8 +435,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.21.1",
-  date          = "2021/11/23",
+  version       = "2.22.0",
+  date          = "2022/01/09",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2018,7 +2040,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2021/11/23 v2.21.1 mplib package for LuaTeX]
+    [2022/01/09 v2.22.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
