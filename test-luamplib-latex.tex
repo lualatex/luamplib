@@ -165,5 +165,59 @@ diameter:\Dia bp.%
   endfig;
 \end{mplibcode}%
 
+\vskip 2\baselineskip
+\mplibcodeinherit{disable}%
+
+\begin{mplibcode}[instanceOne]
+beginfig(1);
+a := 1cm;
+draw fullcircle scaled a;
+draw btex a circle with $d=a$ etex shifted (a,0);
+endfig;
+\end{mplibcode}%
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\begin{mplibcode}[instanceTwo]
+beginfig(1);
+if not known a:
+  draw btex code is not inherited from an instance with a different name etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+endfig;
+\end{mplibcode}%
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\begin{mplibcode}
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if instance name is not listed etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+a := 1cm;
+endfig;
+\end{mplibcode}%
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\begin{mplibcode}
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if mplibcodeinherit is disabled and instance name is not explicitly set etex;
+else:
+  errmessage("Variable was inherited when code inheritance is turned off and instance name is not set");
+fi;
+endfig;
+\end{mplibcode}%
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\begin{mplibcode}[instanceOne]
+beginfig(1);
+draw unitsquare scaled a;
+draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
+endfig;
+\end{mplibcode}%
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
 \tracingcommands0
 \end{document}
