@@ -269,9 +269,9 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{everymplib}, \cs{everyendmplib}}
 %   Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
-%   token lists \cs{everymplibtoks} and \cs{everyendmplibtoks} respectively,
+%   the lua table containing MetaPost code
 %   which will
-%   be automatically inserted at the beginning and ending of each mplib code.
+%   be automatically inserted at the beginning and ending of each |mplibcode|.
 %   \begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -377,7 +377,10 @@ See source file '\inFileName' for licencing and contact information.
 %   In parellel with this functionality, v2.23 and after supports
 %   optional argument of instance name for \cs{everymplib} and
 %   \cs{everyendmplib}, affecting only those |mplibcode| environments
-%   of the same name. Syntax is:
+%   of the same name.
+%   Unnamed \cs{everymplib} affects not only those instances with no name,
+%   but also those with name but with no corresponding \cs{everymplib}.
+%   Syntax is:
 %   \begin{verbatim}
 %     \everymplib[instanceName]{...}
 %     \everyendmplib[instanceName]{...}
@@ -1276,8 +1279,10 @@ local function process_mplibcode (data, instancename)
 %    \begin{macrocode}
   legacy_mplibcode_reset()
 
-  local everymplib    = luamplib.everymplib   [instancename] or ""
-  local everyendmplib = luamplib.everyendmplib[instancename] or ""
+  local everymplib    = luamplib.everymplib[instancename] or
+                        luamplib.everymplib[""]
+  local everyendmplib = luamplib.everyendmplib[instancename] or
+                        luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
