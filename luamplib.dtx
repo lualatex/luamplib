@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2022/01/09 v2.22.0 Interface for using the mplib library]%
+  [2022/01/12 v2.23.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2022/01/09 v2.22.0}
+% \date{2022/01/12 v2.23.0}
 %
 % \maketitle
 %
@@ -374,6 +374,14 @@ See source file '\inFileName' for licencing and contact information.
 %   \item  When an instance names is set,
 %     respective |\currentmpinstancename| is set.
 %   \end{itemize}
+%   In parellel with this functionality, v2.23 and after supports
+%   optional argument of instance name for \cs{everymplib} and
+%   \cs{everyendmplib}, affecting only those |mplibcode| environments
+%   of the same name. Syntax is:
+%   \begin{verbatim}
+%     \everymplib[instanceName]{...}
+%     \everyendmplib[instanceName]{...}
+%   \end{verbatim}
 %
 % \paragraph{\cs{mplibglobaltextext}}
 %   To inherit |btex ... etex| labels as well as metapost variables,
@@ -435,8 +443,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.22.0",
-  date          = "2022/01/09",
+  version       = "2.23.0",
+  date          = "2022/01/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1258,6 +1266,9 @@ local function unprotect_expansion (str)
   end
 end
 
+luamplib.everymplib    = { [""] = "" }
+luamplib.everyendmplib = { [""] = "" }
+
 local function process_mplibcode (data, instancename)
 %    \end{macrocode}
 %
@@ -1265,8 +1276,8 @@ local function process_mplibcode (data, instancename)
 %    \begin{macrocode}
   legacy_mplibcode_reset()
 
-  local everymplib    = texgettoks'everymplibtoks'    or ''
-  local everyendmplib = texgettoks'everyendmplibtoks' or ''
+  local everymplib    = luamplib.everymplib   [instancename] or ""
+  local everyendmplib = luamplib.everyendmplib[instancename] or ""
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
@@ -2040,7 +2051,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2022/01/09 v2.22.0 mplib package for LuaTeX]
+    [2022/01/12 v2.23.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2124,7 +2135,7 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdocode#1\endmplibcode{%
   \endgroup
-  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===])}%
+  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"")}%
   \endgroup
 }
 \else
@@ -2186,30 +2197,47 @@ luamplib.colorconverter = colorconverter
 \newtoks\mplibtmptoks
 %    \end{macrocode}
 %
-%    \cs{everymplib} \& \cs{everyendmplib}: macros redefining
-%    \cs{everymplibtoks} \& \cs{everyendmplibtoks} respectively
+%    \cs{everymplib} \& \cs{everyendmplib}: macros resetting
+%    |luamplib.every(end)mplib| tables
 %
 %    \begin{macrocode}
-\newtoks\everymplibtoks
-\newtoks\everyendmplibtoks
 \protected\def\everymplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeverymplib
-}
-\long\def\mplibdoeverymplib#1{%
-  \endgroup
-  \everymplibtoks{#1}%
 }
 \protected\def\everyendmplib{%
   \begingroup
   \mplibsetupcatcodes
   \mplibdoeveryendmplib
 }
-\long\def\mplibdoeveryendmplib#1{%
-  \endgroup
-  \everyendmplibtoks{#1}%
-}
+\ifcsname ver@luamplib.sty\endcsname
+  \newcommand\mplibdoeverymplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+  \newcommand\mplibdoeveryendmplib[2][]{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
+    }%
+  }
+\else
+  \long\def\mplibdoeverymplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everymplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+  \long\def\mplibdoeveryendmplib#1{%
+    \endgroup
+    \directlua{
+      luamplib.everyendmplib[""] = [===[\unexpanded{#1}]===]
+    }%
+  }
+\fi
 %    \end{macrocode}
 %
 %    Allow \TeX\ dimen/color macros. Now |runscript| does the job,

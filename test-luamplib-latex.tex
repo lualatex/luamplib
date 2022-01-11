@@ -169,12 +169,13 @@ diameter:\Dia bp.%
 \vskip 2\baselineskip
 \mplibcodeinherit{disable}%
 
+\everymplib[instanceOne]{beginfig(1);}
+\everyendmplib[instanceOne]{endfig;}
+
 \begin{mplibcode}[instanceOne]
-beginfig(1);
 a := 1cm;
 draw fullcircle scaled a;
 draw btex a circle with $d=a$ etex shifted (a,0);
-endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
@@ -213,10 +214,8 @@ endfig;
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
 \begin{mplibcode}[instanceOne]
-beginfig(1);
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
-endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
