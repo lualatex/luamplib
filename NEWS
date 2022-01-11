@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2022/01/12 2.23.0
+    In parellel with the functionality introduced at previous version,
+    \everymplib (\everyendmplib as well, of course) supports
+    optional argument of named MetaPost instance, affecting only those
+    mplibcode environments of the same name.
+
 2022/01/09 2.22.0
     * Sergey Slyusarev (@jemmybutton) has suggested and contributed
     a new feature for LaTeX mplibcode environment, which now supports
