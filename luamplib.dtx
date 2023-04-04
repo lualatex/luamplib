@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2022 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2023 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by the LuaLaTeX development team.
 % Support: <lualatex-dev@tug.org>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2022/01/12 v2.23.0 Interface for using the mplib library]%
+  [2023/04/04 v2.24.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2022/01/12 v2.23.0}
+% \date{2023/04/04 v2.24.0}
 %
 % \maketitle
 %
@@ -446,8 +446,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.23.0",
-  date          = "2022/01/12",
+  version       = "2.24.0",
+  date          = "2023/04/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -720,17 +720,24 @@ local special_ftype = {
 
 local function finder(name, mode, ftype)
   if mode == "w" then
+    if name and name ~= "mpout.log" then
+      kpse.record_output_file(name) -- recorder
+    end
     return name
   else
     ftype = special_ftype[ftype] or ftype
     local file = mpkpse:find_file(name,ftype)
     if file then
-      if not lfstouch or ftype ~= "mp" or noneedtoreplace[name] then
-        return file
+      if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
+        file = replaceinputmpfile(name,file)
       end
-      return replaceinputmpfile(name,file)
+    else
+      file = mpkpse:find_file(name, name:match("%a+$"))
     end
-    return mpkpse:find_file(name, name:match("%a+$"))
+    if file then
+      kpse.record_input_file(file) -- recorder
+    end
+    return file
   end
 end
 luamplib.finder = finder
@@ -2056,7 +2063,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2022/01/12 v2.23.0 mplib package for LuaTeX]
+    [2023/04/04 v2.24.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

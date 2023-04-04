@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/04/04 2.24.0
+    respect '-recorder' command-line option
+
 2022/01/12 2.23.0
     In parellel with the functionality introduced at previous version,
     \everymplib (\everyendmplib as well, of course) supports
