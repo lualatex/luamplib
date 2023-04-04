@@ -3,6 +3,7 @@
 *.aux
 *.out
 *.fdb_latexmk
+*.hd
 
 # generated files
 *.pdf
@@ -10,3 +11,4 @@
 *.lua
 *.zip
 *.mp
+*.fls
