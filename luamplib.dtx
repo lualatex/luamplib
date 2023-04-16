@@ -517,9 +517,6 @@ local file = file or { }
 local replacesuffix = file.replacesuffix or function(filename, suffix)
   return (filename:gsub("%.[%a%d]+$","")) .. "." .. suffix
 end
-local stripsuffix = file.stripsuffix or function(filename)
-  return (filename:gsub("%.[%a%d]+$",""))
-end
 
 local is_writable = file.is_writable or function(name)
   if lfsisdir(name) then
