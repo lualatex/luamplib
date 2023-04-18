@@ -1546,7 +1546,7 @@ local pdf_objs = {}
 local token, getpageres, setpageres = newtoken or token
 local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
-if pdfmode then -- repect luaotfload-colors
+if pdfmode then -- respect luaotfload-colors
   getpageres = pdf.getpageresources or function() return pdf.pageresources end
   setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 else
