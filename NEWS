@@ -1,6 +1,10 @@
                        History of the luamplib package
 
-2024/04/04 2.24.0
+2023/08/07 2.25.0
+    * propagate tex's jobname varible into mplib process as well.
+    * protect "..." if and only if textextlabel is enabled.
+
+2023/04/04 2.24.0
     respect '-recorder' command-line option
 
 2022/01/12 2.23.0
