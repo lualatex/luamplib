@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2023/12/08 2.25.2
+    * info instead of warning when compiling with dviluatex
+
 2023/08/21 2.25.1
     * explicit \par in \mplibstoptoPDF to support LaTeX's paragraph hooks
 

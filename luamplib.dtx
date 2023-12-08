@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2023/08/21 v2.25.1 Interface for using the mplib library]%
+  [2023/12/08 v2.25.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2023/08/21 v2.25.1}
+% \date{2023/12/08 v2.25.2}
 %
 % \maketitle
 %
@@ -446,8 +446,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.25.1",
-  date          = "2023/08/21",
+  version       = "2.25.2",
+  date          = "2023/12/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2065,7 +2065,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2023/08/21 v2.25.1 mplib package for LuaTeX]
+    [2023/12/08 v2.25.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2101,17 +2101,17 @@ luamplib.colorconverter = colorconverter
 %
 %    luamplib works in both PDF and DVI mode,
 %    but only DVIPDFMx is supported currently among a number of DVI tools.
-%    So we output a warning.
+%    So we output a info.
 %    \begin{macrocode}
 \ifnum\pdfoutput>0
   \let\mplibtoPDF\pdfliteral
 \else
   \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
-  \ifcsname PackageWarning\endcsname
-    \PackageWarning{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
+  \ifcsname PackageInfo\endcsname
+    \PackageInfo{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
   \else
     \write128{}
-    \write128{luamplib Warning: take dvipdfmx path, no support for other dvi tools currently.}
+    \write128{luamplib Info: take dvipdfmx path, no support for other dvi tools currently.}
     \write128{}
   \fi
 \fi
