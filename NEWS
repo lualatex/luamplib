@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/01/25 2.25.3
+    * protect "..." even if textextlabel is disabled (revert part of v2.25.0)
+
 2023/12/08 2.25.2
     * info instead of warning when compiling with dviluatex
 
