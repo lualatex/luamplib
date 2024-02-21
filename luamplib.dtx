@@ -549,8 +549,8 @@ local currenttime = os.time()
 
 local outputdir
 if lfstouch then
-  local texmfvar = kpse.expand_var('$TEXMFVAR')
-  if texmfvar and texmfvar ~= "" and texmfvar ~= '$TEXMFVAR' then
+  local texmfvar = kpse.var_value'TEXMFVAR'
+  if texmfvar and texmfvar ~= "" then
     for _,dir in next, texmfvar:explode(os.type == "windows" and ";" or ":") do
       if not lfsisdir(dir) then
         mk_full_path(dir)
@@ -565,14 +565,7 @@ if lfstouch then
   end
 end
 if not outputdir then
-  outputdir = "."
-  for _,v in ipairs(arg) do
-    local t = v:match("%-output%-directory=(.+)")
-    if t then
-      outputdir = t
-      break
-    end
-  end
+  outputdir = kpse.var_value'TEXMF_OUTPUT_DIRECTORY' or "."
 end
 
 function luamplib.getcachedir(dir)
@@ -610,7 +603,7 @@ local noneedtoreplace = {
   ["mp-grph.mpiv"] = true, ["mp-idea.mpiv"] = true, ["mp-luas.mpiv"] = true,
   ["mp-mlib.mpiv"] = true, ["mp-node.mpiv"] = true, ["mp-page.mpiv"] = true,
   ["mp-shap.mpiv"] = true, ["mp-step.mpiv"] = true, ["mp-text.mpiv"] = true,
-  ["mp-tool.mpiv"] = true,
+  ["mp-tool.mpiv"] = true, ["mp-cont.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
