@@ -528,7 +528,7 @@ local is_writable = file.is_writable or function(name)
     end
   end
 end
-local mk_full_path = lfs.mkdirs or function(path)
+local mk_full_path = lfs.mkdirp or lfs.mkdirs or function(path)
   local full = ""
   for sub in path:gmatch("(/*[^\\/]+)") do
     full = full .. sub
@@ -549,23 +549,24 @@ local currenttime = os.time()
 
 local outputdir
 if lfstouch then
-  local texmfvar = kpse.var_value'TEXMFVAR'
-  if texmfvar and texmfvar ~= "" then
-    for _,dir in next, texmfvar:explode(os.type == "windows" and ";" or ":") do
-      if not lfsisdir(dir) then
-        mk_full_path(dir)
+  local cache = "luamplib_cache"
+  local tabl  = {'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','TEXMFOUTPUT','.'}
+  for i,v in ipairs(tabl) do
+    local var = i == #tabl and v or kpse.var_value(v)
+    if var and var ~= "" then
+      for _,vv in next, var:explode(os.type == "unix" and ":" or ";") do
+        local dir = format("%s/%s",vv,cache)
+        if not lfsisdir(dir) then
+          mk_full_path(dir)
+        end
+        if is_writable(dir) then
+          outputdir = dir
+          break
+        end
       end
-      if is_writable(dir) then
-        local cached = format("%s/luamplib_cache",dir)
-        lfsmkdir(cached)
-        outputdir = cached
-        break
-      end
+      if outputdir then break end
     end
   end
-end
-if not outputdir then
-  outputdir = kpse.var_value'TEXMF_OUTPUT_DIRECTORY' or "."
 end
 
 function luamplib.getcachedir(dir)
