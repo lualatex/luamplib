@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/01/25 v2.25.3 Interface for using the mplib library]%
+  [2024/03/01 v2.26.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/01/25 v2.25.3}
+% \date{2024/03/01 v2.26.0}
 %
 % \maketitle
 %
@@ -328,8 +328,13 @@ See source file '\inFileName' for licencing and contact information.
 %   |$TEXMFMAIN/metapost/context/base| are already registered by default.
 %
 %   By default, cache files will be stored in |$TEXMFVAR/luamplib_cache| or,
-%   if it's not available, in the same directory as where pdf/dvi output file
-%   is saved. This however can be changed by the command
+%   if it's not available (mostly not writable),
+%   in the directory where output files are saved:
+%   to be specific, |$TEXMF_OUTPUT_DIRECTORY/luamplib_cache|,
+%   |./luamplib_cache|, |$TEXMFOUTPUT/luamplib_cache|, and |.| in this order.
+%   (|$TEXMF_OUTPUT_DIRECTORY| is normally the value of |--output-directory|
+%   command-line option.)
+%   This behavior however can be changed by the command
 %   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
 %   as the user's home directory (on a windows machine as well).
 %   As backslashes (|\|) should be escaped by users, it would be easier to use
@@ -446,8 +451,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.25.3",
-  date          = "2024/01/25",
+  version       = "2.26.0",
+  date          = "2024/03/01",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -528,7 +533,7 @@ local is_writable = file.is_writable or function(name)
     end
   end
 end
-local mk_full_path = lfs.mkdirs or function(path)
+local mk_full_path = lfs.mkdirp or lfs.mkdirs or function(path)
   local full = ""
   for sub in path:gmatch("(/*[^\\/]+)") do
     full = full .. sub
@@ -549,31 +554,24 @@ local currenttime = os.time()
 
 local outputdir
 if lfstouch then
-  local texmfvar = kpse.expand_var('$TEXMFVAR')
-  if texmfvar and texmfvar ~= "" and texmfvar ~= '$TEXMFVAR' then
-    for _,dir in next, texmfvar:explode(os.type == "windows" and ";" or ":") do
-      if not lfsisdir(dir) then
-        mk_full_path(dir)
+  for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
+    local var = i == 3 and v or kpse.var_value(v)
+    if var and var ~= "" then
+      for _,vv in next, var:explode(os.type == "unix" and ":" or ";") do
+        local dir = format("%s/%s",vv,"luamplib_cache")
+        if not lfsisdir(dir) then
+          mk_full_path(dir)
+        end
+        if is_writable(dir) then
+          outputdir = dir
+          break
+        end
       end
-      if is_writable(dir) then
-        local cached = format("%s/luamplib_cache",dir)
-        lfsmkdir(cached)
-        outputdir = cached
-        break
-      end
+      if outputdir then break end
     end
   end
 end
-if not outputdir then
-  outputdir = "."
-  for _,v in ipairs(arg) do
-    local t = v:match("%-output%-directory=(.+)")
-    if t then
-      outputdir = t
-      break
-    end
-  end
-end
+outputdir = outputdir or '.'
 
 function luamplib.getcachedir(dir)
   dir = dir:gsub("##","#")
@@ -610,7 +608,7 @@ local noneedtoreplace = {
   ["mp-grph.mpiv"] = true, ["mp-idea.mpiv"] = true, ["mp-luas.mpiv"] = true,
   ["mp-mlib.mpiv"] = true, ["mp-node.mpiv"] = true, ["mp-page.mpiv"] = true,
   ["mp-shap.mpiv"] = true, ["mp-step.mpiv"] = true, ["mp-text.mpiv"] = true,
-  ["mp-tool.mpiv"] = true,
+  ["mp-tool.mpiv"] = true, ["mp-cont.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
 
@@ -2061,7 +2059,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/01/25 v2.25.3 mplib package for LuaTeX]
+    [2024/03/01 v2.26.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

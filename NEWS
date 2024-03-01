@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2024/03/01 2.26.0
+    * when \mplibcachedir{<dir>} is not set, default cache directory will
+    be in the following order:
+	$TEXMFVAR/luamplib_cache
+	$TEXMF_OUTPUT_DIRECTORY/luamplib_cache
+	./luamplib_cache
+	$TEXMFOUTPUT/luamplib_cache
+	.
+
 2024/01/25 2.25.3
     * protect "..." even if textextlabel is disabled (revert part of v2.25.0)
 
