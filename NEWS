@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/03/03 2.26.1
+    * cope with mp.report warning produced by 'message' under metafun
+
 2024/03/01 2.26.0
     * when \mplibcachedir{<dir>} is not set, default cache directory will
     be in the following order:

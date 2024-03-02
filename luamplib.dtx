@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/01 v2.26.0 Interface for using the mplib library]%
+  [2024/03/03 v2.26.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/01 v2.26.0}
+% \date{2024/03/03 v2.26.1}
 %
 % \maketitle
 %
@@ -451,8 +451,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.26.0",
-  date          = "2024/03/01",
+  version       = "2.26.1",
+  date          = "2024/03/03",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1069,6 +1069,8 @@ mp = mp or {}
 local mp = mp
 mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
+mp.report = mp.report or info
+
 
 %    \end{macrocode}
 %
@@ -2059,7 +2061,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/01 v2.26.0 mplib package for LuaTeX]
+    [2024/03/03 v2.26.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
