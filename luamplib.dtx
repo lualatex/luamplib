@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/01 v2.26.0 Interface for using the mplib library]%
+  [2024/03/04 v2.26.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/01 v2.26.0}
+% \date{2024/03/04 v2.26.1}
 %
 % \maketitle
 %
@@ -300,9 +300,12 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
 %   enviroment (after |withcolor| operator),
 %   though \textsf{luamplib} does not automatically load these
-%   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
+%   packages. See the example code above. For spot colors,
+%   \textsf{colorspace}, \textsf{spotcolor}
 %   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
 %   as well.
+%
+%   From v2.26.1, \textsf{l3color} is also supported by the command \cs{mpcolor}.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -451,8 +454,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.26.0",
-  date          = "2024/03/01",
+  version       = "2.26.1",
+  date          = "2024/03/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -978,17 +981,33 @@ end
 %    Make |color| or |xcolor|'s color expressions usable,
 %    with \cs{mpcolor} or |mplibcolor|. These commands should be used
 %    with graphical objects.
+%
+%    Attempt to support l3color as well.
 %    \begin{macrocode}
-local mplibcolor_fmt = [[\begingroup\let\XC@mcolor\relax]]..
+local mplibcolorfmt = {
+  xcolor = [[\begingroup\let\XC@mcolor\relax]]..
   [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color %s \endgroup]]
+  [[\color %s\endgroup]],
+  l3color = [[\begingroup\color_if_exist:nTF %s]]..
+  [[{\def\__color_select:N #1{\expandafter\__color_select:nn #1}]]..
+  [[\def\__color_backend_select:nn #1#2{\global\mplibtmptoks{#1~#2}}]]..
+  [[\color_select:n %s}]]..
+  [[{\let\XC@mcolor\relax]]..
+  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
+  [[\color %s}\endgroup]],
+}
 
 local function process_color (str)
   if str then
     if not str:find("{.-}") then
       str = format("{%s}",str)
     end
-    run_tex_code(mplibcolor_fmt:format(str), catat11)
+    local myfmt = luamplib.cctabexplat and mplibcolorfmt.l3color or mplibcolorfmt.xcolor
+    local mod = str:match("(.-){.*}")
+    if mod and mod ~= "" then
+      myfmt = mplibcolorfmt.xcolor
+    end
+    run_tex_code(myfmt:format(str,str,str), luamplib.cctabexplat or catat11)
     return format('1 withprescript "MPlibOverrideColor=%s"', texgettoks"mplibtmptoks")
   end
   return ""
@@ -1069,6 +1088,8 @@ mp = mp or {}
 local mp = mp
 mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
+mp.report = mp.report or info
+
 
 %    \end{macrocode}
 %
@@ -1288,10 +1309,6 @@ local function process_mplibcode (data, instancename)
                         luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
-
-  data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
-  data = data:gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
-  data = data:gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
 
   data = data:gsub(btex_etex, function(str)
     return format("btex %s etex ", -- space
@@ -2059,7 +2076,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/01 v2.26.0 mplib package for LuaTeX]
+    [2024/03/04 v2.26.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2252,9 +2269,21 @@ luamplib.colorconverter = colorconverter
 %    so the following lines are not needed for most cases.
 %    But the macros will be expanded when they are used in another macro.
 %    \begin{macrocode}
-\def\mpdim#1{ mplibdimen("#1") }
+\def\mpdim#1{ runscript("luamplibdimen{#1}") }
+\ifdefined\IfDocumentMetadataTF
+  \IfDocumentMetadataTF{
+    \newcatcodetable\catcodetable@explat
+    \directlua{ luamplib.cctabexplat = \the\allocationnumber }
+    \begingroup
+    \ExplSyntaxOn
+    \catcode`@=11
+    \savecatcodetable\catcodetable@explat
+    \ExplSyntaxOff
+    \endgroup
+  }{}
+\fi
 \def\mpcolor#1#{\domplibcolor{#1}}
-\def\domplibcolor#1#2{ mplibcolor("#1{#2}") }
+\def\domplibcolor#1#2{ runscript("luamplibcolor{#1{#2}}") }
 %    \end{macrocode}
 %
 %    MPLib's number system. Now |binary| has gone away.
