@@ -295,7 +295,7 @@ See source file '\inFileName' for licencing and contact information.
 %   automatically protects \TeX\ code inbetween, \cs{btex} is not supported
 %   here.
 %
-% \paragraph{\cs{mpcolor}}
+% \paragraph{\cs{mpcolor}, \cs{mpcoloriii}}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}/\textsf{xcolor} packages can be used inside mplibcode
 %   enviroment (after |withcolor| operator),
@@ -303,6 +303,8 @@ See source file '\inFileName' for licencing and contact information.
 %   packages. See the example code above. For spot colors, \textsf{(x)spotcolor}
 %   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
 %   as well.
+%
+%   From v2.26.1, \textsf{l3color} is supported by the command \cs{mpcoloriii}.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -921,6 +923,7 @@ end
 %    \begin{macrocode}
 local catlatex = luatexbase.registernumber("catcodetable@latex")
 local catat11  = luatexbase.registernumber("catcodetable@atletter")
+local catl3  = luatexbase.registernumber("c_code_cctab")
 
 %    \end{macrocode}
 %
@@ -995,6 +998,22 @@ local function process_color (str)
 end
 
 %    \end{macrocode}
+%    Attempt to support l3color.
+%    \begin{macrocode}
+local l3color_fmt = [[\begingroup]]..
+[[\def\__color_select:N #1{\expandafter\__color_select:nn #1}]]..
+[[\def\__color_backend_select:nn #1#2{\global\mplibtmptoks{#1~#2}}]]..
+[[\color_select:n {%s}\endgroup]]
+
+local function process_l3color (str)
+  if str then
+    run_tex_code(l3color_fmt:format(str), catl3)
+    return format('1 withprescript "MPlibOverrideColor=%s"', texgettoks"mplibtmptoks")
+  end
+  return ""
+end
+
+%    \end{macrocode}
 %
 %    \cs{mpdim} is expanded before MPLib process, so code below will not be
 %    used for |mplibcode| data. But who knows anyone would want it
@@ -1055,6 +1074,7 @@ end
 local runscript_funcs = {
   luamplibtext    = process_tex_text,
   luamplibcolor   = process_color,
+  luamplibl3color   = process_l3color,
   luamplibdimen   = process_dimen,
   luamplibprefig  = process_verbatimtex_prefig,
   luamplibinfig   = process_verbatimtex_infig,
@@ -1182,8 +1202,6 @@ end
 local mplibcodepreamble = [[
 texscriptmode := 2;
 def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
-def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
-def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
 def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
@@ -1290,10 +1308,6 @@ local function process_mplibcode (data, instancename)
                         luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
-
-  data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
-  data = data:gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
-  data = data:gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
 
   data = data:gsub(btex_etex, function(str)
     return format("btex %s etex ", -- space
@@ -2254,9 +2268,10 @@ luamplib.colorconverter = colorconverter
 %    so the following lines are not needed for most cases.
 %    But the macros will be expanded when they are used in another macro.
 %    \begin{macrocode}
-\def\mpdim#1{ mplibdimen("#1") }
+\def\mpdim#1{ runscript("luamplibdimen{#1}") }
 \def\mpcolor#1#{\domplibcolor{#1}}
-\def\domplibcolor#1#2{ mplibcolor("#1{#2}") }
+\def\domplibcolor#1#2{ runscript("luamplibcolor{#1{#2}}") }
+\def\mpcoloriii#1{ runscript("luamplibl3color{#1}") }
 %    \end{macrocode}
 %
 %    MPLib's number system. Now |binary| has gone away.

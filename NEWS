@@ -1,6 +1,7 @@
                        History of the luamplib package
 
 2024/03/03 2.26.1
+    * attempt to support l3color: \mpcoloriii{color expression}
     * cope with mp.report warning produced by 'message' under metafun
 
 2024/03/01 2.26.0
