@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/03/04 2.26.2
+    * color expressions ('red!50') are supported with xcolor package only
+
 2024/03/04 2.26.1
     * attempt to support l3color: \mpcolor{color expression}
     * cope with mp.report warning produced by 'message' under metafun
