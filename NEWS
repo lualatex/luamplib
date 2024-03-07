@@ -1,8 +1,8 @@
                        History of the luamplib package
 
 2024/03/09 2.26.3
-    * color expressions of l3color are supported as well, if xcolor package
-    is NOT loaded.
+    * color expressions of l3color are supported as well.
+    But they are regarded as xcolor's expressions if xcolor package is loaded.
     * support pdfmanagement's opacity and shading management.
 
 2024/03/04 2.26.2
