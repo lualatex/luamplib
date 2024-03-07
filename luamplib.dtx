@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/04 v2.26.2 Interface for using the mplib library]%
+  [2024/03/07 v2.26.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/04 v2.26.2}
+% \date{2024/03/07 v2.26.3}
 %
 % \maketitle
 %
@@ -306,8 +306,9 @@ See source file '\inFileName' for licencing and contact information.
 %   as well.
 %
 %   From v2.26.1, \textsf{l3color} is also supported by the command
-%   \cs{mpcolor}, color expressions (|red!50|) being supported with
-%   \textsf{xcolor} package only.
+%   \cs{mpcolor\{color expression\}}.
+%   But color expressions (|red!50|) are regarded as \textsf{xcolor}'s
+%   expressions if \textsf{xcolor} package is loaded.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -456,8 +457,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.26.2",
-  date          = "2024/03/04",
+  version       = "2.26.3",
+  date          = "2024/03/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -989,28 +990,51 @@ end
 local mplibcolorfmt = {
   xcolor = [[\begingroup\let\XC@mcolor\relax]]..
   [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color %s\endgroup]],
-  l3color = [[\begingroup\color_if_exist:nTF %s]]..
-  [[{\def\__color_select:N #1{\expandafter\__color_select:nn #1}]]..
-  [[\def\__color_backend_select:nn #1#2{\global\mplibtmptoks{#1~#2}}]]..
-  [[\color_select:n %s}]]..
-  [[{\let\XC@mcolor\relax]]..
+  [[\color%s\endgroup]],
+  l3color = [[\begingroup]]..
+  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
+  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
+  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
+  [[\color_select:n%s\endgroup]],
+  l3xcolor = [[\begingroup\color_if_exist:nTF%s{]]..
+  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
+  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
+  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
+  [[\color_select:n%s}{\let\XC@mcolor\relax]]..
   [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color %s}\endgroup]],
+  [[\color%s}\endgroup]],
 }
+
+local colfmt = token.is_defined'color_select:n' and "l3color" or "xcolor"
+if colfmt == "l3color" then
+  run_tex_code{
+    "\\newcatcodetable\\luamplibcctabexplat",
+    "\\begingroup",
+    "\\catcode`@=11 ",
+    "\\catcode`_=11 ",
+    "\\catcode`:=11 ",
+    "\\savecatcodetable\\luamplibcctabexplat",
+    "\\endgroup",
+  }
+end
+
+local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
 local function process_color (str)
   if str then
-    if not str:find("{.-}") then
+    if colfmt == "l3color" and token.is_defined"ver@xcolor.sty" then
+      colfmt = "l3xcolor"
+    end
+    local myfmt = mplibcolorfmt[colfmt]
+    if not str:find("%b{}") then
       str = format("{%s}",str)
     end
-    local myfmt = luamplib.cctabexplat and mplibcolorfmt.l3color or mplibcolorfmt.xcolor
-    local mod = str:match("(.-){.*}")
-    if mod and mod ~= "" then
+    if str:find("%b[]") then
       myfmt = mplibcolorfmt.xcolor
     end
-    run_tex_code(myfmt:format(str,str,str), luamplib.cctabexplat or catat11)
-    return format('1 withprescript "MPlibOverrideColor=%s"', texgettoks"mplibtmptoks")
+    run_tex_code(myfmt:format(str,str,str), ccexplat or catat11)
+    local t = texgettoks"mplibtmptoks"
+    return format('1 withprescript "MPlibOverrideColor=%s"', t)
   end
   return ""
 end
@@ -1312,6 +1336,15 @@ local function process_mplibcode (data, instancename)
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   data = data:gsub("\r","\n")
 
+%    \end{macrocode}
+%    This three lines are needed for |mplibverbatim| mode.
+%    \begin{macrocode}
+  if luamplib.verbatiminput then
+    data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
+    data = data:gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
+    data = data:gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
+  end
+
   data = data:gsub(btex_etex, function(str)
     return format("btex %s etex ", -- space
       luamplib.verbatiminput and str or protect_expansion(str))
@@ -1334,7 +1367,7 @@ local function process_mplibcode (data, instancename)
     data = data:gsub("%%.-\n","")
     data = data:gsub("%zPerCent%z", "\\%%")
 
-    run_tex_code(format("\\mplibtmptoks\\expanded{{%s}}",data))
+    run_tex_code(format("\\mplibtmptoks\\expandafter{\\expanded{%s}}",data))
     data = texgettoks"mplibtmptoks"
 %    \end{macrocode}
 %
@@ -1557,11 +1590,13 @@ end
 %
 %    Colors and Transparency
 %    \begin{macrocode}
+local pdfmanagement = token.is_defined'pdfmanagement_add:nnn'
+
 local pdf_objs = {}
-local token, getpageres, setpageres = newtoken or token
+local getpageres, setpageres
 local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
-if pdfmode then -- respect luaotfload-colors
+if pdfmode then
   getpageres = pdf.getpageresources or function() return pdf.pageresources end
   setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 else
@@ -1597,9 +1632,19 @@ local function update_tr_res(res,mode,opaq)
   local on, new = update_pdfobjs(os)
   if new then
     if pdfmode then
-      res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+      if pdfmanagement then
+        texsprint(ccexplat,format(
+        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s 0 R}]],
+        on,on))
+      else
+        res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+      end
     else
-      if pgf.loaded then
+      if pdfmanagement then
+        texsprint(ccexplat,format(
+        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s}]],
+        on,os))
+      elseif pgf.loaded then
         texsprint(format("\\csname %s\\endcsname{/MPlibTr%i%s}", pgf.extgs, on, os))
       else
         texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
@@ -1610,13 +1655,14 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  if token and pgf.bye and not pgf.loaded then
-    pgf.loaded = token.create(pgf.bye).cmdname == "assign_toks"
+  if not pgf.loaded and pgf.bye then
+    pgf.loaded = token.is_defined(pgf.bye)
     pgf.bye    = pgf.loaded and pgf.bye
   end
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
+  if pdfmanagement then return on_on, off_on end
   if pdfmode then
     if res ~= "" then
       if pgf.loaded then
@@ -1657,7 +1703,7 @@ local function shading_initialize ()
 end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordinates)
-  if not shading_res then shading_initialize() end
+  if not pdfmanagement and not shading_res then shading_initialize() end
   local os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
                     domain, colora, colorb)
   local funcobj = pdfmode and format("%i 0 R",update_pdfobjs(os)) or os
@@ -1666,23 +1712,37 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
   local on, new = update_pdfobjs(os)
   if pdfmode then
     if new then
-      local res = format("/MPlibSh%i %i 0 R", on, on)
-      if pdf_objs.finishpdf then
-        shading_res[#shading_res+1] = res
+      if pdfmanagement then
+        texsprint(ccexplat,format(
+        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{%s 0 R}]],
+        on,on))
       else
-        local pageres = getpageres() or ""
-        if not pageres:find("/Shading<<.*>>") then
-          pageres = pageres.."/Shading<<>>"
+        local res = format("/MPlibSh%i %i 0 R", on, on)
+        if pdf_objs.finishpdf then
+          shading_res[#shading_res+1] = res
+        else
+          local pageres = getpageres() or ""
+          if not pageres:find("/Shading<<.*>>") then
+            pageres = pageres.."/Shading<<>>"
+          end
+          pageres = pageres:gsub("/Shading<<","%1"..res)
+          setpageres(pageres)
         end
-        pageres = pageres:gsub("/Shading<<","%1"..res)
-        setpageres(pageres)
       end
     end
   else
-    if new then
-      texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i%s>>}",on,os))
+    if pdfmanagement then
+      if new then
+        texsprint(ccexplat,format(
+        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{%s}]],
+        on,os))
+      end
+    else
+      if new then
+        texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i%s>>}",on,os))
+      end
+      texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
     end
-    texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
   end
   return on
 end
@@ -1724,7 +1784,11 @@ local function do_preobj_color(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      texsprint(format("\\special{color push %s}",override))
+      if override:find"^pdf:" then
+        texsprint(format("\\special{%s}",override))
+      else
+        texsprint(format("\\special{color push %s}",override))
+      end
       prev_override_color = override
     end
   else
@@ -2078,7 +2142,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/04 v2.26.2 mplib package for LuaTeX]
+    [2024/03/07 v2.26.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2272,18 +2336,6 @@ luamplib.colorconverter = colorconverter
 %    But the macros will be expanded when they are used in another macro.
 %    \begin{macrocode}
 \def\mpdim#1{ runscript("luamplibdimen{#1}") }
-\ifdefined\IfDocumentMetadataTF
-  \IfDocumentMetadataTF{
-    \newcatcodetable\catcodetable@explat
-    \directlua{ luamplib.cctabexplat = \the\allocationnumber }
-    \begingroup
-    \ExplSyntaxOn
-    \catcode`@=11
-    \savecatcodetable\catcodetable@explat
-    \ExplSyntaxOff
-    \endgroup
-  }{}
-\fi
 \def\mpcolor#1#{\domplibcolor{#1}}
 \def\domplibcolor#1#2{ runscript("luamplibcolor{#1{#2}}") }
 %    \end{macrocode}
