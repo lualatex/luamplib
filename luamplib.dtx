@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/09 v2.26.3 Interface for using the mplib library]%
+  [2024/03/07 v2.26.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/09 v2.26.3}
+% \date{2024/03/07 v2.26.3}
 %
 % \maketitle
 %
@@ -307,8 +307,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   From v2.26.1, \textsf{l3color} is also supported by the command
 %   \cs{mpcolor\{color expression\}}.
-%   But, color expressions (|red!50|) are supported with
-%   \textsf{xcolor} package only, if \textsf{xcolor} package is loaded.
+%   But color expressions (|red!50|) are regarded as \textsf{xcolor}'s
+%   expressions if \textsf{xcolor} package is loaded.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -458,7 +458,7 @@ See source file '\inFileName' for licencing and contact information.
 luatexbase.provides_module {
   name          = "luamplib",
   version       = "2.26.3",
-  date          = "2024/03/09",
+  date          = "2024/03/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -988,13 +988,21 @@ end
 %    Attempt to support l3color as well.
 %    \begin{macrocode}
 local mplibcolorfmt = {
-  xcolor = [[\begingroup\let\XC@mcolor\relax\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}\color%s\endgroup]],
-  l3color = [[\begingroup\def\__color_select:N#1{\expandafter\__color_select:nn#1}\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
-  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}\color_select:n%s\endgroup]],
-  l3xcolor = [[\begingroup\color_if_exist:nTF%s{\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
+  xcolor = [[\begingroup\let\XC@mcolor\relax]]..
+  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
+  [[\color%s\endgroup]],
+  l3color = [[\begingroup]]..
+  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
   [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
-  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}\color_select:n%s}]]..
-  [[{\let\XC@mcolor\relax\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}\color%s}\endgroup]],
+  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
+  [[\color_select:n%s\endgroup]],
+  l3xcolor = [[\begingroup\color_if_exist:nTF%s{]]..
+  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
+  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
+  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
+  [[\color_select:n%s}{\let\XC@mcolor\relax]]..
+  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
+  [[\color%s}\endgroup]],
 }
 
 local colfmt = token.is_defined'color_select:n' and "l3color" or "xcolor"
@@ -1021,7 +1029,7 @@ local function process_color (str)
     if not str:find("%b{}") then
       str = format("{%s}",str)
     end
-    if str:match("%b[]") then
+    if str:find("%b[]") then
       myfmt = mplibcolorfmt.xcolor
     end
     run_tex_code(myfmt:format(str,str,str), ccexplat or catat11)
@@ -1776,7 +1784,7 @@ local function do_preobj_color(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      if override:match"^pdf:bc" then
+      if override:find"^pdf:" then
         texsprint(format("\\special{%s}",override))
       else
         texsprint(format("\\special{color push %s}",override))
@@ -2134,7 +2142,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/09 v2.26.3 mplib package for LuaTeX]
+    [2024/03/07 v2.26.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
