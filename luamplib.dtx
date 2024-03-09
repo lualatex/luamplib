@@ -306,9 +306,7 @@ See source file '\inFileName' for licencing and contact information.
 %   as well.
 %
 %   From v2.26.1, \textsf{l3color} is also supported by the command
-%   \cs{mpcolor\{color expression\}}.
-%   But color expressions (|red!50|) are regarded as \textsf{xcolor}'s
-%   expressions if \textsf{xcolor} package is loaded.
+%   \cs{mpcolor\{color expression\}}, including spot colors.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -1029,7 +1027,7 @@ local function process_color (str)
     if colfmt == "l3color" and token.is_defined"ver@xcolor.sty" then
       if str:find("%b[]") then
         myfmt = mplibcolorfmt.xcolor
-      elseif colfmt == "l3color" then
+      else
         for _,v in ipairs(str:match"{(.+)}":explode"!") do
           if not v:find("^%s*%d+%s*$") then
             local pp = token.get_macro(format("l__color_named_%s_prop",v))
