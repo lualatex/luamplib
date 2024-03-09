@@ -1022,15 +1022,24 @@ local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
 local function process_color (str)
   if str then
-    if colfmt == "l3color" and token.is_defined"ver@xcolor.sty" then
-      colfmt = "l3xcolor"
-    end
-    local myfmt = mplibcolorfmt[colfmt]
     if not str:find("%b{}") then
       str = format("{%s}",str)
     end
-    if str:find("%b[]") then
-      myfmt = mplibcolorfmt.xcolor
+    local myfmt = mplibcolorfmt[colfmt]
+    if colfmt == "l3color" and token.is_defined"ver@xcolor.sty" then
+      if str:find("%b[]") then
+        myfmt = mplibcolorfmt.xcolor
+      elseif colfmt == "l3color" then
+        for _,v in ipairs(str:match"{(.+)}":explode"!") do
+          if not v:find("^%s*%d+%s*$") then
+            local pp = token.get_macro(format("l__color_named_%s_prop",v))
+            if not pp or pp == "" then
+              myfmt = mplibcolorfmt.xcolor
+              break
+            end
+          end
+        end
+      end
     end
     run_tex_code(myfmt:format(str,str,str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
