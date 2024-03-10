@@ -507,6 +507,8 @@ if not texruntoks then
   err("Your LuaTeX version is too old. Please upgrade it to the latest")
 end
 
+local is_defined  = token.is_defined
+
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
 local lfs   = require ('lfs')
@@ -1003,7 +1005,7 @@ local mplibcolorfmt = {
   [[\color%s}\endgroup]],
 }
 
-local colfmt = token.is_defined'color_select:n' and "l3color" or "xcolor"
+local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
 if colfmt == "l3color" then
   run_tex_code{
     "\\newcatcodetable\\luamplibcctabexplat",
@@ -1018,19 +1020,13 @@ end
 
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local x_color_loaded = nil
-
 local function process_color (str)
   if str then
-    if x_color_loaded == nil then
-      x_color_loaded = token.is_defined"ver@xcolor.sty" or
-                       token.is_defined"ver@color.sty"
-    end
     if not str:find("%b{}") then
       str = format("{%s}",str)
     end
     local myfmt = mplibcolorfmt[colfmt]
-    if x_color_loaded and colfmt == "l3color" then
+    if colfmt == "l3color" and (is_defined"ver@xcolor.sty" or is_defined"ver@color.sty") then
       if str:find("%b[]") then
         myfmt = mplibcolorfmt.xcolor
       else
@@ -1603,7 +1599,7 @@ end
 %
 %    Colors and Transparency
 %    \begin{macrocode}
-local pdfmanagement = token.is_defined'pdfmanagement_add:nnn'
+local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 
 local pdf_objs = {}
 local getpageres, setpageres
@@ -1669,7 +1665,7 @@ end
 
 local function tr_pdf_pageresources(mode,opaq)
   if not pgf.loaded and pgf.bye then
-    pgf.loaded = token.is_defined(pgf.bye)
+    pgf.loaded = is_defined(pgf.bye)
     pgf.bye    = pgf.loaded and pgf.bye
   end
   local res, on_on, off_on = "", nil, nil
