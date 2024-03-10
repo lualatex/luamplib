@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2024/03/10 2.26.4
+    * not just color names but also color expressions of l3color module
+    are now supported even if xcolor package is loaded
+
 2024/03/07 2.26.3
     * color expressions of l3color are supported as well.
     But they are regarded as xcolor's expressions if xcolor package is loaded.
