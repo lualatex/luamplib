@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/07 v2.26.3 Interface for using the mplib library]%
+  [2024/03/10 v2.26.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/07 v2.26.3}
+% \date{2024/03/10 v2.26.4}
 %
 % \maketitle
 %
@@ -306,9 +306,7 @@ See source file '\inFileName' for licencing and contact information.
 %   as well.
 %
 %   From v2.26.1, \textsf{l3color} is also supported by the command
-%   \cs{mpcolor\{color expression\}}.
-%   But color expressions (|red!50|) are regarded as \textsf{xcolor}'s
-%   expressions if \textsf{xcolor} package is loaded.
+%   \cs{mpcolor\{color expression\}}, including spot colors.
 %
 % \paragraph{\cs{mplibnumbersystem}}
 %   Users can choose |numbersystem| option since v2.4.
@@ -457,8 +455,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.26.3",
-  date          = "2024/03/07",
+  version       = "2.26.4",
+  date          = "2024/03/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -508,6 +506,8 @@ local texruntoks  = tex.runtoks
 if not texruntoks then
   err("Your LuaTeX version is too old. Please upgrade it to the latest")
 end
+
+local is_defined  = token.is_defined
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -1005,7 +1005,7 @@ local mplibcolorfmt = {
   [[\color%s}\endgroup]],
 }
 
-local colfmt = token.is_defined'color_select:n' and "l3color" or "xcolor"
+local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
 if colfmt == "l3color" then
   run_tex_code{
     "\\newcatcodetable\\luamplibcctabexplat",
@@ -1022,15 +1022,24 @@ local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
 local function process_color (str)
   if str then
-    if colfmt == "l3color" and token.is_defined"ver@xcolor.sty" then
-      colfmt = "l3xcolor"
-    end
-    local myfmt = mplibcolorfmt[colfmt]
     if not str:find("%b{}") then
       str = format("{%s}",str)
     end
-    if str:find("%b[]") then
-      myfmt = mplibcolorfmt.xcolor
+    local myfmt = mplibcolorfmt[colfmt]
+    if colfmt == "l3color" and (is_defined"ver@xcolor.sty" or is_defined"ver@color.sty") then
+      if str:find("%b[]") then
+        myfmt = mplibcolorfmt.xcolor
+      else
+        for _,v in ipairs(str:match"{(.+)}":explode"!") do
+          if not v:find("^%s*%d+%s*$") then
+            local pp = token.get_macro(format("l__color_named_%s_prop",v))
+            if not pp or pp == "" then
+              myfmt = mplibcolorfmt.xcolor
+              break
+            end
+          end
+        end
+      end
     end
     run_tex_code(myfmt:format(str,str,str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
@@ -1590,7 +1599,7 @@ end
 %
 %    Colors and Transparency
 %    \begin{macrocode}
-local pdfmanagement = token.is_defined'pdfmanagement_add:nnn'
+local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 
 local pdf_objs = {}
 local getpageres, setpageres
@@ -1656,7 +1665,7 @@ end
 
 local function tr_pdf_pageresources(mode,opaq)
   if not pgf.loaded and pgf.bye then
-    pgf.loaded = token.is_defined(pgf.bye)
+    pgf.loaded = is_defined(pgf.bye)
     pgf.bye    = pgf.loaded and pgf.bye
   end
   local res, on_on, off_on = "", nil, nil
@@ -2142,7 +2151,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/07 v2.26.3 mplib package for LuaTeX]
+    [2024/03/10 v2.26.4 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
