@@ -1603,7 +1603,7 @@ local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 
 local pdf_objs = {}
 local getpageres, setpageres
-local pgf = { bye = "pgfutil@everybye", extgs = "pgf@sys@addpdfresource@extgs@plain" }
+local pgf = { extgs = "pgf@sys@addpdfresource@extgs@plain" }
 
 if pdfmode then
   getpageres = pdf.getpageresources or function() return pdf.pageresources end
@@ -1622,6 +1622,7 @@ local function update_pdfobjs (os)
     on = pdf.immediateobj(os)
   else
     on = pdf_objs.cnt or 0
+    texsprint(format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
     pdf_objs.cnt = on + 1
   end
   pdf_objs[os] = on
@@ -1643,20 +1644,30 @@ local function update_tr_res(res,mode,opaq)
     if pdfmode then
       if pdfmanagement then
         texsprint(ccexplat,format(
-        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s 0 R}]],
-        on,on))
+        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s 0 R}]], on,on))
+      elseif pgf.loaded then
+        texsprint(format("\\csname %s\\endcsname{/MPlibTr%s %s 0 R}", pgf.extgs,on,on))
+      elseif is_defined"TRP@list" then
+        texsprint(catat11,{
+          [[\if@filesw\immediate\write\@auxout{]],
+          [[\string\g@addto@macro\string\TRP@list]],
+          format([[{/MPlibTr%s %s 0 R}]],on,on),
+          [[\string\expandafter\string\gdef\string\csname\space]],
+          os,
+          [[\string\endcsname{}}\fi]],
+          format([[\ifcsname %s\endcsname\else\global\TRP@reruntrue\fi]],os)
+        })
       else
-        res = format("%s/MPlibTr%i %i 0 R",res,on,on)
+        res = format("%s/MPlibTr%s %s 0 R",res,on,on)
       end
     else
       if pdfmanagement then
         texsprint(ccexplat,format(
-        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s}]],
-        on,os))
+        [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{@mplibpdfobj%s}]], on,on))
       elseif pgf.loaded then
-        texsprint(format("\\csname %s\\endcsname{/MPlibTr%i%s}", pgf.extgs, on, os))
+        texsprint(format("\\csname %s\\endcsname{/MPlibTr%s @mplibpdfobj%s}", pgf.extgs,on,on))
       else
-        texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%i%s>>}",on,os))
+        texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%s @mplibpdfobj%s>>}",on,on))
       end
     end
   end
@@ -1664,31 +1675,23 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  if not pgf.loaded and pgf.bye then
-    pgf.loaded = is_defined(pgf.bye)
-    pgf.bye    = pgf.loaded and pgf.bye
+  if not pgf.loaded then
+    pgf.loaded = is_defined(pgf.extgs)
   end
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
-  if pdfmanagement then return on_on, off_on end
   if pdfmode then
     if res ~= "" then
-      if pgf.loaded then
-        texsprint(format("\\csname %s\\endcsname{%s}", pgf.extgs, res))
-      else
-        local tpr, n = getpageres() or "", 0
-        tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
-        if n == 0 then
-          tpr = format("%s/ExtGState<<%s>>", tpr, res)
-        end
-        setpageres(tpr)
+      local tpr, n = getpageres() or "", 0
+      tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
+      if n == 0 then
+        tpr = format("%s/ExtGState<<%s>>", tpr, res)
       end
+      setpageres(tpr)
     end
   else
-    if not pgf.loaded then
-      texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
-    end
+    texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
   end
   return on_on, off_on
 end
@@ -1715,7 +1718,8 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
   if not pdfmanagement and not shading_res then shading_initialize() end
   local os = format("<</FunctionType 2/Domain [ %s ]/C0 [ %s ]/C1 [ %s ]/N 1>>",
                     domain, colora, colorb)
-  local funcobj = pdfmode and format("%i 0 R",update_pdfobjs(os)) or os
+  local funcobj = pdfmode and format("%s 0 R",update_pdfobjs(os))
+                          or  format("@mplibpdfobj%s",update_pdfobjs(os))
   os = format("<</ShadingType %i/ColorSpace /%s/Function %s/Coords [ %s ]/Extend [ true true ]/AntiAlias true>>",
               shtype, colorspace, funcobj, coordinates)
   local on, new = update_pdfobjs(os)
@@ -1723,10 +1727,9 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
     if new then
       if pdfmanagement then
         texsprint(ccexplat,format(
-        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{%s 0 R}]],
-        on,on))
+        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{%s 0 R}]], on,on))
       else
-        local res = format("/MPlibSh%i %i 0 R", on, on)
+        local res = format("/MPlibSh%s %s 0 R", on, on)
         if pdf_objs.finishpdf then
           shading_res[#shading_res+1] = res
         else
@@ -1743,12 +1746,11 @@ local function sh_pdfpageresources(shtype,domain,colorspace,colora,colorb,coordi
     if pdfmanagement then
       if new then
         texsprint(ccexplat,format(
-        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{%s}]],
-        on,os))
+        [[\pdfmanagement_add:nnn{Page/Resources/Shading}{MPlibSh%s}{@mplibpdfobj%s}]], on,on))
       end
     else
       if new then
-        texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%i%s>>}",on,os))
+        texsprint(format("\\special{pdf:put @MPlibSh<</MPlibSh%s @mplibpdfobj%s>>}",on,on))
       end
       texsprint(format("\\special{pdf:put @resources<</Shading @MPlibSh>>}"))
     end
