@@ -1645,29 +1645,35 @@ local function update_tr_res(res,mode,opaq)
       if pdfmanagement then
         texsprint(ccexplat,format(
         [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{%s 0 R}]], on,on))
-      elseif pgf.loaded then
-        texsprint(format("\\csname %s\\endcsname{/MPlibTr%s %s 0 R}", pgf.extgs,on,on))
-      elseif is_defined"TRP@list" then
-        texsprint(catat11,{
-          [[\if@filesw\immediate\write\@auxout{]],
-          [[\string\g@addto@macro\string\TRP@list]],
-          format([[{/MPlibTr%s %s 0 R}]],on,on),
-          [[\string\expandafter\string\gdef\string\csname\space]],
-          os,
-          [[\string\endcsname{}}\fi]],
-          format([[\ifcsname %s\endcsname\else\global\TRP@reruntrue\fi]],os)
-        })
       else
-        res = format("%s/MPlibTr%s %s 0 R",res,on,on)
+        local tr = format("/MPlibTr%s %s 0 R",on,on)
+        if pgf.loaded then
+          texsprint(format("\\csname %s\\endcsname{%s}", pgf.extgs,tr))
+        elseif is_defined"TRP@list" then
+          texsprint(catat11,{
+            [[\if@filesw\immediate\write\@auxout{]],
+            [[\string\g@addto@macro\string\TRP@list{]],
+            tr,
+            [[}}\fi]],
+          })
+          if not token.get_macro"TRP@list":find(tr) then
+            texsprint(catat11,[[\global\TRP@reruntrue]])
+          end
+        else
+          res = res..tr
+        end
       end
     else
       if pdfmanagement then
         texsprint(ccexplat,format(
         [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}{MPlibTr%s}{@mplibpdfobj%s}]], on,on))
-      elseif pgf.loaded then
-        texsprint(format("\\csname %s\\endcsname{/MPlibTr%s @mplibpdfobj%s}", pgf.extgs,on,on))
       else
-        texsprint(format("\\special{pdf:put @MPlibTr<</MPlibTr%s @mplibpdfobj%s>>}",on,on))
+        local tr = format("/MPlibTr%s @mplibpdfobj%s",on,on)
+        if pgf.loaded then
+          texsprint(format("\\csname %s\\endcsname{%s}", pgf.extgs,tr))
+        else
+          texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
+        end
       end
     end
   end
@@ -1681,14 +1687,23 @@ local function tr_pdf_pageresources(mode,opaq)
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
+  if pdfmanagement or pgf.loaded or is_defined"TRP@list" then
+    return on_on, off_on
+  end
   if pdfmode then
     if res ~= "" then
-      local tpr, n = getpageres() or "", 0
-      tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
-      if n == 0 then
-        tpr = format("%s/ExtGState<<%s>>", tpr, res)
+      local n, r = pdf_objs.extgsobj, format("<<%s>>",res)
+      if n then
+        n = pdf.immediateobj(n, r)
+      else
+        n = update_pdfobjs(r)
+        pdf_objs.extgsobj = n
       end
-      setpageres(tpr)
+      local tpr = getpageres() or ""
+      local gsr = format("/ExtGState %s 0 R", n)
+      if not tpr:find(gsr) then
+        setpageres(tpr..gsr)
+      end
     end
   else
     texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
