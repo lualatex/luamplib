@@ -1692,18 +1692,12 @@ local function tr_pdf_pageresources(mode,opaq)
   end
   if pdfmode then
     if res ~= "" then
-      local n, r = pdf_objs.extgsobj, format("<<%s>>",res)
-      if n then
-        n = pdf.immediateobj(n, r)
-      else
-        n = update_pdfobjs(r)
-        pdf_objs.extgsobj = n
+      local tpr, n = getpageres() or "", 0
+      tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
+      if n == 0 then
+        tpr = format("%s/ExtGState<<%s>>", tpr, res)
       end
-      local tpr = getpageres() or ""
-      local gsr = format("/ExtGState %s 0 R", n)
-      if not tpr:find(gsr) then
-        setpageres(tpr..gsr)
-      end
+      setpageres(tpr)
     end
   else
     texsprint(format("\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"))
