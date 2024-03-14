@@ -1681,7 +1681,7 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  if not pgf.loaded then
+  if pgf.loaded == nil then
     pgf.loaded = is_defined(pgf.extgs)
   end
   local res, on_on, off_on = "", nil, nil
