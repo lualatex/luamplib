@@ -342,7 +342,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item  |\mplibcodeinherit| only affects environments
 %     with no instance name set (since if a name is set,
 %     the code is intended to be reused at some point).
-%   \item From v2.27, |btex ... etex| labels are also shared and do not
+%   \item From v2.27, |btex ... etex| boxes are also shared and do not
 %     require |\mplibglobaltextext|.
 %   \item  When an instance names is set,
 %     respective |\currentmpinstancename| is set.
@@ -360,7 +360,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %
 % \paragraph{\cs{mplibglobaltextext}}
-%   To inherit |btex ... etex| labels as well as metapost variables,
+%   Formerly, to inherit |btex ... etex| boxes as well as metapost variables,
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
 %   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
 %   is |true|.
@@ -377,9 +377,9 @@ See source file '\inFileName' for licencing and contact information.
 %     currentpicture := pic scaled 2;
 %   \endmplibcode
 %   \end{verbatim}
-%   Nevertheless even turning on \cs{mplibglobaltextext} alone
-%   can have advantage of more efficient processing, if many of the same
-%   \TeX-text contents are used across several mplib code chunks.
+%   Generally speaking, it is recommended to turn |mplibglobaltextext|
+%   always on, because it has the advantage of more efficient processing.
+%   But everything has its downside: it will waste more memory resources.
 %
 % \paragraph{\cs{mplibverbatim}}
 %   Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
