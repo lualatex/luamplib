@@ -175,9 +175,12 @@ diameter:\Dia bp.%
 \everyendmplib[instanceOne]{endfig;}
 
 \begin{mplibcode}[instanceOne]
+  picture TeX;
+  TeX := btex \TeX etex;
 a := 1cm;
 draw fullcircle scaled a;
 draw btex a circle with $d=a$ etex shifted (a,0);
+draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
@@ -218,6 +221,7 @@ Current instance name is: \currentmpinstancename (should be empty) \vskip 2\base
 \begin{mplibcode}[instanceOne]
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
+  draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 

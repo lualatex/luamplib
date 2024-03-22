@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/10 v2.26.4 Interface for using the mplib library]%
+  [2024/03/23 v2.27.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/10 v2.26.4}
+% \date{2024/03/23 v2.27.0}
 %
 % \maketitle
 %
@@ -260,13 +260,6 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %   \end{verbatim}
 %
-% \paragraph{About figure box metrics}
-%   Notice that, after each figure is processed, macro \cs{MPwidth} stores
-%   the width value of latest figure; \cs{MPheight}, the height value.
-%   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
-%   \cs{MPury} store the bounding box information of latest figure
-%   without the unit |bp|.
-%
 % \paragraph{\cs{everymplib}, \cs{everyendmplib}}
 %   Since v2.3, new macros \cs{everymplib} and \cs{everyendmplib} redefine
 %   the lua table containing MetaPost code
@@ -286,7 +279,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Enrico Gregorio. Please refer the manual of gmp package for details.
 %   \begin{verbatim}
 %     \begin{mplibcode}
-%       draw origin--(\mpdim{\linewidth},0) withpen pencircle scaled 4
+%       draw origin--(.6\mpdim{\linewidth},0) withpen pencircle scaled 4
 %       dashed evenly scaled 4 withcolor \mpcolor{orange};
 %     \end{mplibcode}
 %   \end{verbatim}
@@ -314,35 +307,6 @@ See source file '\inFileName' for licencing and contact information.
 %   by declaring |\mplibnumbersystem{double}| or |\mplibnumbersystem{decimal}|.
 %   For details see
 %   \url{http://github.com/lualatex/luamplib/issues/21}.
-%
-% \paragraph{Settings regarding cache files}
-%   To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
-%   inspects the content of each and every |.mp| input files and makes caches
-%   if nececcsary, before returning their paths to \LuaTeX's mplib library.
-%   This would make the compilation time longer wastefully, as most |.mp| files
-%   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
-%   macros as follows, so that users can give instruction about files
-%   that do not require this functionality.
-%   \begin{itemize}
-%   \item |\mplibmakenocache{<filename>[,<filename>,...]}|
-%   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
-%   \end{itemize}
-%   where |<filename>| is a file name excluding |.mp| extension.
-%   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
-%   |$TEXMFMAIN/metapost/context/base| are already registered by default.
-%
-%   By default, cache files will be stored in |$TEXMFVAR/luamplib_cache| or,
-%   if it's not available (mostly not writable),
-%   in the directory where output files are saved:
-%   to be specific, |$TEXMF_OUTPUT_DIRECTORY/luamplib_cache|,
-%   |./luamplib_cache|, |$TEXMFOUTPUT/luamplib_cache|, and |.| in this order.
-%   (|$TEXMF_OUTPUT_DIRECTORY| is normally the value of |--output-directory|
-%   command-line option.)
-%   This behavior however can be changed by the command
-%   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
-%   as the user's home directory (on a windows machine as well).
-%   As backslashes (|\|) should be escaped by users, it would be easier to use
-%   slashes (|/|) instead.
 %
 % \paragraph{\cs{mplibtextextlabel}}
 %   Starting with v2.6, |\mplibtextextlabel{enable}| enables
@@ -378,7 +342,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item  |\mplibcodeinherit| only affects environments
 %     with no instance name set (since if a name is set,
 %     the code is intended to be reused at some point).
-%   \item  |btex ... etex| labels still exist separately and
+%   \item From v2.27, |btex ... etex| labels are also shared and do not
 %     require |\mplibglobaltextext|.
 %   \item  When an instance names is set,
 %     respective |\currentmpinstancename| is set.
@@ -397,15 +361,12 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibglobaltextext}}
 %   To inherit |btex ... etex| labels as well as metapost variables,
-%   it is necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
-%   On this case, be careful that normal \TeX\ boxes can conflict with
-%   |btex ... etex| boxes, though this would occur very rarely.
-%   Notwithstanding the danger, it is a `must' option to activate
-%   \cs{mplibglobaltextext} if you want to use |graph.mp|
-%   with \cs{mplibcodeinherit} functionality.
+%   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
+%   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
+%   is |true|.
 %   \begin{verbatim}
 %   \mplibcodeinherit{enable}
-%   \mplibglobaltextext{enable}
+%   %\mplibglobaltextext{enable}
 %   \everymplib{ beginfig(0);} \everyendmplib{ endfig;}
 %   \mplibcode
 %     label(btex $\sqrt{2}$ etex, origin);
@@ -416,6 +377,9 @@ See source file '\inFileName' for licencing and contact information.
 %     currentpicture := pic scaled 2;
 %   \endmplibcode
 %   \end{verbatim}
+%   Nevertheless even turning on \cs{mplibglobaltextext} alone
+%   can have advantage of more efficient processing, if many of the same
+%   \TeX-text contents are used across several mplib code chunks.
 %
 % \paragraph{\cs{mplibverbatim}}
 %   Starting with v2.11, users can issue |\mplibverbatim{enable}|, after which
@@ -430,11 +394,47 @@ See source file '\inFileName' for licencing and contact information.
 %   |\mplibshowlog{disable}| will revert this functionality.
 %   This is a \TeX{} side interface for |luamplib.showlog|. (v2.20.8)
 %
+% \paragraph{Settings regarding cache files}
+%   To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
+%   inspects the content of each and every |.mp| input files and makes caches
+%   if nececcsary, before returning their paths to \LuaTeX's mplib library.
+%   This would make the compilation time longer wastefully, as most |.mp| files
+%   do not contain |btex ... etex| command.  So \textsf{luamplib} provides
+%   macros as follows, so that users can give instruction about files
+%   that do not require this functionality.
+%   \begin{itemize}
+%   \item |\mplibmakenocache{<filename>[,<filename>,...]}|
+%   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
+%   \end{itemize}
+%   where |<filename>| is a file name excluding |.mp| extension.
+%   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
+%   |$TEXMFMAIN/metapost/context/base| are already registered by default.
+%
+%   By default, cache files will be stored in |$TEXMFVAR/luamplib_cache| or,
+%   if it's not available (mostly not writable),
+%   in the directory where output files are saved:
+%   to be specific, |$TEXMF_OUTPUT_DIRECTORY/luamplib_cache|,
+%   |./luamplib_cache|, |$TEXMFOUTPUT/luamplib_cache|, and |.| in this order.
+%   (|$TEXMF_OUTPUT_DIRECTORY| is normally the value of |--output-directory|
+%   command-line option.)
+%   This behavior however can be changed by the command
+%   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
+%   as the user's home directory (on a windows machine as well).
+%   As backslashes (|\|) should be escaped by users, it would be easier to use
+%   slashes (|/|) instead.
+%
+% \paragraph{About figure box metrics}
+%   Notice that, after each figure is processed, macro \cs{MPwidth} stores
+%   the width value of latest figure; \cs{MPheight}, the height value.
+%   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
+%   \cs{MPury} store the bounding box information of latest figure
+%   without the unit |bp|.
+%
 % \paragraph{luamplib.cfg}
 %   At the end of package loading, \textsf{luamplib} searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
-%   Frequently used settings such as \cs{everymplib} or \cs{mplibforcehmode}
-%   are suitable for going into this file.
+%   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
+%   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
 % \bigskip
 %
@@ -455,8 +455,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.26.4",
-  date          = "2024/03/10",
+  version       = "2.27.0",
+  date          = "2024/03/23",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -887,8 +887,9 @@ end
 %    \begin{macrocode}
 luamplib.codeinherit = false
 local mplibinstances = {}
+local instancename
 
-local function process (data, instancename)
+local function process (data)
 %    \end{macrocode}
 %
 %    The workaround of issue \#70 seems to be unnecessary, as we use
@@ -948,15 +949,20 @@ end
 
 %    \end{macrocode}
 %
-%    Indefinite number of boxes are needed for |btex ... etex|.
-%    So starts at somewhat huge number of box registry. Of course,
-%    this may conflict with other packages using many many boxes.
-%    (When |codeinherit| feature is enabled, boxes must be globally defined.)
-%    But I don't know any reliable way to escape this danger.
+%    Prepare textext box number containers,
+%    locals, globals and possibly instances.
+%    |localid| can be any number. They are local anyway.
+%    The number will be reset at the start of a new code chunk.
+%    Global boxes will use |\newbox| command in |tex.runtoks| process.
+%    This is the same when |codeinherit| is declared as true.
+%    Boxes of an instance will also be global, so that
+%    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
-local tex_box_id = 2047
+local texboxes = {
+  locals  = {}, localid  = 4096,
+  globals = {}, globalid = 0,
+}
 %    \end{macrocode}
-%
 %    For conversion of |sp| to |bp|.
 %    \begin{macrocode}
 local factor = 65536*(7227/7200)
@@ -967,10 +973,32 @@ local textext_fmt = [[image(addto currentpicture doublepath unitsquare ]]..
 
 local function process_tex_text (str)
   if str then
-    tex_box_id = tex_box_id + 1
-    local global = luamplib.globaltextext and "\\global" or ""
-    run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
-    local box = texgetbox(tex_box_id)
+    local boxtable, global
+    if instancename and instancename ~= "" then
+      texboxes[instancename] = texboxes[instancename] or {}
+      boxtable, global = texboxes[instancename], "\\global"
+    elseif luamplib.globaltextext or luamplib.codeinherit then
+      boxtable, global = texboxes.globals, "\\global"
+    else
+      boxtable, global = texboxes.locals, ""
+    end
+    local tex_box_id = boxtable[str]
+    local box = tex_box_id and texgetbox(tex_box_id)
+    if not box then
+      if global == "" then
+        tex_box_id = texboxes.localid + 1
+        texboxes.localid = tex_box_id
+      else
+        local boxid = texboxes.globalid + 1
+        texboxes.globalid = boxid
+        run_tex_code(format(
+          [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
+        tex_box_id = tex.getcount'allocationnumber'
+      end
+      boxtable[str] = tex_box_id
+      run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
+      box = texgetbox(tex_box_id)
+    end
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
@@ -1331,7 +1359,10 @@ end
 luamplib.everymplib    = { [""] = "" }
 luamplib.everyendmplib = { [""] = "" }
 
-local function process_mplibcode (data, instancename)
+local function process_mplibcode (data, instance)
+  instancename = instance
+  texboxes.localid = 4096
+
 %    \end{macrocode}
 %
 %    This is needed for legacy behavior regarding |verbatimtex|
@@ -1392,7 +1423,7 @@ local function process_mplibcode (data, instancename)
     end)
   end
 
-  process(data, instancename)
+  process(data)
 end
 luamplib.process_mplibcode = process_mplibcode
 
@@ -2162,7 +2193,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/10 v2.26.4 mplib package for LuaTeX]
+    [2024/03/23 v2.27.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
