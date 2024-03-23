@@ -1,5 +1,12 @@
                        History of the luamplib package
 
+2024/03/23 2.27.0
+   * when `mplibcodeinherit' is enabled, `mplibglobaltextext' is implicitly
+   enabled as well.
+   * when instance name is used to mplibcode environments, btex ... etex
+   boxes are also shared among the environments of the same intance name.
+   * transparency functionality does not conflict with transparent package.
+
 2024/03/10 2.26.4
     * not just color names but also color expressions of l3color module
     are now supported even if xcolor package is loaded
