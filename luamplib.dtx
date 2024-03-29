@@ -775,7 +775,18 @@ local function reporterror (result, indeed)
     local log = l or t or "no-term"
     log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
     if result.status > 0 then
-      warn(log)
+      local terminal = log:match"(.-\n! .-)\n! "
+      if terminal then
+        texio.write_nl("term","Module luamplib Warning (more info in the log):")
+        for _,v in ipairs(terminal:explode"\n+") do
+          texio.write_nl("term",format("(luamplib)  %s",v))
+        end
+        texio.write_nl("term", format("(luamplib)  on input line %s",tex.inputlineno))
+        texio.write_nl("term","")
+        info(log)
+      else
+        warn(log)
+      end
       if result.status > 1 then
         err(e or "see above messages")
       end
