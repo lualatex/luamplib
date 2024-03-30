@@ -460,18 +460,6 @@ luatexbase.provides_module {
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
-local format, abs = string.format, math.abs
-
-local err  = function(...)
-  return luatexbase.module_error  ("luamplib", format(...))
-end
-local warn = function(...)
-  return luatexbase.module_warning("luamplib", format(...))
-end
-local info = function(...)
-  return luatexbase.module_info   ("luamplib", format(...))
-end
-
 %    \end{macrocode}
 %
 %    Use the |luamplib| namespace, since |mplib| is for the metapost library
@@ -479,6 +467,42 @@ end
 %    \begin{macrocode}
 luamplib          = luamplib or { }
 local luamplib    = luamplib
+
+local format, abs = string.format, math.abs
+
+local err  = function(...)
+  return luatexbase.module_error  ("luamplib", format(...))
+end
+
+local function termorlog (target, text)
+  if text then
+    local mod, write, append, kind = "luamplib", texio.write_nl, texio.write
+    if target == "term" then
+      kind = "Warning (more info in the log)"
+    elseif target == "log" then
+      kind = "Info"
+    elseif target == "term and log" then
+      kind = "Warning"
+    else
+      err "unknown message target"
+    end
+    write(target, format("Module %s %s:", mod, kind))
+    if text:find"\n" then
+      for _,line in ipairs(text:explode"\n+") do
+        write(target, format("(%s)  %s", mod, line))
+      end
+      write(target, format("(%s) ", mod))
+    else
+      append(target, format(" %s", text))
+    end
+    append(target, format(" on input line %s", tex.inputlineno))
+    write(target, "")
+  end
+end
+
+local warn = function(...) termorlog("term and log", format(...)) end
+local info = function(...) termorlog("log", format(...)) end
+local term = function(...) termorlog("term", format(...)) end
 
 luamplib.showlog  = luamplib.showlog or false
 
@@ -762,17 +786,6 @@ local preamble = [[
   input %s ;
 ]]
 
-local function write2term (lines)
-  if lines then
-    texio.write_nl("term","Module luamplib Warning (more info in the log):")
-    for _,line in ipairs(lines:explode"\n+") do
-      texio.write_nl("term",format("(luamplib)  %s",line))
-    end
-    texio.write_nl("term",format("(luamplib)  on input line %s",tex.inputlineno))
-    texio.write_nl("term","")
-  end
-end
-
 local logatload
 local function reporterror (result, indeed)
   if not result then
@@ -786,9 +799,10 @@ local function reporterror (result, indeed)
     local log = l or t or "no-term"
     log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
     if result.status > 0 then
-      local terminal = log:match"(.-\n! .-)\n! "
-      if terminal then
-        write2term(terminal); info(log)
+      local first = log:match"(.-\n! .-)\n! "
+      if first then
+        term(first)
+        info(log)
       else
         warn(log)
       end
@@ -804,13 +818,9 @@ local function reporterror (result, indeed)
 %    it does not raise error but just prints a warning,
 %    even if output has no figure.
 %    \begin{macrocode}
-      if log:find"\n>>" then
-        local terminal = log:match"(\n>> .+)"
-        if terminal then
-          write2term(terminal); info(log)
-        else
-          warn(log)
-        end
+      if log:find"\n>> " then
+        term(log:match"\n>> .+")
+        info(log)
       elseif log:find"%g" then
         if luamplib.showlog then
           info(log)
