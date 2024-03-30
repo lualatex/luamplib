@@ -762,6 +762,17 @@ local preamble = [[
   input %s ;
 ]]
 
+local function write2term (lines)
+  if lines then
+    texio.write_nl("term","Module luamplib Warning (more info in the log):")
+    for _,line in ipairs(lines:explode"\n+") do
+      texio.write_nl("term",format("(luamplib)  %s",line))
+    end
+    texio.write_nl("term",format("(luamplib)  on input line %s",tex.inputlineno))
+    texio.write_nl("term","")
+  end
+end
+
 local logatload
 local function reporterror (result, indeed)
   if not result then
@@ -777,13 +788,7 @@ local function reporterror (result, indeed)
     if result.status > 0 then
       local terminal = log:match"(.-\n! .-)\n! "
       if terminal then
-        texio.write_nl("term","Module luamplib Warning (more info in the log):")
-        for _,v in ipairs(terminal:explode"\n+") do
-          texio.write_nl("term",format("(luamplib)  %s",v))
-        end
-        texio.write_nl("term", format("(luamplib)  on input line %s",tex.inputlineno))
-        texio.write_nl("term","")
-        info(log)
+        write2term(terminal); info(log)
       else
         warn(log)
       end
@@ -800,7 +805,12 @@ local function reporterror (result, indeed)
 %    even if output has no figure.
 %    \begin{macrocode}
       if log:find"\n>>" then
-        warn(log)
+        local terminal = log:match"(\n>> .+)"
+        if terminal then
+          write2term(terminal); info(log)
+        else
+          warn(log)
+        end
       elseif log:find"%g" then
         if luamplib.showlog then
           info(log)
