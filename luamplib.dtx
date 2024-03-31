@@ -488,16 +488,21 @@ local function termorlog (target, text, warnkind)
       err "unknown message target"
     end
     kind = warnkind or kind
-    write(target, format("Module %s %s:", mod, kind))
-    if text:find"\n" then
-      for _,line in ipairs(text:explode"\n+") do
-        write(target, format("(%s)  %s", mod, line))
+    local t = text:explode"\n"
+    write(target, format("Module %s %s: ", mod, kind))
+    for i,line in ipairs(t) do
+      if line ~= "" then
+        if i == 1 then
+          append(target, line)
+        else
+          write(target, format("(%s)  %s", mod, line))
+        end
       end
-      write(target, format("(%s)  ", mod))
-    else
-      append(target, format(" %s ", text))
     end
-    append(target, format("on input line %s", tex.inputlineno))
+    if #t > 1 then
+      write(target, format("(%s) ", mod))
+    end
+    append(target, format(" on input line %s", tex.inputlineno))
     write(target, "")
   end
 end
@@ -823,7 +828,7 @@ local function reporterror (result, indeed)
 %    it does not raise error but just prints a warning,
 %    even if output has no figure.
 %    \begin{macrocode}
-      if log:find"\n>> " then
+      if log:find"\n>>? " then
         warn(log)
       elseif log:find"%g" then
         if luamplib.showlog then
