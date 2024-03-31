@@ -474,9 +474,10 @@ local err  = function(...)
   return luatexbase.module_error  ("luamplib", format(...))
 end
 
-local function termorlog (target, text)
+local function termorlog (target, text, warnkind)
   if text then
-    local mod, write, append, kind = "luamplib", texio.write_nl, texio.write
+    local mod, write, append = "luamplib", texio.write_nl, texio.write
+    local kind
     if target == "term" then
       kind = "Warning (more info in the log)"
     elseif target == "log" then
@@ -486,16 +487,17 @@ local function termorlog (target, text)
     else
       err "unknown message target"
     end
+    kind = warnkind or kind
     write(target, format("Module %s %s:", mod, kind))
     if text:find"\n" then
       for _,line in ipairs(text:explode"\n+") do
         write(target, format("(%s)  %s", mod, line))
       end
-      write(target, format("(%s) ", mod))
+      write(target, format("(%s)  ", mod))
     else
-      append(target, format(" %s", text))
+      append(target, format(" %s ", text))
     end
-    append(target, format(" on input line %s", tex.inputlineno))
+    append(target, format("on input line %s", tex.inputlineno))
     write(target, "")
   end
 end
@@ -503,6 +505,10 @@ end
 local warn = function(...) termorlog("term and log", format(...)) end
 local info = function(...) termorlog("log", format(...)) end
 local term = function(...) termorlog("term", format(...)) end
+local function term_a_log_b (a, b)
+  termorlog("term", a)
+  termorlog("log", b, "Warning")
+end
 
 luamplib.showlog  = luamplib.showlog or false
 
@@ -801,8 +807,7 @@ local function reporterror (result, indeed)
     if result.status > 0 then
       local first = log:match"(.-\n! .-)\n! "
       if first then
-        term(first)
-        info(log)
+        term_a_log_b(first, log)
       else
         warn(log)
       end
@@ -819,8 +824,7 @@ local function reporterror (result, indeed)
 %    even if output has no figure.
 %    \begin{macrocode}
       if log:find"\n>> " then
-        term(log:match"\n>> .+")
-        info(log)
+        warn(log)
       elseif log:find"%g" then
         if luamplib.showlog then
           info(log)
