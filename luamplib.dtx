@@ -509,11 +509,6 @@ end
 
 local warn = function(...) termorlog("term and log", format(...)) end
 local info = function(...) termorlog("log", format(...)) end
-local term = function(...) termorlog("term", format(...)) end
-local function term_a_log_b (a, b)
-  termorlog("term", a)
-  termorlog("log", b, "Warning")
-end
 
 luamplib.showlog  = luamplib.showlog or false
 
@@ -812,7 +807,8 @@ local function reporterror (result, indeed)
     if result.status > 0 then
       local first = log:match"(.-\n! .-)\n! "
       if first then
-        term_a_log_b(first, log)
+        termorlog("term", first)
+        termorlog("log", log, "Warning")
       else
         warn(log)
       end
