@@ -792,8 +792,15 @@ local preamble = [[
   input %s ;
 ]]
 
-local logatload
-local function reporterror (result, indeed)
+%    \end{macrocode}
+%
+%    v2.9 has introduced the concept of ``code inherit''
+%    \begin{macrocode}
+luamplib.codeinherit = false
+local mplibinstances = {}
+local instancename
+
+local function reporterror (result, currfmt)
   if not result then
     err("no result object returned")
   else
@@ -815,8 +822,13 @@ local function reporterror (result, indeed)
       if result.status > 1 then
         err(e or "see above messages")
       end
-    elseif indeed then
-      local log = logatload..log
+    elseif currfmt then
+      local instance = mplibinstances[currfmt]
+      local log1, logged = instance.log1, instance.logged
+      if not logged then
+        log = log1..log
+        instance.logged = true
+      end
 %    \end{macrocode}
 %
 %    v2.6.1: now luamplib does not disregard |show| command,
@@ -833,9 +845,6 @@ local function reporterror (result, indeed)
           info(log)
         end
       end
-      logatload = ""
-    else
-      logatload = log
     end
     return log
   end
@@ -872,38 +881,26 @@ local function luamplibload (name)
   if luamplib.textextlabel then
     preamble = preamble .. luamplib.textextlabelpreamble
   end
-  local result
+  local result, log
   if not mpx then
     result = { status = 99, error = "out of memory"}
   else
     result = mpx:execute(format(preamble, replacesuffix(name,"mp")))
   end
-  reporterror(result)
-  return mpx, result
+  log = reporterror(result)
+  return mpx, result, log
 end
-
-%    \end{macrocode}
-%
-%    |plain| or |metafun|,
-%    though we cannot support |metafun| format fully.
-%    \begin{macrocode}
-local currentformat = "plain"
-
-local function setformat (name)
-  currentformat = name
-end
-luamplib.setformat = setformat
 
 %    \end{macrocode}
 %
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
-local function process_indeed (mpx, data)
+local function process_indeed (mpx, data, currfmt)
   local converted, result = false, {}
   if mpx and data then
     result = mpx:execute(data)
-    local log = reporterror(result, true)
+    local log = reporterror(result, currfmt)
     if log then
       if result.fig then
         converted = luamplib.convert(result)
@@ -919,11 +916,14 @@ end
 
 %    \end{macrocode}
 %
-%    v2.9 has introduced the concept of ``code inherit''
+%    |plain| or |metafun|,
+%    though we cannot support |metafun| format fully.
 %    \begin{macrocode}
-luamplib.codeinherit = false
-local mplibinstances = {}
-local instancename
+local currentformat = "plain"
+local function setformat (name)
+  currentformat = name
+end
+luamplib.setformat = setformat
 
 local function process (data)
 %    \end{macrocode}
@@ -936,25 +936,29 @@ local function process (data)
 %    end
 %    \end{verbatim}
 %    \begin{macrocode}
-  local defaultinstancename = currentformat .. (luamplib.numbersystem or "scaled")
-    .. tostring(luamplib.textextlabel) .. tostring(luamplib.legacy_verbatimtex)
-  local currfmt = instancename or defaultinstancename
-  if #currfmt == 0 then
-    currfmt = defaultinstancename
+  local currfmt
+  if instancename and instancename ~= "" then
+    currfmt = instancename
+  else
+    currfmt = currentformat..(luamplib.numbersystem or "scaled")
+      ..tostring(luamplib.textextlabel)..tostring(luamplib.legacy_verbatimtex)
   end
-  local mpx = mplibinstances[currfmt]
+  local mplibinstance = mplibinstances[currfmt]
+  local mpx = mplibinstance and mplibinstance.mpx
   local standalone = false
-  if currfmt == defaultinstancename then
+  if currfmt ~= instancename then
     standalone = not luamplib.codeinherit
   end
   if mpx and standalone then
     mpx:finish()
+    mplibinstance = { }
   end
   if standalone or not mpx then
-    mpx = luamplibload(currentformat)
-    mplibinstances[currfmt] = mpx
+    local log
+    mpx, _, log = luamplibload(currentformat)
+    mplibinstances[currfmt] = { mpx=mpx, log1=log }
   end
-  return process_indeed(mpx, data)
+  return process_indeed(mpx, data, currfmt)
 end
 
 %    \end{macrocode}
