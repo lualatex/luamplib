@@ -1,5 +1,13 @@
                        History of the luamplib package
 
+2024/XX/XX 2.27.2
+   * for warning/information/error messages we now use our own function,
+   instead of ltluatex's.
+   * the message format has changed, especially regarding whitespaces.
+   * terminal messages are now much conciser than before.
+   * mplibcode which has no beginfig/endfig does not print a warning to
+   the terminal, but just an info to the log.
+
 2024/03/29 2.27.1
    * fix a bug regarding local textext boxes
 

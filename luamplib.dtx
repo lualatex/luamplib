@@ -189,7 +189,7 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{itemize}
 % \item a \LaTeX\ environment
 % \item all \TeX\ macros start by |mplib|
-% \item use of luatexbase for errors, warnings and declaration
+% \item use of our own function for errors, warnings and informations
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
 %   |TEX()| is also allowed and is a synomym of |textext()|.\par\smallskip
@@ -470,11 +470,11 @@ local luamplib    = luamplib
 
 local format, abs = string.format, math.abs
 
-local err  = function(...)
-  return luatexbase.module_error  ("luamplib", format(...))
-end
-
-local function termorlog (target, text, warnkind)
+%    \end{macrocode}
+%
+%    Use our own function for warn/info/err.
+%    \begin{macrocode}
+local function termorlog (target, text, givenkind)
   if text then
     local mod, write, append = "luamplib", texio.write_nl, texio.write
     local kind
@@ -485,9 +485,9 @@ local function termorlog (target, text, warnkind)
     elseif target == "term and log" then
       kind = "Warning"
     else
-      err "unknown message target"
+      kind, target = "Error", "term and log"
     end
-    kind = warnkind or kind
+    kind = givenkind or kind
     local t = text:explode"\n"
     write(target, format("Module %s %s: ", mod, kind))
     for i,line in ipairs(t) do
@@ -504,11 +504,13 @@ local function termorlog (target, text, warnkind)
     end
     append(target, format(" on input line %s", tex.inputlineno))
     write(target, "")
+    if kind == "Error" then error() end
   end
 end
 
 local warn = function(...) termorlog("term and log", format(...)) end
 local info = function(...) termorlog("log", format(...)) end
+local err  = function(...) termorlog("error", format(...)) end
 
 luamplib.showlog  = luamplib.showlog or false
 
@@ -794,13 +796,25 @@ local preamble = [[
 
 %    \end{macrocode}
 %
+%    |plain| or |metafun|,
+%    though we cannot support |metafun| format fully.
+%    \begin{macrocode}
+local currentformat = "plain"
+local function setformat (name)
+  currentformat = name
+end
+luamplib.setformat = setformat
+
+%    \end{macrocode}
+%
 %    v2.9 has introduced the concept of ``code inherit''
 %    \begin{macrocode}
 luamplib.codeinherit = false
+
 local mplibinstances = {}
 local instancename
 
-local function reporterror (result, currfmt)
+local function reporterror (result, prevlog)
   if not result then
     err("no result object returned")
   else
@@ -822,28 +836,19 @@ local function reporterror (result, currfmt)
       if result.status > 1 then
         err(e or "see above messages")
       end
-    elseif currfmt then
-      local instance = mplibinstances[currfmt]
-      local log1, logged = instance.log1, instance.logged
-      if not logged then
-        log = log1..log
-        instance.logged = true
-      end
+    elseif prevlog then
+      log = prevlog..log
 %    \end{macrocode}
 %
 %    v2.6.1: now luamplib does not disregard |show| command,
 %    even when |luamplib.showlog| is false.  Incidentally,
-%    it does not raise error but just prints a warning,
+%    it does not raise error but just prints an info,
 %    even if output has no figure.
 %    \begin{macrocode}
       if log:find"\n>>? " then
         warn(log)
-      elseif log:find"%g" then
-        if luamplib.showlog then
-          info(log)
-        elseif not result.fig then
-          info(log)
-        end
+      elseif luamplib.showlog and log:find"%g" then
+        info(log)
       end
     end
     return log
@@ -896,35 +901,6 @@ end
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
-local function process_indeed (mpx, data, currfmt)
-  local converted, result = false, {}
-  if mpx and data then
-    result = mpx:execute(data)
-    local log = reporterror(result, currfmt)
-    if log then
-      if result.fig then
-        converted = luamplib.convert(result)
-      else
-        warn("No figure output. Maybe no beginfig/endfig")
-      end
-    end
-  else
-    err("Mem file unloadable. Maybe generated with a different version of mplib?")
-  end
-  return converted, result
-end
-
-%    \end{macrocode}
-%
-%    |plain| or |metafun|,
-%    though we cannot support |metafun| format fully.
-%    \begin{macrocode}
-local currentformat = "plain"
-local function setformat (name)
-  currentformat = name
-end
-luamplib.setformat = setformat
-
 local function process (data)
 %    \end{macrocode}
 %
@@ -943,22 +919,34 @@ local function process (data)
     currfmt = currentformat..(luamplib.numbersystem or "scaled")
       ..tostring(luamplib.textextlabel)..tostring(luamplib.legacy_verbatimtex)
   end
-  local mplibinstance = mplibinstances[currfmt]
-  local mpx = mplibinstance and mplibinstance.mpx
+  local mpx = mplibinstances[currfmt]
   local standalone = false
   if currfmt ~= instancename then
     standalone = not luamplib.codeinherit
   end
   if mpx and standalone then
     mpx:finish()
-    mplibinstance = { }
   end
+  local log = ""
   if standalone or not mpx then
-    local log
     mpx, _, log = luamplibload(currentformat)
-    mplibinstances[currfmt] = { mpx=mpx, log1=log }
+    mplibinstances[currfmt] = mpx
   end
-  return process_indeed(mpx, data, currfmt)
+  local converted, result = false, {}
+  if mpx and data then
+    result = mpx:execute(data)
+    local log = reporterror(result, log)
+    if log then
+      if result.fig then
+        converted = luamplib.convert(result)
+      else
+        info"No figure output. Maybe no beginfig/endfig"
+      end
+    end
+  else
+    err"Mem file unloadable. Maybe generated with a different version of mplib?"
+  end
+  return converted, result
 end
 
 %    \end{macrocode}
@@ -1118,10 +1106,7 @@ end
 
 %    \end{macrocode}
 %
-%    \cs{mpdim} is expanded before MPLib process, so code below will not be
-%    used for |mplibcode| data. But who knows anyone would want it
-%    in |.mp| input file. If then, you can say |mplibdimen(".5\textwidth")|
-%    for example.
+%    for \cs{mpdim} or |mplibdimen|
 %    \begin{macrocode}
 local function process_dimen (str)
   if str then
@@ -1890,7 +1875,11 @@ local function do_preobj_color(object,prescript)
     elseif not pdfmode then
       override = prev_override_color
       if override then
-        texsprint(format("\\special{color push %s}",override))
+        if override:find"^pdf:" then
+          texsprint(format("\\special{%s}",override))
+        else
+          texsprint(format("\\special{color push %s}",override))
+        end
       end
     end
   end
