@@ -845,8 +845,10 @@ local function reporterror (result, prevlog)
 %    it does not raise error but just prints an info,
 %    even if output has no figure.
 %    \begin{macrocode}
-      if log:find"\n>>? " then
-        warn(log)
+      local show = log:match"\n>>? .+"
+      if show then
+        termorlog("term", show, "Info (more info in the log)")
+        info(log)
       elseif luamplib.showlog and log:find"%g" then
         info(log)
       end
@@ -1052,13 +1054,6 @@ local mplibcolorfmt = {
   [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
   [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
   [[\color_select:n%s\endgroup]],
-  l3xcolor = [[\begingroup\color_if_exist:nTF%s{]]..
-  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
-  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
-  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
-  [[\color_select:n%s}{\let\XC@mcolor\relax]]..
-  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color%s}\endgroup]],
 }
 
 local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
@@ -1097,7 +1092,7 @@ local function process_color (str)
         end
       end
     end
-    run_tex_code(myfmt:format(str,str,str), ccexplat or catat11)
+    run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
     return format('1 withprescript "MPlibOverrideColor=%s"', t)
   end
