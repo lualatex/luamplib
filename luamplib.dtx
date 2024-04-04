@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/03/29 v2.27.1 Interface for using the mplib library]%
+  [2024/04/04 v2.27.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/03/29 v2.27.1}
+% \date{2024/04/04 v2.27.2}
 %
 % \maketitle
 %
@@ -455,8 +455,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.27.1",
-  date          = "2024/03/29",
+  version       = "2.27.2",
+  date          = "2024/04/04",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -474,33 +474,24 @@ local format, abs = string.format, math.abs
 %
 %    Use our own function for warn/info/err.
 %    \begin{macrocode}
-local function termorlog (target, text, givenkind)
+local function termorlog (target, text, kind)
   if text then
     local mod, write, append = "luamplib", texio.write_nl, texio.write
-    local kind
-    if target == "term" then
-      kind = "Warning (more info in the log)"
-    elseif target == "log" then
-      kind = "Info"
-    elseif target == "term and log" then
-      kind = "Warning"
+    kind = kind
+        or target == "term" and "Warning (more info in the log)"
+        or target == "log" and "Info"
+        or target == "term and log" and "Warning"
+        or "Error"
+    target = kind == "Error" and "term and log" or target
+    local t = text:explode"\n+"
+    write(target, format("Module %s %s:", mod, kind))
+    if #t == 1 then
+      append(target, format(" %s", t[1]))
     else
-      kind, target = "Error", "term and log"
-    end
-    kind = givenkind or kind
-    local t = text:explode"\n"
-    write(target, format("Module %s %s: ", mod, kind))
-    for i,line in ipairs(t) do
-      if line ~= "" then
-        if i == 1 then
-          append(target, line)
-        else
-          write(target, format("(%s)  %s", mod, line))
-        end
+      for _,line in ipairs(t) do
+        write(target, line)
       end
-    end
-    if #t > 1 then
-      write(target, format("(%s) ", mod))
+      write(target, format("(%s)     ", mod))
     end
     append(target, format(" on input line %s", tex.inputlineno))
     write(target, "")
@@ -2217,7 +2208,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/03/29 v2.27.1 mplib package for LuaTeX]
+    [2024/04/04 v2.27.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
