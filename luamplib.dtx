@@ -1499,7 +1499,7 @@ local function pdf_textfigure(font,size,text,width,height,depth)
   text = text:gsub(".",function(c)
     return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
   end)
-  texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,-( 7200/ 7227)/65536*depth))
+  texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0))
 end
 
 local bend_tolerance = 131/65536
