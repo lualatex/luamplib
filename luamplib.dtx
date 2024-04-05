@@ -1326,11 +1326,11 @@ def mpliboutlinetext_ (expr t) text rest =
   def fillcolor primary c = hide(fc:=c;) enddef;
   def drawcolor primary c = hide(dc:=c;) enddef;
   addto tpic doublepath origin rest; tpic:=nullpicture;
-  rawtextext(
+  image(draw rawtextext(
   "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
   "}\csname color_fill:n\endcsname{"& fc &
   "}\csname color_stroke:n\endcsname{"& dc &
-  "}"& t &"}") rest
+  "}"& t &"}") rest;)
   endgroup;
 enddef;
 ]]
