@@ -1317,7 +1317,7 @@ def mpliboutlinetext primary t =
   mpliboutlinetext_ (t)
 enddef;
 def mpliboutlinetext_ (expr t) text rest =
-  save fakebold, scale, fillcolor, drawcolor, wd, sc, fc, dc, tpic;
+  save fakebold, scale, fillcolor, drawcolor, fb, sc, fc, dc, tpic;
   picture tpic; tpic := nullpicture;
   numeric fb, sc; string fc, dc;
   fb:=2; sc:=1; fc:="white"; dc:="black";
