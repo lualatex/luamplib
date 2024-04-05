@@ -423,6 +423,20 @@ See source file '\inFileName' for licencing and contact information.
 %   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
 %
+% \paragraph{\texttt{mpliboutlinetext}}
+%   For some amusement, luamplib provides its own metapost operator
+%   |mpliboutlinetext|, the effect of which is similar to that of
+%   \ConTeXt's |graphictext|. However syntax is quite different.
+%   \begin{verbatim}
+%   mpliboutlinetext "Funny"
+%     fakebold 2.3 scale 3                % fontspec options
+%     drawcolor "blue" fillcolor "red!50" % l3color expressions
+%   \end{verbatim}
+%   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
+%   default values are |2|, |1|, |black| and |white| respectively.
+%   All from |mpliboutlinetext| to the end of sentence will compose an
+%   anonymous |picture|, which can be drawn or assigned to a variable.
+%
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
@@ -1291,15 +1305,6 @@ if known context_mlib:
         (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
     fi
   enddef;
-  def graphictext primary filename =
-    if (readfrom filename = EOF):
-      errmessage "Please prepare '"&filename&"' in advance with"&
-      " 'pstoedit -ssp -dt -f mpost yourfile.ps "&filename&"'";
-    fi
-    closefrom filename;
-    def data_mpy_file = filename enddef;
-    mfun_do_graphic_text (filename)
-  enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
 fi
@@ -1307,6 +1312,27 @@ def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
+def mpliboutlinetext primary t =
+  begingroup;
+  mpliboutlinetext_ (t)
+enddef;
+def mpliboutlinetext_ (expr t) text rest =
+  save fakebold, scale, fillcolor, drawcolor, wd, sc, fc, dc, tpic;
+  picture tpic; tpic := nullpicture;
+  numeric fb, sc; string fc, dc;
+  fb:=2; sc:=1; fc:="white"; dc:="black";
+  def fakebold  primary c = hide(fb:=c;) enddef;
+  def scale     primary c = hide(sc:=c;) enddef;
+  def fillcolor primary c = hide(fc:=c;) enddef;
+  def drawcolor primary c = hide(dc:=c;) enddef;
+  addto tpic doublepath origin rest; tpic:=nullpicture;
+  rawtextext(
+  "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
+  "}\csname color_fill:n\endcsname{"& fc &
+  "}\csname color_stroke:n\endcsname{"& dc &
+  "}"& t &"}") rest
+  endgroup;
+enddef;
 ]]
 luamplib.mplibcodepreamble = mplibcodepreamble
 
