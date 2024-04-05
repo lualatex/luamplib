@@ -430,7 +430,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{verbatim}
 %   mpliboutlinetext "Funny"
 %     fakebold 2.3 scale 3                % fontspec options
-%     drawcolor "blue" fillcolor "red!50" % l3color expressions
+%     drawcolor .7blue fillcolor "red!50" % color expressions
 %   \end{verbatim}
 %   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
 %   default values are |2|, |1|, |black| and |white| respectively.
@@ -1076,7 +1076,7 @@ end
 
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local function process_color (str)
+local function process_color (str, filldraw)
   if str then
     if not str:find("%b{}") then
       str = format("{%s}",str)
@@ -1097,12 +1097,33 @@ local function process_color (str)
         end
       end
     end
+    if filldraw and myfmt == mplibcolorfmt.l3color then return str end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
+    if filldraw then return t end
     return format('1 withprescript "MPlibOverrideColor=%s"', t)
   end
   return ""
 end
+
+local function outlinefilldraw (str, filldraw)
+  local nn = filldraw == "fill" and 'fn:=' or 'dn:='
+  local cc = filldraw == "fill" and 'fc:=' or 'dc:='
+  local res = process_color(str, true)
+  if res:match"{(.+)}" == str then
+    return format('%s"n"; %s"%s";', nn,cc,str)
+  end
+  local tt, t = res:explode" +", { }
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if tt[i]:find"^%a" then break end
+    table.insert(t, tt[i])
+  end
+  return #t == 1 and format('%s"nn"; %s"gray}{%s";',nn,cc,table.unpack(t))
+  or #t == 3 and format('%s"nn"; %s"rgb}{%s,%s,%s";',nn,cc,table.unpack(t))
+  or #t == 4 and format('%s"nn"; %s"cmyk}{%s,%s,%s,%s";',nn,cc,table.unpack(t))
+end
+luamplib.outlinefilldraw = outlinefilldraw
 
 %    \end{macrocode}
 %
@@ -1317,19 +1338,51 @@ def mpliboutlinetext primary t =
   mpliboutlinetext_ (t)
 enddef;
 def mpliboutlinetext_ (expr t) text rest =
-  save fakebold, scale, fillcolor, drawcolor, fb, sc, fc, dc, tpic;
+  save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
+    fb, sc, fc, dc, fn, dn, tpic;
   picture tpic; tpic := nullpicture;
-  numeric fb, sc; string fc, dc;
-  fb:=2; sc:=1; fc:="white"; dc:="black";
+  numeric fb, sc; string fc, dc, fn, dn;
+  fb:=2; sc:=1; fc:="white"; dc:="black"; fn:=dn:="n";
   def fakebold  primary c = hide(fb:=c;) enddef;
   def scale     primary c = hide(sc:=c;) enddef;
-  def fillcolor primary c = hide(fc:=c;) enddef;
-  def drawcolor primary c = hide(dc:=c;) enddef;
+  def fillcolor primary c = hide(
+    if color c:
+      fn:="nn";
+      fc:="rgb}{" & decimal redpart c & "," & decimal greenpart c
+        & "," & decimal bluepart c;
+    elseif cmykcolor c:
+      fn:="nn";
+      fc:="cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
+        & "," & decimal yellowpart c & "," & decimal blackpart c;
+    elseif numeric c:
+      fn:="nn";
+      fc:="gray}{" & decimal c;
+    else:
+      runscript("return luamplib.outlinefilldraw('"& c &"','fill')")
+    fi
+    ) enddef;
+  def drawcolor primary c = hide(
+    if color c:
+      dn:="nn";
+      dc:="rgb}{" & decimal redpart c & "," & decimal greenpart c
+        & "," & decimal bluepart c;
+    elseif cmykcolor c:
+      dn:="nn";
+      dc:="cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
+        & "," & decimal yellowpart c & "," & decimal blackpart c;
+    elseif numeric c:
+      dn:="nn";
+      dc:="gray}{" & decimal c;
+    else:
+      runscript("return luamplib.outlinefilldraw('"& c &"','draw')")
+    fi
+  ) enddef;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
   addto tpic doublepath origin rest; tpic:=nullpicture;
   image(draw rawtextext(
   "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
-  "}\csname color_fill:n\endcsname{"& fc &
-  "}\csname color_stroke:n\endcsname{"& dc &
+  "}\csname color_fill:"& fn &"\endcsname{"& fc &
+  "}\csname color_stroke:"& dn &"\endcsname{"& dc &
   "}"& t &"}") rest;)
   endgroup;
 enddef;
