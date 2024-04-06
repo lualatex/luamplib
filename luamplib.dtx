@@ -426,16 +426,18 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\texttt{mpliboutlinetext}}
 %   For some amusement, luamplib provides its own metapost operator
 %   |mpliboutlinetext|, the effect of which is similar to that of
-%   \ConTeXt's |graphictext|. However syntax is quite different.
+%   \ConTeXt's |graphictext|. However syntax is somewhat different.
 %   \begin{verbatim}
 %   mpliboutlinetext "Funny"
 %     fakebold 2.3 scale 3                % fontspec options
 %     drawcolor .7blue fillcolor "red!50" % color expressions
 %   \end{verbatim}
 %   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
-%   default values are |2|, |1|, |black| and |white| respectively.
+%   default values are |2|, |1|, |"black"| and |"white"| respectively.
 %   All from |mpliboutlinetext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
+%   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
+%   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -1106,7 +1108,7 @@ local function process_color (str, filldraw)
   return ""
 end
 
-local function outlinefilldraw (str, filldraw)
+local function outlinecolor (str, filldraw)
   local nn = filldraw == "fill" and 'fn:=' or 'dn:='
   local cc = filldraw == "fill" and 'fc:=' or 'dc:='
   local res = process_color(str, true)
@@ -1119,11 +1121,10 @@ local function outlinefilldraw (str, filldraw)
     if tt[i]:find"^%a" then break end
     table.insert(t, tt[i])
   end
-  return #t == 1 and format('%s"nn"; %s"gray}{%s";',nn,cc,table.unpack(t))
-  or #t == 3 and format('%s"nn"; %s"rgb}{%s,%s,%s";',nn,cc,table.unpack(t))
-  or #t == 4 and format('%s"nn"; %s"cmyk}{%s,%s,%s,%s";',nn,cc,table.unpack(t))
+  local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
+  return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
-luamplib.outlinefilldraw = outlinefilldraw
+luamplib.outlinecolor = outlinecolor
 
 %    \end{macrocode}
 %
@@ -1358,7 +1359,7 @@ def mpliboutlinetext_ (expr t) text rest =
       fn:="nn";
       fc:="gray}{" & decimal c;
     else:
-      runscript("return luamplib.outlinefilldraw('"& c &"','fill')")
+      runscript("return luamplib.outlinecolor('"& c &"','fill')")
     fi
     ) enddef;
   def drawcolor primary c = hide(
@@ -1374,7 +1375,7 @@ def mpliboutlinetext_ (expr t) text rest =
       dn:="nn";
       dc:="gray}{" & decimal c;
     else:
-      runscript("return luamplib.outlinefilldraw('"& c &"','draw')")
+      runscript("return luamplib.outlinecolor('"& c &"','draw')")
     fi
   ) enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
