@@ -1347,35 +1347,17 @@ def mpliboutlinetext_ (expr t) text rest =
   def fakebold  primary c = hide(fb:=c;) enddef;
   def scale     primary c = hide(sc:=c;) enddef;
   def fillcolor primary c = hide(
-    if color c:
-      fn:="nn";
-      fc:="rgb}{" & decimal redpart c & "," & decimal greenpart c
-        & "," & decimal bluepart c;
-    elseif cmykcolor c:
-      fn:="nn";
-      fc:="cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
-        & "," & decimal yellowpart c & "," & decimal blackpart c;
-    elseif numeric c:
-      fn:="nn";
-      fc:="gray}{" & decimal c;
-    else:
+    if string c:
       runscript("return luamplib.outlinecolor('"& c &"','fill')")
+    else:
+      fn:="nn"; fc:=mpliboutlinecolor_(c);
     fi
     ) enddef;
   def drawcolor primary c = hide(
-    if color c:
-      dn:="nn";
-      dc:="rgb}{" & decimal redpart c & "," & decimal greenpart c
-        & "," & decimal bluepart c;
-    elseif cmykcolor c:
-      dn:="nn";
-      dc:="cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
-        & "," & decimal yellowpart c & "," & decimal blackpart c;
-    elseif numeric c:
-      dn:="nn";
-      dc:="gray}{" & decimal c;
-    else:
+    if string c:
       runscript("return luamplib.outlinecolor('"& c &"','draw')")
+    else:
+      dn:="nn"; dc:=mpliboutlinecolor_(c);
     fi
   ) enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
@@ -1386,6 +1368,17 @@ def mpliboutlinetext_ (expr t) text rest =
   "}\csname color_stroke:"& dn &"\endcsname{"& dc &
   "}"& t &"}") rest;)
   endgroup;
+enddef;
+def mpliboutlinecolor_ (expr c) =
+  if color c:
+    "rgb}{" & decimal redpart c & "," & decimal greenpart c
+      & "," & decimal bluepart c
+  elseif cmykcolor c:
+    "cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
+      & "," & decimal yellowpart c & "," & decimal blackpart c
+  else:
+    "gray}{" & decimal c
+  fi
 enddef;
 ]]
 luamplib.mplibcodepreamble = mplibcodepreamble
