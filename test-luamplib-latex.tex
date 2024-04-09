@@ -171,12 +171,12 @@ diameter:\Dia bp.%
 \par
 \begin{mplibcode}
 beginfig(1)
-draw mpliboutlinetext "\bfseries Funny"
+draw mplibgraphictext "\bfseries Funny"
   fakebold 2 scale 2 % fontspec options
   drawcolor "blue" fillcolor "red!50" % l3color expressions
   scaled 2 rotated 30 ;
 picture p;
-p:=mpliboutlinetext "\bfseries\itshape xyz";
+p:=mplibgraphictext "\bfseries\itshape xyz";
 draw p scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
