@@ -1102,7 +1102,9 @@ local function process_color (str, filldraw)
         end
       end
     end
-    if filldraw and myfmt == mplibcolorfmt.l3color then return str end
+    if filldraw and filldraw ~= "shade" and myfmt == mplibcolorfmt.l3color then
+      return str
+    end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
     if filldraw then return t end
@@ -1114,16 +1116,17 @@ end
 local function outlinecolor (str, filldraw)
   local nn = filldraw == "fill" and 'fn:=' or 'dn:='
   local cc = filldraw == "fill" and 'fc:=' or 'dc:='
-  local res = process_color(str, true)
+  local res = process_color(str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
   end
-  local tt, t = res:explode" +", { }
+  local tt, t = res:explode(), { }
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
     if tt[i]:find"^%a" then break end
     table.insert(t, tt[i])
   end
+  if filldraw == "shade" then return t end
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
@@ -1329,6 +1332,9 @@ if known context_mlib:
         (mfun_labxf@#*lrcorner p + mfun_labyf@#*ulcorner p +
         (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
     fi
+  enddef;
+  def resolvedcolor(expr s) =
+    runscript("return luamplib.outlinecolor('"& s &"','shade')")
   enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
