@@ -1120,6 +1120,12 @@ local function outlinecolor (str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
   end
+  if res:find"scn" then -- spot color: shade only (l3): WIP
+    run_tex_code({
+      [[\color_export:nnN{]], str, [[}{comma-sep-cmyk}\@tempa]],
+    },ccexplat)
+    return token.get_macro'@tempa':explode","
+  end
   local tt, t = res:explode(), { }
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
