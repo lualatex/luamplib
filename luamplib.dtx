@@ -1265,13 +1265,13 @@ function luamplib.runscript (code)
     function mp.print(...)
       mpprint(buffer,...)
     end
-    f()
+    local res = {f()}
     buffer = tableconcat(buffer)
     if buffer and buffer ~= "" then
       return buffer
     end
     buffer = {}
-    mpprint(buffer, f())
+    mpprint(buffer, table.unpack(res))
     return tableconcat(buffer)
   end
   return ""
