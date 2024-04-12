@@ -1,5 +1,7 @@
 \DocumentMetadata{ uncompress }
 \documentclass{article}
+\usepackage{fontspec}
+\setmainfont{latin modern roman}
 \usepackage{luamplib}
 \usepackage{xcolor}
 \everymplib{ beginfig(0); }
@@ -165,6 +167,35 @@ diameter:\Dia bp.%
   beginfig(1);
     rotatedlabel.top(textext("Rotated!"), origin, 45);
   endfig;
+\end{mplibcode}%
+\par
+\begin{mplibcode}
+beginfig(1)
+draw mplibgraphictext "\bfseries Funny"
+  fakebold 2 scale 2 % fontspec options
+  drawcolor "blue" fillcolor "red!50" % l3color expressions
+  scaled 2 rotated 30 ;
+picture p;
+p:=mplibgraphictext "\bfseries\itshape xyz";
+draw p scaled 3 shifted (40,0);
+endfig;
+\end{mplibcode}%
+\mplibsetformat{metafun}%
+\begin{mplibcode}
+beginfig(1)
+fill unitsquare xyscaled (\mpdim\textwidth,1cm)
+    withshademethod "linear"
+    withshadevector (0,1)
+    withshadestep (
+       withshadefraction .5
+       withshadecolors (red,"blue!50")
+    )
+    withshadestep (
+       withshadefraction 1
+       withshadecolors ("blue!50",green)
+    )
+    ;
+endfig;
 \end{mplibcode}%
 \tracingcommands0
 

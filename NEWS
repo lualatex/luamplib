@@ -1,5 +1,31 @@
                        History of the luamplib package
 
+2024/04/12 2.28.0
+   * provide a new metapost operator 'mplibgraphictext', which is similar
+   to ConTeXt's 'graphictext'. But the syntax is not the same:
+
+       mplibgraphictext "Text" fakebold 2 scale 3
+                               fillcolor red drawcolor blue
+
+   where 'fakebold' and 'scale' are fontspec's font options.
+   'fakebold', 'scale', 'drawcolor' and 'fillcolor' are optional and
+   default values are '2', '1', "black" and "white" respectively.
+   When color expressions are given as string, they are regarded as
+   xcolor's or l3color's expressions. The operator generates a metapost
+   picture, which can be drawn or assigned to a variable. For compatibilty
+   with 'graphictext', 'withdrawcolor' and 'withfillcolor' are synonyms of
+   'drawcolor' and 'fillcolor'. Because the implementation is quite
+   different from the \ConTeXt's, there are some limitations such that
+   we can't apply shading (gradient colors) to the text.
+
+   * support metafun's new shading method. Color expressions given as string
+   are regarded as xcolor's or l3color's expressions. Spot colors defined
+   by the color commands of l3color package are also acceptable
+   (currently '\DocumentMetadata{ }' is needed for spot colors).
+
+   * fix the y-position of text figures, which means the result of 'infont'
+   operator, not of the 'textext' operator.
+
 2024/04/04 2.27.2
    * for warning/info/error messages we now use our own lua function,
    instead of ltluatex's. As a result, mplib's multi-line messages are
