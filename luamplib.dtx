@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/04 v2.27.2 Interface for using the mplib library]%
+  [2024/04/12 v2.28.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/04 v2.27.2}
+% \date{2024/04/12 v2.28.0}
 %
 % \maketitle
 %
@@ -434,12 +434,14 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
 %   default values are |2|, |1|, |"black"| and |"white"| respectively.
+%   When color expressions are given as string, they are regarded as
+%   xcolor's or l3color's expressions (this is the same with shading colors).
 %   All from |mplibgraphictext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
 %   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
 %   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
 %   \textsc{n.b.} Because luamplib's current implementation is quite different
-%   from the \ConTeXt's, there are many limitations such that you can't
+%   from the \ConTeXt's, there are some limitations such that you can't
 %   apply shading (gradient colors) to the text.
 %
 % \paragraph{About figure box metrics}
@@ -474,8 +476,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.27.2",
-  date          = "2024/04/04",
+  version       = "2.28.0",
+  date          = "2024/04/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -550,6 +552,7 @@ if not texruntoks then
 end
 
 local is_defined  = token.is_defined
+local get_macro   = token.get_macro
 
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
@@ -1093,7 +1096,7 @@ local function process_color (str, filldraw)
       else
         for _,v in ipairs(str:match"{(.+)}":explode"!") do
           if not v:find("^%s*%d+%s*$") then
-            local pp = token.get_macro(format("l__color_named_%s_prop",v))
+            local pp = get_macro(format("l__color_named_%s_prop",v))
             if not pp or pp == "" then
               myfmt = mplibcolorfmt.xcolor
               break
@@ -1113,18 +1116,12 @@ local function process_color (str, filldraw)
   return ""
 end
 
-local function outlinecolor (str, filldraw)
+luamplib.outlinecolor = function (str, filldraw)
   local nn = filldraw == "fill" and 'fn:=' or 'dn:='
   local cc = filldraw == "fill" and 'fc:=' or 'dc:='
   local res = process_color(str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
-  end
-  if res:find"scn" then -- spot color: shade only (l3): WIP
-    run_tex_code({
-      [[\color_export:nnN{]], str, [[}{comma-sep-cmyk}\@tempa]],
-    },ccexplat)
-    return token.get_macro'@tempa':explode","
   end
   local tt, t = res:explode(), { }
   local be = tt[1]:find"^%d" and 1 or 2
@@ -1132,11 +1129,79 @@ local function outlinecolor (str, filldraw)
     if tt[i]:find"^%a" then break end
     table.insert(t, tt[i])
   end
-  if filldraw == "shade" then return t end
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
-luamplib.outlinecolor = outlinecolor
+
+luamplib.shadecolor = function (str)
+  local res = process_color(str, "shade")
+  if res:find" cs" then -- spot color shade: l3 only
+%    \end{macrocode}
+%   An example of spot color shading:
+% \begin{verbatim}
+%     \DocumentMetadata{ }
+%     \documentclass{article}
+%     \usepackage{luamplib}
+%     \mplibsetformat{metafun}
+%     \ExplSyntaxOn
+%     \color_model_new:nnn { pantone3005 }
+%       { Separation }
+%       { name = PANTONE~3005~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {1, 0.56, 0, 0}
+%       }
+%       \color_set:nnn{spotA}{pantone3005}{1}
+%       \color_set:nnn{spotB}{pantone3005}{0.6}
+%     \color_model_new:nnn { pantone1215 }
+%       { Separation }
+%       { name = PANTONE~1215~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {0, 0.15, 0.51, 0}
+%       }
+%       \color_set:nnn{spotC}{pantone1215}{1}
+%     \color_model_new:nnn { pantone2040 }
+%       { Separation }
+%       { name = PANTONE~2040~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {0, 0.28, 0.21, 0.04}
+%       }
+%       \color_set:nnn{spotD}{pantone2040}{1}
+%     \ExplSyntaxOff
+%     \begin{document}
+%     \begin{mplibcode}
+%     beginfig(1)
+%       fill unitsquare xyscaled (\mpdim\textwidth,1cm)
+%            withshademethod "linear"
+%            withshadevector (0,1)
+%            withshadestep (
+%                withshadefraction .5
+%                withshadecolors ("spotB","spotC")
+%            )
+%            withshadestep (
+%                withshadefraction 1
+%                withshadecolors ("spotC","spotD")
+%            )
+%       ;
+%     endfig;
+%     \end{mplibcode}
+%     \end{document}
+% \end{verbatim}
+%    \begin{macrocode}
+    run_tex_code({
+      [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
+    },ccexplat)
+    local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
+    local value = res:explode()[3]
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,str,name)
+  end
+  local tt, t = res:explode(), { }
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if tt[i]:find"^%a" then break end
+    table.insert(t, tt[i])
+  end
+  return t
+end
 
 %    \end{macrocode}
 %
@@ -1339,8 +1404,19 @@ if known context_mlib:
         (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
     fi
   enddef;
+  def colordecimals primary c =
+    if cmykcolor c:
+      decimal cyanpart c & ":" & decimal magentapart c & ":" & decimal yellowpart c & ":" & decimal blackpart c
+    elseif rgbcolor c:
+      decimal redpart c & ":" & decimal greenpart c & ":" & decimal bluepart c
+    elseif string c:
+      colordecimals resolvedcolor(c)
+    else:
+      decimal c
+    fi
+  enddef;
   def resolvedcolor(expr s) =
-    runscript("return luamplib.outlinecolor('"& s &"','shade')")
+    runscript("return luamplib.shadecolor('"& s &"')")
   enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
@@ -1535,12 +1611,17 @@ luamplib.process_mplibcode = process_mplibcode
 %
 %    For parsing |prescript| materials.
 %    \begin{macrocode}
+local further_split_keys = {
+  mplibtexboxid = true,
+  sh_color_a    = true,
+  sh_color_b    = true,
+}
 local function script2table(s)
   local t = {}
   for _,i in ipairs(s:explode("\13+")) do
     local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
     if k and v and k ~= "" and not t[k] then
-      if v:find":" then
+      if further_split_keys[k] or further_split_keys[k:sub(1,10)] then
         t[k] = v:explode(":")
       else
         t[k] = v
@@ -1784,7 +1865,7 @@ local function update_tr_res(res,mode,opaq)
             tr,
             [[}}\fi]],
           })
-          if not token.get_macro"TRP@list":find(tr) then
+          if not get_macro"TRP@list":find(tr) then
             texsprint(catat11,[[\global\TRP@reruntrue]])
           end
         else
@@ -1837,7 +1918,7 @@ end
 
 %    \end{macrocode}
 %
-%    Shading with |metafun| format. (except spotcolor support)
+%    Shading with |metafun| format.
 %    \begin{macrocode}
 local function shading_initialize ()
   pdf_objs.shading_res = {}
@@ -1879,12 +1960,18 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   local objref = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s",update_pdfobjs(os))
   os = tableconcat {
     format("<</ShadingType %i", shtype),
-    format("/ColorSpace /%s",   colorspace),
+    format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
     format("/Coords [%s]",      coordinates),
     "/Extend [true true]/AntiAlias true>>",
   }
-  local on, new = update_pdfobjs(os)
+  local on, new
+  if colorspace == [[\pdffeedback lastobj 0 R]] then
+    on, new = pdf.reserveobj(), true
+    texsprint(format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
+  else
+    on, new = update_pdfobjs(os)
+  end
   if pdfmode then
     if new then
       if pdfmanagement then
@@ -2042,21 +2129,46 @@ local function do_preobj_SH(object,prescript)
         cb[i] = prescript[format("sh_color_b_%i",i)] or {1}
       end
     end
-    for _,t in ipairs{ca,cb} do
-      for _,tt in ipairs(t) do
-        model = model > #tt and model or #tt
-      end
-    end
-    colorspace = model == 4 and "DeviceCMYK"
-              or model == 3 and "DeviceRGB"
-              or model == 1 and "DeviceGray"
-              or err"unknown color model"
-    for _,t in ipairs{ca,cb} do
-      for _,tt in ipairs(t) do
-        if #tt < model then
-          color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
+    if prescript.mplib_spotcolor then
+      local names, last = { }, ""
+      local script = object.prescript:explode"\13+"
+      for i=#script,1,-1 do
+        if script[i]:find"mplib_spotcolor" then
+          local str, name = script[i]:match"mplib_spotcolor=(.-):(.+)"
+          if str ~= last then
+            names[#names+1] = name
+          end
+          last = str
         end
       end
+      texsprint(ccexplat,{
+        [[\color_model_new:nnn{]], tableconcat(names),
+        [[}{DeviceN}{names={]], tableconcat(names,","), [[}}]]
+      })
+      colorspace = [[\pdffeedback lastobj 0 R]]
+      for n,t in ipairs{ca,cb} do
+        for i=1,#t do
+          for j=1, i+n-2  do table.insert(t[i], j, 0) end
+          for j=i+n, #t+1 do table.insert(t[i], j, 0) end
+        end
+      end
+    else
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          model = model > #tt and model or #tt
+        end
+      end
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          if #tt < model then
+            color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
+          end
+        end
+      end
+      colorspace = model == 4 and "/DeviceCMYK"
+                or model == 3 and "/DeviceRGB"
+                or model == 1 and "/DeviceGray"
+                or err"unknown color model"
     end
     if sh_type == "linear" then
       local coordinates = format("%f %f %f %f",
@@ -2368,7 +2480,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/04 v2.27.2 mplib package for LuaTeX]
+    [2024/04/12 v2.28.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
