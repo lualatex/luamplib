@@ -1192,7 +1192,7 @@ luamplib.shadecolor = function (str)
     },ccexplat)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
     local value = res:explode()[3]
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,str,name)
+    return format('(%s) withprescript"mplib_spotcolor=%s"', value,name)
   end
   local tt, t = res:explode(), { }
   local be = tt[1]:find"^%d" and 1 or 2
@@ -2130,15 +2130,29 @@ local function do_preobj_SH(object,prescript)
       end
     end
     if prescript.mplib_spotcolor then
-      local names, last = { }, ""
+      ca, cb = { }, { }
+      local names, last, pos = { }, "", -1
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
-          local str, name = script[i]:match"mplib_spotcolor=(.-):(.+)"
-          if str ~= last then
-            names[#names+1] = name
+          local name  = script[i]:match"=(.+)"
+          local value = script[i+1]:match"=(.+)"
+          if name ~= last then
+            table.insert(names, name)
+            pos = pos+1
           end
-          last = str
+          local t = { }
+          for j=1,pos do table.insert(t, 0) end
+          table.insert(t, value)
+          table.insert(#ca == #cb and ca or cb, t)
+          last = name
+        end
+      end
+      for n,t in ipairs{ca,cb} do
+        for i=1,#t do
+          for j=#t[i]+1,#names do
+            table.insert(t[i], 0)
+          end
         end
       end
       texsprint(ccexplat,{
@@ -2146,12 +2160,6 @@ local function do_preobj_SH(object,prescript)
         [[}{DeviceN}{names={]], tableconcat(names,","), [[}}]]
       })
       colorspace = [[\pdffeedback lastobj 0 R]]
-      for n,t in ipairs{ca,cb} do
-        for i=1,#t do
-          for j=1, i+n-2  do table.insert(t[i], j, 0) end
-          for j=i+n, #t+1 do table.insert(t[i], j, 0) end
-        end
-      end
     else
       for _,t in ipairs{ca,cb} do
         for _,tt in ipairs(t) do
