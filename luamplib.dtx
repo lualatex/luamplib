@@ -2131,28 +2131,26 @@ local function do_preobj_SH(object,prescript)
     end
     if prescript.mplib_spotcolor then
       ca, cb = { }, { }
-      local names, last, pos = { }, "", -1
+      local names, pos = { }, -1
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
           local name  = script[i]:match"=(.+)"
           local value = script[i+1]:match"=(.+)"
-          if name ~= last then
-            table.insert(names, name)
+          if not names[name] then
             pos = pos+1
+            names[name] = pos
+            names[#names+1] = name
           end
           local t = { }
-          for j=1,pos do table.insert(t, 0) end
-          table.insert(t, value)
+          for j=1,names[name] do t[#t+1] = 0 end
+          t[#t+1] = value
           table.insert(#ca == #cb and ca or cb, t)
-          last = name
         end
       end
-      for n,t in ipairs{ca,cb} do
-        for i=1,#t do
-          for j=#t[i]+1,#names do
-            table.insert(t[i], 0)
-          end
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          for i=1,#names-#tt do tt[#tt+1] = 0 end
         end
       end
       texsprint(ccexplat,{
