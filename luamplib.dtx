@@ -2086,7 +2086,7 @@ end
 %
 %    shading
 %    \begin{macrocode}
-luamplib.colorspaces = { }
+luamplib.clrspcs = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2167,22 +2167,20 @@ local function do_preobj_SH(object,prescript)
         end
       else
         local name = tableconcat(names)
-        local obj = luamplib.colorspaces[name] or 0
+        local obj = luamplib.clrspcs[name] or 0
         if type(obj) == "string" then
           colorspace = obj
         else
           obj = obj+1 -- redundant objects can be created
-          luamplib.colorspaces[name] = obj
-          texsprint(ccexplat,{
-            [[\color_model_new:nnn]],
-            format("{mplibcolorspace_%s%s}", name, obj),
-            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
-            format("\\directlua{luamplib.colorspaces['%s']=", name),
-            [[\ifnum\outputmode>0 '\pdffeedback lastobj 0 R']],
-            [[\else '@pdf.obj\the\g__pdf_backend_object_int'\fi}]],
-          })
+          luamplib.clrspcs[name] = obj
           colorspace = pdfmode and [[\pdffeedback lastobj 0 R]]
                                or  [[@pdf.obj\the\g__pdf_backend_object_int]]
+          texsprint(ccexplat,{
+            [[\color_model_new:nnn]],
+            format("{mplibcolorspace_%s_%s}", name, obj),
+            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
+            format("\\directlua{luamplib.clrspcs['%s']='%s'}", name,colorspace),
+          })
         end
       end
     else
