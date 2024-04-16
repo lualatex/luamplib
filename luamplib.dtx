@@ -535,7 +535,6 @@ local tableconcat   = table.concat
 local texsprint     = tex.sprint
 local textprint     = tex.tprint
 
-local texget      = tex.get
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
@@ -966,6 +965,11 @@ end
 
 %    \end{macrocode}
 %
+%    |dvipdfmx| is supported, though nobody seems to use it.
+%    \begin{macrocode}
+local pdfmode = tex.get"outputmode" > 0
+%    \end{macrocode}
+%
 %    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|,
 %    which made possible running \TeX\ code snippets inside |\directlua|.
 %    \begin{macrocode}
@@ -1116,6 +1120,16 @@ local function process_color (str, filldraw)
   return ""
 end
 
+local function colorsplit (tt)
+  local t = { }
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if tt[i]:find"^%a" then break end
+    table.insert(t, tt[i])
+  end
+  return t
+end
+
 luamplib.outlinecolor = function (str, filldraw)
   local nn = filldraw == "fill" and 'fn:=' or 'dn:='
   local cc = filldraw == "fill" and 'fc:=' or 'dc:='
@@ -1123,19 +1137,15 @@ luamplib.outlinecolor = function (str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
   end
-  local tt, t = res:explode(), { }
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if tt[i]:find"^%a" then break end
-    table.insert(t, tt[i])
-  end
+  local t = colorsplit(res:explode())
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
 
 luamplib.shadecolor = function (str)
   local res = process_color(str, "shade")
-  if res:find" cs" then -- spot color shade: l3 only
+  local tt  = res:gsub("[%[%]]",""):explode()
+  if tt[2] == "cs" or tt[2]:find"@pdf.obj" then -- spot color shade: l3 only
 %    \end{macrocode}
 %   An example of spot color shading:
 % \begin{verbatim}
@@ -1191,16 +1201,10 @@ luamplib.shadecolor = function (str)
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
     },ccexplat)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
-    local value = res:explode()[3]
-    return format('(%s) withprescript"mplib_spotcolor=%s"', value,name)
+    local csp  = pdfmode and tt[1] or tt[2]
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', tt[3],csp,name)
   end
-  local tt, t = res:explode(), { }
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if tt[i]:find"^%a" then break end
-    table.insert(t, tt[i])
-  end
-  return t
+  return colorsplit(tt)
 end
 
 %    \end{macrocode}
@@ -1753,13 +1757,6 @@ local function flushconcatpath(path,open)
   end
 end
 
-%    \end{macrocode}
-%
-%    |dvipdfmx| is supported, though nobody seems to use it.
-%    \begin{macrocode}
-local pdfoutput = tonumber(texget("outputmode")) or tonumber(texget("pdfoutput"))
-local pdfmode = pdfoutput > 0
-
 local function start_pdf_code()
   if pdfmode then
     pdf_literalcode("q")
@@ -1969,6 +1966,11 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   if colorspace == [[\pdffeedback lastobj 0 R]] then
     on, new = pdf.reserveobj(), true
     texsprint(format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
+  elseif colorspace:find"g__pdf_backend_object_int" then
+    local int = tex.getcount"g__pdf_backend_object_int"+1
+    tex.setcount("g__pdf_backend_object_int", int)
+    on, new = format("cs%s",int), true
+    texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
   else
     on, new = update_pdfobjs(os)
   end
@@ -2084,6 +2086,7 @@ end
 %
 %    shading
 %    \begin{macrocode}
+luamplib.colorspaces = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2117,7 +2120,7 @@ local function do_preobj_SH(object,prescript)
         end
       end
     end
-    local model, ca, cb, colorspace, steps, fractions = 0
+    local ca, cb, colorspace, steps, fractions
     ca = { prescript.sh_color_a_1 or prescript.sh_color_a or {0} }
     cb = { prescript.sh_color_b_1 or prescript.sh_color_b or {1} }
     steps = tonumber(prescript.sh_step) or 1
@@ -2131,12 +2134,13 @@ local function do_preobj_SH(object,prescript)
     end
     if prescript.mplib_spotcolor then
       ca, cb = { }, { }
-      local names, pos = { }, -1
+      local names, pos, csname = { }, -1, ""
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
-          local name  = script[i]:match"=(.+)"
-          local value = script[i+1]:match"=(.+)"
+          local name, value
+          csname, name = script[i]:match"=(.-):(.+)"
+          value = script[i+1]:match"=(.+)"
           if not names[name] then
             pos = pos+1
             names[name] = pos
@@ -2153,12 +2157,36 @@ local function do_preobj_SH(object,prescript)
           for i=1,#names-#tt do tt[#tt+1] = 0 end
         end
       end
-      texsprint(ccexplat,{
-        [[\color_model_new:nnn{]], tableconcat(names),
-        [[}{DeviceN}{names={]], tableconcat(names,","), [[}}]]
-      })
-      colorspace = [[\pdffeedback lastobj 0 R]]
+      if #names == 1 then
+        if pdfmode then
+          local cs = csname:match"^/(.+)"
+          local obj = token.create(format('c__pdf_object_%s_int',cs)).mode
+          colorspace = format("%s 0 R", obj)
+        else
+          colorspace = csname
+        end
+      else
+        local name = tableconcat(names)
+        local obj = luamplib.colorspaces[name] or 0
+        if type(obj) == "string" then
+          colorspace = obj
+        else
+          obj = obj+1 -- redundant objects can be created
+          luamplib.colorspaces[name] = obj
+          texsprint(ccexplat,{
+            [[\color_model_new:nnn]],
+            format("{mplibcolorspace_%s%s}", name, obj),
+            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
+            format("\\directlua{luamplib.colorspaces['%s']=", name),
+            [[\ifnum\outputmode>0 '\pdffeedback lastobj 0 R']],
+            [[\else '@pdf.obj\the\g__pdf_backend_object_int'\fi}]],
+          })
+          colorspace = pdfmode and [[\pdffeedback lastobj 0 R]]
+                               or  [[@pdf.obj\the\g__pdf_backend_object_int]]
+        end
+      end
     else
+      local model = 0
       for _,t in ipairs{ca,cb} do
         for _,tt in ipairs(t) do
           model = model > #tt and model or #tt
