@@ -1203,16 +1203,10 @@ luamplib.shadecolor = function (str)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
     local obj
     if pdfmode then
-      local cs = tt[1]:match"^/(.+)"
-      if is_defined'__pdf_object_retrieve:n' then
-        run_tex_code({
-          [[\edef\mplib_@tempa{\__pdf_object_retrieve:n{]], cs, "}}",
-        },ccexplat)
-        obj = format("%s 0 R",get_macro'mplib_@tempa')
-      else
-        local tok = token.create(format('c__pdf_object_%s_int', cs))
-        obj = format("%s 0 R", tok.mode)
-      end
+      run_tex_code({
+        [[\edef\mplib_@tempa{\pdf_object_ref:n{]], tt[1]:match"^/(.+)", "}}",
+      },ccexplat)
+      obj = get_macro'mplib_@tempa'
     else
       obj = tt[2]
     end
