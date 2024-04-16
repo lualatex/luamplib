@@ -1201,8 +1201,22 @@ luamplib.shadecolor = function (str)
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
     },ccexplat)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
-    local csp  = pdfmode and tt[1] or tt[2]
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', tt[3],csp,name)
+    local obj
+    if pdfmode then
+      local cs = tt[1]:match"^/(.+)"
+      if is_defined'__pdf_object_retrieve:n' then
+        run_tex_code({
+          [[\edef\mplib_@tempa{\__pdf_object_retrieve:n{]], cs, "}}",
+        },ccexplat)
+        obj = format("%s 0 R",get_macro'mplib_@tempa')
+      else
+        local tok = token.create(format('c__pdf_object_%s_int', cs))
+        obj = format("%s 0 R", tok.mode)
+      end
+    else
+      obj = tt[2]
+    end
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', tt[3],obj,name)
   end
   return colorsplit(tt)
 end
@@ -2134,12 +2148,12 @@ local function do_preobj_SH(object,prescript)
     end
     if prescript.mplib_spotcolor then
       ca, cb = { }, { }
-      local names, pos, csname = { }, -1, ""
+      local names, pos, objref = { }, -1, ""
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
           local name, value
-          csname, name = script[i]:match"=(.-):(.+)"
+          objref, name = script[i]:match"=(.-):(.+)"
           value = script[i+1]:match"=(.+)"
           if not names[name] then
             pos = pos+1
@@ -2158,13 +2172,7 @@ local function do_preobj_SH(object,prescript)
         end
       end
       if #names == 1 then
-        if pdfmode then
-          local cs = csname:match"^/(.+)"
-          local obj = token.create(format('c__pdf_object_%s_int',cs)).mode
-          colorspace = format("%s 0 R", obj)
-        else
-          colorspace = csname
-        end
+        colorspace = objref
       else
         local name = tableconcat(names)
         local obj = luamplib.clrspcs[name] or 0
