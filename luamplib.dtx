@@ -1976,7 +1976,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     texsprint(format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
   elseif colorspace:find"g__pdf_backend_object_int" then
     local int = tex.getcount"g__pdf_backend_object_int"+1
-    tex.setcount("g__pdf_backend_object_int", int)
+    tex.setcount("global","g__pdf_backend_object_int", int)
     on, new = format("cs%s",int), true
     texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
   else
