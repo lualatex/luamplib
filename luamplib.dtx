@@ -1971,14 +1971,16 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new
-  if colorspace == [[\pdffeedback lastobj 0 R]] then
-    on, new = pdf.reserveobj(), true
-    texsprint(format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
-  elseif colorspace:find"g__pdf_backend_object_int" then
-    local int = tex.getcount"g__pdf_backend_object_int"+1
-    tex.setcount("global","g__pdf_backend_object_int", int)
-    on, new = format("cs%s",int), true
-    texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+  if colorspace == [[\pdf_object_ref_last:]] then
+    if pdfmode then
+      on, new = pdf.reserveobj(), true
+      texsprint(ccexplat, format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
+    else
+      local int = tex.getcount"g__pdf_backend_object_int"+1
+      tex.setcount("global","g__pdf_backend_object_int", int)
+      on, new = format("cs%s",int), true
+      texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+    end
   else
     on, new = update_pdfobjs(os)
   end
@@ -2175,14 +2177,18 @@ local function do_preobj_SH(object,prescript)
         else
           obj = obj+1 -- redundant objects can be created
           luamplib.clrspcs[name] = obj
-          colorspace = pdfmode and [[\pdffeedback lastobj 0 R]]
-                               or  [[@pdf.obj\the\g__pdf_backend_object_int]]
+          colorspace = [[\pdf_object_ref_last:]]
           texsprint(ccexplat,{
             [[\color_model_new:nnn]],
             format("{mplibcolorspace_%s_%s}", name, obj),
             format("{DeviceN}{names={%s}}", tableconcat(names,",")),
             format("\\directlua{luamplib.clrspcs['%s']='%s'}", name,colorspace),
           })
+          if obj > 1 then
+            warn("  redundant pdf object has been generated.\n"
+            .."  It is recommended to separate shading objects with the same color sequence\n"
+            .."  between independent mplibcode environments")
+          end
         end
       end
     else
