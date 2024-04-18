@@ -1088,7 +1088,7 @@ end
 
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local function process_color (str, filldraw)
+local function process_color (str, kind)
   if str then
     if not str:find("%b{}") then
       str = format("{%s}",str)
@@ -1109,19 +1109,20 @@ local function process_color (str, filldraw)
         end
       end
     end
-    if filldraw and filldraw ~= "shade" and myfmt == mplibcolorfmt.l3color then
-      return str
-    end
+    if myfmt == mplibcolorfmt.l3color and (kind == "fill" or kind == "draw") then return str end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
-    if filldraw then return t end
+    if not pdfmode and not t:find"^pdf" then
+      t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+    end
+    if kind then return t end
     return format('1 withprescript "MPlibOverrideColor=%s"', t)
   end
   return ""
 end
 
-local function colorsplit (tt)
-  local t = { }
+local function colorsplit (res)
+  local t, tt = { }, res:gsub("[%[%]]",""):explode()
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
     if tt[i]:find"^%a" then break end
@@ -1137,15 +1138,14 @@ luamplib.outlinecolor = function (str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
   end
-  local t = colorsplit(res:explode())
+  local t = colorsplit(res)
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
 
 luamplib.shadecolor = function (str)
   local res = process_color(str, "shade")
-  local tt  = res:gsub("[%[%]]",""):explode()
-  if tt[2] == "cs" or tt[2]:find"@pdf.obj" then -- spot color shade: l3 only
+  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
 %    \end{macrocode}
 %   An example of spot color shading:
 % \begin{verbatim}
@@ -1201,18 +1201,19 @@ luamplib.shadecolor = function (str)
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
     },ccexplat)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
-    local obj
+    local t, obj = res:explode()
     if pdfmode then
       run_tex_code({
-        [[\edef\mplib_@tempa{\pdf_object_ref:n{]], tt[1]:match"^/(.+)", "}}",
+        [[\edef\mplib_@tempa{\pdf_object_ref:n{]], t[1]:match"^/(.+)", "}}",
       },ccexplat)
       obj = get_macro'mplib_@tempa'
     else
-      obj = tt[2]
+      obj = t[2]
     end
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', tt[3],obj,name)
+    local value = t[3]:match"%[(.-)%]" or t[3]
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,obj,name)
   end
-  return colorsplit(tt)
+  return colorsplit(res)
 end
 
 %    \end{macrocode}
@@ -2066,11 +2067,7 @@ local function do_preobj_CR(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      if override:find"^pdf:" then
-        texsprint(format("\\special{%s}",override))
-      else
-        texsprint(format("\\special{color push %s}",override))
-      end
+      texsprint(format("\\special{%s}",override))
       prev_override_color = override
     end
   else
@@ -2081,11 +2078,7 @@ local function do_preobj_CR(object,prescript)
     elseif not pdfmode then
       override = prev_override_color
       if override then
-        if override:find"^pdf:" then
-          texsprint(format("\\special{%s}",override))
-        else
-          texsprint(format("\\special{color push %s}",override))
-        end
+        texsprint(format("\\special{%s}",override))
       end
     end
   end
@@ -2185,9 +2178,9 @@ local function do_preobj_SH(object,prescript)
             format("\\directlua{luamplib.clrspcs['%s']='%s'}", name,colorspace),
           })
           if obj > 1 then
-            warn("  redundant pdf object has been generated.\n"
-            .."  It is recommended to separate shading objects with the same color sequence\n"
-            .."  between independent mplibcode environments")
+            warn("redundant pdf object has been generated.\n\z
+It is recommended to separate shading objects with the same color sequence\n\z
+(%s)\nbetween independent mplibcode environments", tableconcat(names,"-"))
           end
         end
       end
@@ -2236,7 +2229,7 @@ local function do_postobj_color(tr,over,sh)
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
   end
   if over then
-    texsprint("\\special{color pop}")
+    texsprint"\\special{pdf:ec}"
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
