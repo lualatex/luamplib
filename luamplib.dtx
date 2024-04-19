@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/12 v2.28.0 Interface for using the mplib library]%
+  [2024/04/19 v2.28.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/12 v2.28.0}
+% \date{2024/04/19 v2.28.1}
 %
 % \maketitle
 %
@@ -476,8 +476,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.28.0",
-  date          = "2024/04/12",
+  version       = "2.28.1",
+  date          = "2024/04/19",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -535,7 +535,6 @@ local tableconcat   = table.concat
 local texsprint     = tex.sprint
 local textprint     = tex.tprint
 
-local texget      = tex.get
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
@@ -795,11 +794,6 @@ luamplib.finder = finder
 %    (Don't know which version of MPLib started to support
 %    |make_text| and |run_script|; let the users find it.)
 %    \begin{macrocode}
-if tonumber(mplib.version()) <= 1.50 then
-  err("luamplib no longer supports mplib v1.50 or lower. "..
-  "Please upgrade to the latest version of LuaTeX")
-end
-
 local preamble = [[
   boolean mplib ; mplib := true ;
   let dump = endinput ;
@@ -894,13 +888,12 @@ local function luamplibload (name)
 %
 %    Append our own MetaPost preamble to the preamble above.
 %    \begin{macrocode}
-  local preamble = preamble .. luamplib.mplibcodepreamble
-  if luamplib.legacy_verbatimtex then
-    preamble = preamble .. luamplib.legacyverbatimtexpreamble
-  end
-  if luamplib.textextlabel then
-    preamble = preamble .. luamplib.textextlabelpreamble
-  end
+  local preamble = tableconcat{
+    preamble,
+    luamplib.mplibcodepreamble,
+    luamplib.legacy_verbatimtex and luamplib.legacyverbatimtexpreamble or "",
+    luamplib.textextlabel and luamplib.textextlabelpreamble or "",
+  }
   local result, log
   if not mpx then
     result = { status = 99, error = "out of memory"}
@@ -966,6 +959,11 @@ end
 
 %    \end{macrocode}
 %
+%    |dvipdfmx| is supported, though nobody seems to use it.
+%    \begin{macrocode}
+local pdfmode = tex.get"outputmode" > 0
+%    \end{macrocode}
+%
 %    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|,
 %    which made possible running \TeX\ code snippets inside |\directlua|.
 %    \begin{macrocode}
@@ -1010,9 +1008,9 @@ local texboxes = {
 %    \begin{macrocode}
 local factor = 65536*(7227/7200)
 
-local textext_fmt = [[image(addto currentpicture doublepath unitsquare ]]..
-  [[xscaled %f yscaled %f shifted (0,-%f) ]]..
-  [[withprescript "mplibtexboxid=%i:%f:%f")]]
+local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
+xscaled %f yscaled %f shifted (0,-%f) \z
+withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
@@ -1059,14 +1057,17 @@ end
 %    Attempt to support l3color as well.
 %    \begin{macrocode}
 local mplibcolorfmt = {
-  xcolor = [[\begingroup\let\XC@mcolor\relax]]..
-  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color%s\endgroup]],
-  l3color = [[\begingroup]]..
-  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
-  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
-  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
-  [[\color_select:n%s\endgroup]],
+  xcolor = tableconcat{
+    [[\begingroup\let\XC@mcolor\relax]],
+    [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]],
+    [[\color%s\endgroup]],
+  },
+  l3color = tableconcat{
+    [[\begingroup\def\__color_select:N#1{\expandafter\__color_select:nn#1}]],
+    [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]],
+    [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]],
+    [[\color_select:n%s\endgroup]],
+  },
 }
 
 local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
@@ -1081,16 +1082,15 @@ if colfmt == "l3color" then
     "\\endgroup",
   }
 end
-
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local function process_color (str, filldraw)
+local function process_color (str, kind)
   if str then
     if not str:find("%b{}") then
       str = format("{%s}",str)
     end
     local myfmt = mplibcolorfmt[colfmt]
-    if colfmt == "l3color" and (is_defined"ver@xcolor.sty" or is_defined"ver@color.sty") then
+    if colfmt == "l3color" and is_defined"color" then
       if str:find("%b[]") then
         myfmt = mplibcolorfmt.xcolor
       else
@@ -1105,15 +1105,26 @@ local function process_color (str, filldraw)
         end
       end
     end
-    if filldraw and filldraw ~= "shade" and myfmt == mplibcolorfmt.l3color then
-      return str
-    end
+    if myfmt == mplibcolorfmt.l3color and (kind == "fill" or kind == "draw") then return str end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
-    if filldraw then return t end
+    if not pdfmode and not t:find"^pdf" then
+      t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+    end
+    if kind then return t end
     return format('1 withprescript "MPlibOverrideColor=%s"', t)
   end
   return ""
+end
+
+local function colorsplit (res)
+  local t, tt = { }, res:gsub("[%[%]]",""):explode()
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if tt[i]:find"^%a" then break end
+    table.insert(t, tt[i])
+  end
+  return t
 end
 
 luamplib.outlinecolor = function (str, filldraw)
@@ -1123,19 +1134,14 @@ luamplib.outlinecolor = function (str, filldraw)
   if res:match"{(.+)}" == str then
     return format('%s"n"; %s"%s";', nn,cc,str)
   end
-  local tt, t = res:explode(), { }
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if tt[i]:find"^%a" then break end
-    table.insert(t, tt[i])
-  end
+  local t = colorsplit(res)
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
 
 luamplib.shadecolor = function (str)
   local res = process_color(str, "shade")
-  if res:find" cs" then -- spot color shade: l3 only
+  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
 %    \end{macrocode}
 %   An example of spot color shading:
 % \begin{verbatim}
@@ -1191,16 +1197,24 @@ luamplib.shadecolor = function (str)
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
     },ccexplat)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
-    local value = res:explode()[3]
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,str,name)
+    local t, obj = res:explode()
+    if pdfmode then
+      obj = t[1]:match"^/(.+)"
+      if ltx.pdf and ltx.pdf.object_id then
+        obj = format("%s 0 R", ltx.pdf.object_id(obj))
+      else
+        run_tex_code({
+          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
+        },ccexplat)
+        obj = get_macro'mplib_@tempa'
+      end
+    else
+      obj = t[2]
+    end
+    local value = t[3]:match"%[(.-)%]" or t[3]
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,obj,name)
   end
-  local tt, t = res:explode(), { }
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if tt[i]:find"^%a" then break end
-    table.insert(t, tt[i])
-  end
-  return t
+  return colorsplit(res)
 end
 
 %    \end{macrocode}
@@ -1753,13 +1767,6 @@ local function flushconcatpath(path,open)
   end
 end
 
-%    \end{macrocode}
-%
-%    |dvipdfmx| is supported, though nobody seems to use it.
-%    \begin{macrocode}
-local pdfoutput = tonumber(texget("outputmode")) or tonumber(texget("pdfoutput"))
-local pdfmode = pdfoutput > 0
-
 local function start_pdf_code()
   if pdfmode then
     pdf_literalcode("q")
@@ -1966,9 +1973,16 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new
-  if colorspace == [[\pdffeedback lastobj 0 R]] then
-    on, new = pdf.reserveobj(), true
-    texsprint(format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
+  if colorspace == [[\pdf_object_ref_last:]] then
+    if pdfmode then
+      on, new = pdf.reserveobj(), true
+      texsprint(ccexplat, format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
+    else
+      local int = tex.getcount"g__pdf_backend_object_int"+1
+      tex.setcount("global","g__pdf_backend_object_int", int)
+      on, new = format("cs%s",int), true
+      texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+    end
   else
     on, new = update_pdfobjs(os)
   end
@@ -2054,11 +2068,7 @@ local function do_preobj_CR(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      if override:find"^pdf:" then
-        texsprint(format("\\special{%s}",override))
-      else
-        texsprint(format("\\special{color push %s}",override))
-      end
+      texsprint(format("\\special{%s}",override))
       prev_override_color = override
     end
   else
@@ -2069,11 +2079,7 @@ local function do_preobj_CR(object,prescript)
     elseif not pdfmode then
       override = prev_override_color
       if override then
-        if override:find"^pdf:" then
-          texsprint(format("\\special{%s}",override))
-        else
-          texsprint(format("\\special{color push %s}",override))
-        end
+        texsprint(format("\\special{%s}",override))
       end
     end
   end
@@ -2084,6 +2090,7 @@ end
 %
 %    shading
 %    \begin{macrocode}
+luamplib.clrspcs = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2117,7 +2124,7 @@ local function do_preobj_SH(object,prescript)
         end
       end
     end
-    local model, ca, cb, colorspace, steps, fractions = 0
+    local ca, cb, colorspace, steps, fractions
     ca = { prescript.sh_color_a_1 or prescript.sh_color_a or {0} }
     cb = { prescript.sh_color_b_1 or prescript.sh_color_b or {1} }
     steps = tonumber(prescript.sh_step) or 1
@@ -2130,29 +2137,70 @@ local function do_preobj_SH(object,prescript)
       end
     end
     if prescript.mplib_spotcolor then
-      local names, last = { }, ""
+      ca, cb = { }, { }
+      local names, pos, objref = { }, -1, ""
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
-          local str, name = script[i]:match"mplib_spotcolor=(.-):(.+)"
-          if str ~= last then
+          local name, value
+          objref, name = script[i]:match"=(.-):(.+)"
+          value = script[i+1]:match"=(.+)"
+          if not names[name] then
+            pos = pos+1
+            names[name] = pos
             names[#names+1] = name
           end
-          last = str
+          local t = { }
+          for j=1,names[name] do t[#t+1] = 0 end
+          t[#t+1] = value
+          table.insert(#ca == #cb and ca or cb, t)
         end
       end
-      texsprint(ccexplat,{
-        [[\color_model_new:nnn{]], tableconcat(names),
-        [[}{DeviceN}{names={]], tableconcat(names,","), [[}}]]
-      })
-      colorspace = [[\pdffeedback lastobj 0 R]]
-      for n,t in ipairs{ca,cb} do
-        for i=1,#t do
-          for j=1, i+n-2  do table.insert(t[i], j, 0) end
-          for j=i+n, #t+1 do table.insert(t[i], j, 0) end
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          for i=1,#names-#tt do tt[#tt+1] = 0 end
+        end
+      end
+      if #names == 1 then
+        colorspace = objref
+      else
+        local name = tableconcat(names,"-")
+        local obj = luamplib.clrspcs[name] or 0
+        if type(obj) == "string" then
+          colorspace = obj
+        else
+          obj = obj+1
+          luamplib.clrspcs[name] = obj
+          colorspace = [[\pdf_object_ref_last:]]
+          local function put_devicen()
+            texsprint(ccexplat,{
+              [[\color_model_new:nnn]],
+              format("{mplibcolorspace_%s_%s}", name, obj),
+              format("{DeviceN}{names={%s}}", tableconcat(names,",")),
+            })
+          end
+          if obj == 1 then
+            put_devicen()
+            texsprint(ccexplat,"\\directlua{luamplib.clrspcs['",name,"']='",colorspace,"'}")
+            if is_defined'@auxout' then
+              texsprint(ccexplat,format("\\if@filesw\\immediate\\write\\@auxout{\z
+              \\string\\expandafter\\string\\gdef\\string\\csname\\space luamplib.colorspace.%s\z
+              \\string\\endcsname{%s}}\\fi", name, colorspace))
+            end
+          else
+            local auxobj = get_macro(format("luamplib.colorspace.%s",name))
+            colorspace = auxobj or colorspace
+            if not auxobj then put_devicen() end
+            if is_defined'@auxout' then
+              texsprint(format("\\directlua{ if luamplib.clrspcs['%s']=='%s' then else \z
+              texio.write_nl('term and log','Module luamplib Warning: Rerun to get smaller PDF \z
+              on input line %s','') end }", name, auxobj, tex.inputlineno))
+            end
+          end
         end
       end
     else
+      local model = 0
       for _,t in ipairs{ca,cb} do
         for _,tt in ipairs(t) do
           model = model > #tt and model or #tt
@@ -2196,7 +2244,7 @@ local function do_postobj_color(tr,over,sh)
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
   end
   if over then
-    texsprint("\\special{color pop}")
+    texsprint"\\special{pdf:ec}"
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
@@ -2480,7 +2528,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/12 v2.28.0 mplib package for LuaTeX]
+    [2024/04/19 v2.28.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2496,14 +2544,7 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \ifx\pdfoutput\undefined
   \let\pdfoutput\outputmode
-  \protected\def\pdfliteral{\pdfextension literal}
 \fi
-%    \end{macrocode}
-%
-%    Unfortuantely there are still packages out there that think it is a good
-%    idea to manually set \cs{pdfoutput} which defeats the above branch that
-%    defines \cs{pdfliteral}.  To cover that case we need an extra check.
-%    \begin{macrocode}
 \ifx\pdfliteral\undefined
   \protected\def\pdfliteral{\pdfextension literal}
 \fi
@@ -2523,11 +2564,9 @@ luamplib.colorconverter = colorconverter
 \else
   \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
   \ifcsname PackageInfo\endcsname
-    \PackageInfo{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
+    \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
-    \write128{}
-    \write128{luamplib Info: take dvipdfmx path, no support for other dvi tools currently.}
-    \write128{}
+    \write128{luamplib Info: only dvipdfmx is supported currently}
   \fi
 \fi
 %    \end{macrocode}

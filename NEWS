@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/04/19 2.28.1
+   * fix spot color shading routine
+
 2024/04/12 2.28.0
    * provide a new metapost operator 'mplibgraphictext', which is similar
    to ConTeXt's 'graphictext'. But the syntax is not the same:
