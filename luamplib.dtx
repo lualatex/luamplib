@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/12 v2.28.0 Interface for using the mplib library]%
+  [2024/04/19 v2.28.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/12 v2.28.0}
+% \date{2024/04/19 v2.28.1}
 %
 % \maketitle
 %
@@ -476,8 +476,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.28.0",
-  date          = "2024/04/12",
+  version       = "2.28.1",
+  date          = "2024/04/19",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -794,11 +794,6 @@ luamplib.finder = finder
 %    (Don't know which version of MPLib started to support
 %    |make_text| and |run_script|; let the users find it.)
 %    \begin{macrocode}
-if tonumber(mplib.version()) <= 1.50 then
-  err("luamplib no longer supports mplib v1.50 or lower. "..
-  "Please upgrade to the latest version of LuaTeX")
-end
-
 local preamble = [[
   boolean mplib ; mplib := true ;
   let dump = endinput ;
@@ -893,13 +888,12 @@ local function luamplibload (name)
 %
 %    Append our own MetaPost preamble to the preamble above.
 %    \begin{macrocode}
-  local preamble = preamble .. luamplib.mplibcodepreamble
-  if luamplib.legacy_verbatimtex then
-    preamble = preamble .. luamplib.legacyverbatimtexpreamble
-  end
-  if luamplib.textextlabel then
-    preamble = preamble .. luamplib.textextlabelpreamble
-  end
+  local preamble = tableconcat{
+    preamble,
+    luamplib.mplibcodepreamble,
+    luamplib.legacy_verbatimtex and luamplib.legacyverbatimtexpreamble or "",
+    luamplib.textextlabel and luamplib.textextlabelpreamble or "",
+  }
   local result, log
   if not mpx then
     result = { status = 99, error = "out of memory"}
@@ -1014,9 +1008,9 @@ local texboxes = {
 %    \begin{macrocode}
 local factor = 65536*(7227/7200)
 
-local textext_fmt = [[image(addto currentpicture doublepath unitsquare ]]..
-  [[xscaled %f yscaled %f shifted (0,-%f) ]]..
-  [[withprescript "mplibtexboxid=%i:%f:%f")]]
+local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
+xscaled %f yscaled %f shifted (0,-%f) \z
+withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
@@ -1063,14 +1057,17 @@ end
 %    Attempt to support l3color as well.
 %    \begin{macrocode}
 local mplibcolorfmt = {
-  xcolor = [[\begingroup\let\XC@mcolor\relax]]..
-  [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]]..
-  [[\color%s\endgroup]],
-  l3color = [[\begingroup]]..
-  [[\def\__color_select:N#1{\expandafter\__color_select:nn#1}]]..
-  [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]]..
-  [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]]..
-  [[\color_select:n%s\endgroup]],
+  xcolor = tableconcat{
+    [[\begingroup\let\XC@mcolor\relax]],
+    [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]],
+    [[\color%s\endgroup]],
+  },
+  l3color = tableconcat{
+    [[\begingroup\def\__color_select:N#1{\expandafter\__color_select:nn#1}]],
+    [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]],
+    [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]],
+    [[\color_select:n%s\endgroup]],
+  },
 }
 
 local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
@@ -1085,7 +1082,6 @@ if colfmt == "l3color" then
     "\\endgroup",
   }
 end
-
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
 local function process_color (str, kind)
@@ -1094,7 +1090,7 @@ local function process_color (str, kind)
       str = format("{%s}",str)
     end
     local myfmt = mplibcolorfmt[colfmt]
-    if colfmt == "l3color" and (is_defined"ver@xcolor.sty" or is_defined"ver@color.sty") then
+    if colfmt == "l3color" and is_defined"color" then
       if str:find("%b[]") then
         myfmt = mplibcolorfmt.xcolor
       else
@@ -1203,10 +1199,15 @@ luamplib.shadecolor = function (str)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
     local t, obj = res:explode()
     if pdfmode then
-      run_tex_code({
-        [[\edef\mplib_@tempa{\pdf_object_ref:n{]], t[1]:match"^/(.+)", "}}",
-      },ccexplat)
-      obj = get_macro'mplib_@tempa'
+      obj = t[1]:match"^/(.+)"
+      if ltx.pdf and ltx.pdf.object_id then
+        obj = format("%s 0 R", ltx.pdf.object_id(obj))
+      else
+        run_tex_code({
+          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
+        },ccexplat)
+        obj = get_macro'mplib_@tempa'
+      end
     else
       obj = t[2]
     end
@@ -2163,24 +2164,38 @@ local function do_preobj_SH(object,prescript)
       if #names == 1 then
         colorspace = objref
       else
-        local name = tableconcat(names)
+        local name = tableconcat(names,"-")
         local obj = luamplib.clrspcs[name] or 0
         if type(obj) == "string" then
           colorspace = obj
         else
-          obj = obj+1 -- redundant objects can be created
+          obj = obj+1
           luamplib.clrspcs[name] = obj
           colorspace = [[\pdf_object_ref_last:]]
-          texsprint(ccexplat,{
-            [[\color_model_new:nnn]],
-            format("{mplibcolorspace_%s_%s}", name, obj),
-            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
-            format("\\directlua{luamplib.clrspcs['%s']='%s'}", name,colorspace),
-          })
-          if obj > 1 then
-            warn("redundant pdf object has been generated.\n\z
-It is recommended to separate shading objects with the same color sequence\n\z
-(%s)\nbetween independent mplibcode environments", tableconcat(names,"-"))
+          local function put_devicen()
+            texsprint(ccexplat,{
+              [[\color_model_new:nnn]],
+              format("{mplibcolorspace_%s_%s}", name, obj),
+              format("{DeviceN}{names={%s}}", tableconcat(names,",")),
+            })
+          end
+          if obj == 1 then
+            put_devicen()
+            texsprint(ccexplat,"\\directlua{luamplib.clrspcs['",name,"']='",colorspace,"'}")
+            if is_defined'@auxout' then
+              texsprint(ccexplat,format("\\if@filesw\\immediate\\write\\@auxout{\z
+              \\string\\expandafter\\string\\gdef\\string\\csname\\space luamplib.colorspace.%s\z
+              \\string\\endcsname{%s}}\\fi", name, colorspace))
+            end
+          else
+            local auxobj = get_macro(format("luamplib.colorspace.%s",name))
+            colorspace = auxobj or colorspace
+            if not auxobj then put_devicen() end
+            if is_defined'@auxout' then
+              texsprint(format("\\directlua{ if luamplib.clrspcs['%s']=='%s' then else \z
+              texio.write_nl('term and log','Module luamplib Warning: Rerun to get smaller PDF \z
+              on input line %s','') end }", name, auxobj, tex.inputlineno))
+            end
           end
         end
       end
@@ -2513,7 +2528,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/12 v2.28.0 mplib package for LuaTeX]
+    [2024/04/19 v2.28.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2529,14 +2544,7 @@ luamplib.colorconverter = colorconverter
 %    \begin{macrocode}
 \ifx\pdfoutput\undefined
   \let\pdfoutput\outputmode
-  \protected\def\pdfliteral{\pdfextension literal}
 \fi
-%    \end{macrocode}
-%
-%    Unfortuantely there are still packages out there that think it is a good
-%    idea to manually set \cs{pdfoutput} which defeats the above branch that
-%    defines \cs{pdfliteral}.  To cover that case we need an extra check.
-%    \begin{macrocode}
 \ifx\pdfliteral\undefined
   \protected\def\pdfliteral{\pdfextension literal}
 \fi
@@ -2556,11 +2564,9 @@ luamplib.colorconverter = colorconverter
 \else
   \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
   \ifcsname PackageInfo\endcsname
-    \PackageInfo{luamplib}{take dvipdfmx path, no support for other dvi tools currently.}
+    \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
-    \write128{}
-    \write128{luamplib Info: take dvipdfmx path, no support for other dvi tools currently.}
-    \write128{}
+    \write128{luamplib Info: only dvipdfmx is supported currently}
   \fi
 \fi
 %    \end{macrocode}
