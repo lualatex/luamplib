@@ -514,8 +514,7 @@ local function termorlog (target, text, kind)
       end
       write(target, format("(%s)     ", mod))
     end
-    append(target, format(" on input line %s", tex.inputlineno))
-    write(target, "")
+    append(target, format(" on input line %s", tex.inputlineno), "")
     if kind == "Error" then error() end
   end
 end
@@ -531,10 +530,8 @@ luamplib.showlog  = luamplib.showlog or false
 %    This module is a stripped down version of libraries that are used by
 %    \ConTeXt. Provide a few ``shortcuts'' expected by the imported code.
 %    \begin{macrocode}
-local tableconcat   = table.concat
-local texsprint     = tex.sprint
-local textprint     = tex.tprint
-
+local tableconcat = table.concat
+local texsprint   = tex.sprint
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
@@ -889,7 +886,7 @@ local function luamplibload (name)
 %    Append our own MetaPost preamble to the preamble above.
 %    \begin{macrocode}
   local preamble = tableconcat{
-    preamble,
+    format(preamble, replacesuffix(name,"mp")),
     luamplib.mplibcodepreamble,
     luamplib.legacy_verbatimtex and luamplib.legacyverbatimtexpreamble or "",
     luamplib.textextlabel and luamplib.textextlabelpreamble or "",
@@ -898,7 +895,7 @@ local function luamplibload (name)
   if not mpx then
     result = { status = 99, error = "out of memory"}
   else
-    result = mpx:execute(format(preamble, replacesuffix(name,"mp")))
+    result = mpx:execute(preamble)
   end
   log = reporterror(result)
   return mpx, result, log
@@ -924,8 +921,12 @@ local function process (data)
   if instancename and instancename ~= "" then
     currfmt = instancename
   else
-    currfmt = currentformat..(luamplib.numbersystem or "scaled")
-      ..tostring(luamplib.textextlabel)..tostring(luamplib.legacy_verbatimtex)
+    currfmt = tableconcat{
+      currentformat,
+      luamplib.numbersystem or "scaled",
+      tostring(luamplib.textextlabel),
+      tostring(luamplib.legacy_verbatimtex),
+    }
   end
   local mpx = mplibinstances[currfmt]
   local standalone = false
@@ -1575,8 +1576,8 @@ local function process_mplibcode (data, instance)
 %    \begin{macrocode}
   if luamplib.verbatiminput then
     data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
-    data = data:gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
-    data = data:gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
+               :gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
+               :gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
   end
 
   data = data:gsub(btex_etex, function(str)
@@ -1596,10 +1597,9 @@ local function process_mplibcode (data, instance)
 %    \begin{macrocode}
   if not luamplib.verbatiminput then
     data = data:gsub("\".-\"", protect_expansion)
-
-    data = data:gsub("\\%%", "\0PerCent\0")
-    data = data:gsub("%%.-\n","")
-    data = data:gsub("%zPerCent%z", "\\%%")
+               :gsub("\\%%", "\0PerCent\0")
+               :gsub("%%.-\n","")
+               :gsub("%zPerCent%z", "\\%%")
 
     run_tex_code(format("\\mplibtmptoks\\expandafter{\\expanded{%s}}",data))
     data = texgettoks"mplibtmptoks"
@@ -1608,8 +1608,8 @@ local function process_mplibcode (data, instance)
 %    Next line to address issue \#55
 %    \begin{macrocode}
     data = data:gsub("##", "#")
-    data = data:gsub("\".-\"", unprotect_expansion)
-    data = data:gsub(btex_etex, function(str)
+               :gsub("\".-\"", unprotect_expansion)
+               :gsub(btex_etex, function(str)
       return format("btex %s etex", unprotect_expansion(str))
     end)
     data = data:gsub(verbatimtex_etex, function(str)
@@ -1660,28 +1660,44 @@ local function convert(result, flusher)
 end
 luamplib.convert = convert
 
+local figcontents = { }
+local function puttofig(t)
+  figcontents[#figcontents+1] = t
+end
+
 local function pdf_startfigure(n,llx,lly,urx,ury)
-  texsprint(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
+  puttofig(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
 end
 
 local function pdf_stopfigure()
-  texsprint("\\mplibstoptoPDF")
+  puttofig("\\mplibstoptoPDF")
 end
 
 %    \end{macrocode}
 %
-%    |tex.tprint| with catcode regime -2, as sometimes |#| gets doubled
+%    |tex.sprint| with catcode regime -2, as sometimes |#| gets doubled
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
-local function pdf_literalcode(fmt,...) -- table
-  textprint({"\\mplibtoPDF{"},{-2,format(fmt,...)},{"}"})
+local pdf_literalcode
+if pdfmode then
+  pdf_literalcode = function (fmt,...)
+    puttofig"\\pdfextension literal{"
+    puttofig{-2, format(fmt,...)}
+    puttofig"}"
+  end
+else
+  pdf_literalcode = function (fmt,...)
+    puttofig"\\special{pdf:literal direct "
+    puttofig{-2, format(fmt,...)}
+    puttofig"}"
+  end
 end
 
 local function pdf_textfigure(font,size,text,width,height,depth)
   text = text:gsub(".",function(c)
     return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
   end)
-  texsprint(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0))
+  puttofig(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0))
 end
 
 local bend_tolerance = 131/65536
@@ -1771,14 +1787,14 @@ local function start_pdf_code()
   if pdfmode then
     pdf_literalcode("q")
   else
-    texsprint("\\special{pdf:bcontent}") -- dvipdfmx
+    puttofig"\\special{pdf:bcontent}"
   end
 end
 local function stop_pdf_code()
   if pdfmode then
     pdf_literalcode("Q")
   else
-    texsprint("\\special{pdf:econtent}") -- dvipdfmx
+    puttofig"\\special{pdf:econtent}"
   end
 end
 
@@ -1807,7 +1823,7 @@ local function put_tex_boxes (object,prescript)
     end
     start_pdf_code()
     pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-    texsprint(format("\\mplibputtextbox{%i}",n))
+    puttofig(format("\\mplibputtextbox{%i}",n))
     stop_pdf_code()
   end
 end
@@ -1972,20 +1988,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("/Coords [%s]",      coordinates),
     "/Extend [true true]/AntiAlias true>>",
   }
-  local on, new
-  if colorspace == [[\pdf_object_ref_last:]] then
-    if pdfmode then
-      on, new = pdf.reserveobj(), true
-      texsprint(ccexplat, format([[\immediate\pdfextension obj useobjnum %s{%s}]],on,os))
-    else
-      local int = tex.getcount"g__pdf_backend_object_int"+1
-      tex.setcount("global","g__pdf_backend_object_int", int)
-      on, new = format("cs%s",int), true
-      texsprint(ccexplat, format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
-    end
-  else
-    on, new = update_pdfobjs(os)
-  end
+  local on, new = update_pdfobjs(os)
   if pdfmode then
     if new then
       if pdfmanagement then
@@ -2068,7 +2071,7 @@ local function do_preobj_CR(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      texsprint(format("\\special{%s}",override))
+      puttofig(format("\\special{%s}",override))
       prev_override_color = override
     end
   else
@@ -2079,7 +2082,7 @@ local function do_preobj_CR(object,prescript)
     elseif not pdfmode then
       override = prev_override_color
       if override then
-        texsprint(format("\\special{%s}",override))
+        puttofig(format("\\special{%s}",override))
       end
     end
   end
@@ -2090,7 +2093,7 @@ end
 %
 %    shading
 %    \begin{macrocode}
-luamplib.clrspcs = { }
+local clrspcs = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2165,38 +2168,18 @@ local function do_preobj_SH(object,prescript)
         colorspace = objref
       else
         local name = tableconcat(names,"-")
-        local obj = luamplib.clrspcs[name] or 0
-        if type(obj) == "string" then
+        local obj = clrspcs[name]
+        if obj then
           colorspace = obj
         else
-          obj = obj+1
-          luamplib.clrspcs[name] = obj
-          colorspace = [[\pdf_object_ref_last:]]
-          local function put_devicen()
-            texsprint(ccexplat,{
-              [[\color_model_new:nnn]],
-              format("{mplibcolorspace_%s_%s}", name, obj),
-              format("{DeviceN}{names={%s}}", tableconcat(names,",")),
-            })
-          end
-          if obj == 1 then
-            put_devicen()
-            texsprint(ccexplat,"\\directlua{luamplib.clrspcs['",name,"']='",colorspace,"'}")
-            if is_defined'@auxout' then
-              texsprint(ccexplat,format("\\if@filesw\\immediate\\write\\@auxout{\z
-              \\string\\expandafter\\string\\gdef\\string\\csname\\space luamplib.colorspace.%s\z
-              \\string\\endcsname{%s}}\\fi", name, colorspace))
-            end
-          else
-            local auxobj = get_macro(format("luamplib.colorspace.%s",name))
-            colorspace = auxobj or colorspace
-            if not auxobj then put_devicen() end
-            if is_defined'@auxout' then
-              texsprint(format("\\directlua{ if luamplib.clrspcs['%s']=='%s' then else \z
-              texio.write_nl('term and log','Module luamplib Warning: Rerun to get smaller PDF \z
-              on input line %s','') end }", name, auxobj, tex.inputlineno))
-            end
-          end
+          run_tex_code({
+            [[\color_model_new:nnn]],
+            format("{mplibcolorspace_%s}", name),
+            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
+            [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
+          }, ccexplat)
+          colorspace = get_macro'mplib_@tempa'
+          clrspcs[name] = colorspace
         end
       end
     else
@@ -2244,7 +2227,7 @@ local function do_postobj_color(tr,over,sh)
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
   end
   if over then
-    texsprint"\\special{pdf:ec}"
+    puttofig"\\special{pdf:ec}"
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
@@ -2280,13 +2263,14 @@ local function flush(result,flusher)
 %    \end{verbatim}
 %    \begin{macrocode}
         else
+          figcontents = {}
 %    \end{macrocode}
 %
 %    For legacy behavior. Insert `pre-fig' \TeX\ code here, and
 %    prepare a table for `in-fig' codes.
 %    \begin{macrocode}
           if tex_code_pre_mplib[f] then
-            texsprint(tex_code_pre_mplib[f])
+            puttofig(tex_code_pre_mplib[f])
           end
           local TeX_code_bot = {}
           pdf_startfigure(fignum,llx,lly,urx,ury)
@@ -2484,6 +2468,13 @@ local function flush(result,flusher)
           end
           stop_pdf_code()
           pdf_stopfigure()
+          for _,t in ipairs(figcontents) do
+            if type(t) == "table" then
+              texsprint(t[1], t[2])
+            else
+              texsprint(t)
+            end
+          end
           if #TeX_code_bot > 0 then texsprint(TeX_code_bot) end
         end
       end

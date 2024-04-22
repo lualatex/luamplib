@@ -42,8 +42,8 @@ $(UNPACKED): $(DTX)
 	luatex -interaction=batchmode $< >/dev/null
 
 check: $(UNPACKED)
-	luatex   -interaction=batchmode test-$(NAME)-plain.tex  >/dev/null
-	lualatex -interaction=batchmode test-$(NAME)-latex.tex  >/dev/null
+	@texfot --quiet --tee=/dev/null luatex -interaction=batchmode test-$(NAME)-plain.tex
+	@texfot --quiet --tee=/dev/null lualatex -interaction=batchmode test-$(NAME)-latex.tex
 	! grep "blank space"              test-$(NAME)-plain.log
 	! grep "blank space"              test-$(NAME)-latex.log
 
