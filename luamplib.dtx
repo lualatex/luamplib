@@ -2263,16 +2263,15 @@ local function flush(result,flusher)
 %    \end{verbatim}
 %    \begin{macrocode}
         else
-          figcontents = {}
 %    \end{macrocode}
-%
-%    For legacy behavior. Insert `pre-fig' \TeX\ code here, and
+%    For collecting figure materials and
+%    for legacy behavior. Insert `pre-fig' \TeX\ code here, and
 %    prepare a table for `in-fig' codes.
 %    \begin{macrocode}
+          figcontents = { post = { } }
           if tex_code_pre_mplib[f] then
             puttofig(tex_code_pre_mplib[f])
           end
-          local TeX_code_bot = {}
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
           if objects then
@@ -2309,7 +2308,7 @@ local function flush(result,flusher)
 %    Legacy behavior.
 %    \begin{macrocode}
                 if prescript and prescript.postmplibverbtex then
-                  TeX_code_bot[#TeX_code_bot+1] = prescript.postmplibverbtex
+                  figcontents.post[#figcontents.post+1] = prescript.postmplibverbtex
                 end
               elseif objecttype == "text" then
                 local ot = object.transform -- 3,4,5,6,1,2
@@ -2475,7 +2474,7 @@ local function flush(result,flusher)
               texsprint(t)
             end
           end
-          if #TeX_code_bot > 0 then texsprint(TeX_code_bot) end
+          if #figcontents.post > 0 then texsprint(figcontents.post) end
         end
       end
     end
@@ -2531,16 +2530,6 @@ luamplib.colorconverter = colorconverter
 \directlua{require("luamplib")}
 %    \end{macrocode}
 %
-%    Support older engine. Seems we don't need it, but no harm.
-%    \begin{macrocode}
-\ifx\pdfoutput\undefined
-  \let\pdfoutput\outputmode
-\fi
-\ifx\pdfliteral\undefined
-  \protected\def\pdfliteral{\pdfextension literal}
-\fi
-%    \end{macrocode}
-%
 %    Set the format for metapost.
 %    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
@@ -2550,10 +2539,7 @@ luamplib.colorconverter = colorconverter
 %    but only DVIPDFMx is supported currently among a number of DVI tools.
 %    So we output a info.
 %    \begin{macrocode}
-\ifnum\pdfoutput>0
-  \let\mplibtoPDF\pdfliteral
-\else
-  \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
+\ifnum\outputmode=0
   \ifcsname PackageInfo\endcsname
     \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
