@@ -1123,7 +1123,7 @@ local function colorsplit (res)
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
     if tt[i]:find"^%a" then break end
-    table.insert(t, tt[i])
+    t[#t+1] = tt[i]
   end
   return t
 end
@@ -1661,16 +1661,16 @@ end
 luamplib.convert = convert
 
 local figcontents = { }
-local function puttofig(t)
-  figcontents[#figcontents+1] = t
+local function put2output(a,...)
+  figcontents[#figcontents+1] = type(a) == "string" and format(a,...) or a
 end
 
 local function pdf_startfigure(n,llx,lly,urx,ury)
-  puttofig(format("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury))
+  put2output("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury)
 end
 
 local function pdf_stopfigure()
-  puttofig("\\mplibstoptoPDF")
+  put2output("\\mplibstoptoPDF")
 end
 
 %    \end{macrocode}
@@ -1678,26 +1678,15 @@ end
 %    |tex.sprint| with catcode regime -2, as sometimes |#| gets doubled
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
-local pdf_literalcode
-if pdfmode then
-  pdf_literalcode = function (fmt,...)
-    puttofig"\\pdfextension literal{"
-    puttofig{-2, format(fmt,...)}
-    puttofig"}"
-  end
-else
-  pdf_literalcode = function (fmt,...)
-    puttofig"\\special{pdf:literal direct "
-    puttofig{-2, format(fmt,...)}
-    puttofig"}"
-  end
+local function pdf_literalcode (fmt,...)
+  put2output{-2, format(fmt,...)}
 end
 
 local function pdf_textfigure(font,size,text,width,height,depth)
   text = text:gsub(".",function(c)
     return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
   end)
-  puttofig(format("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0))
+  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0)
 end
 
 local bend_tolerance = 131/65536
@@ -1787,14 +1776,14 @@ local function start_pdf_code()
   if pdfmode then
     pdf_literalcode("q")
   else
-    puttofig"\\special{pdf:bcontent}"
+    put2output"\\special{pdf:bcontent}"
   end
 end
 local function stop_pdf_code()
   if pdfmode then
     pdf_literalcode("Q")
   else
-    puttofig"\\special{pdf:econtent}"
+    put2output"\\special{pdf:econtent}"
   end
 end
 
@@ -1823,7 +1812,7 @@ local function put_tex_boxes (object,prescript)
     end
     start_pdf_code()
     pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-    puttofig(format("\\mplibputtextbox{%i}",n))
+    put2output("\\mplibputtextbox{%i}",n)
     stop_pdf_code()
   end
 end
@@ -2071,7 +2060,7 @@ local function do_preobj_CR(object,prescript)
       pdf_literalcode(override)
       override = nil
     else
-      puttofig(format("\\special{%s}",override))
+      put2output("\\special{%s}",override)
       prev_override_color = override
     end
   else
@@ -2082,7 +2071,7 @@ local function do_preobj_CR(object,prescript)
     elseif not pdfmode then
       override = prev_override_color
       if override then
-        puttofig(format("\\special{%s}",override))
+        put2output("\\special{%s}",override)
       end
     end
   end
@@ -2227,7 +2216,7 @@ local function do_postobj_color(tr,over,sh)
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
   end
   if over then
-    puttofig"\\special{pdf:ec}"
+    put2output"\\special{pdf:ec}"
   end
   if tr then
     pdf_literalcode("/MPlibTr%i gs",tr)
@@ -2264,13 +2253,13 @@ local function flush(result,flusher)
 %    \begin{macrocode}
         else
 %    \end{macrocode}
-%    For collecting figure materials and
+%    For collecting pdf materials and
 %    for legacy behavior. Insert `pre-fig' \TeX\ code here, and
 %    prepare a table for `in-fig' codes.
 %    \begin{macrocode}
           figcontents = { post = { } }
           if tex_code_pre_mplib[f] then
-            puttofig(tex_code_pre_mplib[f])
+            put2output(tex_code_pre_mplib[f])
           end
           pdf_startfigure(fignum,llx,lly,urx,ury)
           start_pdf_code()
@@ -2467,11 +2456,11 @@ local function flush(result,flusher)
           end
           stop_pdf_code()
           pdf_stopfigure()
-          for _,t in ipairs(figcontents) do
-            if type(t) == "table" then
-              texsprint(t[1], t[2])
+          for _,v in ipairs(figcontents) do
+            if type(v) == "table" then
+              texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
             else
-              texsprint(t)
+              texsprint(v)
             end
           end
           if #figcontents.post > 0 then texsprint(figcontents.post) end
@@ -2530,6 +2519,16 @@ luamplib.colorconverter = colorconverter
 \directlua{require("luamplib")}
 %    \end{macrocode}
 %
+%    legacy commands. Seems we don't need it, but no harm.
+%    \begin{macrocode}
+\ifx\pdfoutput\undefined
+  \let\pdfoutput\outputmode
+\fi
+\ifx\pdfliteral\undefined
+  \protected\def\pdfliteral{\pdfextension literal}
+\fi
+%    \end{macrocode}
+%
 %    Set the format for metapost.
 %    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
@@ -2539,7 +2538,10 @@ luamplib.colorconverter = colorconverter
 %    but only DVIPDFMx is supported currently among a number of DVI tools.
 %    So we output a info.
 %    \begin{macrocode}
-\ifnum\outputmode=0
+\ifnum\pdfoutput>0
+  \let\mplibtoPDF\pdfliteral
+\else
+  \def\mplibtoPDF#1{\special{pdf:literal direct #1}}
   \ifcsname PackageInfo\endcsname
     \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
