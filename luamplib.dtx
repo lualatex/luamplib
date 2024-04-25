@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/19 v2.28.1 Interface for using the mplib library]%
+  [2024/04/25 v2.28.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/19 v2.28.1}
+% \date{2024/04/25 v2.28.2}
 %
 % \maketitle
 %
@@ -476,8 +476,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.28.1",
-  date          = "2024/04/19",
+  version       = "2.28.2",
+  date          = "2024/04/25",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -969,7 +969,7 @@ end
 %
 %    |dvipdfmx| is supported, though nobody seems to use it.
 %    \begin{macrocode}
-local pdfmode = tex.get"outputmode" > 0
+local pdfmode = tex.outputmode > 0
 %    \end{macrocode}
 %
 %    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|,
@@ -1041,7 +1041,7 @@ local function process_tex_text (str)
           [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
         tex_box_id = tex.getcount'allocationnumber'
       end
-      if str:find"^%w*$" then -- the same cs may expand differently
+      if str:find"^[%s%w%{%}%$%^%_]*$" then -- the same cs may expand differently
         boxtable[str] = tex_box_id
       end
       run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
@@ -1152,7 +1152,6 @@ luamplib.shadecolor = function (str)
 %    \end{macrocode}
 %   An example of spot color shading:
 % \begin{verbatim}
-%     \DocumentMetadata{ }
 %     \documentclass{article}
 %     \usepackage{luamplib}
 %     \mplibsetformat{metafun}
@@ -1240,7 +1239,7 @@ end
 %    \end{macrocode}
 %
 %    Newly introduced method of processing |verbatimtex ... etex|.
-%    Used when |\mpliblegacybehavior{false}| is declared.
+%    This function is used when |\mpliblegacybehavior{false}| is declared.
 %    \begin{macrocode}
 local function process_verbatimtex_text (str)
   if str then
@@ -1686,9 +1685,9 @@ end
 
 local function pdf_textfigure(font,size,text,width,height,depth)
   text = text:gsub(".",function(c)
-    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost
+    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
   end)
-  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%f}",font,size,text,0,0)
+  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
 end
 
 local bend_tolerance = 131/65536
@@ -1850,6 +1849,10 @@ local function update_pdfobjs (os)
   return on,true
 end
 
+%    \end{macrocode}
+%
+%    transparency
+%    \begin{macrocode}
 local transparancy_modes = { [0] = "Normal",
   "Normal",       "Multiply",     "Screen",       "Overlay",
   "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
@@ -1858,7 +1861,24 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
-local function update_tr_res(res,mode,opaq)
+local function opacity_initialize ()
+  pdfetcs.opacity_res = {}
+  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
+    local extgstate_obj = pdf.reserveobj()
+    pdfetcs.setpageres(format("%s/ExtGState %i 0 R",pdfetcs.getpageres() or "",extgstate_obj))
+    luatexbase.add_to_callback("finish_pdffile", function()
+      pdf.immediateobj(extgstate_obj, format("<<%s>>",tableconcat(pdfetcs.opacity_res)))
+    end, "luamplib.opacity.finish_pdffile")
+  end
+end
+
+local function update_tr_res(mode,opaq)
+  if pdfetcs.pgfloaded == nil then
+    pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
+    if not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
+      opacity_initialize()
+    end
+  end
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
   if new then
@@ -1883,7 +1903,16 @@ local function update_tr_res(res,mode,opaq)
             texsprint(catat11,[[\global\TRP@reruntrue]])
           end
         else
-          res = res..tr
+          if luatexbase.callbacktypes.finish_pdffile then
+            pdfetcs.opacity_res[#pdfetcs.opacity_res+1] = tr
+          else
+            local tpr, n = pdfetcs.getpageres() or "", 0
+            tpr, n = tpr:gsub("/ExtGState<<", "%1"..tr)
+            if n == 0 then
+              tpr = format("%s/ExtGState<<%s>>", tpr, tr)
+            end
+            pdfetcs.setpageres(tpr)
+          end
         end
       end
     else
@@ -1898,36 +1927,55 @@ local function update_tr_res(res,mode,opaq)
           texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
         else
           texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
+          texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
         end
       end
     end
   end
-  return res,on
+  return on
 end
 
-local function tr_pdf_pageresources(mode,opaq)
-  if pdfetcs.pgfloaded == nil then
-    pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
+local function do_preobj_TR(prescript)
+  local opaq = prescript and prescript.tr_transparency
+  local tron_no, troff_no
+  if opaq then
+    local mode = prescript.tr_alternative or 1
+    mode = transparancy_modes[tonumber(mode)]
+    troff_no = update_tr_res("Normal", 1)
+    tron_no  = update_tr_res(mode, opaq)
+    pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
-  local res, on_on, off_on = "", nil, nil
-  res, off_on = update_tr_res(res, "Normal", 1)
-  res, on_on  = update_tr_res(res, mode, opaq)
-  if pdfmanagement or pdfetcs.pgfloaded or is_defined"TRP@list" then
-    return on_on, off_on
-  end
-  if pdfmode then
-    if res ~= "" then
-      local tpr, n = pdfetcs.getpageres() or "", 0
-      tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
-      if n == 0 then
-        tpr = format("%s/ExtGState<<%s>>", tpr, res)
-      end
-      pdfetcs.setpageres(tpr)
+  return troff_no
+end
+
+%    \end{macrocode}
+%
+%    color
+%    \begin{macrocode}
+local prev_override_color
+local function do_preobj_CR(object,prescript)
+  local override = prescript and prescript.MPlibOverrideColor
+  if override then
+    if pdfmode then
+      pdf_literalcode(override)
+      override = nil
+    else
+      put2output("\\special{%s}",override)
+      prev_override_color = override
     end
   else
-    texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
+    local cs = object.color
+    if cs and #cs > 0 then
+      pdf_literalcode(luamplib.colorconverter(cs))
+      prev_override_color = nil
+    elseif not pdfmode then
+      override = prev_override_color
+      if override then
+        put2output("\\special{%s}",override)
+      end
+    end
   end
-  return on_on, off_on
+  return override
 end
 
 %    \end{macrocode}
@@ -1941,7 +1989,7 @@ local function shading_initialize ()
     pdfetcs.setpageres(format("%s/Shading %i 0 R",pdfetcs.getpageres() or "",shading_obj))
     luatexbase.add_to_callback("finish_pdffile", function()
       pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(pdfetcs.shading_res)))
-    end, "luamplib.finish_pdffile")
+    end, "luamplib.shading.finish_pdffile")
   end
 end
 
@@ -2034,56 +2082,6 @@ local function color_normalize(ca,cb)
   end
 end
 
-%    \end{macrocode}
-%
-%    transparency
-%    \begin{macrocode}
-local function do_preobj_TR(prescript)
-  local opaq = prescript and prescript.tr_transparency
-  local tron_no, troff_no
-  if opaq then
-    local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode)]
-    tron_no, troff_no = tr_pdf_pageresources(mode,opaq)
-    pdf_literalcode("/MPlibTr%i gs",tron_no)
-  end
-  return troff_no
-end
-
-%    \end{macrocode}
-%
-%    color
-%    \begin{macrocode}
-local prev_override_color
-local function do_preobj_CR(object,prescript)
-  local override = prescript and prescript.MPlibOverrideColor
-  if override then
-    if pdfmode then
-      pdf_literalcode(override)
-      override = nil
-    else
-      put2output("\\special{%s}",override)
-      prev_override_color = override
-    end
-  else
-    local cs = object.color
-    if cs and #cs > 0 then
-      pdf_literalcode(luamplib.colorconverter(cs))
-      prev_override_color = nil
-    elseif not pdfmode then
-      override = prev_override_color
-      if override then
-        put2output("\\special{%s}",override)
-      end
-    end
-  end
-  return override
-end
-
-%    \end{macrocode}
-%
-%    shading
-%    \begin{macrocode}
 pdfetcs.clrspcs = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
@@ -2213,6 +2211,10 @@ local function do_preobj_SH(object,prescript)
   return shade_no
 end
 
+%    \end{macrocode}
+%
+%    color stuffs at the end of object
+%    \begin{macrocode}
 local function do_postobj_color(tr,over,sh)
   if sh then
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
@@ -2509,7 +2511,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/19 v2.28.1 mplib package for LuaTeX]
+    [2024/04/25 v2.28.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
