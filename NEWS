@@ -1,6 +1,7 @@
                        History of the luamplib package
 
 2024/0x/xx 2.28.2
+   * direction of figure box is explicitly declared as TLT (#129)
    * figure box materials are emitted in one go at the end of the figure
    (to enable tex.runtoks in spot color shading routine)
 
