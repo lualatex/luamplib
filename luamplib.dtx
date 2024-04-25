@@ -2563,7 +2563,7 @@ luamplib.colorconverter = colorconverter
 %
 %    Catcode. We want to allow comment sign in |mplibcode|.
 %    \begin{macrocode}
-\def\mplibsetupcatcodes{%
+\protected\def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12
@@ -2573,6 +2573,22 @@ luamplib.colorconverter = colorconverter
 %    Make |btex...etex| box zero-metric.
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+%    \end{macrocode}
+%
+%    simple way to use mplib:
+%    |\mpfig draw fullcircle scaled 10; \endfig|
+%    \begin{macrocode}
+\def\mpfig{%
+  \begingroup
+  \begingroup
+  \mplibsetupcatcodes
+  \mplibdompfig
+}
+\long\def\mplibdompfig#1\endfig{%
+  \endgroup
+  \directlua{luamplib.process_mplibcode([===[beginfig(0) \unexpanded{#1} endfig;]===],"")}%
+  \endgroup
+}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -2772,7 +2788,7 @@ luamplib.colorconverter = colorconverter
 %
 %    We encapsulate the litterals.
 %    \begin{macrocode}
-\def\mplibstarttoPDF#1#2#3#4{%
+\protected\def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
   \hbox dir TLT\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
@@ -2786,7 +2802,7 @@ luamplib.colorconverter = colorconverter
   \setbox\mplibscratchbox\vbox\bgroup
   \noindent
 }
-\def\mplibstoptoPDF{%
+\protected\def\mplibstoptoPDF{%
   \par
   \egroup %
   \setbox\mplibscratchbox\hbox %
@@ -2809,7 +2825,7 @@ luamplib.colorconverter = colorconverter
 %
 %    Text items have a special handler.
 %    \begin{macrocode}
-\def\mplibtextext#1#2#3#4#5{%
+\protected\def\mplibtextext#1#2#3#4#5{%
   \begingroup
   \setbox\mplibscratchbox\hbox
     {\font\temp=#1 at #2bp%
