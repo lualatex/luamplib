@@ -514,14 +514,21 @@ local function termorlog (target, text, kind)
       end
       write(target, format("(%s)     ", mod))
     end
-    append(target, format(" on input line %s", tex.inputlineno), "")
+    append(target, format(" on input line %s", tex.inputlineno))
+    write(target, "")
     if kind == "Error" then error() end
   end
 end
 
-local warn = function(...) termorlog("term and log", format(...)) end
-local info = function(...) termorlog("log", format(...)) end
-local err  = function(...) termorlog("error", format(...)) end
+local function warn (...) -- beware '%' symbol
+  termorlog("term and log", select("#",...) > 1 and format(...) or ...)
+end
+local function info (...)
+  termorlog("log", select("#",...) > 1 and format(...) or ...)
+end
+local function err (...)
+  termorlog("error", select("#",...) > 1 and format(...) or ...)
+end
 
 luamplib.showlog  = luamplib.showlog or false
 
@@ -985,8 +992,7 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 %    \end{verbatim}
 %    \begin{macrocode}
 local function run_tex_code (str, cat)
-  cat = cat or catlatex
-  texruntoks(function() texsprint(cat, str) end)
+  texruntoks(function() texsprint(cat or catlatex, str) end)
 end
 
 %    \end{macrocode}
@@ -1016,10 +1022,8 @@ withprescript "mplibtexboxid=%i:%f:%f")'
 local function process_tex_text (str)
   if str then
     local boxtable, global
-    if instancename and instancename ~= "" then
-      texboxes[instancename] = texboxes[instancename] or {}
-      boxtable, global = texboxes[instancename], "\\global"
-    elseif luamplib.globaltextext or luamplib.codeinherit then
+    if instancename and instancename ~= ""
+      or luamplib.globaltextext or luamplib.codeinherit then
       boxtable, global = texboxes.globals, "\\global"
     else
       boxtable, global = texboxes.locals, ""
@@ -1037,7 +1041,9 @@ local function process_tex_text (str)
           [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
         tex_box_id = tex.getcount'allocationnumber'
       end
-      boxtable[str] = tex_box_id
+      if str:find"^%w*$" then -- the same cs may expand differently
+        boxtable[str] = tex_box_id
+      end
       run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
       box = texgetbox(tex_box_id)
     end
@@ -1569,50 +1575,46 @@ local function process_mplibcode (data, instance)
   local everyendmplib = luamplib.everyendmplib[instancename] or
                         luamplib.everyendmplib[""]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
-  data = data:gsub("\r","\n")
+  :gsub("\r","\n")
 
 %    \end{macrocode}
-%    This three lines are needed for |mplibverbatim| mode.
+%    These five lines are needed for |mplibverbatim| mode.
 %    \begin{macrocode}
   if luamplib.verbatiminput then
     data = data:gsub("\\mpcolor%s+(.-%b{})","mplibcolor(\"%1\")")
-               :gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
-               :gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
-  end
-
-  data = data:gsub(btex_etex, function(str)
-    return format("btex %s etex ", -- space
-      luamplib.verbatiminput and str or protect_expansion(str))
-  end)
-  data = data:gsub(verbatimtex_etex, function(str)
-    return format("verbatimtex %s etex;", -- semicolon
-      luamplib.verbatiminput and str or protect_expansion(str))
-  end)
-
+    :gsub("\\mpdim%s+(%b{})", "mplibdimen(\"%1\")")
+    :gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
+    :gsub(btex_etex, "btex %1 etex ")
+    :gsub(verbatimtex_etex, "verbatimtex %1 etex;")
 %    \end{macrocode}
 %
 %    If not |mplibverbatim|, expand |mplibcode| data,
 %    so that users can use \TeX\ codes in it.
 %    It has turned out that no comment sign is allowed.
 %    \begin{macrocode}
-  if not luamplib.verbatiminput then
-    data = data:gsub("\".-\"", protect_expansion)
-               :gsub("\\%%", "\0PerCent\0")
-               :gsub("%%.-\n","")
-               :gsub("%zPerCent%z", "\\%%")
-
+  else
+    data = data:gsub(btex_etex, function(str)
+      return format("btex %s etex ", protect_expansion(str)) -- space
+    end)
+    :gsub(verbatimtex_etex, function(str)
+      return format("verbatimtex %s etex;", protect_expansion(str)) -- semicolon
+    end)
+    :gsub("\".-\"", protect_expansion)
+    :gsub("\\%%", "\0PerCent\0")
+    :gsub("%%.-\n","\n")
+    :gsub("%zPerCent%z", "\\%%")
     run_tex_code(format("\\mplibtmptoks\\expandafter{\\expanded{%s}}",data))
     data = texgettoks"mplibtmptoks"
 %    \end{macrocode}
 %
 %    Next line to address issue \#55
 %    \begin{macrocode}
-    data = data:gsub("##", "#")
-               :gsub("\".-\"", unprotect_expansion)
-               :gsub(btex_etex, function(str)
+    :gsub("##", "#")
+    :gsub("\".-\"", unprotect_expansion)
+    :gsub(btex_etex, function(str)
       return format("btex %s etex", unprotect_expansion(str))
     end)
-    data = data:gsub(verbatimtex_etex, function(str)
+    :gsub(verbatimtex_etex, function(str)
       return format("verbatimtex %s etex", unprotect_expansion(str))
     end)
   end
@@ -1660,7 +1662,7 @@ local function convert(result, flusher)
 end
 luamplib.convert = convert
 
-local figcontents = { }
+local figcontents = { post = { } }
 local function put2output(a,...)
   figcontents[#figcontents+1] = type(a) == "string" and format(a,...) or a
 end
@@ -1822,29 +1824,29 @@ end
 %    Colors and Transparency
 %    \begin{macrocode}
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
-local pdf_objs = {}
-pdf_objs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
+local pdfobjs, pdfetcs = {}, {}
+pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 
 if pdfmode then
-  pdf_objs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  pdf_objs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
+  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
 else
   texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
 end
 
 local function update_pdfobjs (os)
-  local on = pdf_objs[os]
+  local on = pdfobjs[os]
   if on then
     return on,false
   end
   if pdfmode then
     on = pdf.immediateobj(os)
   else
-    on = pdf_objs.cnt or 0
+    on = pdfetcs.cnt or 1
     texsprint(format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
-    pdf_objs.cnt = on + 1
+    pdfetcs.cnt = on + 1
   end
-  pdf_objs[os] = on
+  pdfobjs[os] = on
   return on,true
 end
 
@@ -1868,8 +1870,8 @@ local function update_tr_res(res,mode,opaq)
         })
       else
         local tr = format("/MPlibTr%s %s 0 R",on,on)
-        if pdf_objs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdf_objs.pgfextgs,tr))
+        if pdfetcs.pgfloaded then
+          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
         elseif is_defined"TRP@list" then
           texsprint(catat11,{
             [[\if@filesw\immediate\write\@auxout{]],
@@ -1892,8 +1894,8 @@ local function update_tr_res(res,mode,opaq)
         })
       else
         local tr = format("/MPlibTr%s @mplibpdfobj%s",on,on)
-        if pdf_objs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdf_objs.pgfextgs,tr))
+        if pdfetcs.pgfloaded then
+          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
         else
           texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
         end
@@ -1904,23 +1906,23 @@ local function update_tr_res(res,mode,opaq)
 end
 
 local function tr_pdf_pageresources(mode,opaq)
-  if pdf_objs.pgfloaded == nil then
-    pdf_objs.pgfloaded = is_defined(pdf_objs.pgfextgs)
+  if pdfetcs.pgfloaded == nil then
+    pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
   end
   local res, on_on, off_on = "", nil, nil
   res, off_on = update_tr_res(res, "Normal", 1)
   res, on_on  = update_tr_res(res, mode, opaq)
-  if pdfmanagement or pdf_objs.pgfloaded or is_defined"TRP@list" then
+  if pdfmanagement or pdfetcs.pgfloaded or is_defined"TRP@list" then
     return on_on, off_on
   end
   if pdfmode then
     if res ~= "" then
-      local tpr, n = pdf_objs.getpageres() or "", 0
+      local tpr, n = pdfetcs.getpageres() or "", 0
       tpr, n = tpr:gsub("/ExtGState<<", "%1"..res)
       if n == 0 then
         tpr = format("%s/ExtGState<<%s>>", tpr, res)
       end
-      pdf_objs.setpageres(tpr)
+      pdfetcs.setpageres(tpr)
     end
   else
     texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
@@ -1933,18 +1935,18 @@ end
 %    Shading with |metafun| format.
 %    \begin{macrocode}
 local function shading_initialize ()
-  pdf_objs.shading_res = {}
+  pdfetcs.shading_res = {}
   if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
     local shading_obj = pdf.reserveobj()
-    pdf_objs.setpageres(format("%s/Shading %i 0 R",pdf_objs.getpageres() or "",shading_obj))
+    pdfetcs.setpageres(format("%s/Shading %i 0 R",pdfetcs.getpageres() or "",shading_obj))
     luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(pdf_objs.shading_res)))
+      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(pdfetcs.shading_res)))
     end, "luamplib.finish_pdffile")
   end
 end
 
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  if not pdfmanagement and not pdf_objs.shading_res then
+  if not pdfmanagement and not pdfetcs.shading_res then
     shading_initialize()
   end
   local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
@@ -1988,14 +1990,14 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       else
         local res = format("/MPlibSh%s %s 0 R", on, on)
         if luatexbase.callbacktypes.finish_pdffile then
-          pdf_objs.shading_res[#pdf_objs.shading_res+1] = res
+          pdfetcs.shading_res[#pdfetcs.shading_res+1] = res
         else
-          local pageres = pdf_objs.getpageres() or ""
+          local pageres = pdfetcs.getpageres() or ""
           if not pageres:find("/Shading<<.*>>") then
             pageres = pageres.."/Shading<<>>"
           end
           pageres = pageres:gsub("/Shading<<","%1"..res)
-          pdf_objs.setpageres(pageres)
+          pdfetcs.setpageres(pageres)
         end
       end
     end
@@ -2082,7 +2084,7 @@ end
 %
 %    shading
 %    \begin{macrocode}
-local clrspcs = { }
+pdfetcs.clrspcs = { }
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2157,7 +2159,7 @@ local function do_preobj_SH(object,prescript)
         colorspace = objref
       else
         local name = tableconcat(names,"-")
-        local obj = clrspcs[name]
+        local obj = pdfetcs.clrspcs[name]
         if obj then
           colorspace = obj
         else
@@ -2168,7 +2170,7 @@ local function do_preobj_SH(object,prescript)
             [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
           }, ccexplat)
           colorspace = get_macro'mplib_@tempa'
-          clrspcs[name] = colorspace
+          pdfetcs.clrspcs[name] = colorspace
         end
       end
     else
@@ -2257,7 +2259,6 @@ local function flush(result,flusher)
 %    for legacy behavior. Insert `pre-fig' \TeX\ code here, and
 %    prepare a table for `in-fig' codes.
 %    \begin{macrocode}
-          figcontents = { post = { } }
           if tex_code_pre_mplib[f] then
             put2output(tex_code_pre_mplib[f])
           end
@@ -2464,6 +2465,7 @@ local function flush(result,flusher)
             end
           end
           if #figcontents.post > 0 then texsprint(figcontents.post) end
+          figcontents = { post = { } }
         end
       end
     end
