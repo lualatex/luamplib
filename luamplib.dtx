@@ -1006,10 +1006,7 @@ end
 %    Boxes of an instance will also be global, so that
 %    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
-local texboxes = {
-  locals  = {}, localid  = 4096,
-  globals = {}, globalid = 0,
-}
+local texboxes = { globalid = 0, localid = 4096 }
 %    \end{macrocode}
 %    For conversion of |sp| to |bp|.
 %    \begin{macrocode}
@@ -1021,32 +1018,26 @@ withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
-    local boxtable, global
+    local global
     if instancename and instancename ~= ""
       or luamplib.globaltextext or luamplib.codeinherit then
-      boxtable, global = texboxes.globals, "\\global"
+      global = "\\global"
     else
-      boxtable, global = texboxes.locals, ""
+      global = ""
     end
-    local tex_box_id = boxtable[str]
-    local box = tex_box_id and texgetbox(tex_box_id)
-    if not box then
-      if global == "" then
-        tex_box_id = texboxes.localid + 1
-        texboxes.localid = tex_box_id
-      else
-        local boxid = texboxes.globalid + 1
-        texboxes.globalid = boxid
-        run_tex_code(format(
-          [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
-        tex_box_id = tex.getcount'allocationnumber'
-      end
-      if str:find"^[%s%w%{%}%$%^%_]*$" then -- the same cs may expand differently
-        boxtable[str] = tex_box_id
-      end
-      run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
-      box = texgetbox(tex_box_id)
+    local tex_box_id
+    if global == "" then
+      tex_box_id = texboxes.localid + 1
+      texboxes.localid = tex_box_id
+    else
+      local boxid = texboxes.globalid + 1
+      texboxes.globalid = boxid
+      run_tex_code(format(
+        [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
+      tex_box_id = tex.getcount'allocationnumber'
     end
+    run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
+    local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
@@ -1258,11 +1249,6 @@ end
 local tex_code_pre_mplib = {}
 luamplib.figid = 1
 luamplib.in_the_fig = false
-
-local function legacy_mplibcode_reset ()
-  tex_code_pre_mplib = {}
-  luamplib.figid = 1
-end
 
 local function process_verbatimtex_prefig (str)
   if str then
@@ -1561,13 +1547,13 @@ luamplib.everyendmplib = { [""] = "" }
 
 local function process_mplibcode (data, instance)
   instancename = instance
-  texboxes.locals, texboxes.localid = {}, 4096
+  texboxes.localid = 4096
 
 %    \end{macrocode}
 %
 %    This is needed for legacy behavior regarding |verbatimtex|
 %    \begin{macrocode}
-  legacy_mplibcode_reset()
+  luamplib.figid, tex_code_pre_mplib = 1, {}
 
   local everymplib    = luamplib.everymplib[instancename] or
                         luamplib.everymplib[""]
@@ -1937,15 +1923,15 @@ end
 
 local function do_preobj_TR(prescript)
   local opaq = prescript and prescript.tr_transparency
-  local tron_no, troff_no
+  local tron_no
   if opaq then
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)]
-    troff_no = update_tr_res("Normal", 1)
-    tron_no  = update_tr_res(mode, opaq)
+    tron_no = update_tr_res(mode, opaq)
+    start_pdf_code()
     pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
-  return troff_no
+  return tron_no
 end
 
 %    \end{macrocode}
@@ -2223,7 +2209,7 @@ local function do_postobj_color(tr,over,sh)
     put2output"\\special{pdf:ec}"
   end
   if tr then
-    pdf_literalcode("/MPlibTr%i gs",tr)
+    stop_pdf_code()
   end
 end
 
