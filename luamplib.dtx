@@ -209,6 +209,39 @@ See source file '\inFileName' for licencing and contact information.
 %   setting. (Actually these commands redefine |\prependtomplibbox|. You
 %   can define this command with anything suitable before a box.)
 %
+% \paragraph{\cs{mpfig} \ldots\ \cs{endfig}}
+%   Since v2.29 we provide \TeX\ macros |\mpfig ... \endfig| and its starred version
+%   |\mpfig* ... \endfig| to save typing toil.
+%   The first is roughly the same as follows:
+%   \begin{verbatim}
+%     \begin{mplibcode}[@mpfig]
+%     beginfig(0)
+%     token list declared by \everymplib[@mpfig]
+%     ...
+%     token list declared by \everyendmplib[@mpfig]
+%     endfig;
+%     \end{mplibcode}
+%   \end{verbatim}
+%   and the starred version is roughly the same as follows:
+%   \begin{verbatim}
+%     \begin{mplibcode}[@mpfig]
+%     ...
+%     \end{mplibcode}
+%   \end{verbatim}
+%   As both have the same instance name, metapost codes are inherited.
+%   And in these macros |\mpliblegacybehavior{disable}| (see below)
+%   is forcibly declared.
+%   A simple example:
+%   \begin{verbatim}
+%     \everymplib[@mpfig]{ drawoptions(withcolor red); }
+%     \mpfig* input boxes \endfig
+%     \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endfig
+%   \end{verbatim}
+%   The instance name (default: |@mpfig|) can be changed by redefining
+%   \cs{mpfiginstancename}. So |\let\mpfiginstancename\empty| will
+%   prevent code inheritance if |\mplibcodeinherit{true}| (see below) is not declared.%
+%   \footnote{As for user setting values, |enable|, |yes|, |true| are identical, and
+%   |disable|, |no|, |false| are identical.}
 % \paragraph{\cs{mpliblegacybehavior\{enable\}}}
 %   By default, |\mpliblegacybehavior{enable}| is already declared,
 %   in which case
@@ -326,9 +359,10 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
-% \paragraph{Separate instances for \LaTeX{} environment}
+% \paragraph{Separate instances for \LaTeX{} and plain \TeX}
 %   v2.22 has added the support for several named MetaPost instances
 %   in \LaTeX{} |mplibcode| environment.
+%   (And since v2.29 plain \TeX\ users can use this functionality as well.)
 %   Syntax is like so:
 %   \begin{verbatim}
 %   \begin{mplibcode}[instanceName]
@@ -2199,22 +2233,6 @@ end
 
 %    \end{macrocode}
 %
-%    color stuffs at the end of object
-%    \begin{macrocode}
-local function do_postobj_color(tr,over,sh)
-  if sh then
-    pdf_literalcode("W n /MPlibSh%s sh Q",sh)
-  end
-  if tr then
-    stop_pdf_code()
-  end
-  if over then
-    put2output"\\special{pdf:ec}"
-  end
-end
-
-%    \end{macrocode}
-%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
 local function flush(result,flusher)
@@ -2265,9 +2283,8 @@ local function flush(result,flusher)
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
-              local cr_over = do_preobj_CR(object,prescript)
-              local tr_opaq = do_preobj_TR(prescript)
-              local shade_no = do_preobj_SH(object,prescript)
+              local cr_over = do_preobj_CR(object,prescript) -- color
+              local tr_opaq = do_preobj_TR(prescript) -- opacity
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -2318,6 +2335,11 @@ local function flush(result,flusher)
                     savedhtap[#savedhtap+1] = object.htap or false
                   end
                 else
+%    \end{macrocode}
+%    Removed from ConTeXt general: color stuff
+%    Added : shading stuff
+%    \begin{macrocode}
+                  local shade_no = do_preobj_SH(object,prescript) -- shading
                   local ml = object.miterlimit
                   if ml and ml ~= miterlimit then
                     miterlimit = ml
@@ -2380,8 +2402,7 @@ local function flush(result,flusher)
                       flushnormalpath(path,open)
                     end
 %    \end{macrocode}
-%
-%    Change from ConTeXt general: there was color stuffs.
+%    Shading seems to conflict with these ops
 %    \begin{macrocode}
                     if not shade_no then -- conflict with shading
                       if objecttype == "fill" then
@@ -2433,18 +2454,28 @@ local function flush(result,flusher)
                       stop_pdf_code()
                     end
                   end
-                end
-              end
 %    \end{macrocode}
 %
-%    Added to ConTeXt general: color stuff.
-%    And execute legacy |verbatimtex| code.
+%    Added to ConTeXt general: post-object color and shading stuff.
 %    \begin{macrocode}
-              do_postobj_color(tr_opaq,cr_over,shade_no)
+                  if shade_no then -- shading
+                    pdf_literalcode("W n /MPlibSh%s sh Q",shade_no)
+                  end
+                end
+              end
+              if tr_opaq then -- opacity
+                stop_pdf_code()
+              end
+              if cr_over then -- color
+                put2output"\\special{pdf:ec}"
+              end
             end
           end
           stop_pdf_code()
           pdf_stopfigure()
+%    \end{macrocode}
+%    output collected materials to PDF, plus legacy |verbatimtex| code.
+%    \begin{macrocode}
           for _,v in ipairs(figcontents) do
             if type(v) == "table" then
               texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
@@ -2549,7 +2580,7 @@ luamplib.colorconverter = colorconverter
 %
 %    Catcode. We want to allow comment sign in |mplibcode|.
 %    \begin{macrocode}
-\protected\def\mplibsetupcatcodes{%
+\def\mplibsetupcatcodes{%
   %catcode`\{=12 %catcode`\}=12
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12
@@ -2565,13 +2596,23 @@ luamplib.colorconverter = colorconverter
 %    |\mpfig draw fullcircle scaled 10; \endfig|
 %    \begin{macrocode}
 \def\mpfiginstancename{@mpfig}
-\def\mpfig{%
+\protected\def\mpfig{%
   \begingroup
+  \futurelet\nexttok\mplibmpfigbranch
+}
+\def\mplibmpfigbranch{%
+  \ifx *\nexttok
+    \expandafter\mplibprempfig
+  \else
+    \expandafter\mplibmainmpfig
+  \fi
+}
+\def\mplibmainmpfig{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdompfig
+  \mplibdomainmpfig
 }
-\long\def\mplibdompfig#1\endfig{%
+\long\def\mplibdomainmpfig#1\endfig{%
   \endgroup
   \directlua{
     local legacy = luamplib.legacy_verbatimtex
@@ -2589,13 +2630,12 @@ luamplib.colorconverter = colorconverter
   }%
   \endgroup
 }
-\def\mpfigx{%
-  \begingroup
+\def\mplibprempfig#1{%
   \begingroup
   \mplibsetupcatcodes
-  \mplibdompfigx
+  \mplibdoprempfig
 }
-\long\def\mplibdompfigx#1\endfig{%
+\long\def\mplibdoprempfig#1\endfig{%
   \endgroup
   \directlua{
     local legacy = luamplib.legacy_verbatimtex
@@ -2611,6 +2651,7 @@ luamplib.colorconverter = colorconverter
   }%
   \endgroup
 }
+\protected\def\endfig{endfig}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.
@@ -2836,7 +2877,7 @@ luamplib.colorconverter = colorconverter
 %
 %    We encapsulate the litterals.
 %    \begin{macrocode}
-\protected\def\mplibstarttoPDF#1#2#3#4{%
+\def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
   \hbox dir TLT\bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
@@ -2850,7 +2891,7 @@ luamplib.colorconverter = colorconverter
   \setbox\mplibscratchbox\vbox\bgroup
   \noindent
 }
-\protected\def\mplibstoptoPDF{%
+\def\mplibstoptoPDF{%
   \par
   \egroup %
   \setbox\mplibscratchbox\hbox %
@@ -2873,7 +2914,7 @@ luamplib.colorconverter = colorconverter
 %
 %    Text items have a special handler.
 %    \begin{macrocode}
-\protected\def\mplibtextext#1#2#3#4#5{%
+\def\mplibtextext#1#2#3#4#5{%
   \begingroup
   \setbox\mplibscratchbox\hbox
     {\font\temp=#1 at #2bp%

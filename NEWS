@@ -1,7 +1,8 @@
                        History of the luamplib package
 
 2024/0x/xx 2.29.0
-   * \mpfig ... \endfig is expandable and abbreviation of
+   * provide new TeX macros to reduce typing toil.
+     \mpfig ... \endfig is abbreviation of
          \begin{mplibcode}[@mpfig]
          beginfig(0)
          token list declared by \everymplib[@mpfig]
@@ -9,19 +10,14 @@
          token list declared by \everyendmplib[@mpfig]
          endfig;
          \end{mplibcode}
-     \mpfigx ... \endfig is expandable and abbreviation of
+     \mpfig* ... \endfig is abbreviation of
          \begin{mplibcode}[@mpfig]
          ...
          \end{mplibcode}
      As both have the same instance name, metapost codes are inherited.
-     And in these macros \mpliblegacybehavior{false} is forcibly declared.
-     A simple example:
-         \everymplib[@mpfig]{ drawoptions(withcolor red); }
-         \mpfigx input boxes \endfig
-         \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endfig
+     In these macros \mpliblegacybehavior{false} is forcibly declared.
      The instance name (default: `@mpfig') can be changed by redefining
-     `\mpfiginstancename'.  Therefore `\let\mpfiginstancename\empty' will
-     prevent code inheritance, if \mplibcodeinherit{true} is not declared.
+     `\mpfiginstancename'.
 
    * instance names are allowed in plain TeX as well.
          \mplibcode[name] ... \endmplibcode
