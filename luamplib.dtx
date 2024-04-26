@@ -2591,14 +2591,15 @@ luamplib.colorconverter = colorconverter
     local legacy = luamplib.legacy_verbatimtex
     local everympfig = luamplib.everymplib["\mpfiginstancename"] or ""
     local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"] or ""
+    luamplib.legacy_verbatimtex = false
     luamplib.everymplib["\mpfiginstancename"] = ""
     luamplib.everyendmplib["\mpfiginstancename"] = ""
     luamplib.process_mplibcode(
     "beginfig(0) "..everympfig.." "..[===[\unexpanded{#1}]===].." "..everyendmpfig.." endfig;",
     "\mpfiginstancename")
+    luamplib.legacy_verbatimtex = legacy
     luamplib.everymplib["\mpfiginstancename"] = everympfig
     luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
-    luamplib.legacy_verbatimtex = legacy
   }%
   \endgroup
 }
@@ -2614,12 +2615,13 @@ luamplib.colorconverter = colorconverter
     local legacy = luamplib.legacy_verbatimtex
     local everympfig = luamplib.everymplib["\mpfiginstancename"]
     local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"]
+    luamplib.legacy_verbatimtex = false
     luamplib.everymplib["\mpfiginstancename"] = ""
     luamplib.everyendmplib["\mpfiginstancename"] = ""
     luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\mpfiginstancename")
+    luamplib.legacy_verbatimtex = legacy
     luamplib.everymplib["\mpfiginstancename"] = everympfig
     luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
-    luamplib.legacy_verbatimtex = legacy
   }%
   \endgroup
 }

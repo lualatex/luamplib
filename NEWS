@@ -14,6 +14,7 @@
          ...
          \end{mplibcode}
      As both have the same instance name, metapost codes are inherited.
+     And in these macros \mpliblegacybehavior{false} is forcibly declared.
      A simple example:
          \everymplib[@mpfig]{ drawoptions(withcolor red); }
          \mpfigx input boxes \endfig
