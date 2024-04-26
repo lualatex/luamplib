@@ -2205,11 +2205,11 @@ local function do_postobj_color(tr,over,sh)
   if sh then
     pdf_literalcode("W n /MPlibSh%s sh Q",sh)
   end
-  if over then
-    put2output"\\special{pdf:ec}"
-  end
   if tr then
     stop_pdf_code()
+  end
+  if over then
+    put2output"\\special{pdf:ec}"
   end
 end
 
@@ -2265,8 +2265,8 @@ local function flush(result,flusher)
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
-              local tr_opaq = do_preobj_TR(prescript)
               local cr_over = do_preobj_CR(object,prescript)
+              local tr_opaq = do_preobj_TR(prescript)
               local shade_no = do_preobj_SH(object,prescript)
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
