@@ -2578,6 +2578,7 @@ luamplib.colorconverter = colorconverter
 %    simple way to use mplib:
 %    |\mpfig draw fullcircle scaled 10; \endfig|
 %    \begin{macrocode}
+\def\mpfiginstancename{@mpfig}
 \def\mpfig{%
   \begingroup
   \begingroup
@@ -2586,7 +2587,40 @@ luamplib.colorconverter = colorconverter
 }
 \long\def\mplibdompfig#1\endfig{%
   \endgroup
-  \directlua{luamplib.process_mplibcode([===[beginfig(0) \unexpanded{#1} endfig;]===],"")}%
+  \directlua{
+    local legacy = luamplib.legacy_verbatimtex
+    local everympfig = luamplib.everymplib["\mpfiginstancename"] or ""
+    local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"] or ""
+    luamplib.everymplib["\mpfiginstancename"] = ""
+    luamplib.everyendmplib["\mpfiginstancename"] = ""
+    luamplib.process_mplibcode(
+    "beginfig(0) "..everympfig.." "..[===[\unexpanded{#1}]===].." "..everyendmpfig.." endfig;",
+    "\mpfiginstancename")
+    luamplib.everymplib["\mpfiginstancename"] = everympfig
+    luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
+    luamplib.legacy_verbatimtex = legacy
+  }%
+  \endgroup
+}
+\def\mpfigx{%
+  \begingroup
+  \begingroup
+  \mplibsetupcatcodes
+  \mplibdompfigx
+}
+\long\def\mplibdompfigx#1\endfig{%
+  \endgroup
+  \directlua{
+    local legacy = luamplib.legacy_verbatimtex
+    local everympfig = luamplib.everymplib["\mpfiginstancename"]
+    local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"]
+    luamplib.everymplib["\mpfiginstancename"] = ""
+    luamplib.everyendmplib["\mpfiginstancename"] = ""
+    luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\mpfiginstancename")
+    luamplib.everymplib["\mpfiginstancename"] = everympfig
+    luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
+    luamplib.legacy_verbatimtex = legacy
+  }%
   \endgroup
 }
 %    \end{macrocode}
@@ -2594,44 +2628,57 @@ luamplib.colorconverter = colorconverter
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \unless\ifcsname ver@luamplib.sty\endcsname
-\def\mplibcode{%
-  \begingroup
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdocode
-}
-\long\def\mplibdocode#1\endmplibcode{%
-  \endgroup
-  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"")}%
-  \endgroup
-}
+  \def\mplibcodegetinstancename[#1]{\gdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \protected\def\mplibcode{%
+    \begingroup
+    \futurelet\nexttok\mplibcodebranch
+  }
+  \def\mplibcodebranch{%
+    \ifx [\nexttok
+      \expandafter\mplibcodegetinstancename
+    \else
+      \global\let\currentmpinstancename\empty
+      \expandafter\mplibcodeindeed
+    \fi
+  }
+  \def\mplibcodeindeed{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdocode
+  }
+  \long\def\mplibdocode#1\endmplibcode{%
+    \endgroup
+    \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\currentmpinstancename")}%
+    \endgroup
+  }
+  \protected\def\endmplibcode{endmplibcode}
 \else
 %    \end{macrocode}
 %
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
-\newenvironment{mplibcode}[1][]{%
-  \global\def\currentmpinstancename{#1}%
-  \mplibtmptoks{}\ltxdomplibcode
-}{}
-\def\ltxdomplibcode{%
-  \begingroup
-  \mplibsetupcatcodes
-  \ltxdomplibcodeindeed
-}
-\def\mplib@mplibcode{mplibcode}
-\long\def\ltxdomplibcodeindeed#1\end#2{%
-  \endgroup
-  \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
-  \def\mplibtemp@a{#2}%
-  \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
-    \end{mplibcode}%
-  \else
-    \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
-    \expandafter\ltxdomplibcode
-  \fi
-}
+  \newenvironment{mplibcode}[1][]{%
+    \global\def\currentmpinstancename{#1}%
+    \mplibtmptoks{}\ltxdomplibcode
+  }{}
+  \def\ltxdomplibcode{%
+    \begingroup
+    \mplibsetupcatcodes
+    \ltxdomplibcodeindeed
+  }
+  \def\mplib@mplibcode{mplibcode}
+  \long\def\ltxdomplibcodeindeed#1\end#2{%
+    \endgroup
+    \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
+    \def\mplibtemp@a{#2}%
+    \ifx\mplib@mplibcode\mplibtemp@a
+      \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
+      \end{mplibcode}%
+    \else
+      \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
+      \expandafter\ltxdomplibcode
+    \fi
+  }
 \fi
 %    \end{macrocode}
 %
@@ -2668,17 +2715,17 @@ luamplib.colorconverter = colorconverter
 %    |luamplib.every(end)mplib| tables
 %
 %    \begin{macrocode}
-\protected\def\everymplib{%
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeverymplib
-}
-\protected\def\everyendmplib{%
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeveryendmplib
-}
 \ifcsname ver@luamplib.sty\endcsname
+  \protected\def\everymplib{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeverymplib
+  }
+  \protected\def\everyendmplib{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeveryendmplib
+  }
   \newcommand\mplibdoeverymplib[2][]{%
     \endgroup
     \directlua{
@@ -2692,16 +2739,29 @@ luamplib.colorconverter = colorconverter
     }%
   }
 \else
+  \def\mplibgetinstancename[#1]{\def\currentmpinstancename{#1}}
+  \protected\def\everymplib#1#{%
+    \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeverymplib
+  }
   \long\def\mplibdoeverymplib#1{%
     \endgroup
     \directlua{
-      luamplib.everymplib[""] = [===[\unexpanded{#1}]===]
+      luamplib.everymplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
     }%
+  }
+  \protected\def\everyendmplib#1#{%
+    \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeveryendmplib
   }
   \long\def\mplibdoeveryendmplib#1{%
     \endgroup
     \directlua{
-      luamplib.everyendmplib[""] = [===[\unexpanded{#1}]===]
+      luamplib.everyendmplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
     }%
   }
 \fi

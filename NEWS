@@ -1,5 +1,33 @@
                        History of the luamplib package
 
+2024/0x/xx 2.29.0
+   * \mpfig ... \endfig is expandable and abbreviation of
+         \begin{mplibcode}[@mpfig]
+         beginfig(0)
+         token list declared by \everymplib[@mpfig]
+         ...
+         token list declared by \everyendmplib[@mpfig]
+         endfig;
+         \end{mplibcode}
+     \mpfigx ... \endfig is expandable and abbreviation of
+         \begin{mplibcode}[@mpfig]
+         ...
+         \end{mplibcode}
+     As both have the same instance name, metapost codes are inherited.
+     A simple example:
+         \everymplib[@mpfig]{ drawoptions(withcolor red); }
+         \mpfigx input boxes \endfig
+         \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endfig
+     The instance name (default: `@mpfig') can be changed by redefining
+     `\mpfiginstancename'.  Therefore `\let\mpfiginstancename\empty' will
+     prevent code inheritance, if \mplibcodeinherit{true} is not declared.
+
+   * instance names are allowed in plain TeX as well.
+         \mplibcode[name] ... \endmplibcode
+         \everymplib[name]{ ... }
+         \everyendmplib[name]{ ... }
+     These macros are protected and unexpandable.
+
 2024/04/25 2.28.2
    * direction of figure box is explicitly declared as TLT (#129)
    * figure box materials are emitted in one go at the end of the figure
@@ -72,11 +100,11 @@
 2024/03/01 2.26.0
     * when \mplibcachedir{<dir>} is not set, default cache directory will
     be in the following order:
-	$TEXMFVAR/luamplib_cache
-	$TEXMF_OUTPUT_DIRECTORY/luamplib_cache
-	./luamplib_cache
-	$TEXMFOUTPUT/luamplib_cache
-	.
+        $TEXMFVAR/luamplib_cache
+        $TEXMF_OUTPUT_DIRECTORY/luamplib_cache
+        ./luamplib_cache
+        $TEXMFOUTPUT/luamplib_cache
+        .
 
 2024/01/25 2.25.3
     * protect "..." even if textextlabel is disabled (revert part of v2.25.0)
