@@ -1,6 +1,7 @@
                        History of the luamplib package
 
 2024/0x/xx 2.29.0
+
    * provide new TeX macros to reduce typing toil.
 
      \mpfig ... \endmpfig is roughly the abbreviation of
@@ -31,16 +32,16 @@
 
      These macros are protected and unexpandable.
 
-   * provide new metapost operators `mplibtexcolor' and `mplibrgbtexcolor'.
-     They convert TeX color expressions to MetaPost color expressions.
-     The latter one forces RGB model results. For instance,
+   * provide new metapost operators `mplibtexcolor' and `mplibrgbtexcolor'
+     which convert TeX color expressions to MetaPost color expressions.
+     The latter one forces RGB model results (see #112). For instance,
 
          mplibtexcolor "olive"
          mplibrgbtexcolor "olive"
 
      The former returns a cmyk, the latter rgb, expression.
-
-
+     As spot colors are always forced to cmyk or rgb model, it is not
+     recommended to use these operators for them.
 
 2024/04/25 2.28.2
    * direction of figure box is explicitly declared as TLT (#129)

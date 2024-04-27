@@ -1186,11 +1186,10 @@ end
 
 luamplib.gettexcolor = function (str, rgb)
   local res = process_color(str, "metapost")
-  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
+  if res:find" cs " or res:find"@pdf.obj" then
     if not rgb then
       warn("%s is a spot color. Forced to CMYK", str)
     end
-    local fmt =
     run_tex_code({
       "\\color_export:nnN{",
       str,
@@ -2613,7 +2612,7 @@ luamplib.colorconverter = colorconverter
   \ifcsname PackageInfo\endcsname
     \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
-    \write128{luamplib Info: only dvipdfmx is supported currently}
+    \immediate\write-1{luamplib Info: only dvipdfmx is supported currently}
   \fi
 \fi
 %    \end{macrocode}
