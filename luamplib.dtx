@@ -209,9 +209,9 @@ See source file '\inFileName' for licencing and contact information.
 %   setting. (Actually these commands redefine |\prependtomplibbox|. You
 %   can define this command with anything suitable before a box.)
 %
-% \paragraph{\cs{mpfig} \ldots\ \cs{endfig}}
-%   Since v2.29 we provide \TeX\ macros |\mpfig ... \endfig| and its starred version
-%   |\mpfig* ... \endfig| to save typing toil.
+% \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
+%   Since v2.29 we provide \TeX\ macros |\mpfig ... \endmpfig| and its starred version
+%   |\mpfig* ... \endmpfig| to save typing toil.
 %   The first is roughly the same as follows:
 %   \begin{verbatim}
 %     \begin{mplibcode}[@mpfig]
@@ -233,9 +233,9 @@ See source file '\inFileName' for licencing and contact information.
 %   is forcibly declared.
 %   A simple example:
 %   \begin{verbatim}
-%     \everymplib[@mpfig]{ drawoptions(withcolor red); }
-%     \mpfig* input boxes \endfig
-%     \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endfig
+%     \mpfig* input boxes \endmpfig
+%     \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
+%     \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
 %   \end{verbatim}
 %   The instance name (default: |@mpfig|) can be changed by redefining
 %   \cs{mpfiginstancename}. So |\let\mpfiginstancename\empty| will
@@ -412,7 +412,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmplibcode
 %   \end{verbatim}
 %   Generally speaking, it is recommended to turn |mplibglobaltextext|
-%   always on, because it has the advantage of more efficient processing.
+%   always on, because it has the advantage of reusing metapost pictures
+%   among code chunks sharing the same mplib instance.
 %   But everything has its downside: it will waste more memory resources.
 %
 % \paragraph{\cs{mplibverbatim}}
@@ -456,6 +457,18 @@ See source file '\inFileName' for licencing and contact information.
 %   as the user's home directory (on a windows machine as well).
 %   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
+%
+% \paragraph{\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}}
+%   |mplibtexcolor| is a metapost operator that converts a \TeX\ color expression
+%   to a MetaPost color expression. For instance:
+%   \begin{verbatim}
+%   color col; col := mplibtexcolor "olive!50";
+%   \end{verbatim}
+%   The result may vary in its color model (gray/rgb/cmyk)
+%   according to the given \TeX\ color. (Spot colors are forced to
+%   cmyk model, so this operator is not recommended for spot colors.)
+%   Therefore the example shown above would raise a metapost error.
+%   By contrast, |mplibrgbtexcolor| always returns `rgb' model expressions.
 %
 % \paragraph{\texttt{mplibgraphictext}}
 %   For some amusement, luamplib provides its own metapost operator
@@ -1171,6 +1184,34 @@ luamplib.outlinecolor = function (str, filldraw)
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
 
+luamplib.gettexcolor = function (str, rgb)
+  local res = process_color(str, "metapost")
+  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
+    if not rgb then
+      warn("%s is a spot color. Forced to CMYK", str)
+    end
+    local fmt =
+    run_tex_code({
+      "\\color_export:nnN{",
+      str,
+      "}{",
+      rgb and "space-sep-rgb" or "space-sep-cmyk",
+      "}\\mplib_@tempa",
+    },ccexplat)
+    return get_macro"mplib_@tempa":explode()
+  end
+  local t = colorsplit(res)
+  if #t == 3 or not rgb then return t end
+  run_tex_code({ -- force to rgb
+    "\\color_export:nnnN{",
+    #t == 4 and "cmyk" or "gray",
+    "}{",
+    tableconcat(t,","),
+    "}{space-sep-rgb}\\mplib_@tempa",
+  },ccexplat)
+  return get_macro"mplib_@tempa":explode()
+end
+
 luamplib.shadecolor = function (str)
   local res = process_color(str, "shade")
   if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
@@ -1465,6 +1506,12 @@ def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
+def mplibtexcolor primary c =
+  runscript("return luamplib.gettexcolor('"& c &"')")
+enddef;
+def mplibrgbtexcolor primary c =
+  runscript("return luamplib.gettexcolor('"& c &"','rgb')")
+enddef;
 def mplibgraphictext primary t =
   begingroup;
   mplibgraphictext_ (t)
@@ -2593,7 +2640,7 @@ luamplib.colorconverter = colorconverter
 %    \end{macrocode}
 %
 %    simple way to use mplib:
-%    |\mpfig draw fullcircle scaled 10; \endfig|
+%    |\mpfig draw fullcircle scaled 10; \endmpfig|
 %    \begin{macrocode}
 \def\mpfiginstancename{@mpfig}
 \protected\def\mpfig{%
@@ -2612,7 +2659,7 @@ luamplib.colorconverter = colorconverter
   \mplibsetupcatcodes
   \mplibdomainmpfig
 }
-\long\def\mplibdomainmpfig#1\endfig{%
+\long\def\mplibdomainmpfig#1\endmpfig{%
   \endgroup
   \directlua{
     local legacy = luamplib.legacy_verbatimtex
@@ -2635,7 +2682,7 @@ luamplib.colorconverter = colorconverter
   \mplibsetupcatcodes
   \mplibdoprempfig
 }
-\long\def\mplibdoprempfig#1\endfig{%
+\long\def\mplibdoprempfig#1\endmpfig{%
   \endgroup
   \directlua{
     local legacy = luamplib.legacy_verbatimtex
@@ -2651,7 +2698,7 @@ luamplib.colorconverter = colorconverter
   }%
   \endgroup
 }
-\protected\def\endfig{endfig}
+\protected\def\endmpfig{endmpfig}
 %    \end{macrocode}
 %
 %    The Plain-specific stuff.

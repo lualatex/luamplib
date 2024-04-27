@@ -2,7 +2,8 @@
 
 2024/0x/xx 2.29.0
    * provide new TeX macros to reduce typing toil.
-     \mpfig ... \endfig is abbreviation of
+
+     \mpfig ... \endmpfig is roughly the abbreviation of
          \begin{mplibcode}[@mpfig]
          beginfig(0)
          token list declared by \everymplib[@mpfig]
@@ -10,20 +11,36 @@
          token list declared by \everyendmplib[@mpfig]
          endfig;
          \end{mplibcode}
-     \mpfig* ... \endfig is abbreviation of
+
+     \mpfig* ... \endmpfig is roughly the abbreviation of
          \begin{mplibcode}[@mpfig]
          ...
          \end{mplibcode}
+
+     These macros are protected and unexpandable.
      As both have the same instance name, metapost codes are inherited.
      In these macros \mpliblegacybehavior{false} is forcibly declared.
-     The instance name (default: `@mpfig') can be changed by redefining
+     The instance name (default: @mpfig) can be changed by redefining
      `\mpfiginstancename'.
 
    * instance names are allowed in plain TeX as well.
+
          \mplibcode[name] ... \endmplibcode
          \everymplib[name]{ ... }
          \everyendmplib[name]{ ... }
+
      These macros are protected and unexpandable.
+
+   * provide new metapost operators `mplibtexcolor' and `mplibrgbtexcolor'.
+     They convert TeX color expressions to MetaPost color expressions.
+     The latter one forces RGB model results. For instance,
+
+         mplibtexcolor "olive"
+         mplibrgbtexcolor "olive"
+
+     The former returns a cmyk, the latter rgb, expression.
+
+
 
 2024/04/25 2.28.2
    * direction of figure box is explicitly declared as TLT (#129)
