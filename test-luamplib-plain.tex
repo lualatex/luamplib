@@ -163,4 +163,83 @@ diameter:\Dia bp.%
     rotatedlabel.top(textext("Rotated!"), origin, 45);
   endfig;
 \endmplibcode
+\par
+\mplibsetformat{metafun}%
+\mplibcode
+beginfig(1)
+fill unitsquare xyscaled (\mpdim\hsize, 1cm)
+    withshademethod "linear"
+    withshadevector (0,1)
+    withshadestep (
+       withshadefraction .5
+       withshadecolors (red,blue)
+    )
+    withshadestep (
+       withshadefraction 1
+       withshadecolors (blue,green)
+    )
+    ;
+endfig;
+\endmplibcode
+\everymplib[@mpfig]{ drawoptions(withcolor red); }%
+\mpfig* input boxes \endmpfig
+\mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\tracingcommands0
+
+\vskip 2\baselineskip
+\mplibcodeinherit{disable}
+\everymplib[instanceOne]{beginfig(1);}
+\everyendmplib[instanceOne]{endfig;}
+
+\mplibcode[instanceOne]
+  picture TeX;
+  TeX := btex \TeX etex;
+a := 1cm;
+draw fullcircle scaled a;
+draw btex a circle with $d=a$ etex shifted (a,0);
+draw TeX;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\mplibcode[instanceTwo]
+beginfig(1);
+if not known a:
+  draw btex code is not inherited from an instance with a different name etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\mplibcode
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if instance name is not listed etex;
+else:
+  errmessage("Variable was inherited from a different instance");
+fi;
+a := 1cm;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\mplibcode
+beginfig(1);
+if not known a:
+  draw btex code is not inherited if mplibcodeinherit is disabled and instance name is not explicitly set etex;
+else:
+  errmessage("Variable was inherited when code inheritance is turned off and instance name is not set");
+fi;
+endfig;
+\endmplibcode
+Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
+
+\mplibcode[instanceOne]
+draw unitsquare scaled a;
+draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
+  draw TeX;
+\endmplibcode
+Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
 \bye

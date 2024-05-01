@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/25 v2.28.2 Interface for using the mplib library]%
+  [2024/05/01 v2.29.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/25 v2.28.2}
+% \date{2024/05/01 v2.29.0}
 %
 % \maketitle
 %
@@ -208,6 +208,41 @@ See source file '\inFileName' for licencing and contact information.
 %   will have effects. |\mplibnoforcehmode|, being default, reverts this
 %   setting. (Actually these commands redefine |\prependtomplibbox|. You
 %   can define this command with anything suitable before a box.)
+%
+% \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
+%   Since v2.29 we provide unexpandable \TeX\ macros |\mpfig ... \endmpfig| and its starred version
+%   |\mpfig* ... \endmpfig| to save typing toil.
+%   The first is roughly the same as follows:
+%   \begin{verbatim}
+%     \begin{mplibcode}[@mpfig]
+%     beginfig(0)
+%     token list declared by \everymplib[@mpfig]
+%     ...
+%     token list declared by \everyendmplib[@mpfig]
+%     endfig;
+%     \end{mplibcode}
+%   \end{verbatim}
+%   and the starred version is roughly the same as follows:
+%   \begin{verbatim}
+%     \begin{mplibcode}[@mpfig]
+%     ...
+%     \end{mplibcode}
+%   \end{verbatim}
+%   In these macros |\mpliblegacybehavior{disable}| (see below)
+%   is forcibly declared.
+%   And as both share the same instance name, metapost codes are inherited among them.
+%   A simple example:
+%   \begin{verbatim}
+%     \mpfig* input boxes \endmpfig
+%     \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
+%     \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
+%   \end{verbatim}
+%   The instance name (default: |@mpfig|) can be changed by redefining
+%   \cs{mpfiginstancename}, after which a new MPlib instance will start and
+%   code inheritance too will begin anew.  |\let\mpfiginstancename\empty| will
+%   prevent code inheritance if |\mplibcodeinherit{true}| (see below) is not declared.\footnote{%
+%   As for user setting values, |enable|, |true|, |yes| are identical, and
+%   |disable|, |false|, |no| are identical.}
 %
 % \paragraph{\cs{mpliblegacybehavior\{enable\}}}
 %   By default, |\mpliblegacybehavior{enable}| is already declared,
@@ -326,9 +361,10 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunks being treated as an independent instance, and never
 %   affected by previous code chunks.
 %
-% \paragraph{Separate instances for \LaTeX{} environment}
+% \paragraph{Separate instances for \LaTeX{} and plain \TeX}
 %   v2.22 has added the support for several named MetaPost instances
 %   in \LaTeX{} |mplibcode| environment.
+%   (And since v2.29 plain \TeX\ users can use this functionality as well.)
 %   Syntax is like so:
 %   \begin{verbatim}
 %   \begin{mplibcode}[instanceName]
@@ -378,7 +414,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmplibcode
 %   \end{verbatim}
 %   Generally speaking, it is recommended to turn |mplibglobaltextext|
-%   always on, because it has the advantage of more efficient processing.
+%   always on, because it has the advantage of reusing metapost pictures
+%   among code chunks sharing the same mplib instance.
 %   But everything has its downside: it will waste more memory resources.
 %
 % \paragraph{\cs{mplibverbatim}}
@@ -422,6 +459,19 @@ See source file '\inFileName' for licencing and contact information.
 %   as the user's home directory (on a windows machine as well).
 %   As backslashes (|\|) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
+%
+% \paragraph{\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}}
+%   |mplibtexcolor| is a metapost operator that converts a \TeX\ color expression
+%   to a MetaPost color expression. For instance:
+%   \begin{verbatim}
+%   color col; col := mplibtexcolor "olive!50";
+%   \end{verbatim}
+%   The result may vary in its color model (gray/rgb/cmyk)
+%   according to the given \TeX\ color. (Spot colors are forced to
+%   cmyk model, so this operator is not recommended for spot colors.)
+%   Therefore the example shown above would raise a metapost error:
+%   |cmykcolor col;| should have been declared.
+%   By contrast, |mplibrgbtexcolor| always returns rgb model expressions.
 %
 % \paragraph{\texttt{mplibgraphictext}}
 %   For some amusement, luamplib provides its own metapost operator
@@ -476,8 +526,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.28.2",
-  date          = "2024/04/25",
+  version       = "2.29.0",
+  date          = "2024/05/01",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -821,9 +871,8 @@ luamplib.setformat = setformat
 %    v2.9 has introduced the concept of ``code inherit''
 %    \begin{macrocode}
 luamplib.codeinherit = false
-
 local mplibinstances = {}
-local instancename
+local has_instancename = false
 
 local function reporterror (result, prevlog)
   if not result then
@@ -913,7 +962,7 @@ end
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
-local function process (data)
+local function process (data, instancename)
 %    \end{macrocode}
 %
 %    The workaround of issue \#70 seems to be unnecessary, as we use
@@ -927,6 +976,7 @@ local function process (data)
   local currfmt
   if instancename and instancename ~= "" then
     currfmt = instancename
+    has_instancename = true
   else
     currfmt = tableconcat{
       currentformat,
@@ -934,12 +984,10 @@ local function process (data)
       tostring(luamplib.textextlabel),
       tostring(luamplib.legacy_verbatimtex),
     }
+    has_instancename = false
   end
   local mpx = mplibinstances[currfmt]
-  local standalone = false
-  if currfmt ~= instancename then
-    standalone = not luamplib.codeinherit
-  end
+  local standalone = not (has_instancename or luamplib.codeinherit)
   if mpx and standalone then
     mpx:finish()
   end
@@ -1006,10 +1054,7 @@ end
 %    Boxes of an instance will also be global, so that
 %    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
-local texboxes = {
-  locals  = {}, localid  = 4096,
-  globals = {}, globalid = 0,
-}
+local texboxes = { globalid = 0, localid = 4096 }
 %    \end{macrocode}
 %    For conversion of |sp| to |bp|.
 %    \begin{macrocode}
@@ -1021,32 +1066,21 @@ withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
-    local boxtable, global
-    if instancename and instancename ~= ""
-      or luamplib.globaltextext or luamplib.codeinherit then
-      boxtable, global = texboxes.globals, "\\global"
+    local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
+                   and "\\global" or ""
+    local tex_box_id
+    if global == "" then
+      tex_box_id = texboxes.localid + 1
+      texboxes.localid = tex_box_id
     else
-      boxtable, global = texboxes.locals, ""
+      local boxid = texboxes.globalid + 1
+      texboxes.globalid = boxid
+      run_tex_code(format(
+        [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
+      tex_box_id = tex.getcount'allocationnumber'
     end
-    local tex_box_id = boxtable[str]
-    local box = tex_box_id and texgetbox(tex_box_id)
-    if not box then
-      if global == "" then
-        tex_box_id = texboxes.localid + 1
-        texboxes.localid = tex_box_id
-      else
-        local boxid = texboxes.globalid + 1
-        texboxes.globalid = boxid
-        run_tex_code(format(
-          [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
-        tex_box_id = tex.getcount'allocationnumber'
-      end
-      if str:find"^[%s%w%{%}%$%^%_]*$" then -- the same cs may expand differently
-        boxtable[str] = tex_box_id
-      end
-      run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
-      box = texgetbox(tex_box_id)
-    end
+    run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
+    local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
@@ -1144,6 +1178,33 @@ luamplib.outlinecolor = function (str, filldraw)
   local t = colorsplit(res)
   local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
   return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
+end
+
+luamplib.gettexcolor = function (str, rgb)
+  local res = process_color(str, "metapost")
+  if res:find" cs " or res:find"@pdf.obj" then
+    if not rgb then
+      warn("%s is a spot color. Forced to CMYK", str)
+    end
+    run_tex_code({
+      "\\color_export:nnN{",
+      str,
+      "}{",
+      rgb and "space-sep-rgb" or "space-sep-cmyk",
+      "}\\mplib_@tempa",
+    },ccexplat)
+    return get_macro"mplib_@tempa":explode()
+  end
+  local t = colorsplit(res)
+  if #t == 3 or not rgb then return t end
+  run_tex_code({ -- force to rgb
+    "\\color_export:nnnN{",
+    #t == 4 and "cmyk" or "gray",
+    "}{",
+    tableconcat(t,","),
+    "}{space-sep-rgb}\\mplib_@tempa",
+  },ccexplat)
+  return get_macro"mplib_@tempa":explode()
 end
 
 luamplib.shadecolor = function (str)
@@ -1259,11 +1320,6 @@ local tex_code_pre_mplib = {}
 luamplib.figid = 1
 luamplib.in_the_fig = false
 
-local function legacy_mplibcode_reset ()
-  tex_code_pre_mplib = {}
-  luamplib.figid = 1
-end
-
 local function process_verbatimtex_prefig (str)
   if str then
     tex_code_pre_mplib[luamplib.figid] = str
@@ -1296,7 +1352,6 @@ local mp = mp
 mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 mp.report = mp.report or info
-
 
 %    \end{macrocode}
 %
@@ -1411,6 +1466,9 @@ def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
 def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
 def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
 def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
+def message expr t =
+  if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
+enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -1445,6 +1503,12 @@ def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
 def TEX = textext enddef;
+def mplibtexcolor primary c =
+  runscript("return luamplib.gettexcolor('"& c &"')")
+enddef;
+def mplibrgbtexcolor primary c =
+  runscript("return luamplib.gettexcolor('"& c &"','rgb')")
+enddef;
 def mplibgraphictext primary t =
   begingroup;
   mplibgraphictext_ (t)
@@ -1556,23 +1620,22 @@ local function unprotect_expansion (str)
   end
 end
 
-luamplib.everymplib    = { [""] = "" }
-luamplib.everyendmplib = { [""] = "" }
+luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
+luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 
-local function process_mplibcode (data, instance)
-  instancename = instance
-  texboxes.locals, texboxes.localid = {}, 4096
+local function process_mplibcode (data, instancename)
+  texboxes.localid = 4096
 
 %    \end{macrocode}
 %
-%    This is needed for legacy behavior regarding |verbatimtex|
+%    This is needed for legacy behavior
 %    \begin{macrocode}
-  legacy_mplibcode_reset()
+  if luamplib.legacy_verbatimtex then
+    luamplib.figid, tex_code_pre_mplib = 1, {}
+  end
 
-  local everymplib    = luamplib.everymplib[instancename] or
-                        luamplib.everymplib[""]
-  local everyendmplib = luamplib.everyendmplib[instancename] or
-                        luamplib.everyendmplib[""]
+  local everymplib    = luamplib.everymplib[instancename]
+  local everyendmplib = luamplib.everyendmplib[instancename]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   :gsub("\r","\n")
 
@@ -1618,7 +1681,7 @@ local function process_mplibcode (data, instance)
     end)
   end
 
-  process(data)
+  process(data, instancename)
 end
 luamplib.process_mplibcode = process_mplibcode
 
@@ -1820,7 +1883,37 @@ end
 
 %    \end{macrocode}
 %
-%    Colors and Transparency
+%    Colors
+%    \begin{macrocode}
+local prev_override_color
+local function do_preobj_CR(object,prescript)
+  local override = prescript and prescript.MPlibOverrideColor
+  if override then
+    if pdfmode then
+      pdf_literalcode(override)
+      override = nil
+    else
+      put2output("\\special{%s}",override)
+      prev_override_color = override
+    end
+  else
+    local cs = object.color
+    if cs and #cs > 0 then
+      pdf_literalcode(luamplib.colorconverter(cs))
+      prev_override_color = nil
+    elseif not pdfmode then
+      override = prev_override_color
+      if override then
+        put2output("\\special{%s}",override)
+      end
+    end
+  end
+  return override
+end
+
+%    \end{macrocode}
+%
+%    For transparency and shading
 %    \begin{macrocode}
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
@@ -1851,7 +1944,7 @@ end
 
 %    \end{macrocode}
 %
-%    transparency
+%    Transparency
 %    \begin{macrocode}
 local transparancy_modes = { [0] = "Normal",
   "Normal",       "Multiply",     "Screen",       "Overlay",
@@ -1937,45 +2030,15 @@ end
 
 local function do_preobj_TR(prescript)
   local opaq = prescript and prescript.tr_transparency
-  local tron_no, troff_no
+  local tron_no
   if opaq then
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)]
-    troff_no = update_tr_res("Normal", 1)
-    tron_no  = update_tr_res(mode, opaq)
+    tron_no = update_tr_res(mode, opaq)
+    start_pdf_code()
     pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
-  return troff_no
-end
-
-%    \end{macrocode}
-%
-%    color
-%    \begin{macrocode}
-local prev_override_color
-local function do_preobj_CR(object,prescript)
-  local override = prescript and prescript.MPlibOverrideColor
-  if override then
-    if pdfmode then
-      pdf_literalcode(override)
-      override = nil
-    else
-      put2output("\\special{%s}",override)
-      prev_override_color = override
-    end
-  else
-    local cs = object.color
-    if cs and #cs > 0 then
-      pdf_literalcode(luamplib.colorconverter(cs))
-      prev_override_color = nil
-    elseif not pdfmode then
-      override = prev_override_color
-      if override then
-        put2output("\\special{%s}",override)
-      end
-    end
-  end
-  return override
+  return tron_no
 end
 
 %    \end{macrocode}
@@ -2213,22 +2276,6 @@ end
 
 %    \end{macrocode}
 %
-%    color stuffs at the end of object
-%    \begin{macrocode}
-local function do_postobj_color(tr,over,sh)
-  if sh then
-    pdf_literalcode("W n /MPlibSh%s sh Q",sh)
-  end
-  if over then
-    put2output"\\special{pdf:ec}"
-  end
-  if tr then
-    pdf_literalcode("/MPlibTr%i gs",tr)
-  end
-end
-
-%    \end{macrocode}
-%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
 local function flush(result,flusher)
@@ -2257,9 +2304,7 @@ local function flush(result,flusher)
 %    \begin{macrocode}
         else
 %    \end{macrocode}
-%    For collecting pdf materials and
-%    for legacy behavior. Insert `pre-fig' \TeX\ code here, and
-%    prepare a table for `in-fig' codes.
+%    For legacy behavior, insert `pre-fig' \TeX\ code here.
 %    \begin{macrocode}
           if tex_code_pre_mplib[f] then
             put2output(tex_code_pre_mplib[f])
@@ -2274,14 +2319,13 @@ local function flush(result,flusher)
               local objecttype    = object.type
 %    \end{macrocode}
 %
-%    The following 7 lines are part of |btex...etex| patch.
+%    The following 6 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
-              local tr_opaq = do_preobj_TR(prescript)
-              local cr_over = do_preobj_CR(object,prescript)
-              local shade_no = do_preobj_SH(object,prescript)
+              local cr_over = do_preobj_CR(object,prescript) -- color
+              local tr_opaq = do_preobj_TR(prescript) -- opacity
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -2332,6 +2376,11 @@ local function flush(result,flusher)
                     savedhtap[#savedhtap+1] = object.htap or false
                   end
                 else
+%    \end{macrocode}
+%    Removed from ConTeXt general: color stuff.
+%    Added instead : shading stuff
+%    \begin{macrocode}
+                  local shade_no = do_preobj_SH(object,prescript) -- shading
                   local ml = object.miterlimit
                   if ml and ml ~= miterlimit then
                     miterlimit = ml
@@ -2394,8 +2443,7 @@ local function flush(result,flusher)
                       flushnormalpath(path,open)
                     end
 %    \end{macrocode}
-%
-%    Change from ConTeXt general: there was color stuffs.
+%    Shading seems to conflict with these ops
 %    \begin{macrocode}
                     if not shade_no then -- conflict with shading
                       if objecttype == "fill" then
@@ -2447,18 +2495,28 @@ local function flush(result,flusher)
                       stop_pdf_code()
                     end
                   end
-                end
-              end
 %    \end{macrocode}
 %
-%    Added to ConTeXt general: color stuff.
-%    And execute legacy |verbatimtex| code.
+%    Added to ConTeXt general: post-object color and shading stuff.
 %    \begin{macrocode}
-              do_postobj_color(tr_opaq,cr_over,shade_no)
+                  if shade_no then -- shading
+                    pdf_literalcode("W n /MPlibSh%s sh Q",shade_no)
+                  end
+                end
+              end
+              if tr_opaq then -- opacity
+                stop_pdf_code()
+              end
+              if cr_over then -- color
+                put2output"\\special{pdf:ec}"
+              end
             end
           end
           stop_pdf_code()
           pdf_stopfigure()
+%    \end{macrocode}
+%    output collected materials to PDF, plus legacy |verbatimtex| code.
+%    \begin{macrocode}
           for _,v in ipairs(figcontents) do
             if type(v) == "table" then
               texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
@@ -2511,7 +2569,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/25 v2.28.2 mplib package for LuaTeX]
+    [2024/05/01 v2.29.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2549,12 +2607,12 @@ luamplib.colorconverter = colorconverter
   \ifcsname PackageInfo\endcsname
     \PackageInfo{luamplib}{only dvipdfmx is supported currently}
   \else
-    \write128{luamplib Info: only dvipdfmx is supported currently}
+    \immediate\write-1{luamplib Info: only dvipdfmx is supported currently}
   \fi
 \fi
 %    \end{macrocode}
 %
-%    Make |mplibcode| typesetted always in horizontal mode.
+%    To make |mplibcode| typeset always in horizontal mode.
 %    \begin{macrocode}
 \def\mplibforcehmode{\let\prependtomplibbox\leavevmode}
 \def\mplibnoforcehmode{\let\prependtomplibbox\relax}
@@ -2575,47 +2633,122 @@ luamplib.colorconverter = colorconverter
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
 %    \end{macrocode}
 %
+%    simple way to use mplib:
+%    |\mpfig draw fullcircle scaled 10; \endmpfig|
+%    \begin{macrocode}
+\def\mpfiginstancename{@mpfig}
+\protected\def\mpfig{%
+  \begingroup
+  \futurelet\nexttok\mplibmpfigbranch
+}
+\def\mplibmpfigbranch{%
+  \ifx *\nexttok
+    \expandafter\mplibprempfig
+  \else
+    \expandafter\mplibmainmpfig
+  \fi
+}
+\def\mplibmainmpfig{%
+  \begingroup
+  \mplibsetupcatcodes
+  \mplibdomainmpfig
+}
+\long\def\mplibdomainmpfig#1\endmpfig{%
+  \endgroup
+  \directlua{
+    local legacy = luamplib.legacy_verbatimtex
+    local everympfig = luamplib.everymplib["\mpfiginstancename"] or ""
+    local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"] or ""
+    luamplib.legacy_verbatimtex = false
+    luamplib.everymplib["\mpfiginstancename"] = ""
+    luamplib.everyendmplib["\mpfiginstancename"] = ""
+    luamplib.process_mplibcode(
+    "beginfig(0) "..everympfig.." "..[===[\unexpanded{#1}]===].." "..everyendmpfig.." endfig;",
+    "\mpfiginstancename")
+    luamplib.legacy_verbatimtex = legacy
+    luamplib.everymplib["\mpfiginstancename"] = everympfig
+    luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
+  }%
+  \endgroup
+}
+\def\mplibprempfig#1{%
+  \begingroup
+  \mplibsetupcatcodes
+  \mplibdoprempfig
+}
+\long\def\mplibdoprempfig#1\endmpfig{%
+  \endgroup
+  \directlua{
+    local legacy = luamplib.legacy_verbatimtex
+    local everympfig = luamplib.everymplib["\mpfiginstancename"]
+    local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"]
+    luamplib.legacy_verbatimtex = false
+    luamplib.everymplib["\mpfiginstancename"] = ""
+    luamplib.everyendmplib["\mpfiginstancename"] = ""
+    luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\mpfiginstancename")
+    luamplib.legacy_verbatimtex = legacy
+    luamplib.everymplib["\mpfiginstancename"] = everympfig
+    luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
+  }%
+  \endgroup
+}
+\protected\def\endmpfig{endmpfig}
+%    \end{macrocode}
+%
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \unless\ifcsname ver@luamplib.sty\endcsname
-\def\mplibcode{%
-  \begingroup
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdocode
-}
-\long\def\mplibdocode#1\endmplibcode{%
-  \endgroup
-  \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"")}%
-  \endgroup
-}
+  \def\mplibcodegetinstancename[#1]{\gdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \protected\def\mplibcode{%
+    \begingroup
+    \futurelet\nexttok\mplibcodebranch
+  }
+  \def\mplibcodebranch{%
+    \ifx [\nexttok
+      \expandafter\mplibcodegetinstancename
+    \else
+      \global\let\currentmpinstancename\empty
+      \expandafter\mplibcodeindeed
+    \fi
+  }
+  \def\mplibcodeindeed{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdocode
+  }
+  \long\def\mplibdocode#1\endmplibcode{%
+    \endgroup
+    \directlua{luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\currentmpinstancename")}%
+    \endgroup
+  }
+  \protected\def\endmplibcode{endmplibcode}
 \else
 %    \end{macrocode}
 %
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
-\newenvironment{mplibcode}[1][]{%
-  \global\def\currentmpinstancename{#1}%
-  \mplibtmptoks{}\ltxdomplibcode
-}{}
-\def\ltxdomplibcode{%
-  \begingroup
-  \mplibsetupcatcodes
-  \ltxdomplibcodeindeed
-}
-\def\mplib@mplibcode{mplibcode}
-\long\def\ltxdomplibcodeindeed#1\end#2{%
-  \endgroup
-  \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
-  \def\mplibtemp@a{#2}%
-  \ifx\mplib@mplibcode\mplibtemp@a
-    \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
-    \end{mplibcode}%
-  \else
-    \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
-    \expandafter\ltxdomplibcode
-  \fi
-}
+  \newenvironment{mplibcode}[1][]{%
+    \global\def\currentmpinstancename{#1}%
+    \mplibtmptoks{}\ltxdomplibcode
+  }{}
+  \def\ltxdomplibcode{%
+    \begingroup
+    \mplibsetupcatcodes
+    \ltxdomplibcodeindeed
+  }
+  \def\mplib@mplibcode{mplibcode}
+  \long\def\ltxdomplibcodeindeed#1\end#2{%
+    \endgroup
+    \mplibtmptoks\expandafter{\the\mplibtmptoks#1}%
+    \def\mplibtemp@a{#2}%
+    \ifx\mplib@mplibcode\mplibtemp@a
+      \directlua{luamplib.process_mplibcode([===[\the\mplibtmptoks]===],"\currentmpinstancename")}%
+      \end{mplibcode}%
+    \else
+      \mplibtmptoks\expandafter{\the\mplibtmptoks\end{#2}}%
+      \expandafter\ltxdomplibcode
+    \fi
+  }
 \fi
 %    \end{macrocode}
 %
@@ -2652,17 +2785,17 @@ luamplib.colorconverter = colorconverter
 %    |luamplib.every(end)mplib| tables
 %
 %    \begin{macrocode}
-\protected\def\everymplib{%
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeverymplib
-}
-\protected\def\everyendmplib{%
-  \begingroup
-  \mplibsetupcatcodes
-  \mplibdoeveryendmplib
-}
 \ifcsname ver@luamplib.sty\endcsname
+  \protected\def\everymplib{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeverymplib
+  }
+  \protected\def\everyendmplib{%
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeveryendmplib
+  }
   \newcommand\mplibdoeverymplib[2][]{%
     \endgroup
     \directlua{
@@ -2676,16 +2809,29 @@ luamplib.colorconverter = colorconverter
     }%
   }
 \else
+  \def\mplibgetinstancename[#1]{\def\currentmpinstancename{#1}}
+  \protected\def\everymplib#1#{%
+    \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeverymplib
+  }
   \long\def\mplibdoeverymplib#1{%
     \endgroup
     \directlua{
-      luamplib.everymplib[""] = [===[\unexpanded{#1}]===]
+      luamplib.everymplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
     }%
+  }
+  \protected\def\everyendmplib#1#{%
+    \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
+    \begingroup
+    \mplibsetupcatcodes
+    \mplibdoeveryendmplib
   }
   \long\def\mplibdoeveryendmplib#1{%
     \endgroup
     \directlua{
-      luamplib.everyendmplib[""] = [===[\unexpanded{#1}]===]
+      luamplib.everyendmplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
     }%
   }
 \fi

@@ -1,5 +1,48 @@
                        History of the luamplib package
 
+2024/05/01 2.29.0
+
+   * provide new TeX macros to reduce typing toil.
+
+     \mpfig ... \endmpfig is roughly the abbreviation of
+         \begin{mplibcode}[@mpfig]
+         beginfig(0)
+         token list declared by \everymplib[@mpfig]
+         ...
+         token list declared by \everyendmplib[@mpfig]
+         endfig;
+         \end{mplibcode}
+
+     \mpfig* ... \endmpfig is roughly the abbreviation of
+         \begin{mplibcode}[@mpfig]
+         ...
+         \end{mplibcode}
+
+     These macros are protected and unexpandable.
+     In these macros \mpliblegacybehavior{false} is forcibly declared.
+     As both share the same instance name, MetaPost codes are inherited among them.
+     The instance name (default: @mpfig) can be changed by redefining `\mpfiginstancename'.
+
+   * instance names are allowed in plain TeX as well. The syntax is:
+
+         \mplibcode[name] ... \endmplibcode
+         \everymplib[name]{ ... }
+         \everyendmplib[name]{ ... }
+
+     These macros are now protected and unexpandable.
+
+   * provide new MetaPost operators `mplibtexcolor' and `mplibrgbtexcolor'
+     which convert TeX color expressions to MetaPost color expressions.
+     The latter one forces rgb model results (#112). For instance,
+
+         mplibtexcolor "olive"     % => (0, 0, 1, 0.5)
+         mplibrgbtexcolor "olive"  % => (0.5, 0.5, 0)
+
+     As spot colors are always forced to cmyk or rgb model, it is not
+     recommended to use these operators for them.
+
+   * write down MetaPost messages into the log file
+
 2024/04/25 2.28.2
    * direction of figure box is explicitly declared as TLT (#129)
    * figure box materials are emitted in one go at the end of the figure
@@ -72,11 +115,11 @@
 2024/03/01 2.26.0
     * when \mplibcachedir{<dir>} is not set, default cache directory will
     be in the following order:
-	$TEXMFVAR/luamplib_cache
-	$TEXMF_OUTPUT_DIRECTORY/luamplib_cache
-	./luamplib_cache
-	$TEXMFOUTPUT/luamplib_cache
-	.
+        $TEXMFVAR/luamplib_cache
+        $TEXMF_OUTPUT_DIRECTORY/luamplib_cache
+        ./luamplib_cache
+        $TEXMFOUTPUT/luamplib_cache
+        .
 
 2024/01/25 2.25.3
     * protect "..." even if textextlabel is disabled (revert part of v2.25.0)

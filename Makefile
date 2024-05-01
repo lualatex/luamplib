@@ -36,7 +36,7 @@ world: all ctan
 .PHONY: all doc unpack ctan tds check world
 
 %.pdf: %.dtx
-	latexmk -lualatex -recorder- -silent $< >/dev/null
+	@texfot --quiet --tee=/dev/null --ignore "^Overfull" --ignore "^Underfull" lualatex -recorder $<
 
 $(UNPACKED): $(DTX)
 	luatex -interaction=batchmode $< >/dev/null
