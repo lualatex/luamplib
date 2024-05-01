@@ -30,14 +30,14 @@ A%
 \begin{mplibcode}
 verbatimtex \lower.2em etex
 beginfig(0);
-draw origin--(40,0) withcolor \mpcolor{teal};
-draw btex \Huge xyz etex withcolor \mpcolor{orange};
+draw origin--(1cm,0) withcolor \mpcolor{teal};
+draw btex g etex withcolor \mpcolor{orange};
 draw btex\tracingcommands0
   multi%
   \begin{huge}line\end{huge}
   texcode
   with \%
-  etex shifted (35,0);
+  etex shifted (10,0);
 draw bbox currentpicture;
 endfig;
 
