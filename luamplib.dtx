@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/04/25 v2.28.2 Interface for using the mplib library]%
+  [2024/05/01 v2.29.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/04/25 v2.28.2}
+% \date{2024/05/01 v2.29.0}
 %
 % \maketitle
 %
@@ -210,7 +210,7 @@ See source file '\inFileName' for licencing and contact information.
 %   can define this command with anything suitable before a box.)
 %
 % \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
-%   Since v2.29 we provide \TeX\ macros |\mpfig ... \endmpfig| and its starred version
+%   Since v2.29 we provide unexpandable \TeX\ macros |\mpfig ... \endmpfig| and its starred version
 %   |\mpfig* ... \endmpfig| to save typing toil.
 %   The first is roughly the same as follows:
 %   \begin{verbatim}
@@ -228,9 +228,9 @@ See source file '\inFileName' for licencing and contact information.
 %     ...
 %     \end{mplibcode}
 %   \end{verbatim}
-%   As both have the same instance name, metapost codes are inherited.
-%   And in these macros |\mpliblegacybehavior{disable}| (see below)
+%   In these macros |\mpliblegacybehavior{disable}| (see below)
 %   is forcibly declared.
+%   And as both share the same instance name, metapost codes are inherited among them.
 %   A simple example:
 %   \begin{verbatim}
 %     \mpfig* input boxes \endmpfig
@@ -238,10 +238,12 @@ See source file '\inFileName' for licencing and contact information.
 %     \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
 %   \end{verbatim}
 %   The instance name (default: |@mpfig|) can be changed by redefining
-%   \cs{mpfiginstancename}. So |\let\mpfiginstancename\empty| will
-%   prevent code inheritance if |\mplibcodeinherit{true}| (see below) is not declared.%
-%   \footnote{As for user setting values, |enable|, |yes|, |true| are identical, and
-%   |disable|, |no|, |false| are identical.}
+%   \cs{mpfiginstancename}, after which a new MPlib instance will start and
+%   code inheritance too will begin anew.  |\let\mpfiginstancename\empty| will
+%   prevent code inheritance if |\mplibcodeinherit{true}| (see below) is not declared.\footnote{%
+%   As for user setting values, |enable|, |true|, |yes| are identical, and
+%   |disable|, |false|, |no| are identical.}
+%
 % \paragraph{\cs{mpliblegacybehavior\{enable\}}}
 %   By default, |\mpliblegacybehavior{enable}| is already declared,
 %   in which case
@@ -467,8 +469,9 @@ See source file '\inFileName' for licencing and contact information.
 %   The result may vary in its color model (gray/rgb/cmyk)
 %   according to the given \TeX\ color. (Spot colors are forced to
 %   cmyk model, so this operator is not recommended for spot colors.)
-%   Therefore the example shown above would raise a metapost error.
-%   By contrast, |mplibrgbtexcolor| always returns `rgb' model expressions.
+%   Therefore the example shown above would raise a metapost error:
+%   |cmykcolor col;| should have been declared.
+%   By contrast, |mplibrgbtexcolor| always returns rgb model expressions.
 %
 % \paragraph{\texttt{mplibgraphictext}}
 %   For some amusement, luamplib provides its own metapost operator
@@ -523,8 +526,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.28.2",
-  date          = "2024/04/25",
+  version       = "2.29.0",
+  date          = "2024/05/01",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -868,9 +871,8 @@ luamplib.setformat = setformat
 %    v2.9 has introduced the concept of ``code inherit''
 %    \begin{macrocode}
 luamplib.codeinherit = false
-
 local mplibinstances = {}
-local instancename
+local has_instancename = false
 
 local function reporterror (result, prevlog)
   if not result then
@@ -960,7 +962,7 @@ end
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
-local function process (data)
+local function process (data, instancename)
 %    \end{macrocode}
 %
 %    The workaround of issue \#70 seems to be unnecessary, as we use
@@ -974,6 +976,7 @@ local function process (data)
   local currfmt
   if instancename and instancename ~= "" then
     currfmt = instancename
+    has_instancename = true
   else
     currfmt = tableconcat{
       currentformat,
@@ -981,12 +984,10 @@ local function process (data)
       tostring(luamplib.textextlabel),
       tostring(luamplib.legacy_verbatimtex),
     }
+    has_instancename = false
   end
   local mpx = mplibinstances[currfmt]
-  local standalone = false
-  if currfmt ~= instancename then
-    standalone = not luamplib.codeinherit
-  end
+  local standalone = not (has_instancename or luamplib.codeinherit)
   if mpx and standalone then
     mpx:finish()
   end
@@ -1065,13 +1066,8 @@ withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
-    local global
-    if instancename and instancename ~= ""
-      or luamplib.globaltextext or luamplib.codeinherit then
-      global = "\\global"
-    else
-      global = ""
-    end
+    local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
+                   and "\\global" or ""
     local tex_box_id
     if global == "" then
       tex_box_id = texboxes.localid + 1
@@ -1357,7 +1353,6 @@ mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 mp.report = mp.report or info
 
-
 %    \end{macrocode}
 %
 %    metafun 2021-03-09 changes crashes luamplib.
@@ -1471,6 +1466,9 @@ def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
 def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
 def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
 def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
+def message expr t =
+  if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
+enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -1622,23 +1620,22 @@ local function unprotect_expansion (str)
   end
 end
 
-luamplib.everymplib    = { [""] = "" }
-luamplib.everyendmplib = { [""] = "" }
+luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
+luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 
-local function process_mplibcode (data, instance)
-  instancename = instance
+local function process_mplibcode (data, instancename)
   texboxes.localid = 4096
 
 %    \end{macrocode}
 %
-%    This is needed for legacy behavior regarding |verbatimtex|
+%    This is needed for legacy behavior
 %    \begin{macrocode}
-  luamplib.figid, tex_code_pre_mplib = 1, {}
+  if luamplib.legacy_verbatimtex then
+    luamplib.figid, tex_code_pre_mplib = 1, {}
+  end
 
-  local everymplib    = luamplib.everymplib[instancename] or
-                        luamplib.everymplib[""]
-  local everyendmplib = luamplib.everyendmplib[instancename] or
-                        luamplib.everyendmplib[""]
+  local everymplib    = luamplib.everymplib[instancename]
+  local everyendmplib = luamplib.everyendmplib[instancename]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   :gsub("\r","\n")
 
@@ -1684,7 +1681,7 @@ local function process_mplibcode (data, instance)
     end)
   end
 
-  process(data)
+  process(data, instancename)
 end
 luamplib.process_mplibcode = process_mplibcode
 
@@ -1886,7 +1883,37 @@ end
 
 %    \end{macrocode}
 %
-%    Colors and Transparency
+%    Colors
+%    \begin{macrocode}
+local prev_override_color
+local function do_preobj_CR(object,prescript)
+  local override = prescript and prescript.MPlibOverrideColor
+  if override then
+    if pdfmode then
+      pdf_literalcode(override)
+      override = nil
+    else
+      put2output("\\special{%s}",override)
+      prev_override_color = override
+    end
+  else
+    local cs = object.color
+    if cs and #cs > 0 then
+      pdf_literalcode(luamplib.colorconverter(cs))
+      prev_override_color = nil
+    elseif not pdfmode then
+      override = prev_override_color
+      if override then
+        put2output("\\special{%s}",override)
+      end
+    end
+  end
+  return override
+end
+
+%    \end{macrocode}
+%
+%    For transparency and shading
 %    \begin{macrocode}
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
@@ -1917,7 +1944,7 @@ end
 
 %    \end{macrocode}
 %
-%    transparency
+%    Transparency
 %    \begin{macrocode}
 local transparancy_modes = { [0] = "Normal",
   "Normal",       "Multiply",     "Screen",       "Overlay",
@@ -2012,36 +2039,6 @@ local function do_preobj_TR(prescript)
     pdf_literalcode("/MPlibTr%i gs",tron_no)
   end
   return tron_no
-end
-
-%    \end{macrocode}
-%
-%    color
-%    \begin{macrocode}
-local prev_override_color
-local function do_preobj_CR(object,prescript)
-  local override = prescript and prescript.MPlibOverrideColor
-  if override then
-    if pdfmode then
-      pdf_literalcode(override)
-      override = nil
-    else
-      put2output("\\special{%s}",override)
-      prev_override_color = override
-    end
-  else
-    local cs = object.color
-    if cs and #cs > 0 then
-      pdf_literalcode(luamplib.colorconverter(cs))
-      prev_override_color = nil
-    elseif not pdfmode then
-      override = prev_override_color
-      if override then
-        put2output("\\special{%s}",override)
-      end
-    end
-  end
-  return override
 end
 
 %    \end{macrocode}
@@ -2307,9 +2304,7 @@ local function flush(result,flusher)
 %    \begin{macrocode}
         else
 %    \end{macrocode}
-%    For collecting pdf materials and
-%    for legacy behavior. Insert `pre-fig' \TeX\ code here, and
-%    prepare a table for `in-fig' codes.
+%    For legacy behavior, insert `pre-fig' \TeX\ code here.
 %    \begin{macrocode}
           if tex_code_pre_mplib[f] then
             put2output(tex_code_pre_mplib[f])
@@ -2324,7 +2319,7 @@ local function flush(result,flusher)
               local objecttype    = object.type
 %    \end{macrocode}
 %
-%    The following 7 lines are part of |btex...etex| patch.
+%    The following 6 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -2382,8 +2377,8 @@ local function flush(result,flusher)
                   end
                 else
 %    \end{macrocode}
-%    Removed from ConTeXt general: color stuff
-%    Added : shading stuff
+%    Removed from ConTeXt general: color stuff.
+%    Added instead : shading stuff
 %    \begin{macrocode}
                   local shade_no = do_preobj_SH(object,prescript) -- shading
                   local ml = object.miterlimit
@@ -2574,7 +2569,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/04/25 v2.28.2 mplib package for LuaTeX]
+    [2024/05/01 v2.29.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -2617,7 +2612,7 @@ luamplib.colorconverter = colorconverter
 \fi
 %    \end{macrocode}
 %
-%    Make |mplibcode| typesetted always in horizontal mode.
+%    To make |mplibcode| typeset always in horizontal mode.
 %    \begin{macrocode}
 \def\mplibforcehmode{\let\prependtomplibbox\leavevmode}
 \def\mplibnoforcehmode{\let\prependtomplibbox\relax}
