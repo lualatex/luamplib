@@ -1061,8 +1061,7 @@ local texboxes = { globalid = 0, localid = 4096 }
 local factor = 65536*(7227/7200)
 
 local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
-xscaled %f yscaled %f shifted (0,-%f) \z
-withprescript "mplibtexboxid=%i:%f:%f")'
+xscaled %f yscaled %f withprescript "mplibtexboxid=%i:%f:%f")'
 
 local function process_tex_text (str)
   if str then
@@ -1084,7 +1083,7 @@ local function process_tex_text (str)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
-    return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
+    return textext_fmt:format(wd, ht+dp, tex_box_id, wd, ht+dp)
   end
   return ""
 end
@@ -2630,7 +2629,7 @@ luamplib.colorconverter = colorconverter
 %
 %    Make |btex...etex| box zero-metric.
 %    \begin{macrocode}
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\copy#1\hss}}}
 %    \end{macrocode}
 %
 %    simple way to use mplib:
