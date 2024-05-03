@@ -1919,13 +1919,6 @@ local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 
-if pdfmode then
-  pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-else
-  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
-end
-
 local function update_pdfobjs (os)
   local on = pdfobjs[os]
   if on then
@@ -1942,6 +1935,38 @@ local function update_pdfobjs (os)
   return on,true
 end
 
+if pdfmode then
+  pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
+  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  pdfetcs.initialize_resources = function (name)
+    local tabname = format("%s_res",name)
+    pdfetcs[tabname] = { }
+    if luatexbase.callbacktypes.finish_pdffile then -- ltluatex
+      local obj = pdf.reserveobj()
+      pdfetcs.setpageres(format("%s/%s %i 0 R", pdfetcs.getpageres() or "", name, obj))
+      luatexbase.add_to_callback("finish_pdffile", function()
+        pdf.immediateobj(obj, format("<<%s>>", tableconcat(pdfetcs[tabname])))
+      end,
+      format("luamplib.%s.finish_pdffile",name))
+    end
+  end
+  pdfetcs.fallback_update_resources = function (name, res)
+    if luatexbase.callbacktypes.finish_pdffile then
+      local t = pdfetcs[format("%s_res",name)]
+      t[#t+1] = res
+    else
+      local tpr, n = pdfetcs.getpageres() or "", 0
+      tpr, n = tpr:gsub(format("/%s<<",name), "%1"..res)
+      if n == 0 then
+        tpr = format("%s/%s<<%s>>", tpr, name, res)
+      end
+      pdfetcs.setpageres(tpr)
+    end
+  end
+else
+  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
+end
+
 %    \end{macrocode}
 %
 %    Transparency
@@ -1954,75 +1979,42 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
-local function opacity_initialize ()
-  pdfetcs.opacity_res = {}
-  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
-    local extgstate_obj = pdf.reserveobj()
-    pdfetcs.setpageres(format("%s/ExtGState %i 0 R",pdfetcs.getpageres() or "",extgstate_obj))
-    luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(extgstate_obj, format("<<%s>>",tableconcat(pdfetcs.opacity_res)))
-    end, "luamplib.opacity.finish_pdffile")
-  end
-end
-
 local function update_tr_res(mode,opaq)
   if pdfetcs.pgfloaded == nil then
     pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
-    if not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
-      opacity_initialize()
+    if pdfmode and not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
+      pdfetcs.initialize_resources"ExtGState"
     end
   end
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
-  if new then
-    if pdfmode then
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}]],
-          format("{MPlibTr%s}{%s 0 R}", on, on),
+  if not new then return on end
+  local key = format("MPlibTr%s", on)
+  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+  if pdfmanagement then
+    texsprint(ccexplat,
+    format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
+  else
+    local tr = format("/%s %s", key, val)
+    if pdfetcs.pgfloaded then
+      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
+    elseif pdfmode then
+      if is_defined"TRP@list" then
+        texsprint(catat11,{
+          [[\if@filesw\immediate\write\@auxout{]],
+          [[\string\g@addto@macro\string\TRP@list{]],
+          tr,
+          [[}}\fi]],
         })
-      else
-        local tr = format("/MPlibTr%s %s 0 R",on,on)
-        if pdfetcs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-        elseif is_defined"TRP@list" then
-          texsprint(catat11,{
-            [[\if@filesw\immediate\write\@auxout{]],
-            [[\string\g@addto@macro\string\TRP@list{]],
-            tr,
-            [[}}\fi]],
-          })
-          if not get_macro"TRP@list":find(tr) then
-            texsprint(catat11,[[\global\TRP@reruntrue]])
-          end
-        else
-          if luatexbase.callbacktypes.finish_pdffile then
-            pdfetcs.opacity_res[#pdfetcs.opacity_res+1] = tr
-          else
-            local tpr, n = pdfetcs.getpageres() or "", 0
-            tpr, n = tpr:gsub("/ExtGState<<", "%1"..tr)
-            if n == 0 then
-              tpr = format("%s/ExtGState<<%s>>", tpr, tr)
-            end
-            pdfetcs.setpageres(tpr)
-          end
+        if not get_macro"TRP@list":find(tr) then
+          texsprint(catat11,[[\global\TRP@reruntrue]])
         end
+      else
+        pdfetcs.fallback_update_resources("ExtGState", tr)
       end
     else
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}]],
-          format("{MPlibTr%s}{@mplibpdfobj%s}", on, on),
-        })
-      else
-        local tr = format("/MPlibTr%s @mplibpdfobj%s",on,on)
-        if pdfetcs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-        else
-          texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
-          texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
-        end
-      end
+      texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
+      texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
     end
   end
   return on
@@ -2045,20 +2037,9 @@ end
 %
 %    Shading with |metafun| format.
 %    \begin{macrocode}
-local function shading_initialize ()
-  pdfetcs.shading_res = {}
-  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
-    local shading_obj = pdf.reserveobj()
-    pdfetcs.setpageres(format("%s/Shading %i 0 R",pdfetcs.getpageres() or "",shading_obj))
-    luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(pdfetcs.shading_res)))
-    end, "luamplib.shading.finish_pdffile")
-  end
-end
-
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  if not pdfmanagement and not pdfetcs.shading_res then
-    shading_initialize()
+  if pdfmode and not pdfmanagement and not pdfetcs.Shading_res then
+    pdfetcs.initialize_resources"Shading"
   end
   local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
   if steps > 1 then
@@ -2091,42 +2072,18 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
-  if pdfmode then
-    if new then
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/Shading}]],
-          format("{MPlibSh%s}{%s 0 R}", on, on),
-        })
-      else
-        local res = format("/MPlibSh%s %s 0 R", on, on)
-        if luatexbase.callbacktypes.finish_pdffile then
-          pdfetcs.shading_res[#pdfetcs.shading_res+1] = res
-        else
-          local pageres = pdfetcs.getpageres() or ""
-          if not pageres:find("/Shading<<.*>>") then
-            pageres = pageres.."/Shading<<>>"
-          end
-          pageres = pageres:gsub("/Shading<<","%1"..res)
-          pdfetcs.setpageres(pageres)
-        end
-      end
-    end
+  if not new then return on end
+  local key = format("MPlibSh%s", on)
+  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+  if pdfmanagement then
+    texsprint(ccexplat,
+    format("\\pdfmanagement_add:nnn{Page/Resources/Shading}{%s}{%s}", key, val))
   else
-    if pdfmanagement then
-      if new then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/Shading}]],
-          format("{MPlibSh%s}{@mplibpdfobj%s}", on, on),
-        })
-      end
+    local res = format("/%s %s", key, val)
+    if pdfmode then
+      pdfetcs.fallback_update_resources("Shading", res)
     else
-      if new then
-        texsprint{
-          "\\special{pdf:put @MPlibSh",
-          format("<</MPlibSh%s @mplibpdfobj%s>>}",on, on),
-        }
-      end
+      texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
       texsprint"\\special{pdf:put @resources<</Shading @MPlibSh>>}"
     end
   end
