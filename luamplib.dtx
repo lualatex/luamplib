@@ -1466,9 +1466,6 @@ def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
 def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
 def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
 def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
-def message expr t =
-  if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
-enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -1498,6 +1495,9 @@ if known context_mlib:
   enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
+  def message expr t =
+    if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
+  enddef;
 fi
 def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
@@ -2145,7 +2145,18 @@ local function color_normalize(ca,cb)
   end
 end
 
-pdfetcs.clrspcs = { }
+pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
+  run_tex_code({
+    [[\color_model_new:nnn]],
+    format("{mplibcolorspace_%s}", names:gsub(",","_")),
+    format("{DeviceN}{names={%s}}", names),
+    [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
+  }, ccexplat)
+  local colorspace = get_macro'mplib_@tempa'
+  t[names] = colorspace
+  return colorspace
+end })
+
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2219,20 +2230,7 @@ local function do_preobj_SH(object,prescript)
       if #names == 1 then
         colorspace = objref
       else
-        local name = tableconcat(names,"-")
-        local obj = pdfetcs.clrspcs[name]
-        if obj then
-          colorspace = obj
-        else
-          run_tex_code({
-            [[\color_model_new:nnn]],
-            format("{mplibcolorspace_%s}", name),
-            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
-            [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
-          }, ccexplat)
-          colorspace = get_macro'mplib_@tempa'
-          pdfetcs.clrspcs[name] = colorspace
-        end
+        colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
       end
     else
       local model = 0
