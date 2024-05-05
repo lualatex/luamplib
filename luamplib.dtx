@@ -493,6 +493,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} Because luamplib's current implementation is quite different
 %   from the \ConTeXt's, there are some limitations such that you can't
 %   apply shading (gradient colors) to the text.
+%   Again, for math formular graphictext |unicode-math| package is needed.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -817,7 +818,7 @@ local special_ftype = {
   enc = "enc files",
 }
 
-local function finder(name, mode, ftype)
+function luamplib.finder (name, mode, ftype)
   if mode == "w" then
     if name and name ~= "mpout.log" then
       kpse.record_output_file(name) -- recorder
@@ -839,7 +840,6 @@ local function finder(name, mode, ftype)
     return file
   end
 end
-luamplib.finder = finder
 
 %    \end{macrocode}
 %
@@ -861,10 +861,9 @@ local preamble = [[
 %    though we cannot support |metafun| format fully.
 %    \begin{macrocode}
 local currentformat = "plain"
-local function setformat (name)
+function luamplib.setformat (name)
   currentformat = name
 end
-luamplib.setformat = setformat
 
 %    \end{macrocode}
 %
@@ -943,9 +942,9 @@ local function luamplibload (name)
 %    \begin{macrocode}
   local preamble = tableconcat{
     format(preamble, replacesuffix(name,"mp")),
-    luamplib.mplibcodepreamble,
-    luamplib.legacy_verbatimtex and luamplib.legacyverbatimtexpreamble or "",
-    luamplib.textextlabel and luamplib.textextlabelpreamble or "",
+    luamplib.preambles.mplibcode,
+    luamplib.legacy_verbatimtex and luamplib.preambles.legacyverbatimtex or "",
+    luamplib.textextlabel and luamplib.preambles.textextlabel or "",
   }
   local result, log
   if not mpx then
@@ -1460,7 +1459,8 @@ end
 %
 %    Our MetaPost preambles
 %    \begin{macrocode}
-local mplibcodepreamble = [[
+luamplib.preambles = {
+  mplibcode = [[
 texscriptmode := 2;
 def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
 def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
@@ -1546,7 +1546,8 @@ def mplibgraphictext_ (expr t) text rest =
   "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
   "}\csname color_fill:"& fn &"\endcsname{"& fc &
   "}\csname color_stroke:"& dn &"\endcsname{"& dc &
-  "}"& t &"}") rest;)
+  "}\mplibemboldenmathfont{"& decimal fb &"}{"& decimal sc &
+  "}"& t &"\mplibnormalmathfont}") rest;)
   endgroup;
 enddef;
 def mpliboutlinecolor_ (expr c) =
@@ -1560,10 +1561,8 @@ def mpliboutlinecolor_ (expr c) =
     "gray}{" & decimal c
   fi
 enddef;
-]]
-luamplib.mplibcodepreamble = mplibcodepreamble
-
-local legacyverbatimtexpreamble = [[
+]],
+  legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
 def normalVerbatimTeX  (text t) = runscript("luamplibinfig{"&t&"}") enddef;
 let VerbatimTeX = specialVerbatimTeX;
@@ -1573,10 +1572,8 @@ extra_endfig := extra_endfig & " let VerbatimTeX = specialVerbatimTeX;"&
   "runscript(" &ditto&
   "if luamplib.in_the_fig then luamplib.figid=luamplib.figid+1 end "&
   "luamplib.in_the_fig=false" &ditto& ");";
-]]
-luamplib.legacyverbatimtexpreamble = legacyverbatimtexpreamble
-
-local textextlabelpreamble = [[
+]],
+  textextlabel = [[
 primarydef s infont f = rawtextext(s) enddef;
 def fontsize expr f =
   begingroup
@@ -1585,8 +1582,8 @@ def fontsize expr f =
   if size = 0: 10pt else: size fi
   endgroup
 enddef;
-]]
-luamplib.textextlabelpreamble = textextlabelpreamble
+]],
+}
 
 %    \end{macrocode}
 %
@@ -1623,7 +1620,7 @@ end
 luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 
-local function process_mplibcode (data, instancename)
+function luamplib.process_mplibcode (data, instancename)
   texboxes.localid = 4096
 
 %    \end{macrocode}
@@ -1683,7 +1680,6 @@ local function process_mplibcode (data, instancename)
 
   process(data, instancename)
 end
-luamplib.process_mplibcode = process_mplibcode
 
 %    \end{macrocode}
 %
@@ -1718,11 +1714,10 @@ local function getobjects(result,figure,f)
   return figure:objects()
 end
 
-local function convert(result, flusher)
+function luamplib.convert (result, flusher)
   luamplib.flush(result, flusher)
   return true -- done
 end
-luamplib.convert = convert
 
 local figcontents = { post = { } }
 local function put2output(a,...)
@@ -2233,7 +2228,7 @@ end
 %
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
-local function flush(result,flusher)
+function luamplib.flush (result,flusher)
   if result then
     local figures = result.fig
     if figures then
@@ -2486,9 +2481,8 @@ local function flush(result,flusher)
     end
   end
 end
-luamplib.flush = flush
 
-local function colorconverter(cr)
+function luamplib.colorconverter (cr)
   local n = #cr
   if n == 4 then
     local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
@@ -2501,7 +2495,6 @@ local function colorconverter(cr)
     return format("%.3f g %.3f G",s,s), "0 g 0 G"
   end
 end
-luamplib.colorconverter = colorconverter
 %    \end{macrocode}
 %
 % \iffalse
@@ -2863,6 +2856,26 @@ luamplib.colorconverter = colorconverter
       luamplib.globaltextext = false
     end
 }}
+%    \end{macrocode}
+%
+%    For math in mplibgraphictext
+%    \begin{macrocode}
+\ifdefined\ExplSyntaxOn
+  \ExplSyntaxOn
+  \def\mplibemboldenmathfont#1#2{\ifcsname fontspec_set_family:Nxn\endcsname
+    \fontspec_set_family:Nxn \l__um_family_tl
+      {\l__um_font_keyval_tl,FakeBold=#1,Scale=#2} {\l__um_fontname_tl}
+    \__um_setup_math_fam: \__um_mathparam_restore:
+  \fi}
+  \def\mplibnormalmathfont{\ifcsname fontspec_set_family:Nxn\endcsname
+    \fontspec_set_family:Nxn \l__um_family_tl {\l__um_font_keyval_tl} {\l__um_fontname_tl}
+    \__um_setup_math_fam: \__um_mathparam_restore:
+  \fi}
+  \ExplSyntaxOff
+\else
+  \def\mplibemboldenmathfont#1#2{}
+  \def\mplibnormalmathfont{}
+\fi
 %    \end{macrocode}
 %
 %    The followings are from ConTeXt general, mostly.
