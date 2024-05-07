@@ -1,7 +1,7 @@
                        History of the luamplib package
 
 2024/xx/xx 2.29.1
-   * In mplibgraphictext, 'scale' option is deprecated and now a synomym of 'scaled'.
+   * In mplibgraphictext, 'scale' option is deprecated and now a synonym of 'scaled'.
      In DVI mode, unicode-math package is needed for math formula graphictext.
 
 2024/05/01 2.29.0

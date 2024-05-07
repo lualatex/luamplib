@@ -1460,14 +1460,25 @@ local function embolden (head, fakebold)
       local f = curr.font
       local i = emboldenfonts[f]
       if not i then
-        local ft = font.getcopy(f)
-        ft.mode = 2
-        ft.width = ft.size * fakebold / 6578.176
-        i = font.define(ft)
+        if pdfmode then
+          local ft = font.getcopy(f)
+          ft.mode = 2
+          ft.width = ft.size * fakebold / 6578.176
+          i = font.define(ft)
+        else
+          local ft = font.getfont(f)
+          if ft.format ~= "opentype" and ft.format ~= "truetype" then
+            goto skip_type1
+          end
+          local name = ft.name:gsub('"','')
+          name = format('%sembolden=%s',name,fakebold)
+          _, i = fonts.constructors.readanddefine(name,ft.size)
+        end
         emboldenfonts[f] = i
       end
       curr.font = i
     end
+    ::skip_type1::
     curr = node.getnext(curr)
   end
 end
@@ -1493,27 +1504,11 @@ local function graphictextcolor (col, filldraw)
   end
   return col:gsub("^.- ","")
 end
-texsprint(ccexplat,"\\ifdefined\\ExplSyntaxOn \\ExplSyntaxOn\z
-  \\def\\mplibemboldenmath#1{\\ifcsname fontspec_set_family:Nxn\z
-  \\endcsname\\fontspec_set_family:Nxn\\l__um_family_tl\z
-  {\\l__um_font_keyval_tl,FakeBold=#1}{\\l__um_fontname_tl}\z
-  \\__um_setup_math_fam:\\__um_mathparam_restore:\\fi\z
-  \\addfontfeature{FakeBold=#1}}\\def\\mplibnormalmath\z
-  {\\ifcsname fontspec_set_family:Nxn\\endcsname\\fontspec_set_family:Nxn\z
-  \\l__um_family_tl{\\l__um_font_keyval_tl}{\\l__um_fontname_tl}\z
-  \\__um_setup_math_fam:\\__um_mathparam_restore:\\fi}\\ExplSyntaxOff\z
-  \\else\\ifdefined\\addfontfeature\\let\\mplibemboldenmath\\addfontfeature\z
-  \\else\\def\\mplibemboldenmath#1{}\\fi\\let\\mplibnormalmath\\empty\\fi")
 luamplib.graphictext = function (text, fakebold, fc, dc)
-  if not pdfmode then
-    text = format("\\mplibemboldenmath{%s}%s\\mplibnormalmath",fakebold,text)
-  end
   local id, wd, ht, dp = process_tex_text(text, "filldraw")
   local fmt = textext_fmt:format(wd, ht+dp, dp, id, wd, ht+dp):sub(1,-2)
-  if pdfmode then
-    local box = texgetbox(id)
-    embolden(box.head, fakebold)
-  end
+  local box = texgetbox(id)
+  embolden(box.head, fakebold)
   local fill = graphictextcolor(fc,"fill")
   local draw = graphictextcolor(dc,"draw")
   local bc = pdfmode and "" or "pdf:bc "
@@ -1591,8 +1586,7 @@ def mplibgraphictext_ (expr t) text rest =
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
   addto graphictextpic doublepath origin rest; graphictextpic:=nullpicture;
   def fakebold  primary c = enddef;
-  def fillcolor primary c = enddef;
-  def drawcolor primary c = enddef;
+  let fillcolor = fakebold; let drawcolor = fakebold;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
   image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
     & decimal fb &",'"& fc &"','"& dc &"')") rest;)
