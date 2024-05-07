@@ -1,5 +1,9 @@
 %\DocumentMetadata{ uncompress }
-\documentclass{article}
+\ifnum\outputmode > 0
+  \documentclass{article}
+\else
+  \documentclass[dvipdfmx]{article}
+\fi
 \usepackage{fontspec}
 \setmainfont{latin modern roman}
 \usepackage{luamplib}
@@ -172,8 +176,8 @@ diameter:\Dia bp.%
 \begin{mplibcode}
 beginfig(1)
 draw mplibgraphictext "\bfseries Funny"
-  fakebold 2 scale 2 % fontspec options
-  drawcolor "blue" fillcolor "red!50" % l3color expressions
+  fakebold 2 % fontspec option
+  drawcolor blue fillcolor "red!50" % l3color expression
   scaled 2 rotated 30 ;
 picture p;
 p:=mplibgraphictext "\bfseries\itshape xyz";

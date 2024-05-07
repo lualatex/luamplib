@@ -415,7 +415,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   Generally speaking, it is recommended to turn |mplibglobaltextext|
 %   always on, because it has the advantage of reusing metapost pictures
-%   among code chunks sharing the same mplib instance.
+%   among code chunks.
 %   But everything has its downside: it will waste more memory resources.
 %
 % \paragraph{\cs{mplibverbatim}}
@@ -479,21 +479,22 @@ See source file '\inFileName' for licencing and contact information.
 %   \ConTeXt's |graphictext|. However syntax is somewhat different.
 %   \begin{verbatim}
 %   mplibgraphictext "Funny"
-%     fakebold 2.3 scale 3                % fontspec options
+%     fakebold 2.3                        % fontspec option
 %     drawcolor .7blue fillcolor "red!50" % color expressions
 %   \end{verbatim}
-%   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
-%   default values are |2|, |1|, |"black"| and |"white"| respectively.
+%   |fakebold|, |drawcolor| and |fillcolor| are optional;
+%   default values are |2|, |"black"| and |"white"| respectively.
 %   When color expressions are given as string, they are regarded as
 %   xcolor's or l3color's expressions (this is the same with shading colors).
+%   From v2.29.1, |scale| option is deprecated and is now a synonym of |scaled|.
 %   All from |mplibgraphictext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
 %   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
 %   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
+%   In DVI mode, |unicode-math| package is needed for math formula graphictext.
 %   \textsc{n.b.} Because luamplib's current implementation is quite different
 %   from the \ConTeXt's, there are some limitations such that you can't
 %   apply shading (gradient colors) to the text.
-%   Again, for math formular graphictext |unicode-math| package is needed.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -1063,7 +1064,7 @@ local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
 xscaled %f yscaled %f shifted (0,-%f) \z
 withprescript "mplibtexboxid=%i:%f:%f")'
 
-local function process_tex_text (str)
+local function process_tex_text (str, filldraw)
   if str then
     local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
                    and "\\global" or ""
@@ -1083,6 +1084,7 @@ local function process_tex_text (str)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
+    if filldraw then return tex_box_id, wd, ht, dp end
     return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
   end
   return ""
@@ -1145,7 +1147,6 @@ local function process_color (str, kind)
         end
       end
     end
-    if myfmt == mplibcolorfmt.l3color and (kind == "fill" or kind == "draw") then return str end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
     if not pdfmode and not t:find"^pdf" then
@@ -1165,18 +1166,6 @@ local function colorsplit (res)
     t[#t+1] = tt[i]
   end
   return t
-end
-
-luamplib.outlinecolor = function (str, filldraw)
-  local nn = filldraw == "fill" and 'fn:=' or 'dn:='
-  local cc = filldraw == "fill" and 'fc:=' or 'dc:='
-  local res = process_color(str, filldraw)
-  if res:match"{(.+)}" == str then
-    return format('%s"n"; %s"%s";', nn,cc,str)
-  end
-  local t = colorsplit(res)
-  local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
-  return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
 end
 
 luamplib.gettexcolor = function (str, rgb)
@@ -1457,6 +1446,82 @@ end
 
 %    \end{macrocode}
 %
+%    graphictext
+%    \begin{macrocode}
+local emboldenfonts = { }
+local function embolden (head, fakebold)
+  local curr = head
+  while curr do
+    if curr.head then
+      embolden(curr.head, fakebold)
+    elseif curr.leader and curr.leader.head then
+      embolden(curr.leader.head, fakebold)
+    elseif curr.id == node.id"glyph" and curr.font > 0 then
+      local f = curr.font
+      local i = emboldenfonts[f]
+      if not i then
+        local ft = font.getcopy(f)
+        ft.mode = 2
+        ft.width = ft.size * fakebold / 6578.176
+        i = font.define(ft)
+        emboldenfonts[f] = i
+      end
+      curr.font = i
+    end
+    curr = node.getnext(curr)
+  end
+end
+local function graphictextcolor (col, filldraw)
+  if col:find"^[%d%.:]+$" then
+    col = col:explode":"
+    if pdfmode then
+      local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
+      col[#col+1] = filldraw == "fill" and op or op:upper()
+      return tableconcat(col," ")
+    end
+    return format("[%s]", tableconcat(col," "))
+  end
+  col = process_color(col,"filldraw")
+  if pdfmode then
+    local t, tt = col:explode(), { }
+    local b = filldraw == "fill" and 1 or #t/2+1
+    local e = b == 1 and #t/2 or #t
+    for i=b,e do
+      tt[#tt+1] = t[i]
+    end
+    return tableconcat(tt," ")
+  end
+  return col:gsub("^.- ","")
+end
+texsprint(ccexplat,"\\ifdefined\\ExplSyntaxOn \\ExplSyntaxOn\z
+  \\def\\mplibemboldenmath#1{\\ifcsname fontspec_set_family:Nxn\z
+  \\endcsname\\fontspec_set_family:Nxn\\l__um_family_tl\z
+  {\\l__um_font_keyval_tl,FakeBold=#1}{\\l__um_fontname_tl}\z
+  \\__um_setup_math_fam:\\__um_mathparam_restore:\\fi\z
+  \\addfontfeature{FakeBold=#1}}\\def\\mplibnormalmath\z
+  {\\ifcsname fontspec_set_family:Nxn\\endcsname\\fontspec_set_family:Nxn\z
+  \\l__um_family_tl{\\l__um_font_keyval_tl}{\\l__um_fontname_tl}\z
+  \\__um_setup_math_fam:\\__um_mathparam_restore:\\fi}\\ExplSyntaxOff\z
+  \\else\\ifdefined\\addfontfeature\\let\\mplibemboldenmath\\addfontfeature\z
+  \\else\\def\\mplibemboldenmath#1{}\\fi\\let\\mplibnormalmath\\empty\\fi")
+luamplib.graphictext = function (text, fakebold, fc, dc)
+  if not pdfmode then
+    text = format("\\mplibemboldenmath{%s}%s\\mplibnormalmath",fakebold,text)
+  end
+  local id, wd, ht, dp = process_tex_text(text, "filldraw")
+  local fmt = textext_fmt:format(wd, ht+dp, dp, id, wd, ht+dp):sub(1,-2)
+  if pdfmode then
+    local box = texgetbox(id)
+    embolden(box.head, fakebold)
+  end
+  local fill = graphictextcolor(fc,"fill")
+  local draw = graphictextcolor(dc,"draw")
+  local bc = pdfmode and "" or "pdf:bc "
+  return format('%s withprescript "MPlibOverrideColor=%s%s %s")', fmt, bc, fill, draw)
+end
+
+%    \end{macrocode}
+%
 %    Our MetaPost preambles
 %    \begin{macrocode}
 luamplib.preambles = {
@@ -1479,26 +1544,27 @@ if known context_mlib:
         (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
     fi
   enddef;
-  def colordecimals primary c =
-    if cmykcolor c:
-      decimal cyanpart c & ":" & decimal magentapart c & ":" & decimal yellowpart c & ":" & decimal blackpart c
-    elseif rgbcolor c:
-      decimal redpart c & ":" & decimal greenpart c & ":" & decimal bluepart c
-    elseif string c:
-      colordecimals resolvedcolor(c)
-    else:
-      decimal c
-    fi
-  enddef;
-  def resolvedcolor(expr s) =
-    runscript("return luamplib.shadecolor('"& s &"')")
-  enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
   def message expr t =
     if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
   enddef;
 fi
+def resolvedcolor(expr s) =
+  runscript("return luamplib.shadecolor('"& s &"')")
+enddef;
+def colordecimals primary c =
+  if cmykcolor c:
+    decimal cyanpart c & ":" & decimal magentapart c & ":" &
+    decimal yellowpart c & ":" & decimal blackpart c
+  elseif rgbcolor c:
+    decimal redpart c & ":" & decimal greenpart c & ":" & decimal bluepart c
+  elseif string c:
+    if known graphictextpic: c else: colordecimals resolvedcolor(c) fi
+  else:
+    decimal c
+  fi
+enddef;
 def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
@@ -1515,51 +1581,22 @@ def mplibgraphictext primary t =
 enddef;
 def mplibgraphictext_ (expr t) text rest =
   save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
-    fb, sc, fc, dc, fn, dn, tpic;
-  picture tpic; tpic := nullpicture;
-  numeric fb, sc; string fc, dc, fn, dn;
-  fb:=2; sc:=1; fc:="white"; dc:="black"; fn:=dn:="n";
+    fb, fc, dc, graphictextpic;
+  picture graphictextpic; graphictextpic := nullpicture;
+  numeric fb; string fc, dc; fb:=2; fc:="white"; dc:="black";
+  let scale = scaled;
   def fakebold  primary c = hide(fb:=c;) enddef;
-  def scale     primary c = hide(sc:=c;) enddef;
-  def fillcolor primary c = hide(
-    if string c:
-      runscript("return luamplib.outlinecolor('"& c &"','fill')")
-    else:
-      fn:="nn"; fc:=mpliboutlinecolor_(c);
-    fi
-    ) enddef;
-  def drawcolor primary c = hide(
-    if string c:
-      runscript("return luamplib.outlinecolor('"& c &"','draw')")
-    else:
-      dn:="nn"; dc:=mpliboutlinecolor_(c);
-    fi
-  ) enddef;
+  def fillcolor primary c = hide(fc:=colordecimals c;) enddef;
+  def drawcolor primary c = hide(dc:=colordecimals c;) enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
-  addto tpic doublepath origin rest; tpic:=nullpicture;
+  addto graphictextpic doublepath origin rest; graphictextpic:=nullpicture;
   def fakebold  primary c = enddef;
-  def scale     primary c = enddef;
   def fillcolor primary c = enddef;
   def drawcolor primary c = enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
-  image(draw rawtextext(
-  "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
-  "}\csname color_fill:"& fn &"\endcsname{"& fc &
-  "}\csname color_stroke:"& dn &"\endcsname{"& dc &
-  "}\mplibemboldenmathfont{"& decimal fb &"}{"& decimal sc &
-  "}"& t &"\mplibnormalmathfont}") rest;)
+  image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
+    & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
-enddef;
-def mpliboutlinecolor_ (expr c) =
-  if color c:
-    "rgb}{" & decimal redpart c & "," & decimal greenpart c
-      & "," & decimal bluepart c
-  elseif cmykcolor c:
-    "cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
-      & "," & decimal yellowpart c & "," & decimal blackpart c
-  else:
-    "gray}{" & decimal c
-  fi
 enddef;
 ]],
   legacyverbatimtex = [[
@@ -2856,26 +2893,6 @@ end
       luamplib.globaltextext = false
     end
 }}
-%    \end{macrocode}
-%
-%    For math in mplibgraphictext
-%    \begin{macrocode}
-\ifdefined\ExplSyntaxOn
-  \ExplSyntaxOn
-  \def\mplibemboldenmathfont#1#2{\ifcsname fontspec_set_family:Nxn\endcsname
-    \fontspec_set_family:Nxn \l__um_family_tl
-      {\l__um_font_keyval_tl,FakeBold=#1,Scale=#2} {\l__um_fontname_tl}
-    \__um_setup_math_fam: \__um_mathparam_restore:
-  \fi}
-  \def\mplibnormalmathfont{\ifcsname fontspec_set_family:Nxn\endcsname
-    \fontspec_set_family:Nxn \l__um_family_tl {\l__um_font_keyval_tl} {\l__um_fontname_tl}
-    \__um_setup_math_fam: \__um_mathparam_restore:
-  \fi}
-  \ExplSyntaxOff
-\else
-  \def\mplibemboldenmathfont#1#2{}
-  \def\mplibnormalmathfont{}
-\fi
 %    \end{macrocode}
 %
 %    The followings are from ConTeXt general, mostly.
