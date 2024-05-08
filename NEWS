@@ -1,8 +1,26 @@
                        History of the luamplib package
 
-2024/xx/xx 2.29.1
-   * In mplibgraphictext, 'scale' option is deprecated and now a synonym of 'scaled'.
-     In DVI mode, unicode-math package is needed for math formula graphictext.
+2024/xx/xx 2.30.0
+   * provide new metapost operator 'mplibglyph', which returns a metapost
+   picture containing outline paths of a glyph in opentype, truetype or type1
+   fonts.  When a type1 font is specified, metapost primitive 'glyph' will be
+   called.  In the syntax as follows, subfont number is zero based.
+
+       mplibglyph 50   of \fontid\font            % slot 50 of current font
+       mplibglyph 50   of "cmr10"                          % type1 font
+       mplibglyph "Q"  of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+       mplibglyph "똠" of "NotoSansCJKkr-Regular.otf"      % raw filename
+       mplibglyph "Q"  of "Times.ttc(2)"                   % subfont number
+       mplibglyph "똠" of "SourceHanSansK-VF.otf[Regular]" % instance name
+
+   * provide new metapost command 'mplibdrawglyph'. In contrast to metapost's
+   'draw' command, this one fills paths of a picture according to the Nonzero
+   Winding Number Rule.  So, for instance, inner path of "O" will not be filled
+   with background color, but remain transparent.
+
+   * in 'mplibgraphictext', option 'scale' is deprecated and now a synonym of
+   'scaled'.  In DVI mode, unicode-math package is needed for math formula
+   graphictext.
 
 2024/05/01 2.29.0
 
