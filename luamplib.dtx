@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/01 v2.29.0 Interface for using the mplib library]%
+  [2024/05/10 v2.30.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/01 v2.29.0}
+% \date{2024/05/10 v2.30.0}
 %
 % \maketitle
 %
@@ -492,10 +492,11 @@ See source file '\inFileName' for licencing and contact information.
 %   anonymous |picture|, which can be drawn or assigned to a variable.
 %   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
 %   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
-%   In DVI mode, |unicode-math| package is needed for math formula graphictext.
 %   \textsc{n.b.} Because luamplib's current implementation is quite different
 %   from the \ConTeXt's, there are some limitations such that you can't
-%   apply shading (gradient colors) to the text.
+%   apply shading (gradient colors) to the text (But see below).
+%   In DVI mode, |unicode-math| package is needed for math formula graphictext,
+%   as we cannot embolden type1 fonts in DVI mode.
 %
 %   \paragraph{\texttt{mplibglyph}, \texttt{mplibdrawglyph}}
 %   From v2.30, we provide a new metapost operator |mplibglyph|, which returns a metapost picture
@@ -508,22 +509,22 @@ See source file '\inFileName' for licencing and contact information.
 %      mplibglyph "Q" of "Times.ttc(2)"                   % subfont number
 %      mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]" % instance name
 %   \end{verbatim}
-%   The returned picture will be quite similar to the result of |glyph| primitive.
 %   Both arguments before and after of ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
-%   String argument of the left side is regarded as a glyph name in the font or a unicode character.
-%   String argument of the right side is regarded as a \TeX\ fontname (without backslash) or
-%   a raw font file name. When it is a font file name, a number within parentheses
-%   after the file name represents a
-%   subfont number, starting from zero, of a TTC font; a string within brackets represents
+%   String argument at the left side is regarded as a glyph name in the font or a unicode character.
+%   String argument at the right side is regarded as a \TeX\ fontname (without backslash) or
+%   the raw filename of a font. When it is a font filename, a number within parentheses
+%   after the filename denotes a
+%   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   MetaPost's |draw| command fills the inner path of a glyph picture with background color.
-%   In contrast, |mplibdrawglyph| command fills the paths accroding to the
-%   Nonzero Winding Number Rule. So, for instance, inner path of "O" will remain transparent.
-%   This command can be used for the result of |mplibglyph| as well as of |glyph| operator.
+%   The returned picture is quite similar to the result of |glyph| primitive.
+%   So, metapost's |draw| command will fill the inner path of a glyph picture with background color.
+%   In contrast, |mplibdrawglyph| command fills the paths accroding to the Nonzero Winding
+%   Number Rule. For instance, the area inside the inner path of ``O'' will remain transparent.
+%   This command can be used for the picture of |mplibglyph| as well as of |glyph| operator.
 %
-%   We can adapt the mothod used in |mplibdrawglyph| to multiple pictures as if they were
+%   We can adapt the method used in |mplibdrawglyph| to multiple pictures as if they were
 %   components of one and the same picture.  An example:
 %   \begin{verbatim}
 %     \mplibsetformat{metafun}
@@ -580,8 +581,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.29.0",
-  date          = "2024/05/01",
+  version       = "2.30.0",
+  date          = "2024/05/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1521,7 +1522,7 @@ local function embolden (head, fakebold)
           ft.width = ft.size * fakebold / 6578.176
           i = font.define(ft)
         else
-          local ft = font.getfont(f)
+          local ft = font.getfont(f) or font.getcopy(f)
           if ft.format ~= "opentype" and ft.format ~= "truetype" then
             goto skip_type1
           end
@@ -2783,7 +2784,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/01 v2.29.0 mplib package for LuaTeX]
+    [2024/05/10 v2.30.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

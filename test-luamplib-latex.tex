@@ -184,6 +184,7 @@ p:=mplibgraphictext "\bfseries\itshape xyz";
 draw p scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
+\par
 \mplibsetformat{metafun}%
 \begin{mplibcode}
 beginfig(1)
@@ -205,6 +206,25 @@ endfig;
 \everymplib[@mpfig]{ drawoptions(withcolor red); }%
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\mpfig
+picture Q, u, e;
+Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
+u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
+e := mplibglyph "e" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner u;
+i:=0;
+totallen := length Q + length u + length e;
+for pic=Q, u, e:
+  for item within pic:
+    i:=i+1;
+    fill pathpart item
+    if i < totallen: withpostscript "collect"; fi
+  endfor
+endfor
+  withshademethod "linear"
+  withshadedirection (0.5,2.5)
+  withshadecolors (.7red,.7yellow)
+  ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip
