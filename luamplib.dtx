@@ -518,11 +518,11 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   The returned picture is quite similar to the result of |glyph| primitive.
-%   So, metapost's |draw| command will fill the inner path of a glyph picture with background color.
-%   In contrast, |mplibdrawglyph| command fills the paths accroding to the Nonzero Winding
-%   Number Rule. For instance, the area inside the inner path of ``O'' will remain transparent.
-%   This command can be used for the picture of |mplibglyph| as well as of |glyph| operator.
+%   The returned picture will be quite similar to the result of |glyph| primitive in its structure.
+%   So, metapost's |draw| command will fill the inner path of the picture with background color.
+%   In contrast, |mplibdrawglyph| command fills the paths according to the Nonzero Winding
+%   Number Rule. As a result, for instance, the area surrounded by inner path of ``O''
+%   will remain transparent.
 %
 %   We can adapt the method used in |mplibdrawglyph| to multiple pictures as if they were
 %   components of one and the same picture.  An example:
@@ -1686,18 +1686,16 @@ function luamplib.glyph (f, c)
     end
   end
   local time = lfsattributes(filename,"modification")
-  local newname = format("%s/shapes_%s%s%s.lua",
-    cachedir or outputdir,
-    filename:gsub("%W","_"),
-    subfont and subfont > 1 and format("(%i)",subfont) or "",
-    instance and instance ~= "" and format("[%s]",instance) or "")
+  local k = format("shapes_%s(%s)[%s]", filename, subfont or "", instance or "")
+  local h = format(string.rep('%02x', 256/8), string.byte(sha2.digest256(k), 1, -1))
+  local newname = format("%s/%s.lua", cachedir or outputdir, h)
   local newtime = lfsattributes(newname,"modification") or 0
   if time == newtime then
     shapedata = require(newname)
   end
   if not shapedata then
-    shapedata = fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
-    if not shapedata then return mperr"loadshapes() failed" end
+    shapedata = fonts and fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
+    if not shapedata then return mperr"loadshapes() failed. luaotfload not loaded?" end
     table.tofile(newname, shapedata, "return")
     lfstouch(newname, time, time)
   end

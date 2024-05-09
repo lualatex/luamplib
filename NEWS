@@ -15,8 +15,7 @@
 
    * provide a new metapost command 'mplibdrawglyph'. In contrast to metapost's
    'draw' command, this one fills paths of a picture according to the Nonzero
-   Winding Number Rule.  So, for instance, inner path of "O" will not be filled
-   with background color, but remain transparent.
+   Winding Number Rule.
 
    * in 'mplibgraphictext', option 'scale' is deprecated and now a synonym of
    'scaled'.  In DVI mode, unicode-math package is needed for math formula
