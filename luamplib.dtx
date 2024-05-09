@@ -1116,7 +1116,7 @@ local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
 xscaled %f yscaled %f shifted (0,-%f) \z
 withprescript "mplibtexboxid=%i:%f:%f")'
 
-local function process_tex_text (str, filldraw)
+local function process_tex_text (str)
   if str then
     local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
                    and "\\global" or ""
@@ -1136,7 +1136,6 @@ local function process_tex_text (str, filldraw)
     local wd  = box.width  / factor
     local ht  = box.height / factor
     local dp  = box.depth  / factor
-    if filldraw then return tex_box_id, wd, ht, dp end
     return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
   end
   return ""
@@ -1178,7 +1177,7 @@ if colfmt == "l3color" then
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local function process_color (str, kind)
+local function process_color (str)
   if str then
     if not str:find("%b{}") then
       str = format("{%s}",str)
@@ -1204,8 +1203,7 @@ local function process_color (str, kind)
     if not pdfmode and not t:find"^pdf" then
       t = t:gsub("%a+ (.+)","pdf:bc [%1]")
     end
-    if kind then return t end
-    return format('1 withprescript "MPlibOverrideColor=%s"', t)
+    return format('1 withprescript "mpliboverridecolor=%s"', t)
   end
   return ""
 end
@@ -1396,8 +1394,9 @@ local function colorsplit (res)
   return t
 end
 
+local min = math.min
 luamplib.gettexcolor = function (str, rgb)
-  local res = process_color(str, "metapost")
+  local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then
     if not rgb then
       warn("%s is a spot color. Forced to CMYK", str)
@@ -1413,18 +1412,14 @@ luamplib.gettexcolor = function (str, rgb)
   end
   local t = colorsplit(res)
   if #t == 3 or not rgb then return t end
-  run_tex_code({ -- force to rgb
-    "\\color_export:nnnN{",
-    #t == 4 and "cmyk" or "gray",
-    "}{",
-    tableconcat(t,","),
-    "}{space-sep-rgb}\\mplib_@tempa",
-  },ccexplat)
-  return get_macro"mplib_@tempa":explode()
+  if #t == 4 then
+    return { 1 - min(1,t[1]+t[4]), 1 - min(1,t[2]+t[4]), 1 - min(1,t[3]+t[4]) }
+  end
+  return { t[1], t[1], t[1] }
 end
 
 luamplib.shadecolor = function (str)
-  local res = process_color(str, "shade")
+  local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
 %    \end{macrocode}
 %   An example of spot color shading:
@@ -1548,7 +1543,7 @@ local function graphictextcolor (col, filldraw)
     end
     return format("[%s]", tableconcat(col," "))
   end
-  col = process_color(col,"filldraw")
+  col = process_color(col):match'"mpliboverridecolor=(.+)"'
   if pdfmode then
     local t, tt = col:explode(), { }
     local b = filldraw == "fill" and 1 or #t/2+1
@@ -1561,14 +1556,13 @@ local function graphictextcolor (col, filldraw)
   return col:gsub("^.- ","")
 end
 luamplib.graphictext = function (text, fakebold, fc, dc)
-  local id, wd, ht, dp = process_tex_text(text, "filldraw")
-  local fmt = textext_fmt:format(wd, ht+dp, dp, id, wd, ht+dp):sub(1,-2)
-  local box = texgetbox(id)
-  embolden(box.head, fakebold)
+  local fmt = process_tex_text(text):sub(1,-2)
+  local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
+  embolden(texgetbox(id).head, fakebold)
   local fill = graphictextcolor(fc,"fill")
   local draw = graphictextcolor(dc,"draw")
   local bc = pdfmode and "" or "pdf:bc "
-  return format('%s withprescript "MPlibOverrideColor=%s%s %s")', fmt, bc, fill, draw)
+  return format('%s withprescript "mpliboverridecolor=%s%s %s")', fmt, bc, fill, draw)
 end
 
 %    \end{macrocode}
@@ -2149,7 +2143,7 @@ end
 %    \begin{macrocode}
 local prev_override_color
 local function do_preobj_CR(object,prescript)
-  local override = prescript and prescript.MPlibOverrideColor
+  local override = prescript and prescript.mpliboverridecolor
   if override then
     if pdfmode then
       pdf_literalcode(override)
