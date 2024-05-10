@@ -1,6 +1,7 @@
+\input luaotfload.sty
 \input miniltx
 \input color
-\definecolor{orange}{rgb}{1,0.5,0}
+\definecolor{orange}{cmyk}{0,.5,1,0}
 \input luamplib.sty
 \mpliblegacybehavior{true}%
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
@@ -164,6 +165,19 @@ diameter:\Dia bp.%
   endfig;
 \endmplibcode
 \par
+\mplibcode
+beginfig(1) % in dvi mode, not work for type1 font
+draw mplibgraphictext "\bf Funny"
+  fakebold 2 % fontspec option
+  drawcolor blue fillcolor .5[red,white]
+  scaled 3 rotated 30 ;
+picture p;
+p:=mplibgraphictext "\it xyz"
+  fillcolor .7white;
+draw p scaled 3 shifted (40,0);
+endfig;
+\endmplibcode
+\par
 \mplibsetformat{metafun}%
 \mplibcode
 beginfig(1)
@@ -181,7 +195,27 @@ fill unitsquare xyscaled (\mpdim\hsize, 1cm)
     ;
 endfig;
 \endmplibcode
-\everymplib[@mpfig]{ drawoptions(withcolor red); }%
+\leavevmode
+\mpfig
+picture Q, u, e;
+Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
+u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
+e := mplibglyph "e" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner u;
+i:=0;
+totallen := length Q + length u + length e;
+for pic=Q, u, e:
+  for item within pic:
+    i:=i+1;
+    fill pathpart item
+    if i < totallen: withpostscript "collect"; fi
+  endfor
+endfor
+  withshademethod "linear"
+  withshadedirection (0.5,2.5)
+  withshadecolors (.7red,.7yellow)
+  ;
+\endmpfig
+\everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor"orange"); }%
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \tracingcommands0

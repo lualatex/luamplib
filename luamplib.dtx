@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/01 v2.29.0 Interface for using the mplib library]%
+  [2024/05/10 v2.30.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/01 v2.29.0}
+% \date{2024/05/10 v2.30.0}
 %
 % \maketitle
 %
@@ -415,7 +415,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   Generally speaking, it is recommended to turn |mplibglobaltextext|
 %   always on, because it has the advantage of reusing metapost pictures
-%   among code chunks sharing the same mplib instance.
+%   among code chunks.
 %   But everything has its downside: it will waste more memory resources.
 %
 % \paragraph{\cs{mplibverbatim}}
@@ -464,7 +464,8 @@ See source file '\inFileName' for licencing and contact information.
 %   |mplibtexcolor| is a metapost operator that converts a \TeX\ color expression
 %   to a MetaPost color expression. For instance:
 %   \begin{verbatim}
-%   color col; col := mplibtexcolor "olive!50";
+%     color col;
+%     col := mplibtexcolor "olive!50";
 %   \end{verbatim}
 %   The result may vary in its color model (gray/rgb/cmyk)
 %   according to the given \TeX\ color. (Spot colors are forced to
@@ -478,21 +479,75 @@ See source file '\inFileName' for licencing and contact information.
 %   |mplibgraphictext|, the effect of which is similar to that of
 %   \ConTeXt's |graphictext|. However syntax is somewhat different.
 %   \begin{verbatim}
-%   mplibgraphictext "Funny"
-%     fakebold 2.3 scale 3                % fontspec options
-%     drawcolor .7blue fillcolor "red!50" % color expressions
+%     mplibgraphictext "Funny"
+%       fakebold 2.3                        % fontspec option
+%       drawcolor .7blue fillcolor "red!50" % color expressions
 %   \end{verbatim}
-%   |fakebold|, |scale|, |drawcolor| and |fillcolor| are optional;
-%   default values are |2|, |1|, |"black"| and |"white"| respectively.
+%   |fakebold|, |drawcolor| and |fillcolor| are optional;
+%   default values are |2|, |"black"| and |"white"| respectively.
 %   When color expressions are given as string, they are regarded as
 %   xcolor's or l3color's expressions (this is the same with shading colors).
+%   From v2.30, |scale| option is deprecated and is now a synonym of |scaled|.
 %   All from |mplibgraphictext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
 %   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
 %   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
 %   \textsc{n.b.} Because luamplib's current implementation is quite different
 %   from the \ConTeXt's, there are some limitations such that you can't
-%   apply shading (gradient colors) to the text.
+%   apply shading (gradient colors) to the text (But see below).
+%   In DVI mode, |unicode-math| package is needed for math formula graphictext,
+%   as we cannot embolden type1 fonts in DVI mode.
+%
+%   \paragraph{\texttt{mplibglyph}, \texttt{mplibdrawglyph}}
+%   From v2.30, we provide a new metapost operator |mplibglyph|, which returns a metapost picture
+%   containing outline paths of a glyph in opentype, truetype or type1 fonts.
+%   When a type1 font is specified, metapost primitive |glyph| will be called.
+%   \begin{verbatim}
+%      mplibglyph 50  of \fontid\font          % slot 50 of current font
+%      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+%      mplibglyph "Q" of "texgyrepagella-regular.otf"     % raw filename
+%      mplibglyph "Q" of "Times.ttc(2)"                   % subfont number
+%      mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]" % instance name
+%   \end{verbatim}
+%   Both arguments before and after of ``|of|'' can be either a number or a string.
+%   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
+%   String argument at the left side is regarded as a glyph name in the font or a unicode character.
+%   String argument at the right side is regarded as a \TeX\ fontname (without backslash) or
+%   the raw filename of a font. When it is a font filename, a number within parentheses
+%   after the filename denotes a
+%   subfont number (starting from zero) of a TTC font; a string within brackets denotes
+%   an instance name of a variable font.
+%
+%   The returned picture will be quite similar to the result of |glyph| primitive in its structure.
+%   So, metapost's |draw| command will fill the inner path of the picture with background color.
+%   In contrast, |mplibdrawglyph| command fills the paths according to the Nonzero Winding
+%   Number Rule. As a result, for instance, the area surrounded by inner path of ``O''
+%   will remain transparent.
+%
+%   We can adapt the method used in |mplibdrawglyph| to multiple pictures as if they were
+%   components of one and the same picture.  An example:
+%   \begin{verbatim}
+%     \mplibsetformat{metafun}
+%     \mpfig
+%     picture Q, u, e;
+%     Q := mplibglyph "Q" of "Times.ttc(2)" scaled .15;
+%     u := mplibglyph "u" of "Times.ttc(2)" scaled .15 shifted lrcorner Q;
+%     e := mplibglyph "e" of "Times.ttc(2)" scaled .15 shifted lrcorner u;
+%
+%     i:=0;
+%     totallen := length Q + length u + length e;
+%     for pic=Q, u, e:
+%       for item within pic:
+%         i:=i+1;
+%         fill pathpart item
+%         if i < totallen: withpostscript "collect"; fi
+%       endfor
+%     endfor
+%       withshademethod "linear"
+%       withshadedirection (0.5,2.5)
+%       withshadecolors (.7red,.7yellow);
+%     \endmpfig
+%   \end{verbatim}
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -526,8 +581,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.29.0",
-  date          = "2024/05/01",
+  version       = "2.30.0",
+  date          = "2024/05/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -588,6 +643,7 @@ luamplib.showlog  = luamplib.showlog or false
 %    \ConTeXt. Provide a few ``shortcuts'' expected by the imported code.
 %    \begin{macrocode}
 local tableconcat = table.concat
+local tableinsert = table.insert
 local texsprint   = tex.sprint
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
@@ -656,7 +712,7 @@ luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
 
 local currenttime = os.time()
 
-local outputdir
+local outputdir, cachedir
 if lfstouch then
   for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
     local var = i == 3 and v or kpse.var_value(v)
@@ -676,7 +732,6 @@ if lfstouch then
   end
 end
 outputdir = outputdir or '.'
-
 function luamplib.getcachedir(dir)
   dir = dir:gsub("##","#")
   dir = dir:gsub("^~",
@@ -684,7 +739,7 @@ function luamplib.getcachedir(dir)
   if lfstouch and dir then
     if lfsisdir(dir) then
       if is_writable(dir) then
-        luamplib.cachedir = dir
+        cachedir = dir
       else
         warn("Directory '%s' is not writable!", dir)
       end
@@ -751,9 +806,8 @@ local verbatimtex_etex = name_b.."verbatimtex"..name_e.."%s*(.-)%s*"..name_b.."e
 local function replaceinputmpfile (name,file)
   local ofmodify = lfsattributes(file,"modification")
   if not ofmodify then return file end
-  local cachedir = luamplib.cachedir or outputdir
   local newfile = name:gsub("%W","_")
-  newfile = cachedir .."/luamplib_input_"..newfile
+  newfile = format("%s/luamplib_input_%s", cachedir or outputdir, newfile)
   if newfile and luamplibtime then
     local nf = lfsattributes(newfile)
     if nf and nf.mode == "file" and
@@ -817,7 +871,7 @@ local special_ftype = {
   enc = "enc files",
 }
 
-local function finder(name, mode, ftype)
+function luamplib.finder (name, mode, ftype)
   if mode == "w" then
     if name and name ~= "mpout.log" then
       kpse.record_output_file(name) -- recorder
@@ -839,7 +893,6 @@ local function finder(name, mode, ftype)
     return file
   end
 end
-luamplib.finder = finder
 
 %    \end{macrocode}
 %
@@ -861,10 +914,9 @@ local preamble = [[
 %    though we cannot support |metafun| format fully.
 %    \begin{macrocode}
 local currentformat = "plain"
-local function setformat (name)
+function luamplib.setformat (name)
   currentformat = name
 end
-luamplib.setformat = setformat
 
 %    \end{macrocode}
 %
@@ -943,9 +995,9 @@ local function luamplibload (name)
 %    \begin{macrocode}
   local preamble = tableconcat{
     format(preamble, replacesuffix(name,"mp")),
-    luamplib.mplibcodepreamble,
-    luamplib.legacy_verbatimtex and luamplib.legacyverbatimtexpreamble or "",
-    luamplib.textextlabel and luamplib.textextlabelpreamble or "",
+    luamplib.preambles.mplibcode,
+    luamplib.legacy_verbatimtex and luamplib.preambles.legacyverbatimtex or "",
+    luamplib.textextlabel and luamplib.preambles.textextlabel or "",
   }
   local result, log
   if not mpx then
@@ -1125,7 +1177,7 @@ if colfmt == "l3color" then
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local function process_color (str, kind)
+local function process_color (str)
   if str then
     if not str:find("%b{}") then
       str = format("{%s}",str)
@@ -1146,142 +1198,14 @@ local function process_color (str, kind)
         end
       end
     end
-    if myfmt == mplibcolorfmt.l3color and (kind == "fill" or kind == "draw") then return str end
     run_tex_code(myfmt:format(str), ccexplat or catat11)
     local t = texgettoks"mplibtmptoks"
     if not pdfmode and not t:find"^pdf" then
       t = t:gsub("%a+ (.+)","pdf:bc [%1]")
     end
-    if kind then return t end
-    return format('1 withprescript "MPlibOverrideColor=%s"', t)
+    return format('1 withprescript "mpliboverridecolor=%s"', t)
   end
   return ""
-end
-
-local function colorsplit (res)
-  local t, tt = { }, res:gsub("[%[%]]",""):explode()
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if tt[i]:find"^%a" then break end
-    t[#t+1] = tt[i]
-  end
-  return t
-end
-
-luamplib.outlinecolor = function (str, filldraw)
-  local nn = filldraw == "fill" and 'fn:=' or 'dn:='
-  local cc = filldraw == "fill" and 'fc:=' or 'dc:='
-  local res = process_color(str, filldraw)
-  if res:match"{(.+)}" == str then
-    return format('%s"n"; %s"%s";', nn,cc,str)
-  end
-  local t = colorsplit(res)
-  local md = #t == 1 and 'gray' or #t == 3 and 'rgb' or #t == 4 and 'cmyk'
-  return format('%s"nn"; %s"%s}{%s";', nn, cc, md, tableconcat(t,','))
-end
-
-luamplib.gettexcolor = function (str, rgb)
-  local res = process_color(str, "metapost")
-  if res:find" cs " or res:find"@pdf.obj" then
-    if not rgb then
-      warn("%s is a spot color. Forced to CMYK", str)
-    end
-    run_tex_code({
-      "\\color_export:nnN{",
-      str,
-      "}{",
-      rgb and "space-sep-rgb" or "space-sep-cmyk",
-      "}\\mplib_@tempa",
-    },ccexplat)
-    return get_macro"mplib_@tempa":explode()
-  end
-  local t = colorsplit(res)
-  if #t == 3 or not rgb then return t end
-  run_tex_code({ -- force to rgb
-    "\\color_export:nnnN{",
-    #t == 4 and "cmyk" or "gray",
-    "}{",
-    tableconcat(t,","),
-    "}{space-sep-rgb}\\mplib_@tempa",
-  },ccexplat)
-  return get_macro"mplib_@tempa":explode()
-end
-
-luamplib.shadecolor = function (str)
-  local res = process_color(str, "shade")
-  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
-%    \end{macrocode}
-%   An example of spot color shading:
-% \begin{verbatim}
-%     \documentclass{article}
-%     \usepackage{luamplib}
-%     \mplibsetformat{metafun}
-%     \ExplSyntaxOn
-%     \color_model_new:nnn { pantone3005 }
-%       { Separation }
-%       { name = PANTONE~3005~U ,
-%         alternative-model = cmyk ,
-%         alternative-values = {1, 0.56, 0, 0}
-%       }
-%       \color_set:nnn{spotA}{pantone3005}{1}
-%       \color_set:nnn{spotB}{pantone3005}{0.6}
-%     \color_model_new:nnn { pantone1215 }
-%       { Separation }
-%       { name = PANTONE~1215~U ,
-%         alternative-model = cmyk ,
-%         alternative-values = {0, 0.15, 0.51, 0}
-%       }
-%       \color_set:nnn{spotC}{pantone1215}{1}
-%     \color_model_new:nnn { pantone2040 }
-%       { Separation }
-%       { name = PANTONE~2040~U ,
-%         alternative-model = cmyk ,
-%         alternative-values = {0, 0.28, 0.21, 0.04}
-%       }
-%       \color_set:nnn{spotD}{pantone2040}{1}
-%     \ExplSyntaxOff
-%     \begin{document}
-%     \begin{mplibcode}
-%     beginfig(1)
-%       fill unitsquare xyscaled (\mpdim\textwidth,1cm)
-%            withshademethod "linear"
-%            withshadevector (0,1)
-%            withshadestep (
-%                withshadefraction .5
-%                withshadecolors ("spotB","spotC")
-%            )
-%            withshadestep (
-%                withshadefraction 1
-%                withshadecolors ("spotC","spotD")
-%            )
-%       ;
-%     endfig;
-%     \end{mplibcode}
-%     \end{document}
-% \end{verbatim}
-%    \begin{macrocode}
-    run_tex_code({
-      [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
-    },ccexplat)
-    local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
-    local t, obj = res:explode()
-    if pdfmode then
-      obj = t[1]:match"^/(.+)"
-      if ltx.pdf and ltx.pdf.object_id then
-        obj = format("%s 0 R", ltx.pdf.object_id(obj))
-      else
-        run_tex_code({
-          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
-        },ccexplat)
-        obj = get_macro'mplib_@tempa'
-      end
-    else
-      obj = t[2]
-    end
-    local value = t[3]:match"%[(.-)%]" or t[3]
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,obj,name)
-  end
-  return colorsplit(res)
 end
 
 %    \end{macrocode}
@@ -1458,17 +1382,359 @@ end
 
 %    \end{macrocode}
 %
+%    luamplib's metapost color operators
+%    \begin{macrocode}
+local function colorsplit (res)
+  local t, tt = { }, res:gsub("[%[%]]",""):explode()
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if tt[i]:find"^%a" then break end
+    t[#t+1] = tt[i]
+  end
+  return t
+end
+
+local min = math.min
+luamplib.gettexcolor = function (str, rgb)
+  local res = process_color(str):match'"mpliboverridecolor=(.+)"'
+  if res:find" cs " or res:find"@pdf.obj" then
+    if not rgb then
+      warn("%s is a spot color. Forced to CMYK", str)
+    end
+    run_tex_code({
+      "\\color_export:nnN{",
+      str,
+      "}{",
+      rgb and "space-sep-rgb" or "space-sep-cmyk",
+      "}\\mplib_@tempa",
+    },ccexplat)
+    return get_macro"mplib_@tempa":explode()
+  end
+  local t = colorsplit(res)
+  if #t == 3 or not rgb then return t end
+  if #t == 4 then
+    return { 1 - min(1,t[1]+t[4]), 1 - min(1,t[2]+t[4]), 1 - min(1,t[3]+t[4]) }
+  end
+  return { t[1], t[1], t[1] }
+end
+
+luamplib.shadecolor = function (str)
+  local res = process_color(str):match'"mpliboverridecolor=(.+)"'
+  if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
+%    \end{macrocode}
+%   An example of spot color shading:
+% \begin{verbatim}
+%     \documentclass{article}
+%     \usepackage{luamplib}
+%     \mplibsetformat{metafun}
+%     \ExplSyntaxOn
+%     \color_model_new:nnn { pantone3005 }
+%       { Separation }
+%       { name = PANTONE~3005~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {1, 0.56, 0, 0}
+%       }
+%       \color_set:nnn{spotA}{pantone3005}{1}
+%       \color_set:nnn{spotB}{pantone3005}{0.6}
+%     \color_model_new:nnn { pantone1215 }
+%       { Separation }
+%       { name = PANTONE~1215~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {0, 0.15, 0.51, 0}
+%       }
+%       \color_set:nnn{spotC}{pantone1215}{1}
+%     \color_model_new:nnn { pantone2040 }
+%       { Separation }
+%       { name = PANTONE~2040~U ,
+%         alternative-model = cmyk ,
+%         alternative-values = {0, 0.28, 0.21, 0.04}
+%       }
+%       \color_set:nnn{spotD}{pantone2040}{1}
+%     \ExplSyntaxOff
+%     \begin{document}
+%     \begin{mplibcode}
+%     beginfig(1)
+%       fill unitsquare xyscaled (\mpdim\textwidth,1cm)
+%            withshademethod "linear"
+%            withshadevector (0,1)
+%            withshadestep (
+%                withshadefraction .5
+%                withshadecolors ("spotB","spotC")
+%            )
+%            withshadestep (
+%                withshadefraction 1
+%                withshadecolors ("spotC","spotD")
+%            )
+%       ;
+%     endfig;
+%     \end{mplibcode}
+%     \end{document}
+% \end{verbatim}
+%    \begin{macrocode}
+    run_tex_code({
+      [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
+    },ccexplat)
+    local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
+    local t, obj = res:explode()
+    if pdfmode then
+      obj = t[1]:match"^/(.+)"
+      if ltx.pdf and ltx.pdf.object_id then
+        obj = format("%s 0 R", ltx.pdf.object_id(obj))
+      else
+        run_tex_code({
+          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
+        },ccexplat)
+        obj = get_macro'mplib_@tempa'
+      end
+    else
+      obj = t[2]
+    end
+    local value = t[3]:match"%[(.-)%]" or t[3]
+    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,obj,name)
+  end
+  return colorsplit(res)
+end
+
+%    \end{macrocode}
+%
+%    luamplib's mplibgraphictext operator
+%    \begin{macrocode}
+local emboldenfonts = { }
+local function embolden (head, fakebold)
+  local curr = head
+  while curr do
+    if curr.head then
+      embolden(curr.head, fakebold)
+    elseif curr.leader and curr.leader.head then
+      embolden(curr.leader.head, fakebold)
+    elseif curr.id == node.id"glyph" and curr.font > 0 then
+      local f = curr.font
+      local i = emboldenfonts[f]
+      if not i then
+        if pdfmode then
+          local ft = font.getcopy(f)
+          ft.mode = 2
+          ft.width = ft.size * fakebold / 6578.176
+          i = font.define(ft)
+        else
+          local ft = font.getfont(f) or font.getcopy(f)
+          if ft.format ~= "opentype" and ft.format ~= "truetype" then
+            goto skip_type1
+          end
+          local name = ft.name:gsub('"',''):gsub(';$','')
+          name = format('%s;embolden=%s',name,fakebold)
+          _, i = fonts.constructors.readanddefine(name,ft.size)
+        end
+        emboldenfonts[f] = i
+      end
+      curr.font = i
+    end
+    ::skip_type1::
+    curr = node.getnext(curr)
+  end
+end
+local function graphictextcolor (col, filldraw)
+  if col:find"^[%d%.:]+$" then
+    col = col:explode":"
+    if pdfmode then
+      local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
+      col[#col+1] = filldraw == "fill" and op or op:upper()
+      return tableconcat(col," ")
+    end
+    return format("[%s]", tableconcat(col," "))
+  end
+  col = process_color(col):match'"mpliboverridecolor=(.+)"'
+  if pdfmode then
+    local t, tt = col:explode(), { }
+    local b = filldraw == "fill" and 1 or #t/2+1
+    local e = b == 1 and #t/2 or #t
+    for i=b,e do
+      tt[#tt+1] = t[i]
+    end
+    return tableconcat(tt," ")
+  end
+  return col:gsub("^.- ","")
+end
+luamplib.graphictext = function (text, fakebold, fc, dc)
+  local fmt = process_tex_text(text):sub(1,-2)
+  local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
+  embolden(texgetbox(id).head, fakebold)
+  local fill = graphictextcolor(fc,"fill")
+  local draw = graphictextcolor(dc,"draw")
+  local bc = pdfmode and "" or "pdf:bc "
+  return format('%s withprescript "mpliboverridecolor=%s%s %s")', fmt, bc, fill, draw)
+end
+
+%    \end{macrocode}
+%
+%    luamplib's mplibglyph operator
+%    \begin{macrocode}
+local function mperr (str)
+  return format("hide(errmessage %q)", str)
+end
+local function getangle (a,b,c)
+  local r = math.deg(math.atan(c.y-b.y, c.x-b.x) - math.atan(b.y-a.y, b.x-a.x))
+  if r > 180 then
+    r = r - 360
+  elseif r < -180 then
+    r = r + 360
+  end
+  return r
+end
+local function turning (t)
+  local r, n = 0, #t
+  for i=1,2 do
+    tableinsert(t, t[i])
+  end
+  for i=1,n do
+    r = r + getangle(t[i], t[i+1], t[i+2])
+  end
+  return r/360
+end
+local function glyphimage(t, fmt)
+  local q,p,r = {{},{}}
+  for i,v in ipairs(t) do
+    local cmd = v[#v]
+    if cmd == "m" then
+      p = {format('(%s,%s)',v[1],v[2])}
+      r = {{x=v[1],y=v[2]}}
+    else
+      local nt = t[i+1]
+      local last = not nt or nt[#nt] == "m"
+      if cmd == "l" then
+        local pt = t[i-1]
+        local seco = pt[#pt] == "m"
+        if (last or seco) and r[1].x == v[1] and r[1].y == v[2] then
+        else
+          tableinsert(p, format('--(%s,%s)',v[1],v[2]))
+          tableinsert(r, {x=v[1],y=v[2]})
+        end
+        if last then
+          tableinsert(p, '--cycle')
+        end
+      elseif cmd == "c" then
+        tableinsert(p, format('..controls(%s,%s)and(%s,%s)',v[1],v[2],v[3],v[4]))
+        if last and r[1].x == v[5] and r[1].y == v[6] then
+          tableinsert(p, '..cycle')
+        else
+          tableinsert(p, format('..(%s,%s)',v[5],v[6]))
+          if last then
+            tableinsert(p, '--cycle')
+          end
+          tableinsert(r, {x=v[5],y=v[6]})
+        end
+      else
+        return mperr"unknown operator"
+      end
+      if last then
+        tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
+      end
+    end
+  end
+  r = { }
+  if fmt == "opentype" then
+    for _,v in ipairs(q[1]) do
+      tableinsert(r, format('addto currentpicture contour %s;',v))
+    end
+    for _,v in ipairs(q[2]) do
+      tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
+    end
+  else
+    for _,v in ipairs(q[2]) do
+      tableinsert(r, format('addto currentpicture contour %s;',v))
+    end
+    for _,v in ipairs(q[1]) do
+      tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
+    end
+  end
+  return format('image(%s)', tableconcat(r))
+end
+if not table.tofile then require"lualibs-lpeg"; require"lualibs-table"; end
+function luamplib.glyph (f, c)
+  local filename, subfont, instance, kind, shapedata
+  local fid = tonumber(f) or font.id(f) -- string: fontname
+  if fid > 0 then
+    local fontdata = font.getfont(fid) or font.getcopy(fid)
+    filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
+    instance = fontdata.specification and fontdata.specification.instance
+  else
+    local name
+    f = f:match"^%s*(.+)%s*$"
+    name, subfont, instance = f:match"(.+)%((%d+)%)%[(.-)%]$"
+    if not name then
+      name, instance = f:match"(.+)%[(.-)%]$" -- SourceHanSansK-VF.otf[Heavy]
+    end
+    if not name then
+      name, subfont = f:match"(.+)%((%d+)%)$" -- Times.ttc(2)
+    end
+    name = name or f
+    subfont = (subfont or 0)+1
+    instance = instance and instance:lower()
+    for _,ftype in ipairs{"opentype", "truetype"} do
+      filename = kpse.find_file(name, ftype.." fonts")
+      if filename then
+        kind = ftype; break
+      end
+    end
+  end
+  if kind ~= "opentype" and kind ~= "truetype" then
+    f = fid and fid > 0 and tex.fontname(fid) or f
+    if kpse.find_file(f, "tfm") then
+      return format("glyph %s of %q", tonumber(c) or format("%q",c), f)
+    else
+      return mperr"font not found"
+    end
+  end
+  local time = lfsattributes(filename,"modification")
+  local k = format("shapes_%s(%s)[%s]", filename, subfont or "", instance or "")
+  local h = format(string.rep('%02x', 256/8), string.byte(sha2.digest256(k), 1, -1))
+  local newname = format("%s/%s.lua", cachedir or outputdir, h)
+  local newtime = lfsattributes(newname,"modification") or 0
+  if time == newtime then
+    shapedata = require(newname)
+  end
+  if not shapedata then
+    shapedata = fonts and fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
+    if not shapedata then return mperr"loadshapes() failed. luaotfload not loaded?" end
+    table.tofile(newname, shapedata, "return")
+    lfstouch(newname, time, time)
+  end
+  local gid = tonumber(c)
+  if not gid then
+    local uni = utf8.codepoint(c)
+    for i,v in pairs(shapedata.glyphs) do
+      if c == v.name or uni == v.unicode then
+        gid = i; break
+      end
+    end
+  end
+  if not gid then return mperr"cannot get GID (glyph id)" end
+  local fac = 1000 / (shapedata.units or 1000)
+  local t = shapedata.glyphs[gid].segments
+  if not t then return mperr"glyph has no contour. Maybe blank space" end
+  for i,v in ipairs(t) do
+    if type(v) == "table" then
+      for ii,vv in ipairs(v) do
+        if type(vv) == "number" then
+          t[i][ii] = format("%.0f", vv * fac)
+        end
+      end
+    end
+  end
+  return glyphimage(t, kind)
+end
+
+%    \end{macrocode}
+%
 %    Our MetaPost preambles
 %    \begin{macrocode}
-local mplibcodepreamble = [[
+luamplib.preambles = {
+  mplibcode = [[
 texscriptmode := 2;
 def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
 def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
 def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
 def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
-def message expr t =
-  if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
-enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -1482,23 +1748,27 @@ if known context_mlib:
         (1-mfun_labxf@#-mfun_labyf@#)*llcorner p))
     fi
   enddef;
-  def colordecimals primary c =
-    if cmykcolor c:
-      decimal cyanpart c & ":" & decimal magentapart c & ":" & decimal yellowpart c & ":" & decimal blackpart c
-    elseif rgbcolor c:
-      decimal redpart c & ":" & decimal greenpart c & ":" & decimal bluepart c
-    elseif string c:
-      colordecimals resolvedcolor(c)
-    else:
-      decimal c
-    fi
-  enddef;
-  def resolvedcolor(expr s) =
-    runscript("return luamplib.shadecolor('"& s &"')")
-  enddef;
 else:
   vardef textext@# (text t) = rawtextext (t) enddef;
+  def message expr t =
+    if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
+  enddef;
 fi
+def resolvedcolor(expr s) =
+  runscript("return luamplib.shadecolor('"& s &"')")
+enddef;
+def colordecimals primary c =
+  if cmykcolor c:
+    decimal cyanpart c & ":" & decimal magentapart c & ":" &
+    decimal yellowpart c & ":" & decimal blackpart c
+  elseif rgbcolor c:
+    decimal redpart c & ":" & decimal greenpart c & ":" & decimal bluepart c
+  elseif string c:
+    if known graphictextpic: c else: colordecimals resolvedcolor(c) fi
+  else:
+    decimal c
+  fi
+enddef;
 def externalfigure primary filename =
   draw rawtextext("\includegraphics{"& filename &"}")
 enddef;
@@ -1515,55 +1785,43 @@ def mplibgraphictext primary t =
 enddef;
 def mplibgraphictext_ (expr t) text rest =
   save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
-    fb, sc, fc, dc, fn, dn, tpic;
-  picture tpic; tpic := nullpicture;
-  numeric fb, sc; string fc, dc, fn, dn;
-  fb:=2; sc:=1; fc:="white"; dc:="black"; fn:=dn:="n";
+    fb, fc, dc, graphictextpic;
+  picture graphictextpic; graphictextpic := nullpicture;
+  numeric fb; string fc, dc; fb:=2; fc:="white"; dc:="black";
+  let scale = scaled;
   def fakebold  primary c = hide(fb:=c;) enddef;
-  def scale     primary c = hide(sc:=c;) enddef;
-  def fillcolor primary c = hide(
-    if string c:
-      runscript("return luamplib.outlinecolor('"& c &"','fill')")
-    else:
-      fn:="nn"; fc:=mpliboutlinecolor_(c);
-    fi
-    ) enddef;
-  def drawcolor primary c = hide(
-    if string c:
-      runscript("return luamplib.outlinecolor('"& c &"','draw')")
-    else:
-      dn:="nn"; dc:=mpliboutlinecolor_(c);
-    fi
-  ) enddef;
+  def fillcolor primary c = hide(fc:=colordecimals c;) enddef;
+  def drawcolor primary c = hide(dc:=colordecimals c;) enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
-  addto tpic doublepath origin rest; tpic:=nullpicture;
+  addto graphictextpic doublepath origin rest; graphictextpic:=nullpicture;
   def fakebold  primary c = enddef;
-  def scale     primary c = enddef;
-  def fillcolor primary c = enddef;
-  def drawcolor primary c = enddef;
+  let fillcolor = fakebold; let drawcolor = fakebold;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
-  image(draw rawtextext(
-  "{\addfontfeature{FakeBold="& decimal fb &",Scale="& decimal sc &
-  "}\csname color_fill:"& fn &"\endcsname{"& fc &
-  "}\csname color_stroke:"& dn &"\endcsname{"& dc &
-  "}"& t &"}") rest;)
+  image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
+    & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
 enddef;
-def mpliboutlinecolor_ (expr c) =
-  if color c:
-    "rgb}{" & decimal redpart c & "," & decimal greenpart c
-      & "," & decimal bluepart c
-  elseif cmykcolor c:
-    "cmyk}{" & decimal cyanpart c & "," & decimal magentapart c
-      & "," & decimal yellowpart c & "," & decimal blackpart c
-  else:
-    "gray}{" & decimal c
-  fi
+def mplibglyph expr c of f =
+  runscript (
+    "return luamplib.glyph('"
+    & if numeric f: decimal fi f
+    & "','"
+    & if numeric c: decimal fi c
+    & "')"
+  )
 enddef;
-]]
-luamplib.mplibcodepreamble = mplibcodepreamble
-
-local legacyverbatimtexpreamble = [[
+def mplibdrawglyph expr g =
+  draw image(
+    save i; numeric i; i:=0;
+    for item within g:
+      i := i+1;
+      fill pathpart item
+      if i < length g: withpostscript "collect" fi;
+    endfor
+  )
+enddef;
+]],
+  legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
 def normalVerbatimTeX  (text t) = runscript("luamplibinfig{"&t&"}") enddef;
 let VerbatimTeX = specialVerbatimTeX;
@@ -1573,10 +1831,8 @@ extra_endfig := extra_endfig & " let VerbatimTeX = specialVerbatimTeX;"&
   "runscript(" &ditto&
   "if luamplib.in_the_fig then luamplib.figid=luamplib.figid+1 end "&
   "luamplib.in_the_fig=false" &ditto& ");";
-]]
-luamplib.legacyverbatimtexpreamble = legacyverbatimtexpreamble
-
-local textextlabelpreamble = [[
+]],
+  textextlabel = [[
 primarydef s infont f = rawtextext(s) enddef;
 def fontsize expr f =
   begingroup
@@ -1585,8 +1841,8 @@ def fontsize expr f =
   if size = 0: 10pt else: size fi
   endgroup
 enddef;
-]]
-luamplib.textextlabelpreamble = textextlabelpreamble
+]],
+}
 
 %    \end{macrocode}
 %
@@ -1623,7 +1879,7 @@ end
 luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 
-local function process_mplibcode (data, instancename)
+function luamplib.process_mplibcode (data, instancename)
   texboxes.localid = 4096
 
 %    \end{macrocode}
@@ -1683,7 +1939,6 @@ local function process_mplibcode (data, instancename)
 
   process(data, instancename)
 end
-luamplib.process_mplibcode = process_mplibcode
 
 %    \end{macrocode}
 %
@@ -1718,11 +1973,10 @@ local function getobjects(result,figure,f)
   return figure:objects()
 end
 
-local function convert(result, flusher)
+function luamplib.convert (result, flusher)
   luamplib.flush(result, flusher)
   return true -- done
 end
-luamplib.convert = convert
 
 local figcontents = { post = { } }
 local function put2output(a,...)
@@ -1887,7 +2141,7 @@ end
 %    \begin{macrocode}
 local prev_override_color
 local function do_preobj_CR(object,prescript)
-  local override = prescript and prescript.MPlibOverrideColor
+  local override = prescript and prescript.mpliboverridecolor
   if override then
     if pdfmode then
       pdf_literalcode(override)
@@ -1919,13 +2173,6 @@ local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 
-if pdfmode then
-  pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-else
-  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
-end
-
 local function update_pdfobjs (os)
   local on = pdfobjs[os]
   if on then
@@ -1942,6 +2189,38 @@ local function update_pdfobjs (os)
   return on,true
 end
 
+if pdfmode then
+  pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
+  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  pdfetcs.initialize_resources = function (name)
+    local tabname = format("%s_res",name)
+    pdfetcs[tabname] = { }
+    if luatexbase.callbacktypes.finish_pdffile then -- ltluatex
+      local obj = pdf.reserveobj()
+      pdfetcs.setpageres(format("%s/%s %i 0 R", pdfetcs.getpageres() or "", name, obj))
+      luatexbase.add_to_callback("finish_pdffile", function()
+        pdf.immediateobj(obj, format("<<%s>>", tableconcat(pdfetcs[tabname])))
+      end,
+      format("luamplib.%s.finish_pdffile",name))
+    end
+  end
+  pdfetcs.fallback_update_resources = function (name, res)
+    if luatexbase.callbacktypes.finish_pdffile then
+      local t = pdfetcs[format("%s_res",name)]
+      t[#t+1] = res
+    else
+      local tpr, n = pdfetcs.getpageres() or "", 0
+      tpr, n = tpr:gsub(format("/%s<<",name), "%1"..res)
+      if n == 0 then
+        tpr = format("%s/%s<<%s>>", tpr, name, res)
+      end
+      pdfetcs.setpageres(tpr)
+    end
+  end
+else
+  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
+end
+
 %    \end{macrocode}
 %
 %    Transparency
@@ -1954,75 +2233,42 @@ local transparancy_modes = { [0] = "Normal",
   "Compatible",
 }
 
-local function opacity_initialize ()
-  pdfetcs.opacity_res = {}
-  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
-    local extgstate_obj = pdf.reserveobj()
-    pdfetcs.setpageres(format("%s/ExtGState %i 0 R",pdfetcs.getpageres() or "",extgstate_obj))
-    luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(extgstate_obj, format("<<%s>>",tableconcat(pdfetcs.opacity_res)))
-    end, "luamplib.opacity.finish_pdffile")
-  end
-end
-
 local function update_tr_res(mode,opaq)
   if pdfetcs.pgfloaded == nil then
     pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
-    if not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
-      opacity_initialize()
+    if pdfmode and not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
+      pdfetcs.initialize_resources"ExtGState"
     end
   end
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
-  if new then
-    if pdfmode then
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}]],
-          format("{MPlibTr%s}{%s 0 R}", on, on),
+  if not new then return on end
+  local key = format("MPlibTr%s", on)
+  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+  if pdfmanagement then
+    texsprint(ccexplat,
+    format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
+  else
+    local tr = format("/%s %s", key, val)
+    if pdfetcs.pgfloaded then
+      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
+    elseif pdfmode then
+      if is_defined"TRP@list" then
+        texsprint(catat11,{
+          [[\if@filesw\immediate\write\@auxout{]],
+          [[\string\g@addto@macro\string\TRP@list{]],
+          tr,
+          [[}}\fi]],
         })
-      else
-        local tr = format("/MPlibTr%s %s 0 R",on,on)
-        if pdfetcs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-        elseif is_defined"TRP@list" then
-          texsprint(catat11,{
-            [[\if@filesw\immediate\write\@auxout{]],
-            [[\string\g@addto@macro\string\TRP@list{]],
-            tr,
-            [[}}\fi]],
-          })
-          if not get_macro"TRP@list":find(tr) then
-            texsprint(catat11,[[\global\TRP@reruntrue]])
-          end
-        else
-          if luatexbase.callbacktypes.finish_pdffile then
-            pdfetcs.opacity_res[#pdfetcs.opacity_res+1] = tr
-          else
-            local tpr, n = pdfetcs.getpageres() or "", 0
-            tpr, n = tpr:gsub("/ExtGState<<", "%1"..tr)
-            if n == 0 then
-              tpr = format("%s/ExtGState<<%s>>", tpr, tr)
-            end
-            pdfetcs.setpageres(tpr)
-          end
+        if not get_macro"TRP@list":find(tr) then
+          texsprint(catat11,[[\global\TRP@reruntrue]])
         end
+      else
+        pdfetcs.fallback_update_resources("ExtGState", tr)
       end
     else
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/ExtGState}]],
-          format("{MPlibTr%s}{@mplibpdfobj%s}", on, on),
-        })
-      else
-        local tr = format("/MPlibTr%s @mplibpdfobj%s",on,on)
-        if pdfetcs.pgfloaded then
-          texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-        else
-          texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
-          texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
-        end
-      end
+      texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
+      texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
     end
   end
   return on
@@ -2045,20 +2291,9 @@ end
 %
 %    Shading with |metafun| format.
 %    \begin{macrocode}
-local function shading_initialize ()
-  pdfetcs.shading_res = {}
-  if pdfmode and luatexbase.callbacktypes.finish_pdffile then -- ltluatex
-    local shading_obj = pdf.reserveobj()
-    pdfetcs.setpageres(format("%s/Shading %i 0 R",pdfetcs.getpageres() or "",shading_obj))
-    luatexbase.add_to_callback("finish_pdffile", function()
-      pdf.immediateobj(shading_obj,format("<<%s>>",tableconcat(pdfetcs.shading_res)))
-    end, "luamplib.shading.finish_pdffile")
-  end
-end
-
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  if not pdfmanagement and not pdfetcs.shading_res then
-    shading_initialize()
+  if pdfmode and not pdfmanagement and not pdfetcs.Shading_res then
+    pdfetcs.initialize_resources"Shading"
   end
   local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
   if steps > 1 then
@@ -2091,42 +2326,18 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
-  if pdfmode then
-    if new then
-      if pdfmanagement then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/Shading}]],
-          format("{MPlibSh%s}{%s 0 R}", on, on),
-        })
-      else
-        local res = format("/MPlibSh%s %s 0 R", on, on)
-        if luatexbase.callbacktypes.finish_pdffile then
-          pdfetcs.shading_res[#pdfetcs.shading_res+1] = res
-        else
-          local pageres = pdfetcs.getpageres() or ""
-          if not pageres:find("/Shading<<.*>>") then
-            pageres = pageres.."/Shading<<>>"
-          end
-          pageres = pageres:gsub("/Shading<<","%1"..res)
-          pdfetcs.setpageres(pageres)
-        end
-      end
-    end
+  if not new then return on end
+  local key = format("MPlibSh%s", on)
+  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+  if pdfmanagement then
+    texsprint(ccexplat,
+    format("\\pdfmanagement_add:nnn{Page/Resources/Shading}{%s}{%s}", key, val))
   else
-    if pdfmanagement then
-      if new then
-        texsprint(ccexplat,{
-          [[\pdfmanagement_add:nnn{Page/Resources/Shading}]],
-          format("{MPlibSh%s}{@mplibpdfobj%s}", on, on),
-        })
-      end
+    local res = format("/%s %s", key, val)
+    if pdfmode then
+      pdfetcs.fallback_update_resources("Shading", res)
     else
-      if new then
-        texsprint{
-          "\\special{pdf:put @MPlibSh",
-          format("<</MPlibSh%s @mplibpdfobj%s>>}",on, on),
-        }
-      end
+      texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
       texsprint"\\special{pdf:put @resources<</Shading @MPlibSh>>}"
     end
   end
@@ -2145,7 +2356,18 @@ local function color_normalize(ca,cb)
   end
 end
 
-pdfetcs.clrspcs = { }
+pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
+  run_tex_code({
+    [[\color_model_new:nnn]],
+    format("{mplibcolorspace_%s}", names:gsub(",","_")),
+    format("{DeviceN}{names={%s}}", names),
+    [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
+  }, ccexplat)
+  local colorspace = get_macro'mplib_@tempa'
+  t[names] = colorspace
+  return colorspace
+end })
+
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -2208,7 +2430,7 @@ local function do_preobj_SH(object,prescript)
           local t = { }
           for j=1,names[name] do t[#t+1] = 0 end
           t[#t+1] = value
-          table.insert(#ca == #cb and ca or cb, t)
+          tableinsert(#ca == #cb and ca or cb, t)
         end
       end
       for _,t in ipairs{ca,cb} do
@@ -2219,20 +2441,7 @@ local function do_preobj_SH(object,prescript)
       if #names == 1 then
         colorspace = objref
       else
-        local name = tableconcat(names,"-")
-        local obj = pdfetcs.clrspcs[name]
-        if obj then
-          colorspace = obj
-        else
-          run_tex_code({
-            [[\color_model_new:nnn]],
-            format("{mplibcolorspace_%s}", name),
-            format("{DeviceN}{names={%s}}", tableconcat(names,",")),
-            [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
-          }, ccexplat)
-          colorspace = get_macro'mplib_@tempa'
-          pdfetcs.clrspcs[name] = colorspace
-        end
+        colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
       end
     else
       local model = 0
@@ -2278,7 +2487,7 @@ end
 %
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
-local function flush(result,flusher)
+function luamplib.flush (result,flusher)
   if result then
     local figures = result.fig
     if figures then
@@ -2531,9 +2740,8 @@ local function flush(result,flusher)
     end
   end
 end
-luamplib.flush = flush
 
-local function colorconverter(cr)
+function luamplib.colorconverter (cr)
   local n = #cr
   if n == 4 then
     local c, m, y, k = cr[1], cr[2], cr[3], cr[4]
@@ -2546,7 +2754,6 @@ local function colorconverter(cr)
     return format("%.3f g %.3f G",s,s), "0 g 0 G"
   end
 end
-luamplib.colorconverter = colorconverter
 %    \end{macrocode}
 %
 % \iffalse
@@ -2569,7 +2776,7 @@ luamplib.colorconverter = colorconverter
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/01 v2.29.0 mplib package for LuaTeX]
+    [2024/05/10 v2.30.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

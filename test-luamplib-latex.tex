@@ -1,5 +1,9 @@
 %\DocumentMetadata{ uncompress }
-\documentclass{article}
+\ifnum\outputmode > 0
+  \documentclass{article}
+\else
+  \documentclass[dvipdfmx]{article}
+\fi
 \usepackage{fontspec}
 \setmainfont{latin modern roman}
 \usepackage{luamplib}
@@ -172,14 +176,15 @@ diameter:\Dia bp.%
 \begin{mplibcode}
 beginfig(1)
 draw mplibgraphictext "\bfseries Funny"
-  fakebold 2 scale 2 % fontspec options
-  drawcolor "blue" fillcolor "red!50" % l3color expressions
-  scaled 2 rotated 30 ;
+  fakebold 2 % fontspec option
+  drawcolor blue fillcolor "red!50" % l3color expression
+  scaled 3 rotated 30 ;
 picture p;
 p:=mplibgraphictext "\bfseries\itshape xyz";
 draw p scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
+\par
 \mplibsetformat{metafun}%
 \begin{mplibcode}
 beginfig(1)
@@ -198,7 +203,26 @@ fill unitsquare xyscaled (\mpdim\textwidth,1cm)
 endfig;
 \end{mplibcode}%
 \leavevmode
-\everymplib[@mpfig]{ drawoptions(withcolor red); }%
+\mpfig
+picture Q, u, e;
+Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
+u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
+e := mplibglyph "e" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner u;
+i:=0;
+totallen := length Q + length u + length e;
+for pic=Q, u, e:
+  for item within pic:
+    i:=i+1;
+    fill pathpart item
+    if i < totallen: withpostscript "collect"; fi
+  endfor
+endfor
+  withshademethod "linear"
+  withshadedirection (0.5,2.5)
+  withshadecolors (.7red,.7yellow)
+  ;
+\endmpfig
+\everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor "olive"); }%
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \tracingcommands0
