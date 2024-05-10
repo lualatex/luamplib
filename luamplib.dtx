@@ -1702,7 +1702,7 @@ function luamplib.glyph (f, c)
   local gid = tonumber(c)
   if not gid then
     local uni = utf8.codepoint(c)
-    for i,v in ipairs(shapedata.glyphs) do
+    for i,v in pairs(shapedata.glyphs) do
       if c == v.name or uni == v.unicode then
         gid = i; break
       end
