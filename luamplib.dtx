@@ -1657,6 +1657,7 @@ function luamplib.glyph (f, c)
     local fontdata = font.getfont(fid) or font.getcopy(fid)
     filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
     instance = fontdata.specification and fontdata.specification.instance
+    filename = filename:gsub("^harfloaded:","")
   else
     local name
     f = f:match"^%s*(.+)%s*$"
@@ -1721,7 +1722,182 @@ function luamplib.glyph (f, c)
       end
     end
   end
+  kind = shapedata.format or kind
   return glyphimage(t, kind)
+end
+
+%    \end{macrocode}
+%
+%    mpliboutlinetext : based on mkiv's font-mps.lua
+%    \begin{macrocode}
+local rulefmt = "addto currentpicture contour (unitsquare shifted - center unitsquare) \z
+xscaled %f yscaled %f shifted (%f,%f);"
+local outline_horz, outline_vert
+function outline_vert (res, box, curr, xshift, yshift)
+  local dy = (box.height or 0)/factor
+  while curr do
+    if curr.id == node.id"rule" then
+      local ht, dp = curr.height/factor, curr.depth/factor
+      local hd = ht + dp
+      if hd ~= 0 then
+        local wd = curr.width
+        wd = (wd == -1073741824 and box.width or wd)/factor
+        dy = dy - ht
+        if wd ~= 0 and curr.subtype == 0 then
+          res[#res+1] = rulefmt:format(wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
+        end
+        dy = dy - dp
+      end
+    elseif curr.id == node.id"glue" then
+      local vwidth = node.effective_glue(curr,box)/factor
+      if curr.leader then
+        local curr, kind = curr.leader, curr.subtype
+        if curr.id == node.id"rule" then
+          local wd = curr.width/factor
+          if wd ~= 0 then
+            local hd = vwidth
+            local dy = dy - hd
+            if hd ~= 0 and curr.subtype == 0 then
+              res[#res+1] = rulefmt:format(wd, hd, xshift+wd/2, yshift+dy+hd/2)
+            end
+          end
+        elseif curr.head then
+          local hd = (curr.height + curr.depth)/factor
+          if hd <= vwidth then
+            local dy, iy, n = dy, 0, 0
+            if kind == 100 or kind == 103 then -- todo
+              local ady = (box.height or 0)/factor - dy
+              local ndy = math.ceil(ady / hd) * hd
+              n = (vwidth-ndy+ady) // hd
+              dy = dy + ady - ndy
+            else
+              n = vwidth // hd
+              if kind == 101 then
+                dy = dy - vwidth % hd / 2
+              elseif kind == 102 then
+                iy = vwidth % hd / (n+1)
+                dy = dy - iy
+              end
+            end
+            dy = dy - curr.height/factor
+            local outline_func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            for i=1,n do
+              res = outline_func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+              dy = dy - hd - iy
+            end
+          end
+        end
+      end
+      dy = dy - vwidth
+    elseif curr.id == node.id"kern" then
+      dy = dy - curr.kern/factor
+    elseif curr.id == node.id"vlist" then
+      dy = dy - curr.height/factor
+      res = outline_vert(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+      dy = dy - curr.depth/factor
+    elseif curr.id == node.id"hlist" then
+      dy = dy - curr.height/factor
+      res = outline_horz(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+      dy = dy - curr.depth/factor
+    end
+    curr = node.getnext(curr)
+  end
+  return res, dy
+end
+function outline_horz (res, box, curr, xshift, yshift)
+  local dx = 0
+  while curr do
+    if curr.char and curr.font and curr.font > 0 then
+      local ft = font.getfont(curr.font) or font.getcopy(curr.font)
+      if ft.format ~= "opentype" and ft.format ~= "truetype" then
+        return { mperr"mpliboutlinetext: support opentype/truetype fonts only" }
+      end
+      local gid = ft.characters[curr.char].index
+      local scale = ft.size / factor / 1000
+      local extend  = (ft.extend or 1000)/1000
+      local squeeze = (ft.squeeze or 1000)/1000
+      local expand  = 1 + (curr.expansion_factor or 0)/1000000
+      local xscale = scale * extend * expand
+      local yscale = scale * squeeze
+      local xpos = dx + xshift + (curr.xoffset or 0)/factor
+      local ypos = yshift + (curr.yoffset or 0)/factor
+      local image = luamplib.glyph(curr.font,gid)
+      res[#res+1] = format("addto currentpicture also %s \z
+      xscaled %f yscaled %f shifted (%f,%f);", image, xscale, yscale, xpos, ypos)
+      dx = dx + curr.width/factor * expand
+    elseif curr.id == node.id"disc" then
+      local width
+      res, width = outline_horz(res, curr, curr.replace, xshift+dx, yshift)
+      dx = dx + width
+    elseif curr.id == node.id"rule" then
+      local wd = curr.width/factor
+      if wd ~= 0 then
+        local ht, dp = curr.height, curr.depth
+        ht = (ht == -1073741824 and box.height or ht)/factor
+        dp = (dp == -1073741824 and box.depth  or dp)/factor
+        local hd = ht + dp
+        if hd ~= 0 and curr.subtype == 0 then
+          res[#res+1] = rulefmt:format(wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+        end
+        dx = dx + wd
+      end
+    elseif curr.id == node.id"glue" then
+      local width = node.effective_glue(curr, box)/factor
+      if curr.leader then
+        local curr, kind = curr.leader, curr.subtype
+        if curr.id == node.id"rule" then
+          local ht, dp = curr.height/factor, curr.depth/factor
+          local hd = ht + dp
+          if hd ~= 0 then
+            local wd = width
+            if wd ~= 0 and curr.subtype == 0 then
+              res[#res+1] = rulefmt:format(wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+            end
+          end
+        elseif curr.head then
+          local wd = curr.width/factor
+          if wd <= width then
+            local n = width // wd
+            local dx, ix = dx, 0
+            if kind == 100 or kind == 103 then -- todo
+              local ndx = math.ceil(dx / wd) * wd
+              n = (width-ndx+dx) // wd
+              dx = ndx
+            elseif kind == 101 then
+              dx = dx + width % wd / 2
+            elseif kind == 102 then
+              ix = width % wd / (n+1)
+              dx = dx + ix
+            end
+            local outline_func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            for i=1,n do
+              res = outline_func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+              dx = dx + wd + ix
+            end
+          end
+        end
+      end
+      dx = dx + width
+    elseif curr.id == node.id"kern" then
+      dx = dx + curr.kern/factor
+    elseif curr.id == node.id"vlist" then
+      res = outline_vert(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+      dx = dx + curr.width/factor
+    elseif curr.id == node.id"hlist" then
+      res = outline_horz(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+      dx = dx + curr.width/factor
+    end
+    curr = node.getnext(curr)
+  end
+  return res, dx
+end
+function luamplib.outlinetext (text)
+  local fmt = process_tex_text(text)
+  local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
+  local box = texgetbox(id)
+  local res = outline_horz({ }, box, box.head, 0, 0)
+  if #res == 0 then res = { "draw fullcircle scaled 0;" } end
+  return format("image(%s)", tableconcat(res))
 end
 
 %    \end{macrocode}
@@ -1820,6 +1996,81 @@ def mplibdrawglyph expr g =
     endfor
   )
 enddef;
+def mplib_do_outline_text_set_b (text f) (text d) text r =
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_f (text f) text r =
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_d (text d) text r =
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_r (text d) (text f) text r =
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_n text r =
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_p = enddef;
+def mplib_fill_outline_text (expr p) =
+  i:=0;
+  for item within p:
+    i:=i+1;
+    addto currentpicture contour pathpart item
+    if i < length p: withpostscript "collect"; fi
+  endfor
+  mplib_do_outline_options_f;
+enddef;
+def mplib_draw_outline_text (expr p) =
+  i:=0;
+  for item within p:
+    i:=i+1;
+    addto currentpicture doublepath pathpart item
+    if i < length p: withpostscript "collect"; fi
+  endfor
+  mplib_do_outline_options_d;
+enddef;
+vardef mpliboutlinetext@# (expr t) text rest =
+  save kind; string kind; kind := str @#;
+  save p, i; picture p; numeric i;
+  def mplib_do_outline_options_d = enddef;
+  def mplib_do_outline_options_f = enddef;
+  def mplib_do_outline_options_r = enddef;
+  p := runscript("return luamplib.outlinetext[===["&t&"]===]");
+  image ( addto currentpicture also image (
+    if kind = "f":
+      mplib_do_outline_text_set_f rest;
+      def mplib_do_outline_options_d = withpen pencircle scaled 0 enddef;
+      mplib_fill_outline_text (p);
+    elseif kind = "d":
+      mplib_do_outline_text_set_d rest;
+      mplib_draw_outline_text (p);
+    elseif kind = "b":
+      mplib_do_outline_text_set_b rest;
+      mplib_fill_outline_text (p);
+      mplib_draw_outline_text (p);
+    elseif kind = "u":
+      mplib_do_outline_text_set_f rest;
+      mplib_fill_outline_text (p);
+    elseif kind = "r":
+      mplib_do_outline_text_set_r rest;
+      mplib_draw_outline_text (p);
+      mplib_fill_outline_text (p);
+    elseif kind = "p":
+      mplib_do_outline_text_set_p;
+      mplib_draw_outline_text (p);
+    else:
+      mplib_do_outline_text_set_n rest;
+      mplib_fill_outline_text (p);
+    fi;
+  ) mplib_do_outline_options_r; )
+enddef ;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
