@@ -1730,8 +1730,8 @@ end
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
-local rulefmt = "addto currentpicture contour (unitsquare shifted - center unitsquare) \z
-xscaled %f yscaled %f shifted (%f,%f);"
+local rulefmt = "mplibpic_[%i]:=image(addto currentpicture doublepath \z
+unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
 function outline_vert (res, box, curr, xshift, yshift)
   local dy = (box.height or 0)/factor
@@ -1744,7 +1744,7 @@ function outline_vert (res, box, curr, xshift, yshift)
         wd = (wd == -1073741824 and box.width or wd)/factor
         dy = dy - ht
         if wd ~= 0 and curr.subtype == 0 then
-          res[#res+1] = rulefmt:format(wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
+          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
         end
         dy = dy - dp
       end
@@ -1758,7 +1758,7 @@ function outline_vert (res, box, curr, xshift, yshift)
             local hd = vwidth
             local dy = dy - hd
             if hd ~= 0 and curr.subtype == 0 then
-              res[#res+1] = rulefmt:format(wd, hd, xshift+wd/2, yshift+dy+hd/2)
+              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+hd/2)
             end
           end
         elseif curr.head then
@@ -1809,11 +1809,9 @@ function outline_horz (res, box, curr, xshift, yshift)
   while curr do
     if curr.char and curr.font and curr.font > 0 then
       local ft = font.getfont(curr.font) or font.getcopy(curr.font)
-      if ft.format ~= "opentype" and ft.format ~= "truetype" then
-        return { mperr"mpliboutlinetext: support opentype/truetype fonts only" }
-      end
-      local gid = ft.characters[curr.char].index
+      local gid = ft.characters[curr.char].index or curr.char
       local scale = ft.size / factor / 1000
+      local slant   = (ft.slant or 0)/1000
       local extend  = (ft.extend or 1000)/1000
       local squeeze = (ft.squeeze or 1000)/1000
       local expand  = 1 + (curr.expansion_factor or 0)/1000000
@@ -1821,9 +1819,14 @@ function outline_horz (res, box, curr, xshift, yshift)
       local yscale = scale * squeeze
       local xpos = dx + xshift + (curr.xoffset or 0)/factor
       local ypos = yshift + (curr.yoffset or 0)/factor
-      local image = luamplib.glyph(curr.font,gid)
-      res[#res+1] = format("addto currentpicture also %s \z
-      xscaled %f yscaled %f shifted (%f,%f);", image, xscale, yscale, xpos, ypos)
+      local image
+      if ft.format == "opentype" or ft.format == "truetype" then
+        image = luamplib.glyph(curr.font, gid)
+      else
+        image = format("glyph %s of %q", gid, ft.name) -- reencoding ?
+      end
+      res[#res+1] = format("mplibpic_[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
+                           #res+1, image, xscale, yscale, slant, xpos, ypos)
       dx = dx + curr.width/factor * expand
     elseif curr.id == node.id"disc" then
       local width
@@ -1837,7 +1840,7 @@ function outline_horz (res, box, curr, xshift, yshift)
         dp = (dp == -1073741824 and box.depth  or dp)/factor
         local hd = ht + dp
         if hd ~= 0 and curr.subtype == 0 then
-          res[#res+1] = rulefmt:format(wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
         end
         dx = dx + wd
       end
@@ -1851,7 +1854,7 @@ function outline_horz (res, box, curr, xshift, yshift)
           if hd ~= 0 then
             local wd = width
             if wd ~= 0 and curr.subtype == 0 then
-              res[#res+1] = rulefmt:format(wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
             end
           end
         elseif curr.head then
@@ -1897,7 +1900,11 @@ function luamplib.outlinetext (text)
   local box = texgetbox(id)
   local res = outline_horz({ }, box, box.head, 0, 0)
   if #res == 0 then res = { "draw fullcircle scaled 0;" } end
-  return format("image(%s)", tableconcat(res))
+  local t = {  }
+  for i=1, #res do
+    t[#t+1] = format("addto currentpicture also mplibpic_[%i];", i)
+  end
+  return tableconcat(res) .. format("mplibpic_[0]:=image(%s);", tableconcat(t))
 end
 
 %    \end{macrocode}
@@ -2038,36 +2045,36 @@ def mplib_draw_outline_text (expr p) =
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
-  save p, i; picture p; numeric i;
+  save mplibpic_, i; picture mplibpic_[]; numeric i;
   def mplib_do_outline_options_d = enddef;
   def mplib_do_outline_options_f = enddef;
   def mplib_do_outline_options_r = enddef;
-  p := runscript("return luamplib.outlinetext[===["&t&"]===]");
+  runscript("return luamplib.outlinetext[===["&t&"]===]");
   image ( addto currentpicture also image (
     if kind = "f":
       mplib_do_outline_text_set_f rest;
       def mplib_do_outline_options_d = withpen pencircle scaled 0 enddef;
-      mplib_fill_outline_text (p);
+      mplib_fill_outline_text (mplibpic_[0]);
     elseif kind = "d":
       mplib_do_outline_text_set_d rest;
-      mplib_draw_outline_text (p);
+      mplib_draw_outline_text (mplibpic_[0]);
     elseif kind = "b":
       mplib_do_outline_text_set_b rest;
-      mplib_fill_outline_text (p);
-      mplib_draw_outline_text (p);
+      mplib_fill_outline_text (mplibpic_[0]);
+      mplib_draw_outline_text (mplibpic_[0]);
     elseif kind = "u":
       mplib_do_outline_text_set_f rest;
-      mplib_fill_outline_text (p);
+      mplib_fill_outline_text (mplibpic_[0]);
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
-      mplib_draw_outline_text (p);
-      mplib_fill_outline_text (p);
+      mplib_draw_outline_text (mplibpic_[0]);
+      mplib_fill_outline_text (mplibpic_[0]);
     elseif kind = "p":
       mplib_do_outline_text_set_p;
-      mplib_draw_outline_text (p);
+      mplib_draw_outline_text (mplibpic_[0]);
     else:
       mplib_do_outline_text_set_n rest;
-      mplib_fill_outline_text (p);
+      mplib_fill_outline_text (mplibpic_[0]);
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;

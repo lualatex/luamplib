@@ -1,8 +1,8 @@
                        History of the luamplib package
 
 2024/xx/xx 2.31.0
-   * provide a new metapost operator 'mpliboutlinetext', the purpose of which
-   is mimicking metafun's 'outlinetext'. The syntax is the same as metafun's.
+   * provide a new metapost operator 'mpliboutlinetext', which mimicks
+   metafun's 'outlinetext'. The syntax is the same as metafun's.
 
 2024/05/10 2.30.0
    * provide a new metapost operator 'mplibglyph', which returns a metapost
