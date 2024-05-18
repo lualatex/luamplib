@@ -225,6 +225,13 @@ endfor
 \everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor "olive"); }%
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\def\mpfiginstancename{mympfig}%
+\mpfig
+draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
+    (withcolor .6[red,white])
+    (withpen pencircle scaled .2 withcolor red)
+    scaled 4 ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

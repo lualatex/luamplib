@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/10 v2.30.0 Interface for using the mplib library]%
+  [2024/05/21 v2.31.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/10 v2.30.0}
+% \date{2024/05/21 v2.31.0}
 %
 % \maketitle
 %
@@ -549,6 +549,17 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %   \end{verbatim}
 %
+% \paragraph{\texttt{mpliboutlinetext}}
+%   From v2.31, we provide a new metapost operator |mpliboutlinetext|, which mimicks
+%   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
+%   manual \textsection\,8.7 (|texdoc metafun|). A simple example:
+%   \begin{verbatim}
+%     draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
+%         (withcolor \mpcolor{red!50})
+%         (withpen pencircle scaled .2 withcolor red)
+%         scaled 2 ;
+%   \end{verbatim}
+%
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
@@ -581,8 +592,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.30.0",
-  date          = "2024/05/10",
+  version       = "2.31.0",
+  date          = "2024/05/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1394,7 +1405,6 @@ local function colorsplit (res)
   return t
 end
 
-local min = math.min
 luamplib.gettexcolor = function (str, rgb)
   local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then
@@ -1413,7 +1423,7 @@ luamplib.gettexcolor = function (str, rgb)
   local t = colorsplit(res)
   if #t == 3 or not rgb then return t end
   if #t == 4 then
-    return { 1 - min(1,t[1]+t[4]), 1 - min(1,t[2]+t[4]), 1 - min(1,t[3]+t[4]) }
+    return { 1 - math.min(1,t[1]+t[4]), 1 - math.min(1,t[2]+t[4]), 1 - math.min(1,t[3]+t[4]) }
   end
   return { t[1], t[1], t[1] }
 end
@@ -1712,7 +1722,7 @@ function luamplib.glyph (f, c)
   if not gid then return mperr"cannot get GID (glyph id)" end
   local fac = 1000 / (shapedata.units or 1000)
   local t = shapedata.glyphs[gid].segments
-  if not t then return mperr"glyph has no contour. Maybe blank space" end
+  if not t then return "image(fill fullcircle scaled 0;)" end
   for i,v in ipairs(t) do
     if type(v) == "table" then
       for ii,vv in ipairs(v) do
@@ -1730,7 +1740,7 @@ end
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
-local rulefmt = "mplibpic_[%i]:=image(addto currentpicture doublepath \z
+local rulefmt = "mplibpic[%i]:=image(addto currentpicture contour \z
 unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
 function outline_vert (res, box, curr, xshift, yshift)
@@ -1765,7 +1775,7 @@ function outline_vert (res, box, curr, xshift, yshift)
           local hd = (curr.height + curr.depth)/factor
           if hd <= vwidth then
             local dy, iy, n = dy, 0, 0
-            if kind == 100 or kind == 103 then -- todo
+            if kind == 100 or kind == 103 then
               local ady = (box.height or 0)/factor - dy
               local ndy = math.ceil(ady / hd) * hd
               n = (vwidth-ndy+ady) // hd
@@ -1780,9 +1790,9 @@ function outline_vert (res, box, curr, xshift, yshift)
               end
             end
             dy = dy - curr.height/factor
-            local outline_func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
             for i=1,n do
-              res = outline_func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+              res = func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
               dy = dy - hd - iy
             end
           end
@@ -1823,9 +1833,9 @@ function outline_horz (res, box, curr, xshift, yshift)
       if ft.format == "opentype" or ft.format == "truetype" then
         image = luamplib.glyph(curr.font, gid)
       else
-        image = format("glyph %s of %q", gid, ft.name) -- reencoding ?
+        image = format("glyph %s of %q", gid, ft.name)
       end
-      res[#res+1] = format("mplibpic_[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
+      res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
                            #res+1, image, xscale, yscale, slant, xpos, ypos)
       dx = dx + curr.width/factor * expand
     elseif curr.id == node.id"disc" then
@@ -1862,7 +1872,7 @@ function outline_horz (res, box, curr, xshift, yshift)
           if wd <= width then
             local n = width // wd
             local dx, ix = dx, 0
-            if kind == 100 or kind == 103 then -- todo
+            if kind == 100 or kind == 103 then
               local ndx = math.ceil(dx / wd) * wd
               n = (width-ndx+dx) // wd
               dx = ndx
@@ -1872,9 +1882,9 @@ function outline_horz (res, box, curr, xshift, yshift)
               ix = width % wd / (n+1)
               dx = dx + ix
             end
-            local outline_func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
             for i=1,n do
-              res = outline_func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+              res = func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
               dx = dx + wd + ix
             end
           end
@@ -1899,12 +1909,12 @@ function luamplib.outlinetext (text)
   local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
   local box = texgetbox(id)
   local res = outline_horz({ }, box, box.head, 0, 0)
-  if #res == 0 then res = { "draw fullcircle scaled 0;" } end
+  if #res == 0 then res = { "mplibpic[1]:=image(fill fullcircle scaled 0;);" } end
   local t = {  }
   for i=1, #res do
-    t[#t+1] = format("addto currentpicture also mplibpic_[%i];", i)
+    t[#t+1] = format("addto currentpicture also mplibpic[%i];", i)
   end
-  return tableconcat(res) .. format("mplibpic_[0]:=image(%s);", tableconcat(t))
+  return tableconcat(res) .. format("mplibpic[0]:=image(%s);", tableconcat(t))
 end
 
 %    \end{macrocode}
@@ -2045,7 +2055,7 @@ def mplib_draw_outline_text (expr p) =
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
-  save mplibpic_, i; picture mplibpic_[]; numeric i;
+  save mplibpic, i; picture mplibpic[]; numeric i;
   def mplib_do_outline_options_d = enddef;
   def mplib_do_outline_options_f = enddef;
   def mplib_do_outline_options_r = enddef;
@@ -2054,27 +2064,27 @@ vardef mpliboutlinetext@# (expr t) text rest =
     if kind = "f":
       mplib_do_outline_text_set_f rest;
       def mplib_do_outline_options_d = withpen pencircle scaled 0 enddef;
-      mplib_fill_outline_text (mplibpic_[0]);
+      mplib_fill_outline_text (mplibpic0);
     elseif kind = "d":
       mplib_do_outline_text_set_d rest;
-      mplib_draw_outline_text (mplibpic_[0]);
+      mplib_draw_outline_text (mplibpic0);
     elseif kind = "b":
       mplib_do_outline_text_set_b rest;
-      mplib_fill_outline_text (mplibpic_[0]);
-      mplib_draw_outline_text (mplibpic_[0]);
+      mplib_fill_outline_text (mplibpic0);
+      mplib_draw_outline_text (mplibpic0);
     elseif kind = "u":
       mplib_do_outline_text_set_f rest;
-      mplib_fill_outline_text (mplibpic_[0]);
+      mplib_fill_outline_text (mplibpic0);
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
-      mplib_draw_outline_text (mplibpic_[0]);
-      mplib_fill_outline_text (mplibpic_[0]);
+      mplib_draw_outline_text (mplibpic0);
+      mplib_fill_outline_text (mplibpic0);
     elseif kind = "p":
       mplib_do_outline_text_set_p;
-      mplib_draw_outline_text (mplibpic_[0]);
+      mplib_draw_outline_text (mplibpic0);
     else:
       mplib_do_outline_text_set_n rest;
-      mplib_fill_outline_text (mplibpic_[0]);
+      mplib_fill_outline_text (mplibpic0);
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;
@@ -3034,7 +3044,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/10 v2.30.0 mplib package for LuaTeX]
+    [2024/05/21 v2.31.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
