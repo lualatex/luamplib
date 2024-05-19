@@ -504,7 +504,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When a type1 font is specified, metapost primitive |glyph| will be called.
 %   \begin{verbatim}
 %      mplibglyph 50  of \fontid\font          % slot 50 of current font
-%      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+%      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
 %      mplibglyph "Q" of "texgyrepagella-regular.otf"     % raw filename
 %      mplibglyph "Q" of "Times.ttc(2)"                   % subfont number
 %      mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]" % instance name
@@ -512,7 +512,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Both arguments before and after of ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
 %   String argument at the left side is regarded as a glyph name in the font or a unicode character.
-%   String argument at the right side is regarded as a \TeX\ fontname (without backslash) or
+%   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
 %   the raw filename of a font. When it is a font filename, a number within parentheses
 %   after the filename denotes a
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
@@ -1662,7 +1662,7 @@ end
 if not table.tofile then require"lualibs-lpeg"; require"lualibs-table"; end
 function luamplib.glyph (f, c)
   local filename, subfont, instance, kind, shapedata
-  local fid = tonumber(f) or font.id(f) -- string: fontname
+  local fid = tonumber(f) or font.id(f)
   if fid > 0 then
     local fontdata = font.getfont(fid) or font.getcopy(fid)
     filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
@@ -1833,7 +1833,20 @@ function outline_horz (res, box, curr, xshift, yshift)
       if ft.format == "opentype" or ft.format == "truetype" then
         image = luamplib.glyph(curr.font, gid)
       else
-        image = format("glyph %s of %q", gid, ft.name)
+        local name, scale = ft.name, 1
+        local vf = font.read_vf(name, ft.size)
+        if vf and vf.characters[gid] then
+          local cmds = vf.characters[gid].commands or {}
+          for _,v in ipairs(cmds) do
+            if v[1] == "char" then
+              gid = v[2]
+            elseif v[1] == "font" and vf.fonts[v[2]] then
+              name  = vf.fonts[v[2]].name
+              scale = vf.fonts[v[2]].size / ft.size
+            end
+          end
+        end
+        image = format("glyph %s of %q scaled %f", gid, name, scale)
       end
       res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
                            #res+1, image, xscale, yscale, slant, xpos, ypos)

@@ -12,7 +12,7 @@
 
        mplibglyph 50   of \fontid\font            % slot 50 of current font
        mplibglyph 50   of "cmr10"                          % type1 font
-       mplibglyph "Q"  of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+       mplibglyph "Q"  of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
        mplibglyph "똠" of "NotoSansCJKkr-Regular.otf"      % raw filename
        mplibglyph "Q"  of "Times.ttc(2)"                   % subfont number
        mplibglyph "똠" of "SourceHanSansK-VF.otf[Regular]" % instance name
