@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/10 v2.30.0 Interface for using the mplib library]%
+  [2024/05/21 v2.31.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/10 v2.30.0}
+% \date{2024/05/21 v2.31.0}
 %
 % \maketitle
 %
@@ -504,7 +504,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When a type1 font is specified, metapost primitive |glyph| will be called.
 %   \begin{verbatim}
 %      mplibglyph 50  of \fontid\font          % slot 50 of current font
-%      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+%      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
 %      mplibglyph "Q" of "texgyrepagella-regular.otf"     % raw filename
 %      mplibglyph "Q" of "Times.ttc(2)"                   % subfont number
 %      mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]" % instance name
@@ -512,7 +512,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Both arguments before and after of ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
 %   String argument at the left side is regarded as a glyph name in the font or a unicode character.
-%   String argument at the right side is regarded as a \TeX\ fontname (without backslash) or
+%   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
 %   the raw filename of a font. When it is a font filename, a number within parentheses
 %   after the filename denotes a
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
@@ -549,6 +549,17 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %   \end{verbatim}
 %
+% \paragraph{\texttt{mpliboutlinetext}}
+%   From v2.31, we provide a new metapost operator |mpliboutlinetext|, which mimicks
+%   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
+%   manual \textsection\,8.7 (|texdoc metafun|). A simple example:
+%   \begin{verbatim}
+%     draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
+%         (withcolor \mpcolor{red!50})
+%         (withpen pencircle scaled .2 withcolor red)
+%         scaled 2 ;
+%   \end{verbatim}
+%
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
@@ -581,8 +592,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.30.0",
-  date          = "2024/05/10",
+  version       = "2.31.0",
+  date          = "2024/05/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1394,7 +1405,6 @@ local function colorsplit (res)
   return t
 end
 
-local min = math.min
 luamplib.gettexcolor = function (str, rgb)
   local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then
@@ -1413,7 +1423,7 @@ luamplib.gettexcolor = function (str, rgb)
   local t = colorsplit(res)
   if #t == 3 or not rgb then return t end
   if #t == 4 then
-    return { 1 - min(1,t[1]+t[4]), 1 - min(1,t[2]+t[4]), 1 - min(1,t[3]+t[4]) }
+    return { 1 - math.min(1,t[1]+t[4]), 1 - math.min(1,t[2]+t[4]), 1 - math.min(1,t[3]+t[4]) }
   end
   return { t[1], t[1], t[1] }
 end
@@ -1652,11 +1662,12 @@ end
 if not table.tofile then require"lualibs-lpeg"; require"lualibs-table"; end
 function luamplib.glyph (f, c)
   local filename, subfont, instance, kind, shapedata
-  local fid = tonumber(f) or font.id(f) -- string: fontname
+  local fid = tonumber(f) or font.id(f)
   if fid > 0 then
     local fontdata = font.getfont(fid) or font.getcopy(fid)
     filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
     instance = fontdata.specification and fontdata.specification.instance
+    filename = filename:gsub("^harfloaded:","")
   else
     local name
     f = f:match"^%s*(.+)%s*$"
@@ -1711,7 +1722,7 @@ function luamplib.glyph (f, c)
   if not gid then return mperr"cannot get GID (glyph id)" end
   local fac = 1000 / (shapedata.units or 1000)
   local t = shapedata.glyphs[gid].segments
-  if not t then return mperr"glyph has no contour. Maybe blank space" end
+  if not t then return "image(fill fullcircle scaled 0;)" end
   for i,v in ipairs(t) do
     if type(v) == "table" then
       for ii,vv in ipairs(v) do
@@ -1721,7 +1732,252 @@ function luamplib.glyph (f, c)
       end
     end
   end
+  kind = shapedata.format or kind
   return glyphimage(t, kind)
+end
+
+%    \end{macrocode}
+%
+%    mpliboutlinetext : based on mkiv's font-mps.lua
+%    \begin{macrocode}
+local rulefmt = "mplibpic[%i]:=image(addto currentpicture contour \z
+unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
+local outline_horz, outline_vert
+function outline_vert (res, box, curr, xshift, yshift)
+  local b2u = box.dir == "LTL"
+  local dy = (b2u and -(box.depth or 0) or (box.height or 0))/factor
+  local ody = dy
+  while curr do
+    if curr.id == node.id"rule" then
+      local ht, dp = curr.height/factor, curr.depth/factor
+      local hd = ht + dp
+      if hd ~= 0 then
+        local wd = curr.width
+        wd = (wd == -1073741824 and box.width or wd)/factor
+        dy = dy + (b2u and dp or -ht)
+        if wd ~= 0 and curr.subtype == 0 then
+          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
+        end
+        dy = dy + (b2u and ht or -dp)
+      end
+    elseif curr.id == node.id"glue" then
+      local vwidth = node.effective_glue(curr,box)/factor
+      dy = dy + (b2u and vwidth or 0)
+      if curr.leader then
+        local curr, kind = curr.leader, curr.subtype
+        if curr.id == node.id"rule" then
+          local wd = curr.width/factor
+          if wd ~= 0 then
+            local hd = vwidth
+            local dy = dy - hd
+            if hd ~= 0 and curr.subtype == 0 then
+              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+hd/2)
+            end
+          end
+        elseif curr.head then
+          local hd = (curr.height + curr.depth)/factor
+          if hd <= vwidth then
+            local dy = b2u and dy-vwidth or dy
+            local n, iy = 0, 0
+            if kind == 100 or kind == 103 then -- todo: gleaders
+              local ady = abs(ody - dy)
+              local ndy = math.ceil(ady / hd) * hd
+              local diff = ndy - ady
+              n = (vwidth-diff) // hd
+              dy = dy + (b2u and diff or -diff)
+            else
+              n = vwidth // hd
+              if kind == 101 then
+                local side = vwidth % hd / 2
+                dy = dy + (b2u and side or -side)
+              elseif kind == 102 then
+                iy = vwidth % hd / (n+1)
+                dy = dy + (b2u and iy or -iy)
+              end
+            end
+            dy = dy + (b2u and curr.depth or -curr.height)/factor
+            hd = b2u and hd or -hd
+            iy = b2u and iy or -iy
+            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            for i=1,n do
+              res = func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+              dy = dy + hd + iy
+            end
+          end
+        end
+      end
+      dy = dy - (b2u and 0 or vwidth)
+    elseif curr.id == node.id"kern" then
+      dy = dy + curr.kern/factor * (b2u and 1 or -1)
+    elseif curr.id == node.id"vlist" then
+      dy = dy + (b2u and curr.depth or -curr.height)/factor
+      res = outline_vert(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+      dy = dy + (b2u and curr.height or -curr.depth)/factor
+    elseif curr.id == node.id"hlist" then
+      dy = dy + (b2u and curr.depth or -curr.height)/factor
+      res = outline_horz(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+      dy = dy + (b2u and curr.height or -curr.depth)/factor
+    end
+    curr = node.getnext(curr)
+  end
+  return res
+end
+function outline_horz (res, box, curr, xshift, yshift)
+  local r2l = box.dir == "TRT"
+  local dx = r2l and (box.width or 0)/factor or 0
+  local dirs = { { dir = r2l, dx = dx } }
+  local odx = dx
+  while curr do
+    if curr.id == node.id"dir" then
+      local sign, dir = curr.dir:match"(.)(...)"
+      local level, newdir = curr.level, r2l
+      if sign == "+" then
+        local n = node.getnext(curr)
+        while n do
+          if n.id == node.id"dir" and n.level+1 == level then break end
+          n = node.getnext(n)
+        end
+        n = n or node.tail(curr)
+        newdir = dir == "TRT"
+        if r2l ~= newdir then
+          dx = dx + node.rangedimensions(box, curr, n)/factor * (newdir and 1 or -1)
+        end
+        dirs[level] = { dir = r2l, dx = dx }
+      else
+        local level = level + 1
+        newdir = dirs[level].dir
+        if r2l ~= newdir then
+          dx = dirs[level].dx
+        end
+      end
+      r2l = newdir
+    elseif curr.char and curr.font and curr.font > 0 then
+      local ft = font.getfont(curr.font) or font.getcopy(curr.font)
+      local gid = ft.characters[curr.char].index or curr.char
+      local scale = ft.size / factor / 1000
+      local slant   = (ft.slant or 0)/1000
+      local extend  = (ft.extend or 1000)/1000
+      local squeeze = (ft.squeeze or 1000)/1000
+      local expand  = 1 + (curr.expansion_factor or 0)/1000000
+      local xscale = scale * extend * expand
+      local yscale = scale * squeeze
+      dx = dx - (r2l and curr.width/factor*expand or 0)
+      local xpos = dx + xshift + (curr.xoffset or 0)/factor
+      local ypos = yshift + (curr.yoffset or 0)/factor
+      local image
+      if ft.format == "opentype" or ft.format == "truetype" then
+        image = luamplib.glyph(curr.font, gid)
+      else
+        local name, scale = ft.name, 1
+        local vf = font.read_vf(name, ft.size)
+        if vf and vf.characters[gid] then
+          local cmds = vf.characters[gid].commands or {}
+          for _,v in ipairs(cmds) do
+            if v[1] == "char" then
+              gid = v[2]
+            elseif v[1] == "font" and vf.fonts[v[2]] then
+              name  = vf.fonts[v[2]].name
+              scale = vf.fonts[v[2]].size / ft.size
+            end
+          end
+        end
+        image = format("glyph %s of %q scaled %f", gid, name, scale)
+      end
+      res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
+                           #res+1, image, xscale, yscale, slant, xpos, ypos)
+      dx = dx + (r2l and 0 or curr.width/factor*expand)
+    elseif curr.id == node.id"disc" then
+      local width = node.dimensions(curr.replace)/factor
+      dx = dx - (r2l and width or 0)
+      res = outline_horz(res, curr, curr.replace, xshift+dx, yshift)
+      dx = dx + (r2l and 0 or width)
+    elseif curr.id == node.id"rule" then
+      local wd = curr.width/factor
+      if wd ~= 0 then
+        local ht, dp = curr.height, curr.depth
+        ht = (ht == -1073741824 and box.height or ht)/factor
+        dp = (dp == -1073741824 and box.depth  or dp)/factor
+        local hd = ht + dp
+        dx = dx - (r2l and wd or 0)
+        if hd ~= 0 and curr.subtype == 0 then
+          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+        end
+        dx = dx + (r2l and 0 or wd)
+      end
+    elseif curr.id == node.id"glue" then
+      local width = node.effective_glue(curr, box)/factor
+      dx = dx - (r2l and width or 0)
+      if curr.leader then
+        local curr, kind = curr.leader, curr.subtype
+        if curr.id == node.id"rule" then
+          local ht, dp = curr.height/factor, curr.depth/factor
+          local hd = ht + dp
+          if hd ~= 0 then
+            local wd = width
+            if wd ~= 0 and curr.subtype == 0 then
+              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+            end
+          end
+        elseif curr.head then
+          local wd = curr.width/factor
+          if wd <= width then
+            local dx = r2l and dx+width or dx
+            local n, ix = 0, 0
+            if kind == 100 or kind == 103 then -- todo: gleaders
+              local adx = abs(dx-odx)
+              local ndx = math.ceil(adx / wd) * wd
+              local diff = ndx - adx
+              n = (width-diff) // wd
+              dx = dx + (r2l and -diff-wd or diff)
+            else
+              n = width // wd
+              if kind == 101 then
+                local side = width % wd /2
+                dx = dx + (r2l and -side-wd or side)
+              elseif kind == 102 then
+                ix = width % wd / (n+1)
+                dx = dx + (r2l and -ix-wd or ix)
+              end
+            end
+            wd = r2l and -wd or wd
+            ix = r2l and -ix or ix
+            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
+            for i=1,n do
+              res = func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+              dx = dx + wd + ix
+            end
+          end
+        end
+      end
+      dx = dx + (r2l and 0 or width)
+    elseif curr.id == node.id"kern" then
+      dx = dx + curr.kern/factor * (r2l and -1 or 1)
+    elseif curr.id == node.id"math" then
+      dx = dx + curr.surround/factor * (r2l and -1 or 1)
+    elseif curr.id == node.id"vlist" then
+      dx = dx - (r2l and curr.width/factor or 0)
+      res = outline_vert(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+      dx = dx + (r2l and 0 or curr.width/factor)
+    elseif curr.id == node.id"hlist" then
+      dx = dx - (r2l and curr.width/factor or 0)
+      res = outline_horz(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+      dx = dx + (r2l and 0 or curr.width/factor)
+    end
+    curr = node.getnext(curr)
+  end
+  return res
+end
+function luamplib.outlinetext (text)
+  local fmt = process_tex_text(text)
+  local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
+  local box = texgetbox(id)
+  local res = outline_horz({ }, box, box.head, 0, 0)
+  if #res == 0 then res = { "mplibpic[1]:=image(fill fullcircle scaled 0;);" } end
+  local t = { }
+  for i=1, #res do
+    t[#t+1] = format("addto currentpicture also mplibpic[%i];", i)
+  end
+  return tableconcat(res) .. format("mplibpic[0]:=image(%s);", tableconcat(t))
 end
 
 %    \end{macrocode}
@@ -1820,6 +2076,81 @@ def mplibdrawglyph expr g =
     endfor
   )
 enddef;
+def mplib_do_outline_text_set_b (text f) (text d) text r =
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_f (text f) text r =
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_d (text d) text r =
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_r (text d) (text f) text r =
+  def mplib_do_outline_options_d = d enddef;
+  def mplib_do_outline_options_f = f enddef;
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_n text r =
+  def mplib_do_outline_options_r = r enddef;
+enddef;
+def mplib_do_outline_text_set_p = enddef;
+def mplib_fill_outline_text (expr p) =
+  i:=0;
+  for item within p:
+    i:=i+1;
+    addto currentpicture contour pathpart item
+    if i < length p: withpostscript "collect"; fi
+  endfor
+  mplib_do_outline_options_f;
+enddef;
+def mplib_draw_outline_text (expr p) =
+  i:=0;
+  for item within p:
+    i:=i+1;
+    addto currentpicture doublepath pathpart item
+    if i < length p: withpostscript "collect"; fi
+  endfor
+  mplib_do_outline_options_d;
+enddef;
+vardef mpliboutlinetext@# (expr t) text rest =
+  save kind; string kind; kind := str @#;
+  save mplibpic, i; picture mplibpic[]; numeric i;
+  def mplib_do_outline_options_d = enddef;
+  def mplib_do_outline_options_f = enddef;
+  def mplib_do_outline_options_r = enddef;
+  runscript("return luamplib.outlinetext[===["&t&"]===]");
+  image ( addto currentpicture also image (
+    if kind = "f":
+      mplib_do_outline_text_set_f rest;
+      def mplib_do_outline_options_d = withpen pencircle scaled 0 enddef;
+      mplib_fill_outline_text (mplibpic0);
+    elseif kind = "d":
+      mplib_do_outline_text_set_d rest;
+      mplib_draw_outline_text (mplibpic0);
+    elseif kind = "b":
+      mplib_do_outline_text_set_b rest;
+      mplib_fill_outline_text (mplibpic0);
+      mplib_draw_outline_text (mplibpic0);
+    elseif kind = "u":
+      mplib_do_outline_text_set_f rest;
+      mplib_fill_outline_text (mplibpic0);
+    elseif kind = "r":
+      mplib_do_outline_text_set_r rest;
+      mplib_draw_outline_text (mplibpic0);
+      mplib_fill_outline_text (mplibpic0);
+    elseif kind = "p":
+      mplib_do_outline_text_set_p;
+      mplib_draw_outline_text (mplibpic0);
+    else:
+      mplib_do_outline_text_set_n rest;
+      mplib_fill_outline_text (mplibpic0);
+    fi;
+  ) mplib_do_outline_options_r; )
+enddef ;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -2776,7 +3107,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/10 v2.30.0 mplib package for LuaTeX]
+    [2024/05/21 v2.31.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

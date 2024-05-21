@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2024/05/21 2.31.0
+   * provide a new metapost operator 'mpliboutlinetext', which mimicks
+   metafun's 'outlinetext'. The syntax is the same as metafun's. (#133)
+
 2024/05/10 2.30.0
    * provide a new metapost operator 'mplibglyph', which returns a metapost
    picture containing outline paths of a glyph in opentype, truetype or type1
@@ -8,7 +12,7 @@
 
        mplibglyph 50   of \fontid\font            % slot 50 of current font
        mplibglyph 50   of "cmr10"                          % type1 font
-       mplibglyph "Q"  of "TU/TeXGyrePagella(0)/m/n/10"    % TeX fontname
+       mplibglyph "Q"  of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
        mplibglyph "똠" of "NotoSansCJKkr-Regular.otf"      % raw filename
        mplibglyph "Q"  of "Times.ttc(2)"                   % subfont number
        mplibglyph "똠" of "SourceHanSansK-VF.otf[Regular]" % instance name
