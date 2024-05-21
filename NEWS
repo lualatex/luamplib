@@ -2,7 +2,7 @@
 
 2024/05/21 2.31.0
    * provide a new metapost operator 'mpliboutlinetext', which mimicks
-   metafun's 'outlinetext'. The syntax is the same as metafun's.
+   metafun's 'outlinetext'. The syntax is the same as metafun's. (#133)
 
 2024/05/10 2.30.0
    * provide a new metapost operator 'mplibglyph', which returns a metapost
