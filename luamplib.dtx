@@ -112,7 +112,7 @@ See source file '\inFileName' for licencing and contact information.
   ItalicFont  = {Linux Libertine O Italic},
   SlantedFont = {Linux Libertine O Italic},
 ]{Linux Libertine O}
-\setmonofont[Ligatures=TeX,Scale=MatchLowercase]{InconsolataN}
+\setmonofont[Scale=MatchLowercase]{InconsolataN}
 %setsansfont[Ligatures=TeX]{Linux Biolinum O}
 \setsansfont[Ligatures=TeX,Scale=MatchLowercase]{Iwona Medium}
 %setmathfont{XITS Math}
@@ -1517,6 +1517,8 @@ local function embolden (head, fakebold)
       embolden(curr.head, fakebold)
     elseif curr.leader and curr.leader.head then
       embolden(curr.leader.head, fakebold)
+    elseif curr.replace then
+      embolden(curr.replace, fakebold)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
       local f = curr.font
       local i = emboldenfonts[f]
@@ -1532,7 +1534,7 @@ local function embolden (head, fakebold)
             goto skip_type1
           end
           local name = ft.name:gsub('"',''):gsub(';$','')
-          name = format('%s;embolden=%s',name,fakebold)
+          name = format('%s;embolden=%s;',name,fakebold)
           _, i = fonts.constructors.readanddefine(name,ft.size)
         end
         emboldenfonts[f] = i
@@ -1762,14 +1764,13 @@ function outline_vert (res, box, curr, xshift, yshift)
       end
     elseif curr.id == node.id"glue" then
       local vwidth = node.effective_glue(curr,box)/factor
-      dy = dy + (b2u and vwidth or 0)
       if curr.leader then
         local curr, kind = curr.leader, curr.subtype
         if curr.id == node.id"rule" then
           local wd = curr.width/factor
           if wd ~= 0 then
             local hd = vwidth
-            local dy = dy - hd
+            local dy = dy + (b2u and 0 or -hd)
             if hd ~= 0 and curr.subtype == 0 then
               res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+hd/2)
             end
@@ -1777,8 +1778,7 @@ function outline_vert (res, box, curr, xshift, yshift)
         elseif curr.head then
           local hd = (curr.height + curr.depth)/factor
           if hd <= vwidth then
-            local dy = b2u and dy-vwidth or dy
-            local n, iy = 0, 0
+            local dy, n, iy = dy, 0, 0
             if kind == 100 or kind == 103 then -- todo: gleaders
               local ady = abs(ody - dy)
               local ndy = math.ceil(ady / hd) * hd
@@ -1806,7 +1806,7 @@ function outline_vert (res, box, curr, xshift, yshift)
           end
         end
       end
-      dy = dy - (b2u and 0 or vwidth)
+      dy = dy + (b2u and vwidth or -vwidth)
     elseif curr.id == node.id"kern" then
       dy = dy + curr.kern/factor * (b2u and 1 or -1)
     elseif curr.id == node.id"vlist" then
@@ -1832,14 +1832,14 @@ function outline_horz (res, box, curr, xshift, yshift)
       local sign, dir = curr.dir:match"(.)(...)"
       local level, newdir = curr.level, r2l
       if sign == "+" then
-        local n = node.getnext(curr)
-        while n do
-          if n.id == node.id"dir" and n.level+1 == level then break end
-          n = node.getnext(n)
-        end
-        n = n or node.tail(curr)
         newdir = dir == "TRT"
         if r2l ~= newdir then
+          local n = node.getnext(curr)
+          while n do
+            if n.id == node.id"dir" and n.level+1 == level then break end
+            n = node.getnext(n)
+          end
+          n = n or node.tail(curr)
           dx = dx + node.rangedimensions(box, curr, n)/factor * (newdir and 1 or -1)
         end
         dirs[level] = { dir = r2l, dx = dx }
@@ -1886,7 +1886,7 @@ function outline_horz (res, box, curr, xshift, yshift)
       res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
                            #res+1, image, xscale, yscale, slant, xpos, ypos)
       dx = dx + (r2l and 0 or curr.width/factor*expand)
-    elseif curr.id == node.id"disc" then
+    elseif curr.id == node.id"disc" and curr.replace then
       local width = node.dimensions(curr.replace)/factor
       dx = dx - (r2l and width or 0)
       res = outline_horz(res, curr, curr.replace, xshift+dx, yshift)
