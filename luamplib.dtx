@@ -1742,6 +1742,7 @@ end
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
+local running = -1073741824
 local rulefmt = "mplibpic[%i]:=image(addto currentpicture contour \z
 unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
@@ -1755,7 +1756,7 @@ function outline_vert (res, box, curr, xshift, yshift)
       local hd = ht + dp
       if hd ~= 0 then
         local wd = curr.width
-        wd = (wd == -1073741824 and box.width or wd)/factor
+        wd = (wd == running and box.width or wd)/factor
         dy = dy + (b2u and dp or -ht)
         if wd ~= 0 and curr.subtype == 0 then
           res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
@@ -1767,7 +1768,8 @@ function outline_vert (res, box, curr, xshift, yshift)
       if curr.leader then
         local curr, kind = curr.leader, curr.subtype
         if curr.id == node.id"rule" then
-          local wd = curr.width/factor
+          local wd = curr.width
+          wd = (wd == running and box.width or wd)/factor
           if wd ~= 0 then
             local hd = vwidth
             local dy = dy + (b2u and 0 or -hd)
@@ -1826,7 +1828,6 @@ function outline_horz (res, box, curr, xshift, yshift)
   local r2l = box.dir == "TRT"
   local dx = r2l and (box.width or 0)/factor or 0
   local dirs = { { dir = r2l, dx = dx } }
-  local odx = dx
   while curr do
     if curr.id == node.id"dir" then
       local sign, dir = curr.dir:match"(.)(...)"
@@ -1895,8 +1896,8 @@ function outline_horz (res, box, curr, xshift, yshift)
       local wd = curr.width/factor
       if wd ~= 0 then
         local ht, dp = curr.height, curr.depth
-        ht = (ht == -1073741824 and box.height or ht)/factor
-        dp = (dp == -1073741824 and box.depth  or dp)/factor
+        ht = (ht == running and box.height or ht)/factor
+        dp = (dp == running and box.depth  or dp)/factor
         local hd = ht + dp
         dx = dx - (r2l and wd or 0)
         if hd ~= 0 and curr.subtype == 0 then
@@ -1910,7 +1911,9 @@ function outline_horz (res, box, curr, xshift, yshift)
       if curr.leader then
         local curr, kind = curr.leader, curr.subtype
         if curr.id == node.id"rule" then
-          local ht, dp = curr.height/factor, curr.depth/factor
+          local ht, dp = curr.height, curr.depth
+          ht = (ht == running and box.height or ht)/factor
+          dp = (dp == running and box.depth  or dp)/factor
           local hd = ht + dp
           if hd ~= 0 then
             local wd = width
@@ -1924,7 +1927,7 @@ function outline_horz (res, box, curr, xshift, yshift)
             local dx = r2l and dx+width or dx
             local n, ix = 0, 0
             if kind == 100 or kind == 103 then -- todo: gleaders
-              local adx = abs(dx-odx)
+              local adx = abs(dx-dirs[1].dx)
               local ndx = math.ceil(adx / wd) * wd
               local diff = ndx - adx
               n = (width-diff) // wd
