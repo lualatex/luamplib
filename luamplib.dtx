@@ -1509,24 +1509,100 @@ end
 %
 %    luamplib's mplibgraphictext operator
 %    \begin{macrocode}
+local running = -1073741824
 local emboldenfonts = { }
-local function embolden (head, fakebold)
-  local curr = head
+local function getemboldenwidth (curr, fakebold)
+  local width = emboldenfonts.width
+  if not width then
+    local f
+    local function getglyph(n)
+      while n do
+        if n.head then
+          getglyph(n.head)
+        elseif n.font and n.font > 0 then
+          f = n.font; break
+        end
+        n = node.getnext(n)
+      end
+    end
+    getglyph(curr)
+    width = font.getcopy(f or font.current()).size * fakebold / factor * 10
+    emboldenfonts.width = width
+  end
+  return width
+end
+local function getrulewhatsit (line, wd, ht, dp)
+  line, wd, ht, dp = line/1000, wd/factor, ht/factor, dp/factor
+  local pl
+  local fmt = "%f w %f %f %f %f re %s"
+  if pdfmode then
+    pl = node.new("whatsit","pdf_literal")
+    pl.mode = 0
+  else
+    fmt = "pdf:content "..fmt
+    pl = node.new("whatsit","special")
+  end
+  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B")
+  local ss = node.new"glue"
+  node.setglue(ss, 0, 65536, 65536, 2, 2)
+  pl.next = ss
+  return pl
+end
+local function embolden (box, curr, fakebold)
+  local head = curr
   while curr do
     if curr.head then
-      embolden(curr.head, fakebold)
-    elseif curr.leader and curr.leader.head then
-      embolden(curr.leader.head, fakebold)
+      curr.head = embolden(curr, curr.head, fakebold)
     elseif curr.replace then
-      embolden(curr.replace, fakebold)
+      curr.replace = embolden(box, curr.replace, fakebold)
+    elseif curr.leader then
+      if curr.leader.head then
+        curr.leader.head = embolden(curr.leader, curr.leader.head, fakebold)
+      elseif curr.leader.id == node.id"rule" then
+        local glue = node.effective_glue(curr, box)
+        local line = getemboldenwidth(curr, fakebold)
+        local wd,ht,dp = curr.leader.width, curr.leader.height, curr.leader.depth
+        wd = wd == running and box.width  or wd
+        ht = ht == running and box.height or ht
+        dp = dp == running and box.depth  or dp
+        if box.id == node.id"hlist" then
+          wd = glue
+        else
+          ht, dp = 0, glue
+        end
+        local pl = getrulewhatsit(line, wd, ht, dp)
+        local pack = box.id == node.id"hlist" and node.hpack or node.vpack
+        local list = pack(pl, glue, "exactly")
+        head = node.insert_after(head, curr, list)
+        head, curr = node.remove(head, curr)
+      end
+    elseif curr.id == node.id"rule" and curr.subtype == 0 then
+      local line = getemboldenwidth(curr, fakebold)
+      local wd,ht,dp = curr.width, curr.height, curr.depth
+      wd = wd == running and box.width  or wd
+      ht = ht == running and box.height or ht
+      dp = dp == running and box.depth  or dp
+      if box.id == node.id"vlist" then
+        ht, dp = 0, ht+dp
+      end
+      local pl = getrulewhatsit(line, wd, ht, dp)
+      local list
+      if box.id == node.id"hlist" then
+        list = node.hpack(pl, wd, "exactly")
+      else
+        list = node.vpack(pl, ht+dp, "exactly")
+      end
+      head = node.insert_after(head, curr, list)
+      head, curr = node.remove(head, curr)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
       local f = curr.font
       local i = emboldenfonts[f]
       if not i then
         if pdfmode then
           local ft = font.getcopy(f)
-          ft.mode = 2
-          ft.width = ft.size * fakebold / 6578.176
+          width = ft.size * fakebold / factor * 10
+          emboldenfonts.width = width
+          ft.mode, ft.width = 2, width
           i = font.define(ft)
         else
           local ft = font.getfont(f) or font.getcopy(f)
@@ -1544,6 +1620,7 @@ local function embolden (head, fakebold)
     ::skip_type1::
     curr = node.getnext(curr)
   end
+  return head
 end
 local function graphictextcolor (col, filldraw)
   if col:find"^[%d%.:]+$" then
@@ -1570,7 +1647,8 @@ end
 luamplib.graphictext = function (text, fakebold, fc, dc)
   local fmt = process_tex_text(text):sub(1,-2)
   local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
-  embolden(texgetbox(id).head, fakebold)
+  local box = texgetbox(id)
+  box.head = embolden(box, box.head, fakebold)
   local fill = graphictextcolor(fc,"fill")
   local draw = graphictextcolor(dc,"draw")
   local bc = pdfmode and "" or "pdf:bc "
@@ -1742,7 +1820,6 @@ end
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
-local running = -1073741824
 local rulefmt = "mplibpic[%i]:=image(addto currentpicture contour \z
 unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
@@ -1887,10 +1964,10 @@ function outline_horz (res, box, curr, xshift, yshift)
       res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
                            #res+1, image, xscale, yscale, slant, xpos, ypos)
       dx = dx + (r2l and 0 or curr.width/factor*expand)
-    elseif curr.id == node.id"disc" and curr.replace then
+    elseif curr.replace then
       local width = node.dimensions(curr.replace)/factor
       dx = dx - (r2l and width or 0)
-      res = outline_horz(res, curr, curr.replace, xshift+dx, yshift)
+      res = outline_horz(res, box, curr.replace, xshift+dx, yshift)
       dx = dx + (r2l and 0 or width)
     elseif curr.id == node.id"rule" then
       local wd = curr.width/factor
