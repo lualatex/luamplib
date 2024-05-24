@@ -2184,7 +2184,7 @@ def mplib_draw_outline_text (expr p) =
     addto currentpicture doublepath pathpart item
     if i < length p: withpostscript "collect"; fi
   endfor
-  mplib_do_outline_options_d;
+  withpen currentpen mplib_do_outline_options_d;
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
@@ -2207,7 +2207,16 @@ vardef mpliboutlinetext@# (expr t) text rest =
       mplib_draw_outline_text (mplibpic0);
     elseif kind = "u":
       mplib_do_outline_text_set_f rest;
-      mplib_fill_outline_text (mplibpic0);
+      i:=0;
+      for item within mplibpic0:
+        i:=i+1;
+        if i < length mplibpic0:
+          fill pathpart item withpostscript "collect";
+        else:
+          draw pathpart item withpostscript "both"
+        fi
+      endfor
+      mplib_do_outline_options_f;
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
       mplib_draw_outline_text (mplibpic0);

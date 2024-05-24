@@ -232,6 +232,18 @@ draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
     (withpen pencircle scaled .2 withcolor red)
     scaled 4 ;
 \endmpfig
+\par
+\mpfig
+  draw mpliboutlinetext.r
+    ("Question")
+    ( withpen pencircle scaled .3 )
+    (
+      withshademethod "linear"
+      withshadedirection (2.5, 0.5)
+      withshadecolors(red, blue)
+    )
+    scaled 4;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip
