@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/21 v2.31.0 Interface for using the mplib library]%
+  [2024/05/24 v2.31.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/21 v2.31.0}
+% \date{2024/05/24 v2.31.1}
 %
 % \maketitle
 %
@@ -592,8 +592,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.31.0",
-  date          = "2024/05/21",
+  version       = "2.31.1",
+  date          = "2024/05/24",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -834,7 +834,6 @@ local function replaceinputmpfile (name,file)
   local data = fh:read("*all"); fh:close()
 
 %    \end{macrocode}
-%
 %    ``|etex|'' must be followed by a space or semicolon as specified in
 %    \LuaTeX\ manual, which is not the case of standalone MetaPost though.
 %    \begin{macrocode}
@@ -943,7 +942,6 @@ local function reporterror (result, prevlog)
   else
     local t, e, l = result.term, result.error, result.log
 %    \end{macrocode}
-%
 %    log has more information than term, so log first (2021/08/02)
 %    \begin{macrocode}
     local log = l or t or "no-term"
@@ -962,7 +960,6 @@ local function reporterror (result, prevlog)
     elseif prevlog then
       log = prevlog..log
 %    \end{macrocode}
-%
 %    v2.6.1: now luamplib does not disregard |show| command,
 %    even when |luamplib.showlog| is false.  Incidentally,
 %    it does not raise error but just prints an info,
@@ -985,7 +982,6 @@ local function luamplibload (name)
     ini_version = true,
     find_file   = luamplib.finder,
 %    \end{macrocode}
-%
 %    Make use of |make_text| and |run_script|, which will co-operate
 %    with \LuaTeX's |tex.runtoks|. And we
 %    provide |numbersystem| option since v2.4. Default value ``|scaled|''
@@ -1001,7 +997,6 @@ local function luamplibload (name)
     extensions  = 1,
   }
 %    \end{macrocode}
-%
 %    Append our own MetaPost preamble to the preamble above.
 %    \begin{macrocode}
   local preamble = tableconcat{
@@ -1027,7 +1022,6 @@ end
 %    \begin{macrocode}
 local function process (data, instancename)
 %    \end{macrocode}
-%
 %    The workaround of issue \#70 seems to be unnecessary, as we use
 %    |make_text| now.
 %    \begin{verbatim}
@@ -1548,6 +1542,16 @@ local function getrulewhatsit (line, wd, ht, dp)
   pl.next = ss
   return pl
 end
+local function getrulemetric (box, curr, bp)
+  local wd,ht,dp = curr.width, curr.height, curr.depth
+  wd = wd == running and box.width  or wd
+  ht = ht == running and box.height or ht
+  dp = dp == running and box.depth  or dp
+  if bp then
+    return wd/factor, ht/factor, dp/factor
+  end
+  return wd, ht, dp
+end
 local function embolden (box, curr, fakebold)
   local head = curr
   while curr do
@@ -1561,10 +1565,7 @@ local function embolden (box, curr, fakebold)
       elseif curr.leader.id == node.id"rule" then
         local glue = node.effective_glue(curr, box)
         local line = getemboldenwidth(curr, fakebold)
-        local wd,ht,dp = curr.leader.width, curr.leader.height, curr.leader.depth
-        wd = wd == running and box.width  or wd
-        ht = ht == running and box.height or ht
-        dp = dp == running and box.depth  or dp
+        local wd,ht,dp = getrulemetric(box, curr.leader)
         if box.id == node.id"hlist" then
           wd = glue
         else
@@ -1578,10 +1579,7 @@ local function embolden (box, curr, fakebold)
       end
     elseif curr.id == node.id"rule" and curr.subtype == 0 then
       local line = getemboldenwidth(curr, fakebold)
-      local wd,ht,dp = curr.width, curr.height, curr.depth
-      wd = wd == running and box.width  or wd
-      ht = ht == running and box.height or ht
-      dp = dp == running and box.depth  or dp
+      local wd,ht,dp = getrulemetric(box, curr)
       if box.id == node.id"vlist" then
         ht, dp = 0, ht+dp
       end
@@ -1747,7 +1745,7 @@ function luamplib.glyph (f, c)
     local fontdata = font.getfont(fid) or font.getcopy(fid)
     filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
     instance = fontdata.specification and fontdata.specification.instance
-    filename = filename:gsub("^harfloaded:","")
+    filename = filename and filename:gsub("^harfloaded:","")
   else
     local name
     f = f:match"^%s*(.+)%s*$"
@@ -1825,15 +1823,13 @@ unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
 function outline_vert (res, box, curr, xshift, yshift)
   local b2u = box.dir == "LTL"
-  local dy = (b2u and -(box.depth or 0) or (box.height or 0))/factor
+  local dy = (b2u and -box.depth or box.height)/factor
   local ody = dy
   while curr do
     if curr.id == node.id"rule" then
-      local ht, dp = curr.height/factor, curr.depth/factor
+      local wd, ht, dp = getrulemetric(box, curr, true)
       local hd = ht + dp
       if hd ~= 0 then
-        local wd = curr.width
-        wd = (wd == running and box.width or wd)/factor
         dy = dy + (b2u and dp or -ht)
         if wd ~= 0 and curr.subtype == 0 then
           res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
@@ -1845,8 +1841,7 @@ function outline_vert (res, box, curr, xshift, yshift)
       if curr.leader then
         local curr, kind = curr.leader, curr.subtype
         if curr.id == node.id"rule" then
-          local wd = curr.width
-          wd = (wd == running and box.width or wd)/factor
+          local wd = getrulemetric(box, curr, true)
           if wd ~= 0 then
             local hd = vwidth
             local dy = dy + (b2u and 0 or -hd)
@@ -1901,9 +1896,9 @@ function outline_vert (res, box, curr, xshift, yshift)
   end
   return res
 end
-function outline_horz (res, box, curr, xshift, yshift)
+function outline_horz (res, box, curr, xshift, yshift, discwd)
   local r2l = box.dir == "TRT"
-  local dx = r2l and (box.width or 0)/factor or 0
+  local dx = r2l and (discwd or box.width/factor) or 0
   local dirs = { { dir = r2l, dx = dx } }
   while curr do
     if curr.id == node.id"dir" then
@@ -1967,14 +1962,11 @@ function outline_horz (res, box, curr, xshift, yshift)
     elseif curr.replace then
       local width = node.dimensions(curr.replace)/factor
       dx = dx - (r2l and width or 0)
-      res = outline_horz(res, box, curr.replace, xshift+dx, yshift)
+      res = outline_horz(res, box, curr.replace, xshift+dx, yshift, width)
       dx = dx + (r2l and 0 or width)
     elseif curr.id == node.id"rule" then
-      local wd = curr.width/factor
+      local wd, ht, dp = getrulemetric(box, curr, true)
       if wd ~= 0 then
-        local ht, dp = curr.height, curr.depth
-        ht = (ht == running and box.height or ht)/factor
-        dp = (dp == running and box.depth  or dp)/factor
         local hd = ht + dp
         dx = dx - (r2l and wd or 0)
         if hd ~= 0 and curr.subtype == 0 then
@@ -1988,12 +1980,10 @@ function outline_horz (res, box, curr, xshift, yshift)
       if curr.leader then
         local curr, kind = curr.leader, curr.subtype
         if curr.id == node.id"rule" then
-          local ht, dp = curr.height, curr.depth
-          ht = (ht == running and box.height or ht)/factor
-          dp = (dp == running and box.depth  or dp)/factor
+          local wd, ht, dp = getrulemetric(box, curr, true)
           local hd = ht + dp
           if hd ~= 0 then
-            local wd = width
+            wd = width
             if wd ~= 0 and curr.subtype == 0 then
               res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
             end
@@ -2294,7 +2284,6 @@ function luamplib.process_mplibcode (data, instancename)
   texboxes.localid = 4096
 
 %    \end{macrocode}
-%
 %    This is needed for legacy behavior
 %    \begin{macrocode}
   if luamplib.legacy_verbatimtex then
@@ -2316,7 +2305,6 @@ function luamplib.process_mplibcode (data, instancename)
     :gsub(btex_etex, "btex %1 etex ")
     :gsub(verbatimtex_etex, "verbatimtex %1 etex;")
 %    \end{macrocode}
-%
 %    If not |mplibverbatim|, expand |mplibcode| data,
 %    so that users can use \TeX\ codes in it.
 %    It has turned out that no comment sign is allowed.
@@ -2335,7 +2323,6 @@ function luamplib.process_mplibcode (data, instancename)
     run_tex_code(format("\\mplibtmptoks\\expandafter{\\expanded{%s}}",data))
     data = texgettoks"mplibtmptoks"
 %    \end{macrocode}
-%
 %    Next line to address issue \#55
 %    \begin{macrocode}
     :gsub("##", "#")
@@ -2912,7 +2899,6 @@ function luamplib.flush (result,flusher)
         local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
         if urx < llx then
 %    \end{macrocode}
-%
 %    luamplib silently ignores this invalid figure for those
 %    that do not contain |beginfig ... endfig|. (issue \#70)
 %    Original code of ConTeXt general was:
@@ -2938,7 +2924,6 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%
 %    The following 6 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
@@ -2959,7 +2944,6 @@ function luamplib.flush (result,flusher)
                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
               elseif objecttype == "special" then
 %    \end{macrocode}
-%
 %    Collect \TeX\ codes that will be executed after flushing.
 %    Legacy behavior.
 %    \begin{macrocode}
@@ -3116,7 +3100,6 @@ function luamplib.flush (result,flusher)
                     end
                   end
 %    \end{macrocode}
-%
 %    Added to ConTeXt general: post-object color and shading stuff.
 %    \begin{macrocode}
                   if shade_no then -- shading
@@ -3187,7 +3170,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/21 v2.31.0 mplib package for LuaTeX]
+    [2024/05/24 v2.31.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
