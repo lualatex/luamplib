@@ -2172,19 +2172,17 @@ def mplib_fill_outline_text (expr p) =
   i:=0;
   for item within p:
     i:=i+1;
-    addto currentpicture contour pathpart item
-    if i < length p: withpostscript "collect"; fi
+    fill pathpart item if i < length p: withpostscript "collect"; fi
   endfor
-  mplib_do_outline_options_f;
+  mplib_do_outline_options_f
 enddef;
 def mplib_draw_outline_text (expr p) =
   i:=0;
   for item within p:
     i:=i+1;
-    addto currentpicture doublepath pathpart item
-    if i < length p: withpostscript "collect"; fi
+    draw pathpart item if i < length p: withpostscript "collect"; fi
   endfor
-  withpen currentpen mplib_do_outline_options_d;
+  mplib_do_outline_options_d
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
@@ -2196,8 +2194,7 @@ vardef mpliboutlinetext@# (expr t) text rest =
   image ( addto currentpicture also image (
     if kind = "f":
       mplib_do_outline_text_set_f rest;
-      def mplib_do_outline_options_d = withpen pencircle scaled 0 enddef;
-      mplib_fill_outline_text (mplibpic0);
+      mplib_fill_outline_text (mplibpic0) withpen pencircle scaled 0;
     elseif kind = "d":
       mplib_do_outline_text_set_d rest;
       mplib_draw_outline_text (mplibpic0);
@@ -2206,17 +2203,8 @@ vardef mpliboutlinetext@# (expr t) text rest =
       mplib_fill_outline_text (mplibpic0);
       mplib_draw_outline_text (mplibpic0);
     elseif kind = "u":
-      mplib_do_outline_text_set_f rest;
-      i:=0;
-      for item within mplibpic0:
-        i:=i+1;
-        if i < length mplibpic0:
-          fill pathpart item withpostscript "collect";
-        else:
-          draw pathpart item withpostscript "both"
-        fi
-      endfor
-      mplib_do_outline_options_f;
+      mplib_do_outline_text_set_d rest;
+      mplib_draw_outline_text (mplibpic0) withpostscript "both";
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
       mplib_draw_outline_text (mplibpic0);
@@ -2548,6 +2536,7 @@ end
 %    \begin{macrocode}
 local prev_override_color
 local function do_preobj_CR(object,prescript)
+  if object.postscript == "collect" then return end
   local override = prescript and prescript.mpliboverridecolor
   if override then
     if pdfmode then
@@ -2681,7 +2670,8 @@ local function update_tr_res(mode,opaq)
   return on
 end
 
-local function do_preobj_TR(prescript)
+local function do_preobj_TR(object,prescript)
+  if object.postscript == "collect" then return end
   local opaq = prescript and prescript.tr_transparency
   local tron_no
   if opaq then
@@ -2776,6 +2766,7 @@ pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
 end })
 
 local function do_preobj_SH(object,prescript)
+  if object.postscript == "collect" then return end
   local shade_no
   local sh_type = prescript and prescript.sh_type
   if sh_type then
@@ -2939,7 +2930,7 @@ function luamplib.flush (result,flusher)
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
               local cr_over = do_preobj_CR(object,prescript) -- color
-              local tr_opaq = do_preobj_TR(prescript) -- opacity
+              local tr_opaq = do_preobj_TR(object,prescript) -- opacity
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
