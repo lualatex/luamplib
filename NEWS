@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/05/30 2.31.2
+   * partly support vertical writing mode in outlinetext (luatexko only)
+
 2024/05/24 2.31.1
    * fix bugs in outlinetext routine
    * improve rule treatment in graphictext

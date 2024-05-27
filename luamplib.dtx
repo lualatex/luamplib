@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/24 v2.31.1 Interface for using the mplib library]%
+  [2024/05/30 v2.31.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/24 v2.31.1}
+% \date{2024/05/30 v2.31.2}
 %
 % \maketitle
 %
@@ -592,8 +592,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.31.1",
-  date          = "2024/05/24",
+  version       = "2.31.2",
+  date          = "2024/05/30",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1596,14 +1596,13 @@ local function embolden (box, curr, fakebold)
       local f = curr.font
       local i = emboldenfonts[f]
       if not i then
+        local ft = font.getfont(f) or font.getcopy(f)
         if pdfmode then
-          local ft = font.getcopy(f)
           width = ft.size * fakebold / factor * 10
           emboldenfonts.width = width
           ft.mode, ft.width = 2, width
           i = font.define(ft)
         else
-          local ft = font.getfont(f) or font.getcopy(f)
           if ft.format ~= "opentype" and ft.format ~= "truetype" then
             goto skip_type1
           end
@@ -1937,6 +1936,7 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
       dx = dx - (r2l and curr.width/factor*expand or 0)
       local xpos = dx + xshift + (curr.xoffset or 0)/factor
       local ypos = yshift + (curr.yoffset or 0)/factor
+      local vertical = ft.shared and ft.shared.features.vertical and "rotated 90" or ""
       local image
       if ft.format == "opentype" or ft.format == "truetype" then
         image = luamplib.glyph(curr.font, gid)
@@ -1956,8 +1956,8 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
         end
         image = format("glyph %s of %q scaled %f", gid, name, scale)
       end
-      res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
-                           #res+1, image, xscale, yscale, slant, xpos, ypos)
+      res[#res+1] = format("mplibpic[%i]:=%s %s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
+                           #res+1, image, vertical, xscale, yscale, slant, xpos, ypos)
       dx = dx + (r2l and 0 or curr.width/factor*expand)
     elseif curr.replace then
       local width = node.dimensions(curr.replace)/factor
@@ -2155,6 +2155,9 @@ def mplib_do_outline_text_set_f (text f) text r =
   def mplib_do_outline_options_f = f enddef;
   def mplib_do_outline_options_r = r enddef;
 enddef;
+def mplib_do_outline_text_set_u (text f) text r =
+  def mplib_do_outline_options_f = f enddef;
+enddef;
 def mplib_do_outline_text_set_d (text d) text r =
   def mplib_do_outline_options_d = d enddef;
   def mplib_do_outline_options_r = r enddef;
@@ -2172,17 +2175,13 @@ def mplib_fill_outline_text (expr p) =
   i:=0;
   for item within p:
     i:=i+1;
-    fill pathpart item if i < length p: withpostscript "collect"; fi
+    fill pathpart item mplib_do_outline_options_f if i < length p: withpostscript "collect"; fi
   endfor
-  mplib_do_outline_options_f
 enddef;
 def mplib_draw_outline_text (expr p) =
-  i:=0;
   for item within p:
-    i:=i+1;
-    draw pathpart item if i < length p: withpostscript "collect"; fi
+    draw pathpart item mplib_do_outline_options_d;
   endfor
-  mplib_do_outline_options_d
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
@@ -2203,8 +2202,16 @@ vardef mpliboutlinetext@# (expr t) text rest =
       mplib_fill_outline_text (mplibpic0);
       mplib_draw_outline_text (mplibpic0);
     elseif kind = "u":
-      mplib_do_outline_text_set_d rest;
-      mplib_draw_outline_text (mplibpic0) withpostscript "both";
+      mplib_do_outline_text_set_u rest;
+      i:=0;
+      for item within mplibpic0:
+        i:=i+1;
+        if i < length mplibpic0:
+          fill pathpart item mplib_do_outline_options_f withpostscript "collect";
+        else:
+          draw pathpart item mplib_do_outline_options_f withpostscript "both";
+        fi
+      endfor
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
       mplib_draw_outline_text (mplibpic0);
@@ -3170,7 +3177,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/24 v2.31.1 mplib package for LuaTeX]
+    [2024/05/30 v2.31.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
