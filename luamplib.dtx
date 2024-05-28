@@ -1937,6 +1937,17 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
       local xpos = dx + xshift + (curr.xoffset or 0)/factor
       local ypos = yshift + (curr.yoffset or 0)/factor
       local vertical = ft.shared and ft.shared.features.vertical and "rotated 90" or ""
+      if vertical ~= "" then -- luatexko
+        for _,v in ipairs(ft.characters[curr.char].commands or { }) do
+          if v[1] == "pdf" then
+            break
+          elseif v[1] == "down" then
+            ypos = ypos - v[2] / factor
+          elseif v[1] == "right" then
+            xpos = xpos + v[2] / factor
+          end
+        end
+      end
       local image
       if ft.format == "opentype" or ft.format == "truetype" then
         image = luamplib.glyph(curr.font, gid)
@@ -1956,8 +1967,8 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
         end
         image = format("glyph %s of %q scaled %f", gid, name, scale)
       end
-      res[#res+1] = format("mplibpic[%i]:=%s %s xscaled %f yscaled %f slanted %f shifted (%f,%f);",
-                           #res+1, image, vertical, xscale, yscale, slant, xpos, ypos)
+      res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f %s shifted (%f,%f);",
+                           #res+1, image, xscale, yscale, slant, vertical, xpos, ypos)
       dx = dx + (r2l and 0 or curr.width/factor*expand)
     elseif curr.replace then
       local width = node.dimensions(curr.replace)/factor
