@@ -1,7 +1,13 @@
                        History of the luamplib package
 
 2024/05/30 2.31.2
-   * partly support vertical writing mode in outlinetext (luatexko only)
+   * support vertical writing mode in mpliboutlinetext (presently luatexko
+   package only, and except horizontal mode inside vertical mode)
+
+   * after the process of mpliboutlinetext, mpliboutlinepic[1] ...
+   mpliboutlinepic[mpliboutlinenum] will be preserved as an array of images
+   each of which containing a glyph or a rule.  N.B. Unicode grapheme cluster
+   is not considered here.
 
 2024/05/24 2.31.1
    * fix bugs in outlinetext routine

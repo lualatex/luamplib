@@ -524,31 +524,6 @@ See source file '\inFileName' for licencing and contact information.
 %   Number Rule. As a result, for instance, the area surrounded by inner path of ``O''
 %   will remain transparent.
 %
-%   We can adapt the method used in |mplibdrawglyph| to multiple pictures as if they were
-%   components of one and the same picture.  An example:
-%   \begin{verbatim}
-%     \mplibsetformat{metafun}
-%     \mpfig
-%     picture Q, u, e;
-%     Q := mplibglyph "Q" of "Times.ttc(2)" scaled .15;
-%     u := mplibglyph "u" of "Times.ttc(2)" scaled .15 shifted lrcorner Q;
-%     e := mplibglyph "e" of "Times.ttc(2)" scaled .15 shifted lrcorner u;
-%
-%     i:=0;
-%     totallen := length Q + length u + length e;
-%     for pic=Q, u, e:
-%       for item within pic:
-%         i:=i+1;
-%         fill pathpart item
-%         if i < totallen: withpostscript "collect"; fi
-%       endfor
-%     endfor
-%       withshademethod "linear"
-%       withshadedirection (0.5,2.5)
-%       withshadecolors (.7red,.7yellow);
-%     \endmpfig
-%   \end{verbatim}
-%
 % \paragraph{\texttt{mpliboutlinetext}}
 %   From v2.31, we provide a new metapost operator |mpliboutlinetext|, which mimicks
 %   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
@@ -559,6 +534,12 @@ See source file '\inFileName' for licencing and contact information.
 %         (withpen pencircle scaled .2 withcolor red)
 %         scaled 2 ;
 %   \end{verbatim}
+%   After the process of |mpliboutlinetext|, |mpliboutlinepic[]|
+%   and |mpliboutlinenum| will be preserved as global variables;
+%   |mpliboutlinepic[1]| \ldots{} |mpliboutlinepic[mpliboutlinenum]|
+%   will be an array of images each of which containing a glyph or a rule.
+%   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
+%   a single cluster might be separated apart.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -1817,7 +1798,7 @@ end
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
-local rulefmt = "mplibpic[%i]:=image(addto currentpicture contour \z
+local rulefmt = "mpliboutlinepic[%i]:=image(addto currentpicture contour \z
 unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
 function outline_vert (res, box, curr, xshift, yshift)
@@ -1939,12 +1920,12 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
       local vertical = ft.shared and ft.shared.features.vertical and "rotated 90" or ""
       if vertical ~= "" then -- luatexko
         for _,v in ipairs(ft.characters[curr.char].commands or { }) do
-          if v[1] == "pdf" then
-            break
-          elseif v[1] == "down" then
+          if v[1] == "down" then
             ypos = ypos - v[2] / factor
           elseif v[1] == "right" then
             xpos = xpos + v[2] / factor
+          else
+            break
           end
         end
       end
@@ -1967,7 +1948,7 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
         end
         image = format("glyph %s of %q scaled %f", gid, name, scale)
       end
-      res[#res+1] = format("mplibpic[%i]:=%s xscaled %f yscaled %f slanted %f %s shifted (%f,%f);",
+      res[#res+1] = format("mpliboutlinepic[%i]:=%s xscaled %f yscaled %f slanted %f %s shifted (%f,%f);",
                            #res+1, image, xscale, yscale, slant, vertical, xpos, ypos)
       dx = dx + (r2l and 0 or curr.width/factor*expand)
     elseif curr.replace then
@@ -2053,12 +2034,8 @@ function luamplib.outlinetext (text)
   local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
   local box = texgetbox(id)
   local res = outline_horz({ }, box, box.head, 0, 0)
-  if #res == 0 then res = { "mplibpic[1]:=image(fill fullcircle scaled 0;);" } end
-  local t = { }
-  for i=1, #res do
-    t[#t+1] = format("addto currentpicture also mplibpic[%i];", i)
-  end
-  return tableconcat(res) .. format("mplibpic[0]:=image(%s);", tableconcat(t))
+  if #res == 0 then res = { "mpliboutlinepic[1]:=image(fill fullcircle scaled 0;);" } end
+  return tableconcat(res) .. format("mpliboutlinenum:=%i;", #res)
 end
 
 %    \end{macrocode}
@@ -2182,21 +2159,40 @@ def mplib_do_outline_text_set_n text r =
   def mplib_do_outline_options_r = r enddef;
 enddef;
 def mplib_do_outline_text_set_p = enddef;
-def mplib_fill_outline_text (expr p) =
-  i:=0;
-  for item within p:
-    i:=i+1;
-    fill pathpart item mplib_do_outline_options_f if i < length p: withpostscript "collect"; fi
+def mplib_fill_outline_text =
+  for n=1 upto mpliboutlinenum:
+    i:=0;
+    for item within mpliboutlinepic[n]:
+      i:=i+1;
+      fill pathpart item mplib_do_outline_options_f withpen pencircle scaled 0
+      if (n<mpliboutlinenum) or (i<length mpliboutlinepic[n]): withpostscript "collect"; fi
+    endfor
   endfor
 enddef;
-def mplib_draw_outline_text (expr p) =
-  for item within p:
-    draw pathpart item mplib_do_outline_options_d;
+def mplib_draw_outline_text =
+  for n=1 upto mpliboutlinenum:
+    for item within mpliboutlinepic[n]:
+      draw pathpart item mplib_do_outline_options_d;
+    endfor
+  endfor
+enddef;
+def mplib_filldraw_outline_text =
+  for n=1 upto mpliboutlinenum:
+    i:=0;
+    for item within mpliboutlinepic[n]:
+      i:=i+1;
+      if (n<mpliboutlinenum) or (i<length mpliboutlinepic[n]):
+        fill pathpart item mplib_do_outline_options_f withpostscript "collect";
+      else:
+        draw pathpart item mplib_do_outline_options_f withpostscript "both";
+      fi
+    endfor
   endfor
 enddef;
 vardef mpliboutlinetext@# (expr t) text rest =
   save kind; string kind; kind := str @#;
-  save mplibpic, i; picture mplibpic[]; numeric i;
+  save i; numeric i;
+  picture mpliboutlinepic[]; numeric mpliboutlinenum;
   def mplib_do_outline_options_d = enddef;
   def mplib_do_outline_options_f = enddef;
   def mplib_do_outline_options_r = enddef;
@@ -2204,35 +2200,27 @@ vardef mpliboutlinetext@# (expr t) text rest =
   image ( addto currentpicture also image (
     if kind = "f":
       mplib_do_outline_text_set_f rest;
-      mplib_fill_outline_text (mplibpic0) withpen pencircle scaled 0;
+      mplib_fill_outline_text;
     elseif kind = "d":
       mplib_do_outline_text_set_d rest;
-      mplib_draw_outline_text (mplibpic0);
+      mplib_draw_outline_text;
     elseif kind = "b":
       mplib_do_outline_text_set_b rest;
-      mplib_fill_outline_text (mplibpic0);
-      mplib_draw_outline_text (mplibpic0);
+      mplib_fill_outline_text;
+      mplib_draw_outline_text;
     elseif kind = "u":
       mplib_do_outline_text_set_u rest;
-      i:=0;
-      for item within mplibpic0:
-        i:=i+1;
-        if i < length mplibpic0:
-          fill pathpart item mplib_do_outline_options_f withpostscript "collect";
-        else:
-          draw pathpart item mplib_do_outline_options_f withpostscript "both";
-        fi
-      endfor
+      mplib_filldraw_outline_text;
     elseif kind = "r":
       mplib_do_outline_text_set_r rest;
-      mplib_draw_outline_text (mplibpic0);
-      mplib_fill_outline_text (mplibpic0);
+      mplib_draw_outline_text;
+      mplib_fill_outline_text;
     elseif kind = "p":
       mplib_do_outline_text_set_p;
-      mplib_draw_outline_text (mplibpic0);
+      mplib_draw_outline_text;
     else:
       mplib_do_outline_text_set_n rest;
-      mplib_fill_outline_text (mplibpic0);
+      mplib_fill_outline_text;
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;
