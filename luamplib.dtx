@@ -3280,6 +3280,35 @@ end
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
 %    \end{macrocode}
 %
+%    Patterns
+%    \begin{macrocode}
+\newbox\mplibpatternbox
+\protected\def\mppattern#1{%
+  \def\mplibpatternname{#1}%
+  \futurelet\nexttok\mplibpatternbranch
+}
+\def\mplibpatternbranch{%
+  \ifx [\nexttok
+    \expandafter\mplibpatternopts
+  \else
+    \expandafter\mplibpatternmain
+  \fi
+}
+\def\mplibpatternopts[#1]{%
+  \def\mplibpatternoptions{#1}%
+  \mplibpatternmain
+}
+\def\mplibpatternmain{%
+  \setbox\mplibpatternbox\hbox\bgroup\ignorespaces
+}
+\protected\def\endmppattern{%
+  \egroup
+  \directlua{ luamplib.registerpattern(
+    \the\mplibpatternbox, '\mplibpatternname', {\mplibpatternoptions}
+  )}%
+}
+%    \end{macrocode}
+%
 %    simple way to use mplib:
 %    |\mpfig draw fullcircle scaled 10; \endmpfig|
 %    \begin{macrocode}
