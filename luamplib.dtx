@@ -1625,6 +1625,7 @@ end
 luamplib.graphictext = function (text, fakebold, fc, dc)
   local fmt = process_tex_text(text):sub(1,-2)
   local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
+  emboldenfonts.width = nil
   local box = texgetbox(id)
   box.head = embolden(box, box.head, fakebold)
   local fill = graphictextcolor(fc,"fill")
@@ -2224,6 +2225,9 @@ vardef mpliboutlinetext@# (expr t) text rest =
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;
+primarydef t withpattern p =
+  image( fill t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -2772,10 +2776,11 @@ pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
 end })
 
 local function do_preobj_SH(object,prescript)
-  if object.postscript == "collect" then return end
   local shade_no
   local sh_type = prescript and prescript.sh_type
-  if sh_type then
+  if not sh_type then
+    return
+  else
     local domain  = prescript.sh_domain or "0 1"
     local centera = prescript.sh_center_a or "0 0"; centera = centera:explode()
     local centerb = prescript.sh_center_b or "0 0"; centerb = centerb:explode()
@@ -2889,6 +2894,40 @@ end
 
 %    \end{macrocode}
 %
+%    Patterns
+%    \begin{macrocode}
+luamplib.patterns = { }
+function luamplib.registerpattern ( boxid, name, opts )
+  if not pdfmode then err"pattern does not support dvi mode" end
+  local box = texgetbox(boxid)
+  local attr = tableconcat{
+    "/Type/Pattern",
+    "/PatternType 1",
+    "/PaintType 1",
+    "/TilingType 2",
+    format("/XStep %.3f", opts.xstep or box.width/factor),
+    format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
+    format("/Matrix [1 0 0 1 %s %s]", opts.xshift or 0, opts.yshift or 0),
+  }
+  local index = tex.saveboxresource( boxid, attr, nil, true, 1 )
+  luamplib.patterns[name] = { id = index }
+end
+local function do_preobj_PAT(object, prescript)
+  local pattern = prescript and prescript.mplibpattern
+  if not pattern then return end
+  pattern = luamplib.patterns[pattern]
+  local index = pattern and pattern.id
+  if not index then err"cannot get pattern box resource index" end
+  local key, val = format("MPlibPt%s",index), format("%s 0 R",index)
+  if pdfmanagement then
+    texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}", key, val))
+  end
+  pdf_literalcode("/Pattern cs /%s scn", key)
+  return true
+end
+
+%    \end{macrocode}
+%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
 function luamplib.flush (result,flusher)
@@ -2991,6 +3030,7 @@ function luamplib.flush (result,flusher)
 %    Added instead : shading stuff
 %    \begin{macrocode}
                   local shade_no = do_preobj_SH(object,prescript) -- shading
+                  local pattern_ = do_preobj_PAT(object,prescript) -- pattern
                   local ml = object.miterlimit
                   if ml and ml ~= miterlimit then
                     miterlimit = ml
