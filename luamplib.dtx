@@ -2624,7 +2624,8 @@ if pdfmode then
     end
   end
 else
-  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}")
+  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}",
+  "\\special{pdf:obj @MPlibPt<<>>}")
 end
 
 %    \end{macrocode}
@@ -2898,32 +2899,58 @@ end
 %    \begin{macrocode}
 luamplib.patterns = { }
 function luamplib.registerpattern ( boxid, name, opts )
-  if not pdfmode then err"pattern does not support dvi mode" end
   local box = texgetbox(boxid)
+  if opts.xstep == 0 then opts.xstep = nil end
+  if opts.ystep == 0 then opts.ystep = nil end
   local attr = tableconcat{
     "/Type/Pattern",
     "/PatternType 1",
-    "/PaintType 1",
+    "/PaintType 1", -- force colored
     "/TilingType 2",
     format("/XStep %.3f", opts.xstep or box.width/factor),
     format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
-    format("/Matrix [1 0 0 1 %s %s]", opts.xshift or 0, opts.yshift or 0),
+    format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
-  local index = tex.saveboxresource( boxid, attr, nil, true, 1 )
+  if not pdfmode then info"making pattern box NOT supported in dvi mode" end
+  local index = tex.saveboxresource( boxid, attr, opts.resources, true, 1 )
   luamplib.patterns[name] = { id = index }
 end
 local function do_preobj_PAT(object, prescript)
   local pattern = prescript and prescript.mplibpattern
   if not pattern then return end
-  pattern = luamplib.patterns[pattern]
-  local index = pattern and pattern.id
-  if not index then err"cannot get pattern box resource index" end
-  local key, val = format("MPlibPt%s",index), format("%s 0 R",index)
-  if pdfmanagement then
-    texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}", key, val))
+  local index = tonumber(pattern)
+  if not index then
+    local t = luamplib.patterns[pattern]
+    index = t and t.id
+    if not index then
+      if not pdfmode and pattern:find"^@" then
+        index = pattern
+      else
+        err"cannot get pattern resource index"
+      end
+    end
   end
+  local key = format("MPlibPt%s",index)
+  local val = type(index)=="number" and format("%s 0 R",index) or index
   pdf_literalcode("/Pattern cs /%s scn", key)
-  return true
+  if luamplib.patterns[pattern].done then return end
+  if pdfmanagement then
+    texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
+  else
+    local res = format("/%s %s", key, val)
+    if is_defined"pgf@sys@addpdfresource@patterns@plain" then
+      run_tex_code(format("\\pgf@sys@addpdfresource@patterns@plain{%s}", res), catat11)
+    elseif pdfmode then
+      if not pdfetcs.Pattern_res then
+        pdfetcs.initialize_resources"Pattern"
+      end
+      pdfetcs.fallback_update_resources("Pattern", res)
+    else
+      texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
+      texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
+    end
+  end
+  luamplib.patterns[pattern].done = true
 end
 
 %    \end{macrocode}
