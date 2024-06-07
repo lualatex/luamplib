@@ -2897,12 +2897,13 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-luamplib.patterns = { }
+patterns = { }
+luamplib.patterns = patterns
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
-  local attr = tableconcat{
+  local attr = {
     "/Type/Pattern",
     "/PatternType 1",
     "/PaintType 1", -- force colored
@@ -2911,35 +2912,42 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
-  if not pdfmode then info"making pattern box NOT supported in dvi mode" end
-  local index = tex.saveboxresource( boxid, attr, opts.resources, true, 1 )
-  luamplib.patterns[name] = { id = index }
+  if pdfmode then
+    local index = tex.saveboxresource( boxid, tableconcat(attr), opts.resources, true, 1 )
+    patterns[name] = { id = index }
+  else
+    -- does not work ?
+    local objname = "@mplibpattern"..name
+    texsprint {
+      [[\special{pdf:bxobj ]], objname,
+      [[ width  \the\wd\mplibscratchbox\space]],
+      [[ height \the\ht\mplibscratchbox\space]],
+      [[ depth  \the\dp\mplibscratchbox}]],
+      [[\box\mplibscratchbox]],
+      [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
+    }
+    patterns[name] = { id = #patterns+1 }
+    patterns[#patterns+1] = objname
+  end
 end
 local function do_preobj_PAT(object, prescript)
-  local pattern = prescript and prescript.mplibpattern
-  if not pattern then return end
-  local index = tonumber(pattern)
+  local name = prescript and prescript.mplibpattern
+  if not name then return end
+  local index = tonumber(name)
   if not index then
-    local t = luamplib.patterns[pattern]
-    index = t and t.id
-    if not index then
-      if not pdfmode and pattern:find"^@" then
-        index = pattern
-      else
-        err"cannot get pattern resource index"
-      end
-    end
+    index = patterns[name] and patterns[name].id
+    if not index then err"cannot get pattern resource index" end
   end
   local key = format("MPlibPt%s",index)
-  local val = type(index)=="number" and format("%s 0 R",index) or index
+  local val = pdfmode and format("%s 0 R",index) or patterns[index]
   pdf_literalcode("/Pattern cs /%s scn", key)
-  if luamplib.patterns[pattern].done then return end
+  if patterns[name].done then return end
   if pdfmanagement then
     texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
   else
     local res = format("/%s %s", key, val)
     if is_defined"pgf@sys@addpdfresource@patterns@plain" then
-      run_tex_code(format("\\pgf@sys@addpdfresource@patterns@plain{%s}", res), catat11)
+      texsprint(catat11, format("\\pgf@sys@addpdfresource@patterns@plain{%s}", res))
     elseif pdfmode then
       if not pdfetcs.Pattern_res then
         pdfetcs.initialize_resources"Pattern"
@@ -2950,7 +2958,7 @@ local function do_preobj_PAT(object, prescript)
       texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
     end
   end
-  luamplib.patterns[pattern].done = true
+  patterns[name].done = true
 end
 
 %    \end{macrocode}
@@ -3309,16 +3317,24 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-\newbox\mplibpatternbox
+{\def\:{\global\let\mplibsptoken= } \: }
 \protected\def\mppattern#1{%
+  \begingroup
   \def\mplibpatternname{#1}%
-  \futurelet\nexttok\mplibpatternbranch
+  \mplibpatterngetnexttok
 }
+\def\mplibpatterngetnexttok{\futurelet\nexttok\mplibpatternbranch}
+\def\mplibpatternskipspace{\afterassignment\mplibpatterngetnexttok\let\nexttok= }
 \def\mplibpatternbranch{%
   \ifx [\nexttok
     \expandafter\mplibpatternopts
   \else
-    \expandafter\mplibpatternmain
+    \ifx\mplibsptoken\nexttok
+      \expandafter\expandafter\expandafter\mplibpatternskipspace
+    \else
+      \let\mplibpatternoptions\empty
+      \expandafter\expandafter\expandafter\mplibpatternmain
+    \fi
   \fi
 }
 \def\mplibpatternopts[#1]{%
@@ -3326,13 +3342,14 @@ end
   \mplibpatternmain
 }
 \def\mplibpatternmain{%
-  \setbox\mplibpatternbox\hbox\bgroup\ignorespaces
+  \setbox\mplibscratchbox\hbox\bgroup\ignorespaces
 }
 \protected\def\endmppattern{%
   \egroup
   \directlua{ luamplib.registerpattern(
-    \the\mplibpatternbox, '\mplibpatternname', {\mplibpatternoptions}
+    \the\mplibscratchbox, '\mplibpatternname', {\mplibpatternoptions}
   )}%
+  \endgroup
 }
 %    \end{macrocode}
 %
