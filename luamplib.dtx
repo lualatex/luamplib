@@ -2897,7 +2897,7 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { }
+patterns = { d_o_n_e_ = { } }
 luamplib.patterns = patterns
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
@@ -2914,34 +2914,30 @@ function luamplib.registerpattern ( boxid, name, opts )
   }
   if pdfmode then
     local index = tex.saveboxresource( boxid, tableconcat(attr), opts.resources, true, 1 )
-    patterns[name] = { id = index }
+    patterns[name] = index
   else
-    -- does not work ?
     local objname = "@mplibpattern"..name
     texsprint {
+      [[\leavevmode]], -- leavevmode! bug of dvipdfmx?
       [[\special{pdf:bxobj ]], objname,
-      [[ width  \the\wd\mplibscratchbox\space]],
-      [[ height \the\ht\mplibscratchbox\space]],
-      [[ depth  \the\dp\mplibscratchbox}]],
-      [[\box\mplibscratchbox]],
+      format([[ width \the\wd %i \space]], boxid),
+      format([[ height \the\ht %i \space]], boxid),
+      format([[ depth \the\dp %i}]], boxid),
+      format([[\box %i]], boxid),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
     }
-    patterns[name] = { id = #patterns+1 }
     patterns[#patterns+1] = objname
+    patterns[name] = #patterns
   end
 end
 local function do_preobj_PAT(object, prescript)
   local name = prescript and prescript.mplibpattern
   if not name then return end
-  local index = tonumber(name)
-  if not index then
-    index = patterns[name] and patterns[name].id
-    if not index then err"cannot get pattern resource index" end
-  end
+  local index = patterns[name] or err"cannot get pattern object"
   local key = format("MPlibPt%s",index)
-  local val = pdfmode and format("%s 0 R",index) or patterns[index]
   pdf_literalcode("/Pattern cs /%s scn", key)
-  if patterns[name].done then return end
+  if patterns.d_o_n_e_[index] then return end
+  local val = pdfmode and format("%s 0 R",index) or patterns[index]
   if pdfmanagement then
     texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
   else
@@ -2958,7 +2954,7 @@ local function do_preobj_PAT(object, prescript)
       texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
     end
   end
-  patterns[name].done = true
+  patterns.d_o_n_e_[index] = true
 end
 
 %    \end{macrocode}
