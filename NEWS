@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/06/10 2.32.0
+   * \mppattern{<name>} ... \endmppattern defines a tiling pattern which can be
+   used with 'withpattern' operator to fill a closed path by replicating the tile
+   horizontally and vertically.  \begin{mppattern} ... \end{mppattern} is exactly
+   the same as \mppattern ... \endmppattern.  See luamplib manual for details.
+
 2024/05/30 2.31.2
    * support vertical writing mode in mpliboutlinetext (presently luatexko
    package only, and except horizontal mode inside vertical mode)

@@ -244,6 +244,46 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     )
     scaled 4;
 \endmpfig
+\par\leavevmode
+\mppattern{mypatt}
+  \mpfig
+    picture q;
+    q := btex Q etex;
+    fill bbox q withcolor .8[red,white];
+    draw q withcolor .8red;
+  \endmpfig
+\endmppattern
+\mpfig
+  fill fullcircle scaled 100 withpostscript "collect";
+  draw unitsquare shifted - center unitsquare scaled 45
+    withpattern "mypatt"
+    withpostscript "evenodd"
+    ;
+\endmpfig
+\begin{mppattern}{pattuncolored}
+  [
+    colored = false,
+    xstep = 10,
+    ystep = 12,
+    matrix = "0.7071 0.7071 -0.7071 0.7071",
+  ]
+  Q%
+\end{mppattern}\relax
+\mpfig
+  picture q;
+  q := mplibglyph "Q" of \fontid\font scaled .2;
+  i:=0;
+  for item within q:
+    i:=i+1;
+    if i < length q:
+      fill pathpart item withpostscript "collect";
+    else:
+      draw pathpart item withpattern "pattuncolored"
+        withcolor .2[blue,white];
+    fi
+  endfor
+  for item within q: draw pathpart item; endfor
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

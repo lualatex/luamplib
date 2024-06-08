@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/05/30 v2.31.2 Interface for using the mplib library]%
+  [2024/06/10 v2.32.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/05/30 v2.31.2}
+% \date{2024/06/10 v2.32.0}
 %
 % \maketitle
 %
@@ -541,6 +541,72 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
+% \paragraph{\cs{mppattern} \ldots\ \cs{endmppattern}, \texttt{withpattern}}
+%   |\mppattern{<name>}| \ldots\ |\endmppattern| defines a tiling pattern
+%   associated with the |<name>|.\footnote{\textsc{n.b.} Due to a possible bug of DVIPDFMx,
+%   when using DVI mode, you have to declare \cs{mppattern}
+%   in horizontal mode, that is, not in between paragraphs.}
+%   MetaPost operator |withpattern|, the syntax of which
+%   is |<path>| |withpattern| |<string>|, will return a metapost picture which fills
+%   the given path with the tiling patterns.
+%   \begin{verbatim}
+%     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
+%       [ xstep = 10, ystep = 12 ] % options: see below
+%       \mpfig                     % or any other TeX code,
+%         picture q;
+%         q := btex Q etex;
+%         fill bbox q withcolor .8[red,white];
+%         draw q withcolor .8red;
+%       \endmpfig
+%     \endmppattern                % or \end{mppattern}
+%     \mpfig
+%       fill fullcircle scaled 100 withpostscript "collect";
+%       draw unitsquare shifted - center unitsquare scaled 45
+%         withpattern "mypatt"
+%         withpostscript "evenodd" ;
+%     \endmpfig
+%   \end{verbatim}
+%   The available options are:
+%
+%   \bigskip
+%   \begin{tabular}{lll}
+%     Key   & Value Type & Explanation\\\hline
+%     |xstep|    &\textit{number} & horizontal spacing between cells\\
+%     |ystep|    &\textit{number} & vertical spacing between cells\\
+%     |xshift|   &\textit{number} & horizontal shifting of cells\\
+%     |yshift|   &\textit{number} & vertical shifting of cells\\
+%     |matrix|   &\textit{string} & |xx| |xy| |yx| |yy| values separated by spaces\\
+%     |resources|&\textit{string} & PDF resources if needed\\
+%     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%   \end{tabular}
+%   \bigskip
+%
+%   When you use special effects such as transparency in a pattern,
+%   |resources| option might be needed, for instance |resources="/ExtGState 1 0 R"|.
+%
+%   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
+%   Uncolored pattern will be painted later by the color of a metapost object.
+%   A simple example:
+%   \begin{verbatim}
+%     \begin{mppattern}{uncoloredpatt}
+%       [
+%         colored = false,
+%         xstep = 10, ystep = 12,
+%         matrix = "0.7071 0.7071 -0.7071 0.7071",
+%       ]
+%       Q%
+%     \end{mppattern}
+%     \begin{mplibcode}
+%       beginfig(1);
+%       fill fullcircle scaled 100 withpostscript "collect";
+%       draw unitsquare shifted - center unitsquare scaled 45
+%         withpattern "uncoloredpatt"
+%         withcolor blue             % will paint the pattern
+%         withpostscript "evenodd" ;
+%       endfig;
+%     \end{mplibcode}
+%   \end{verbatim}
+%
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
 %   the width value of latest figure; \cs{MPheight}, the height value.
@@ -573,8 +639,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.31.2",
-  date          = "2024/05/30",
+  version       = "2.32.0",
+  date          = "2024/06/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2625,7 +2691,7 @@ if pdfmode then
   end
 else
   texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}",
-  "\\special{pdf:obj @MPlibPt<<>>}")
+  "\\special{pdf:obj @MPlibCS<<>>}","\\special{pdf:obj @MPlibPt<<>>}")
 end
 
 %    \end{macrocode}
@@ -2897,16 +2963,16 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { d_o_n_e_ = { } }
-luamplib.patterns = patterns
+patterns = { c_l_r_s_p_c_s_ = { } }
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
+  if opts.colored == nil then opts.colored = true end
   local attr = {
     "/Type/Pattern",
     "/PatternType 1",
-    "/PaintType 1", -- force colored
+    format("/PaintType %i", opts.colored and 1 or 2),
     "/TilingType 2",
     format("/XStep %.3f", opts.xstep or box.width/factor),
     format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
@@ -2914,7 +2980,7 @@ function luamplib.registerpattern ( boxid, name, opts )
   }
   if pdfmode then
     local index = tex.saveboxresource( boxid, tableconcat(attr), opts.resources, true, 1 )
-    patterns[name] = index
+    patterns[name] = { id = index, colored = opts.colored }
   else
     local objname = "@mplibpattern"..name
     texsprint {
@@ -2927,16 +2993,66 @@ function luamplib.registerpattern ( boxid, name, opts )
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
     }
     patterns[#patterns+1] = objname
-    patterns[name] = #patterns
+    patterns[name] = { id = #patterns, colored = opts.colored }
   end
+end
+local function pattern_colorspace (cs, ref)
+  local on, new = update_pdfobjs(format("[/Pattern %s]", ref or format("/%s",cs)))
+  if new then
+    local key = format("MPlibCS%i",on)
+    local val = pdfmode and format("%i 0 R",on) or format("@mplibpdfobj%i",on)
+    if pdfmanagement then
+      texsprint(ccexplat,format("\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{%s}{%s}",key,val))
+    else
+      local res = format("/%s %s", key, val)
+      if is_defined"pgf@sys@addpdfresource@colorspaces@plain" then
+        texsprint(catat11, format("\\pgf@sys@addpdfresource@colorspaces@plain{%s}", res))
+      elseif pdfmode then
+        if not pdfetcs.ColorSpace_res then
+          pdfetcs.initialize_resources"ColorSpace"
+        end
+        pdfetcs.fallback_update_resources("ColorSpace", res)
+      else
+        texsprint(format("\\special{pdf:put @MPlibCS<<%s>>}", res))
+        texsprint"\\special{pdf:put @resources<</ColorSpace @MPlibCS>>}"
+      end
+    end
+    patterns.c_l_r_s_p_c_s_[cs] = on
+  end
+  return on
 end
 local function do_preobj_PAT(object, prescript)
   local name = prescript and prescript.mplibpattern
   if not name then return end
-  local index = patterns[name] or err"cannot get pattern object"
+  local patt = patterns[name]
+  local index = patt and patt.id or err("cannot get pattern object '%s'", name)
   local key = format("MPlibPt%s",index)
-  pdf_literalcode("/Pattern cs /%s scn", key)
-  if patterns.d_o_n_e_[index] then return end
+  if patt.colored then
+    pdf_literalcode("/Pattern cs /%s scn", key)
+  else
+    local color = prescript.mpliboverridecolor or luamplib.colorconverter(object.color)
+    if not color then return end
+    local csobj, cs
+    if color:find" cs " or color:find"@pdf.obj" then
+      local t, ref = color:explode()
+      if pdfmode then
+        cs = t[1]:sub(2,-1)
+        ref = format("%s 0 R", ltx.pdf.object_id(cs))
+        color = t[3]
+      else
+        cs, ref = t[2], t[2]
+        color = t[3]:match"%[(.+)%]"
+      end
+      csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs, ref)
+    else
+      local t = colorsplit(color)
+      cs = #t == 4 and "DeviceCMYK" or #t == 3 and "DeviceRGB" or "DeviceGray"
+      csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs)
+      color = tableconcat(t," ")
+    end
+    pdf_literalcode("/MPlibCS%i cs %s /%s scn", csobj, color, key)
+  end
+  if patt.done then return end
   local val = pdfmode and format("%s 0 R",index) or patterns[index]
   if pdfmanagement then
     texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
@@ -2954,7 +3070,7 @@ local function do_preobj_PAT(object, prescript)
       texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
     end
   end
-  patterns.d_o_n_e_[index] = true
+  patt.done = true
 end
 
 %    \end{macrocode}
@@ -3247,7 +3363,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/05/30 v2.31.2 mplib package for LuaTeX]
+    [2024/06/10 v2.32.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
