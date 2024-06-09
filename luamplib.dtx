@@ -547,8 +547,8 @@ See source file '\inFileName' for licencing and contact information.
 %   when using DVI mode, you have to declare \cs{mppattern}
 %   in horizontal mode, that is, not in between paragraphs.}
 %   MetaPost operator |withpattern|, the syntax of which
-%   is |<path>| |withpattern| |<string>|, will return a metapost picture which fills
-%   the given path with the tiling patterns.
+%   is `\textit{path} |withpattern| \textit{string}', will return a metapost picture which fills
+%   the given path with a tiling pattern of the |<name>|.
 %   \begin{verbatim}
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
 %       [ xstep = 10, ystep = 12 ] % options: see below
@@ -559,6 +559,7 @@ See source file '\inFileName' for licencing and contact information.
 %         draw q withcolor .8red;
 %       \endmpfig
 %     \endmppattern                % or \end{mppattern}
+%
 %     \mpfig
 %       fill fullcircle scaled 100 withpostscript "collect";
 %       draw unitsquare shifted - center unitsquare scaled 45
@@ -569,7 +570,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The available options are:
 %
 %   \bigskip
-%   \begin{tabular}{lll}
+%   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
 %     |xstep|    &\textit{number} & horizontal spacing between cells\\
 %     |ystep|    &\textit{number} & vertical spacing between cells\\
@@ -586,25 +587,34 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
-%   A simple example:
+%   An example:
 %   \begin{verbatim}
-%     \begin{mppattern}{uncoloredpatt}
-%       [
-%         colored = false,
-%         xstep = 10, ystep = 12,
-%         matrix = "0.7071 0.7071 -0.7071 0.7071",
-%       ]
-%       Q%
-%     \end{mppattern}
-%     \begin{mplibcode}
-%       beginfig(1);
-%       fill fullcircle scaled 100 withpostscript "collect";
-%       draw unitsquare shifted - center unitsquare scaled 45
-%         withpattern "uncoloredpatt"
-%         withcolor blue             % will paint the pattern
-%         withpostscript "evenodd" ;
-%       endfig;
-%     \end{mplibcode}
+%      \begin{mppattern}{pattuncolored}
+%        [
+%          colored = false,
+%          matrix = "0.7071 0.7071 -0.7071 0.7071",
+%        ]
+%        \tiny\TeX
+%      \end{mppattern}
+%
+%      \begin{mplibcode}
+%        beginfig(1)
+%        picture tex; tex := mpliboutlinetext.p ("\bfseries \TeX");
+%        i:=0;
+%        for item within tex:
+%          i:=i+1;
+%          if i < length tex:
+%            fill pathpart item scaled 10
+%                 withpostscript "collect";
+%          else:
+%            draw pathpart item scaled 10
+%                 withpattern "pattuncolored"
+%                 withcolor 0.7 blue          % paints the pattern
+%                 ;
+%          fi
+%        endfor
+%        endfig;
+%      \end{mplibcode}
 %   \end{verbatim}
 %
 % \paragraph{About figure box metrics}
@@ -3030,11 +3040,15 @@ local function do_preobj_PAT(object, prescript)
   if patt.colored then
     pdf_literalcode("/Pattern cs /%s scn", key)
   else
-    local color = prescript.mpliboverridecolor or luamplib.colorconverter(object.color)
+    local color = prescript.mpliboverridecolor
+    if not color then
+      local t = object.color
+      color = t and #t>0 and luamplib.colorconverter(t)
+    end
     if not color then return end
-    local csobj, cs
+    local csobj, cs, ref
     if color:find" cs " or color:find"@pdf.obj" then
-      local t, ref = color:explode()
+      local t = color:explode()
       if pdfmode then
         cs = t[1]:sub(2,-1)
         ref = format("%s 0 R", ltx.pdf.object_id(cs))
@@ -3043,13 +3057,12 @@ local function do_preobj_PAT(object, prescript)
         cs, ref = t[2], t[2]
         color = t[3]:match"%[(.+)%]"
       end
-      csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs, ref)
     else
       local t = colorsplit(color)
       cs = #t == 4 and "DeviceCMYK" or #t == 3 and "DeviceRGB" or "DeviceGray"
-      csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs)
       color = tableconcat(t," ")
     end
+    csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs, ref)
     pdf_literalcode("/MPlibCS%i cs %s /%s scn", csobj, color, key)
   end
   if patt.done then return end

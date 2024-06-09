@@ -256,26 +256,21 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
 \mppattern{pattuncolored}
   [
     colored = false,
-    xstep = 10,
-    ystep = 12,
     matrix = "0.7071 0.7071 -0.7071 0.7071",
   ]
-  Q%
+  \fiverm\TeX
 \endmppattern
 \mpfig
-  picture q;
-  q := mplibglyph "Q" of \fontid\font scaled .2;
+  picture tex; tex := mpliboutlinetext.p ("\bf \TeX");
   i:=0;
-  for item within q:
+  for item within tex:
     i:=i+1;
-    if i < length q:
-      fill pathpart item withpostscript "collect";
+    if i < length tex:
+      fill pathpart item scaled 10 withpostscript "collect";
     else:
-      draw pathpart item withpattern "pattuncolored"
-        withcolor .2[blue,white];
+      draw pathpart item scaled 10 withpattern "pattuncolored" withcolor 0.7 blue;
     fi
   endfor
-  for item within q: draw pathpart item; endfor
 \endmpfig
 \tracingcommands0
 
