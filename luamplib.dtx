@@ -543,11 +543,9 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mppattern} \ldots\ \cs{endmppattern}, \texttt{withpattern}}
 %   |\mppattern{<name>}| \ldots\ |\endmppattern| defines a tiling pattern
-%   associated with the |<name>|.\footnote{\textsc{n.b.} Due to a possible bug of DVIPDFMx,
-%   when using DVI mode, you have to declare \cs{mppattern}
-%   in horizontal mode, that is, not in between paragraphs.}
-%   MetaPost operator |withpattern|, the syntax of which
-%   is `\textit{path} |withpattern| \textit{string}', will return a metapost picture which fills
+%   associated with the |<name>|.
+%   MetaPost operator |withpattern|, the syntax being
+%   \textit{path} |withpattern| \textit{string}, will return a metapost picture which fills
 %   the given path with a tiling pattern of the |<name>|.
 %   \begin{verbatim}
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
@@ -583,7 +581,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \bigskip
 %
 %   When you use special effects such as transparency in a pattern,
-%   |resources| option might be needed, for instance |resources="/ExtGState 1 0 R"|.
+%   |resources| option might be needed: for instance, |resources="/ExtGState 1 0 R"|.
 %
 %   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
@@ -2994,13 +2992,15 @@ function luamplib.registerpattern ( boxid, name, opts )
   else
     local objname = "@mplibpattern"..name
     texsprint {
-      [[\leavevmode]], -- leavevmode! bug of dvipdfmx?
+      [[\ifvmode\nointerlineskip\fi]],
+      format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
       [[\special{pdf:bxobj ]], objname,
       format([[ width \the\wd %i \space]], boxid),
       format([[ height \the\ht %i \space]], boxid),
       format([[ depth \the\dp %i}]], boxid),
       format([[\box %i]], boxid),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
+      [[\par}\hss}]],
     }
     patterns[#patterns+1] = objname
     patterns[name] = { id = #patterns, colored = opts.colored }
