@@ -570,10 +570,11 @@ See source file '\inFileName' for licencing and contact information.
 %   \bigskip
 %   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
-%     |xstep|    &\textit{number} & horizontal spacing between cells\\
-%     |ystep|    &\textit{number} & vertical spacing between cells\\
-%     |xshift|   &\textit{number} & horizontal shifting of cells\\
-%     |yshift|   &\textit{number} & vertical shifting of cells\\
+%     |xstep|    &\textit{number} & horizontal spacing between pattern cells\\
+%     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
+%     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
+%     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
+%     |bbox|     &\textit{string} & |llx| |lly| |urx| |ury| values separated by spaces\\
 %     |matrix|   &\textit{string} & |xx| |xy| |yx| |yy| values separated by spaces\\
 %     |resources|&\textit{string} & PDF resources if needed\\
 %     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
@@ -2987,19 +2988,23 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   if pdfmode then
-    local index = tex.saveboxresource( boxid, tableconcat(attr), opts.resources, true, 1 )
+    if opts.bbox then
+      attr[#attr+1] = format("/BBox [%s]", opts.bbox)
+    end
+    local index = tex.saveboxresource(boxid,tableconcat(attr),opts.resources,true,opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
     local objname = "@mplibpattern"..name
+    local metric = opts.bbox and format("bbox %s",opts.bbox) or
+      format([[width \the\wd%i \space height \the\ht%i \space depth \the\dp%i]],boxid,boxid,boxid)
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
       format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
-      [[\special{pdf:bxobj ]], objname,
-      format([[ width \the\wd %i \space]], boxid),
-      format([[ height \the\ht %i \space]], boxid),
-      format([[ depth \the\dp %i}]], boxid),
+      [[\special{pdf:bcontent}]],
+      [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
       format([[\box %i]], boxid),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
+      [[\special{pdf:econtent}]],
       [[\par}\hss}]],
     }
     patterns[#patterns+1] = objname
