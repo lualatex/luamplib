@@ -2653,6 +2653,8 @@ end
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
+pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
+pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
 
 local function update_pdfobjs (os)
   local on = pdfobjs[os]
@@ -2716,12 +2718,6 @@ local transparancy_modes = { [0] = "Normal",
 }
 
 local function update_tr_res(mode,opaq)
-  if pdfetcs.pgfloaded == nil then
-    pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
-    if pdfmode and not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
-      pdfetcs.initialize_resources"ExtGState"
-    end
-  end
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
   if not new then return on end
@@ -2732,7 +2728,7 @@ local function update_tr_res(mode,opaq)
     format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
   else
     local tr = format("/%s %s", key, val)
-    if pdfetcs.pgfloaded then
+    if is_defined(pdfetcs.pgfextgs) then
       texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
     elseif pdfmode then
       if is_defined"TRP@list" then
@@ -2746,6 +2742,9 @@ local function update_tr_res(mode,opaq)
           texsprint(catat11,[[\global\TRP@reruntrue]])
         end
       else
+        if not pdfetcs.ExtGState_res then
+          pdfetcs.initialize_resources"ExtGState"
+        end
         pdfetcs.fallback_update_resources("ExtGState", tr)
       end
     else
@@ -2775,9 +2774,6 @@ end
 %    Shading with |metafun| format.
 %    \begin{macrocode}
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  if pdfmode and not pdfmanagement and not pdfetcs.Shading_res then
-    pdfetcs.initialize_resources"Shading"
-  end
   local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
   if steps > 1 then
     local list,bounds,encode = { },{ },{ }
@@ -2818,6 +2814,9 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   else
     local res = format("/%s %s", key, val)
     if pdfmode then
+      if not pdfetcs.Shading_res then
+        pdfetcs.initialize_resources"Shading"
+      end
       pdfetcs.fallback_update_resources("Shading", res)
     else
       texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
@@ -3020,8 +3019,8 @@ local function pattern_colorspace (cs, ref)
       texsprint(ccexplat,format("\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{%s}{%s}",key,val))
     else
       local res = format("/%s %s", key, val)
-      if is_defined"pgf@sys@addpdfresource@colorspaces@plain" then
-        texsprint(catat11, format("\\pgf@sys@addpdfresource@colorspaces@plain{%s}", res))
+      if is_defined(pdfetcs.pgfcolorspace) then
+        texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfcolorspace, res))
       elseif pdfmode then
         if not pdfetcs.ColorSpace_res then
           pdfetcs.initialize_resources"ColorSpace"
@@ -3076,8 +3075,8 @@ local function do_preobj_PAT(object, prescript)
     texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
   else
     local res = format("/%s %s", key, val)
-    if is_defined"pgf@sys@addpdfresource@patterns@plain" then
-      texsprint(catat11, format("\\pgf@sys@addpdfresource@patterns@plain{%s}", res))
+    if is_defined(pdfetcs.pgfpattern) then
+      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
     elseif pdfmode then
       if not pdfetcs.Pattern_res then
         pdfetcs.initialize_resources"Pattern"
