@@ -2971,7 +2971,7 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { c_l_r_s_p_c_s_ = { } }
+patterns = { }
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   local wd = format("%.3f",box.width/factor)
@@ -3000,10 +3000,10 @@ function luamplib.registerpattern ( boxid, name, opts )
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
-      format([[\hbox to0pt{\vbox to0pt{\hsize=%sbp\vss\noindent]], wd), -- force horiz mode?
+      format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
       [[\special{pdf:bcontent}]],
       [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
-      format([[\raise %ssp\box %i]], box.depth, boxid),
+      format([[\raise\dp %i\box %i]], boxid, boxid),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
       [[\special{pdf:econtent}]],
       [[\par}\hss}]],
@@ -3012,8 +3012,8 @@ function luamplib.registerpattern ( boxid, name, opts )
     patterns[name] = { id = #patterns, colored = opts.colored }
   end
 end
-local function pattern_colorspace (cs, ref)
-  local on, new = update_pdfobjs(format("[/Pattern %s]", ref or format("/%s",cs)))
+local function pattern_colorspace (cs)
+  local on, new = update_pdfobjs(format("[/Pattern %s]", cs))
   if new then
     local key = format("MPlibCS%i",on)
     local val = pdfmode and format("%i 0 R",on) or format("@mplibpdfobj%i",on)
@@ -3033,7 +3033,6 @@ local function pattern_colorspace (cs, ref)
         texsprint"\\special{pdf:put @resources<</ColorSpace @MPlibCS>>}"
       end
     end
-    patterns.c_l_r_s_p_c_s_[cs] = on
   end
   return on
 end
@@ -3052,24 +3051,22 @@ local function do_preobj_PAT(object, prescript)
       color = t and #t>0 and luamplib.colorconverter(t)
     end
     if not color then return end
-    local csobj, cs, ref
+    local cs
     if color:find" cs " or color:find"@pdf.obj" then
       local t = color:explode()
       if pdfmode then
-        cs = t[1]:sub(2,-1)
-        ref = format("%s 0 R", ltx.pdf.object_id(cs))
+        cs = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
         color = t[3]
       else
-        cs, ref = t[2], t[2]
+        cs = t[2]
         color = t[3]:match"%[(.+)%]"
       end
     else
       local t = colorsplit(color)
-      cs = #t == 4 and "DeviceCMYK" or #t == 3 and "DeviceRGB" or "DeviceGray"
+      cs = #t == 4 and "/DeviceCMYK" or #t == 3 and "/DeviceRGB" or "/DeviceGray"
       color = tableconcat(t," ")
     end
-    csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs, ref)
-    pdf_literalcode("/MPlibCS%i cs %s /%s scn", csobj, color, key)
+    pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
   end
   if patt.done then return end
   local val = pdfmode and format("%s 0 R",index) or patterns[index]
