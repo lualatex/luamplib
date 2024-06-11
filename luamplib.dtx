@@ -2974,6 +2974,9 @@ end
 patterns = { c_l_r_s_p_c_s_ = { } }
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
+  local wd = format("%.3f",box.width/factor)
+  local hd = format("%.3f",(box.height+box.depth)/factor)
+  info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then opts.colored = true end
@@ -2982,8 +2985,8 @@ function luamplib.registerpattern ( boxid, name, opts )
     "/PatternType 1",
     format("/PaintType %i", opts.colored and 1 or 2),
     "/TilingType 2",
-    format("/XStep %.3f", opts.xstep or box.width/factor),
-    format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
+    format("/XStep %s", opts.xstep or wd),
+    format("/YStep %s", opts.ystep or hd),
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   if pdfmode then
@@ -2994,14 +2997,13 @@ function luamplib.registerpattern ( boxid, name, opts )
     patterns[name] = { id = index, colored = opts.colored }
   else
     local objname = "@mplibpattern"..name
-    local metric = opts.bbox and format("bbox %s",opts.bbox) or
-      format([[width \the\wd%i \space height \the\ht%i \space depth \the\dp%i]],boxid,boxid,boxid)
+    local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
-      format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
+      format([[\hbox to0pt{\vbox to0pt{\hsize=%sbp\vss\noindent]], wd), -- force horiz mode?
       [[\special{pdf:bcontent}]],
       [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
-      format([[\box %i]], boxid),
+      format([[\raise %ssp\box %i]], box.depth, boxid),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
       [[\special{pdf:econtent}]],
       [[\par}\hss}]],
