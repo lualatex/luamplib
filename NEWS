@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/06/12 2.32.1
+   * as for 'matrix' and 'bbox' options in \mppattern macro, table type as well
+   as string type is now allowed.
+   * for the sake of convenience, width and height of tiling patterns will be
+   written down into the log file. (depth is always zero)
+
 2024/06/10 2.32.0
    * \mppattern{<name>} ... \endmppattern defines a tiling pattern which can be
    used with 'withpattern' operator to fill a closed path by replicating the tile

@@ -549,7 +549,10 @@ See source file '\inFileName' for licencing and contact information.
 %   the given path with a tiling pattern of the |<name>|.
 %   \begin{verbatim}
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
-%       [ xstep = 10, ystep = 12 ] % options: see below
+%       [                          % options: see below
+%         xstep = 10, ystep = 12,
+%         matrix = "0 1 -1 0",
+%       ]
 %       \mpfig                     % or any other TeX code,
 %         picture q;
 %         q := btex Q etex;
@@ -566,20 +569,23 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %   \end{verbatim}
 %   The available options are:
-%
-%   \bigskip
+%   \begin{center}
 %   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
 %     |xstep|    &\textit{number} & horizontal spacing between pattern cells\\
 %     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |bbox|     &\textit{string} & |llx| |lly| |urx| |ury| values separated by spaces\\
-%     |matrix|   &\textit{string} & |xx| |xy| |yx| |yy| values separated by spaces\\
+%     |matrix|   &\textit{table} or \textit{string} & four numbers of |xx|, |xy|, |yx|, |yy| values\,*\\
+%     |bbox|     &\textit{table} or \textit{string} & four numbers of |llx|, |lly|, |urx|, |ury| values\,*\\
 %     |resources|&\textit{string} & PDF resources if needed\\
 %     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
-%   \bigskip
+%   \end{center}
+%
+%   For the sake of convenience, width and height of tiling patterns will be written down
+%   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
 %   When you use special effects such as transparency in a pattern,
 %   |resources| option might be needed: for instance, |resources="/ExtGState 1 0 R"|.
@@ -591,7 +597,7 @@ See source file '\inFileName' for licencing and contact information.
 %      \begin{mppattern}{pattuncolored}
 %        [
 %          colored = false,
-%          matrix = "0.7071 0.7071 -0.7071 0.7071",
+%          matrix = {0.7071, 0.7071, -0.7071, 0.7071},
 %        ]
 %        \tiny\TeX
 %      \end{mppattern}
@@ -608,6 +614,7 @@ See source file '\inFileName' for licencing and contact information.
 %          else:
 %            draw pathpart item scaled 10
 %                 withpattern "pattuncolored"
+%                 withpen pencircle scaled 0.5
 %                 withcolor 0.7 blue          % paints the pattern
 %                 ;
 %          fi
@@ -2980,6 +2987,8 @@ function luamplib.registerpattern ( boxid, name, opts )
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then opts.colored = true end
+  if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
+  if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
   local attr = {
     "/Type/Pattern",
     "/PatternType 1",

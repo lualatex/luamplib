@@ -268,7 +268,9 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
     if i < length tex:
       fill pathpart item scaled 10 withpostscript "collect";
     else:
-      draw pathpart item scaled 10 withpattern "pattuncolored" withcolor 0.7 blue;
+      draw pathpart item scaled 10 withpattern "pattuncolored"
+      withpen pencircle scaled 1/2
+      withcolor 0.7 blue;
     fi
   endfor
 \endmpfig
