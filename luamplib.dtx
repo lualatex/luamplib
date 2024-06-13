@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/10 v2.32.0 Interface for using the mplib library]%
+  [2024/06/13 v2.32.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/10 v2.32.0}
+% \date{2024/06/13 v2.32.1}
 %
 % \maketitle
 %
@@ -551,7 +551,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
 %       [                          % options: see below
 %         xstep = 10, ystep = 12,
-%         matrix = "0 1 -1 0",
+%         matrix = {0,1,-1,0},     % or "0 1 -1 0"
 %       ]
 %       \mpfig                     % or any other TeX code,
 %         picture q;
@@ -576,19 +576,26 @@ See source file '\inFileName' for licencing and contact information.
 %     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |matrix|   &\textit{table} or \textit{string} & four numbers of |xx|, |xy|, |yx|, |yy| values\,*\\
-%     |bbox|     &\textit{table} or \textit{string} & four numbers of |llx|, |lly|, |urx|, |ury| values\,*\\
+%     |matrix|   &\textit{table} or \textit{string} & |xx|, |xy|, |yx|, |yy| values\kern1pt* or MP transformation code\\
+%     |bbox|     &\textit{table} or \textit{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %     |resources|&\textit{string} & PDF resources if needed\\
 %     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
 %                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
 %   \end{center}
 %
-%   For the sake of convenience, width and height of tiling patterns will be written down
+%   For the sake of convenience, width and height values of tiling patterns will be written down
 %   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
+%   As for |matrix| option, metapost code such as `|rotated 30 slanted .2|' is allowed as well
+%   as string or table of four numbers. You can also set |xshift| and |yshift|
+%   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
+%   given, they have precedence over the effect of `|shifted|' operator.
+%
 %   When you use special effects such as transparency in a pattern,
-%   |resources| option might be needed: for instance, |resources="/ExtGState 1 0 R"|.
+%   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
+%   However, as luamplib automatically includes the resources of the current page, this option
+%   is not needed in most cases.
 %
 %   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
@@ -597,7 +604,7 @@ See source file '\inFileName' for licencing and contact information.
 %      \begin{mppattern}{pattuncolored}
 %        [
 %          colored = false,
-%          matrix = {0.7071, 0.7071, -0.7071, 0.7071},
+%          matrix = "rotated 30",
 %        ]
 %        \tiny\TeX
 %      \end{mppattern}
@@ -655,8 +662,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.0",
-  date          = "2024/06/10",
+  version       = "2.32.1",
+  date          = "2024/06/13",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1123,8 +1130,6 @@ local function process (data, instancename)
     if log then
       if result.fig then
         converted = luamplib.convert(result)
-      else
-        info"No figure output. Maybe no beginfig/endfig"
       end
     end
   else
@@ -2310,6 +2315,18 @@ enddef ;
 primarydef t withpattern p =
   image( fill t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
 enddef;
+vardef mplibtransformmatrix (text e) =
+  save t; transform t;
+  t = inverse (identity e);
+  runscript("luamplib.transformmatrix = {"
+  & decimal xxpart t & ","
+  & decimal xypart t & ","
+  & decimal yxpart t & ","
+  & decimal yypart t & ","
+  & decimal xpart  t & ","
+  & decimal ypart  t & ","
+  & "}");
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -2989,6 +3006,14 @@ function luamplib.registerpattern ( boxid, name, opts )
   if opts.colored == nil then opts.colored = true end
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
+  if opts.matrix and opts.matrix:find"%a" then
+    local data = format("mplibtransformmatrix(%s);",opts.matrix)
+    process(data,"@mplibtransformmatrix")
+    local t = luamplib.transformmatrix
+    opts.matrix = format("%s %s %s %s", t[1], t[2], t[3], t[4])
+    opts.xshift = opts.xshift or t[5]
+    opts.yshift = opts.yshift or t[6]
+  end
   local attr = {
     "/Type/Pattern",
     "/PatternType 1",
@@ -2999,20 +3024,57 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   if pdfmode then
+    local optres, t = opts.resources or "", { }
+    if pdfmanagement then
+      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          t[#t+1] = format("/%s %s", v, ltx.__pdf.object["__pdf/Page/Resources/"..v])
+        end
+      end
+    else
+      local res = pdfetcs.getpageres() or ""
+      run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
+      res = (res .. texgettoks'mplibtmptoks'):explode()
+      res = tableconcat(res," "):explode"/+"
+      for _,v in ipairs(res) do
+        if not v:find"Pattern" and not optres:find(v) then
+          t[#t+1] = "/" .. v
+        end
+      end
+    end
+    optres = optres .. tableconcat(t)
     if opts.bbox then
       attr[#attr+1] = format("/BBox [%s]", opts.bbox)
     end
-    local index = tex.saveboxresource(boxid,tableconcat(attr),opts.resources,true,opts.bbox and 4 or 1)
+    local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
     local objname = "@mplibpattern"..name
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
+    local optres, t = opts.resources or "", { }
+    if pdfmanagement then
+      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
+        run_tex_code(format(
+        [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],v,v),ccexplat)
+        t[#t+1] = texgettoks'mplibtmptoks'
+      end
+    elseif is_defined(pdfetcs.pgfextgs) then
+      run_tex_code("\\mplibtmptoks\\expanded{{\z
+      \\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi\z
+      \\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi}}",catat11)
+      t[#t+1] = texgettoks'mplibtmptoks'
+    else
+      t[#t+1] = "/ExtGState @MPlibTr/Shading @MPlibSh/ColorSpace @MPlibCS"
+    end
+    optres = optres .. tableconcat(t)
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
       format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
       [[\special{pdf:bcontent}]],
       [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
       format([[\raise\dp %i\box %i]], boxid, boxid),
+      format([[\special{pdf:put @resources <<%s>>}]], optres),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
       [[\special{pdf:econtent}]],
       [[\par}\hss}]],
@@ -3388,7 +3450,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/10 v2.32.0 mplib package for LuaTeX]
+    [2024/06/13 v2.32.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

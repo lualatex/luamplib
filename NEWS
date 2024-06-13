@@ -1,10 +1,19 @@
                        History of the luamplib package
 
-2024/06/12 2.32.1
-   * as for 'matrix' and 'bbox' options in \mppattern macro, table type as well
-   as string type is now allowed.
-   * for the sake of convenience, width and height of tiling patterns will be
-   written down into the log file. (depth is always zero)
+2024/06/13 2.32.1
+   * for the sake of convenience, width and height values of tiling patterns
+   will be written down into the log file.
+
+   * table type is allowed as well as string type for 'matrix' and 'bbox'
+   options in pattern definition.
+
+   * metapost code such as 'rotated 30 slanted .2' is allowed as well as the
+   string or table of numbers for the 'matrix' option in pattern definition.
+
+   * as for the 'resources' option in pattern definition, luamplib
+   automatically includes the resources of the current page.
+
+   * luamplib does not log info even if there's no beginfig ... endfig.
 
 2024/06/10 2.32.0
    * \mppattern{<name>} ... \endmppattern defines a tiling pattern which can be
