@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/06/14 2.32.2
+   * fix matrix conversion between MP and PDF
+
 2024/06/13 2.32.1
    * for the sake of convenience, width and height values of tiling patterns
    will be written down into the log file.
