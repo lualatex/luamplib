@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/10 v2.32.0 Interface for using the mplib library]%
+  [2024/06/13 v2.32.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/10 v2.32.0}
+% \date{2024/06/13 v2.32.1}
 %
 % \maketitle
 %
@@ -549,7 +549,10 @@ See source file '\inFileName' for licencing and contact information.
 %   the given path with a tiling pattern of the |<name>|.
 %   \begin{verbatim}
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
-%       [ xstep = 10, ystep = 12 ] % options: see below
+%       [                          % options: see below
+%         xstep = 10, ystep = 12,
+%         matrix = {0,1,-1,0},     % or "0 1 -1 0"
+%       ]
 %       \mpfig                     % or any other TeX code,
 %         picture q;
 %         q := btex Q etex;
@@ -566,23 +569,33 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %   \end{verbatim}
 %   The available options are:
-%
-%   \bigskip
+%   \begin{center}
 %   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
 %     |xstep|    &\textit{number} & horizontal spacing between pattern cells\\
 %     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |bbox|     &\textit{string} & |llx| |lly| |urx| |ury| values separated by spaces\\
-%     |matrix|   &\textit{string} & |xx| |xy| |yx| |yy| values separated by spaces\\
+%     |matrix|   &\textit{table} or \textit{string} & |xx|, |xy|, |yx|, |yy| values\kern1pt* or MP transformation code\\
+%     |bbox|     &\textit{table} or \textit{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %     |resources|&\textit{string} & PDF resources if needed\\
 %     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
-%   \bigskip
+%   \end{center}
+%
+%   For the sake of convenience, width and height values of tiling patterns will be written down
+%   into the log file. (depth is always zero.) Users can refer to them for option setting.
+%
+%   As for |matrix| option, metapost code such as `|rotated 30 slanted .2|' is allowed as well
+%   as string or table of four numbers. You can also set |xshift| and |yshift|
+%   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
+%   given, they have precedence over the effect of `|shifted|' operator.
 %
 %   When you use special effects such as transparency in a pattern,
-%   |resources| option might be needed: for instance, |resources="/ExtGState 1 0 R"|.
+%   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
+%   However, as luamplib automatically includes the resources of the current page, this option
+%   is not needed in most cases.
 %
 %   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
@@ -591,7 +604,7 @@ See source file '\inFileName' for licencing and contact information.
 %      \begin{mppattern}{pattuncolored}
 %        [
 %          colored = false,
-%          matrix = "0.7071 0.7071 -0.7071 0.7071",
+%          matrix = "rotated 30",
 %        ]
 %        \tiny\TeX
 %      \end{mppattern}
@@ -608,6 +621,7 @@ See source file '\inFileName' for licencing and contact information.
 %          else:
 %            draw pathpart item scaled 10
 %                 withpattern "pattuncolored"
+%                 withpen pencircle scaled 0.5
 %                 withcolor 0.7 blue          % paints the pattern
 %                 ;
 %          fi
@@ -648,8 +662,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.0",
-  date          = "2024/06/10",
+  version       = "2.32.1",
+  date          = "2024/06/13",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1116,8 +1130,6 @@ local function process (data, instancename)
     if log then
       if result.fig then
         converted = luamplib.convert(result)
-      else
-        info"No figure output. Maybe no beginfig/endfig"
       end
     end
   else
@@ -2303,6 +2315,18 @@ enddef ;
 primarydef t withpattern p =
   image( fill t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
 enddef;
+vardef mplibtransformmatrix (text e) =
+  save t; transform t;
+  t = inverse (identity e);
+  runscript("luamplib.transformmatrix = {"
+  & decimal xxpart t & ","
+  & decimal xypart t & ","
+  & decimal yxpart t & ","
+  & decimal yypart t & ","
+  & decimal xpart  t & ","
+  & decimal ypart  t & ","
+  & "}");
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -2653,6 +2677,8 @@ end
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
+pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
+pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
 
 local function update_pdfobjs (os)
   local on = pdfobjs[os]
@@ -2716,12 +2742,6 @@ local transparancy_modes = { [0] = "Normal",
 }
 
 local function update_tr_res(mode,opaq)
-  if pdfetcs.pgfloaded == nil then
-    pdfetcs.pgfloaded = is_defined(pdfetcs.pgfextgs)
-    if pdfmode and not pdfmanagement and not pdfetcs.pgfloaded and not is_defined"TRP@list" then
-      pdfetcs.initialize_resources"ExtGState"
-    end
-  end
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
   if not new then return on end
@@ -2732,7 +2752,7 @@ local function update_tr_res(mode,opaq)
     format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
   else
     local tr = format("/%s %s", key, val)
-    if pdfetcs.pgfloaded then
+    if is_defined(pdfetcs.pgfextgs) then
       texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
     elseif pdfmode then
       if is_defined"TRP@list" then
@@ -2746,6 +2766,9 @@ local function update_tr_res(mode,opaq)
           texsprint(catat11,[[\global\TRP@reruntrue]])
         end
       else
+        if not pdfetcs.ExtGState_res then
+          pdfetcs.initialize_resources"ExtGState"
+        end
         pdfetcs.fallback_update_resources("ExtGState", tr)
       end
     else
@@ -2775,9 +2798,6 @@ end
 %    Shading with |metafun| format.
 %    \begin{macrocode}
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  if pdfmode and not pdfmanagement and not pdfetcs.Shading_res then
-    pdfetcs.initialize_resources"Shading"
-  end
   local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
   if steps > 1 then
     local list,bounds,encode = { },{ },{ }
@@ -2818,6 +2838,9 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   else
     local res = format("/%s %s", key, val)
     if pdfmode then
+      if not pdfetcs.Shading_res then
+        pdfetcs.initialize_resources"Shading"
+      end
       pdfetcs.fallback_update_resources("Shading", res)
     else
       texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
@@ -2972,37 +2995,86 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { c_l_r_s_p_c_s_ = { } }
+patterns = { }
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
+  local wd = format("%.3f",box.width/factor)
+  local hd = format("%.3f",(box.height+box.depth)/factor)
+  info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then opts.colored = true end
+  if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
+  if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
+  if opts.matrix and opts.matrix:find"%a" then
+    local data = format("mplibtransformmatrix(%s);",opts.matrix)
+    process(data,"@mplibtransformmatrix")
+    local t = luamplib.transformmatrix
+    opts.matrix = format("%s %s %s %s", t[1], t[2], t[3], t[4])
+    opts.xshift = opts.xshift or t[5]
+    opts.yshift = opts.yshift or t[6]
+  end
   local attr = {
     "/Type/Pattern",
     "/PatternType 1",
     format("/PaintType %i", opts.colored and 1 or 2),
     "/TilingType 2",
-    format("/XStep %.3f", opts.xstep or box.width/factor),
-    format("/YStep %.3f", opts.ystep or (box.height+box.depth)/factor),
+    format("/XStep %s", opts.xstep or wd),
+    format("/YStep %s", opts.ystep or hd),
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   if pdfmode then
+    local optres, t = opts.resources or "", { }
+    if pdfmanagement then
+      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          t[#t+1] = format("/%s %s", v, ltx.__pdf.object["__pdf/Page/Resources/"..v])
+        end
+      end
+    else
+      local res = pdfetcs.getpageres() or ""
+      run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
+      res = (res .. texgettoks'mplibtmptoks'):explode()
+      res = tableconcat(res," "):explode"/+"
+      for _,v in ipairs(res) do
+        if not v:find"Pattern" and not optres:find(v) then
+          t[#t+1] = "/" .. v
+        end
+      end
+    end
+    optres = optres .. tableconcat(t)
     if opts.bbox then
       attr[#attr+1] = format("/BBox [%s]", opts.bbox)
     end
-    local index = tex.saveboxresource(boxid,tableconcat(attr),opts.resources,true,opts.bbox and 4 or 1)
+    local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
     local objname = "@mplibpattern"..name
-    local metric = opts.bbox and format("bbox %s",opts.bbox) or
-      format([[width \the\wd%i \space height \the\ht%i \space depth \the\dp%i]],boxid,boxid,boxid)
+    local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
+    local optres, t = opts.resources or "", { }
+    if pdfmanagement then
+      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
+        run_tex_code(format(
+        [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],v,v),ccexplat)
+        t[#t+1] = texgettoks'mplibtmptoks'
+      end
+    elseif is_defined(pdfetcs.pgfextgs) then
+      run_tex_code("\\mplibtmptoks\\expanded{{\z
+      \\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi\z
+      \\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi}}",catat11)
+      t[#t+1] = texgettoks'mplibtmptoks'
+    else
+      t[#t+1] = "/ExtGState @MPlibTr/Shading @MPlibSh/ColorSpace @MPlibCS"
+    end
+    optres = optres .. tableconcat(t)
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
       format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
       [[\special{pdf:bcontent}]],
       [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
-      format([[\box %i]], boxid),
+      format([[\raise\dp %i\box %i]], boxid, boxid),
+      format([[\special{pdf:put @resources <<%s>>}]], optres),
       [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
       [[\special{pdf:econtent}]],
       [[\par}\hss}]],
@@ -3011,8 +3083,8 @@ function luamplib.registerpattern ( boxid, name, opts )
     patterns[name] = { id = #patterns, colored = opts.colored }
   end
 end
-local function pattern_colorspace (cs, ref)
-  local on, new = update_pdfobjs(format("[/Pattern %s]", ref or format("/%s",cs)))
+local function pattern_colorspace (cs)
+  local on, new = update_pdfobjs(format("[/Pattern %s]", cs))
   if new then
     local key = format("MPlibCS%i",on)
     local val = pdfmode and format("%i 0 R",on) or format("@mplibpdfobj%i",on)
@@ -3020,8 +3092,8 @@ local function pattern_colorspace (cs, ref)
       texsprint(ccexplat,format("\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{%s}{%s}",key,val))
     else
       local res = format("/%s %s", key, val)
-      if is_defined"pgf@sys@addpdfresource@colorspaces@plain" then
-        texsprint(catat11, format("\\pgf@sys@addpdfresource@colorspaces@plain{%s}", res))
+      if is_defined(pdfetcs.pgfcolorspace) then
+        texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfcolorspace, res))
       elseif pdfmode then
         if not pdfetcs.ColorSpace_res then
           pdfetcs.initialize_resources"ColorSpace"
@@ -3032,7 +3104,6 @@ local function pattern_colorspace (cs, ref)
         texsprint"\\special{pdf:put @resources<</ColorSpace @MPlibCS>>}"
       end
     end
-    patterns.c_l_r_s_p_c_s_[cs] = on
   end
   return on
 end
@@ -3051,24 +3122,22 @@ local function do_preobj_PAT(object, prescript)
       color = t and #t>0 and luamplib.colorconverter(t)
     end
     if not color then return end
-    local csobj, cs, ref
+    local cs
     if color:find" cs " or color:find"@pdf.obj" then
       local t = color:explode()
       if pdfmode then
-        cs = t[1]:sub(2,-1)
-        ref = format("%s 0 R", ltx.pdf.object_id(cs))
+        cs = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
         color = t[3]
       else
-        cs, ref = t[2], t[2]
+        cs = t[2]
         color = t[3]:match"%[(.+)%]"
       end
     else
       local t = colorsplit(color)
-      cs = #t == 4 and "DeviceCMYK" or #t == 3 and "DeviceRGB" or "DeviceGray"
+      cs = #t == 4 and "/DeviceCMYK" or #t == 3 and "/DeviceRGB" or "/DeviceGray"
       color = tableconcat(t," ")
     end
-    csobj = patterns.c_l_r_s_p_c_s_[cs] or pattern_colorspace(cs, ref)
-    pdf_literalcode("/MPlibCS%i cs %s /%s scn", csobj, color, key)
+    pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
   end
   if patt.done then return end
   local val = pdfmode and format("%s 0 R",index) or patterns[index]
@@ -3076,8 +3145,8 @@ local function do_preobj_PAT(object, prescript)
     texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
   else
     local res = format("/%s %s", key, val)
-    if is_defined"pgf@sys@addpdfresource@patterns@plain" then
-      texsprint(catat11, format("\\pgf@sys@addpdfresource@patterns@plain{%s}", res))
+    if is_defined(pdfetcs.pgfpattern) then
+      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
     elseif pdfmode then
       if not pdfetcs.Pattern_res then
         pdfetcs.initialize_resources"Pattern"
@@ -3381,7 +3450,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/10 v2.32.0 mplib package for LuaTeX]
+    [2024/06/13 v2.32.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
