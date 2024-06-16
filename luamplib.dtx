@@ -3003,7 +3003,12 @@ function luamplib.registerpattern ( boxid, name, opts )
   info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
-  if opts.colored == nil then opts.colored = true end
+  if opts.colored == nil then
+    opts.colored = opts.coloured
+    if opts.colored == nil then
+      opts.colored = true
+    end
+  end
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
   if opts.matrix and opts.matrix:find"%a" then
