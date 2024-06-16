@@ -576,10 +576,10 @@ See source file '\inFileName' for licencing and contact information.
 %     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |matrix|   &\textit{table} or \textit{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transformation code\\
+%     |matrix|   &\textit{table} or \textit{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
 %     |bbox|     &\textit{table} or \textit{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %     |resources|&\textit{string} & PDF resources if needed\\
-%     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%     |colored| or |coloured| &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
 %                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
 %   \end{center}
@@ -597,7 +597,7 @@ See source file '\inFileName' for licencing and contact information.
 %   However, as luamplib automatically includes the resources of the current page, this option
 %   is not needed in most cases.
 %
-%   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
+%   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
 %   An example:
 %   \begin{verbatim}
