@@ -2773,7 +2773,6 @@ local function update_tr_res(mode,opaq)
         end
       else
         texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
-        pdfetcs.dvi_ExtGState = true
       end
     end
   end
@@ -2848,7 +2847,6 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
         pdfetcs.fallback_update_resources("Shading", res)
       else
         texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
-        pdfetcs.dvi_Shading = true
       end
     end
   end
@@ -3080,13 +3078,6 @@ function luamplib.registerpattern ( boxid, name, opts )
       \\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi\z
       \\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi}}",catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
-    else
-      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
-        if pdfetcs["dvi_"..v] then
-          local suffix = v == "ExtGState" and "Tr" or v == "Shading" and "Sh" or "CS"
-          t[#t+1] = format("/%s @MPlib%s", v, suffix)
-        end
-      end
     end
     optres = optres .. tableconcat(t)
     texsprint {
@@ -3122,7 +3113,6 @@ local function pattern_colorspace (cs)
         pdfetcs.fallback_update_resources("ColorSpace", res)
       else
         texsprint(format("\\special{pdf:put @MPlibCS<<%s>>}", res))
-        pdfetcs.dvi_ColorSpace = true
       end
     end
   end
@@ -3178,7 +3168,6 @@ local function do_preobj_PAT(object, prescript)
         pdfetcs.fallback_update_resources("Pattern", res)
       else
         texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
-        pdfetcs.dvi_Pattern = true
       end
     end
   end
