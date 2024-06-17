@@ -1549,15 +1549,7 @@ luamplib.shadecolor = function (str)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
     local t, obj = res:explode()
     if pdfmode then
-      obj = t[1]:match"^/(.+)"
-      if ltx.pdf and ltx.pdf.object_id then
-        obj = format("%s 0 R", ltx.pdf.object_id(obj))
-      else
-        run_tex_code({
-          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
-        },ccexplat)
-        obj = get_macro'mplib_@tempa'
-      end
+      obj = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
     else
       obj = t[2]
     end
