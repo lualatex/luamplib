@@ -2704,6 +2704,9 @@ if pdfmode then
     end
   end
   pdfetcs.fallback_update_resources = function (name, res)
+    if not pdfetcs[format("%s_res",name)] then
+      pdfetcs.initialize_resources(name)
+    end
     if luatexbase.callbacktypes.finish_pdffile then
       local t = pdfetcs[format("%s_res",name)]
       t[#t+1] = res
@@ -2758,9 +2761,6 @@ local function update_tr_res(mode,opaq)
             texsprint(catat11,[[\global\TRP@reruntrue]])
           end
         else
-          if not pdfetcs.ExtGState_res then
-            pdfetcs.initialize_resources"ExtGState"
-          end
           pdfetcs.fallback_update_resources("ExtGState", tr)
         end
       else
@@ -2833,9 +2833,6 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     else
       local res = format("/%s %s", key, val)
       if pdfmode then
-        if not pdfetcs.Shading_res then
-          pdfetcs.initialize_resources"Shading"
-        end
         pdfetcs.fallback_update_resources("Shading", res)
       else
         texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
@@ -3032,7 +3029,7 @@ function luamplib.registerpattern ( boxid, name, opts )
       for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
         local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
         if pp and pp:find"__prop_pair" then
-          t[#t+1] = format("/%s %s", v, ltx.__pdf.object["__pdf/Page/Resources/"..v])
+          t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
     else
@@ -3099,9 +3096,6 @@ local function pattern_colorspace (cs)
       if is_defined(pdfetcs.pgfcolorspace) then
         texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfcolorspace, res))
       elseif pdfmode then
-        if not pdfetcs.ColorSpace_res then
-          pdfetcs.initialize_resources"ColorSpace"
-        end
         pdfetcs.fallback_update_resources("ColorSpace", res)
       else
         texsprint(format("\\special{pdf:put @MPlibCS<<%s>>}", res))
@@ -3154,9 +3148,6 @@ local function do_preobj_PAT(object, prescript)
       if is_defined(pdfetcs.pgfpattern) then
         texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
       elseif pdfmode then
-        if not pdfetcs.Pattern_res then
-          pdfetcs.initialize_resources"Pattern"
-        end
         pdfetcs.fallback_update_resources("Pattern", res)
       else
         texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
