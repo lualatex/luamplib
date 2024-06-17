@@ -2744,37 +2744,41 @@ local transparancy_modes = { [0] = "Normal",
 local function update_tr_res(mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
-  if not new then return on end
-  local key = format("MPlibTr%s", on)
-  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
-  if pdfmanagement then
-    texsprint(ccexplat,
-    format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
-  else
-    local tr = format("/%s %s", key, val)
-    if is_defined(pdfetcs.pgfextgs) then
-      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-    elseif pdfmode then
-      if is_defined"TRP@list" then
-        texsprint(catat11,{
-          [[\if@filesw\immediate\write\@auxout{]],
-          [[\string\g@addto@macro\string\TRP@list{]],
-          tr,
-          [[}}\fi]],
-        })
-        if not get_macro"TRP@list":find(tr) then
-          texsprint(catat11,[[\global\TRP@reruntrue]])
+  if new then
+    local key = format("MPlibTr%s", on)
+    local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+    if pdfmanagement then
+      texsprint(ccexplat,
+      format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
+    else
+      local tr = format("/%s %s", key, val)
+      if is_defined(pdfetcs.pgfextgs) then
+        texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
+      elseif pdfmode then
+        if is_defined"TRP@list" then
+          texsprint(catat11,{
+            [[\if@filesw\immediate\write\@auxout{]],
+            [[\string\g@addto@macro\string\TRP@list{]],
+            tr,
+            [[}}\fi]],
+          })
+          if not get_macro"TRP@list":find(tr) then
+            texsprint(catat11,[[\global\TRP@reruntrue]])
+          end
+        else
+          if not pdfetcs.ExtGState_res then
+            pdfetcs.initialize_resources"ExtGState"
+          end
+          pdfetcs.fallback_update_resources("ExtGState", tr)
         end
       else
-        if not pdfetcs.ExtGState_res then
-          pdfetcs.initialize_resources"ExtGState"
-        end
-        pdfetcs.fallback_update_resources("ExtGState", tr)
+        texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
+        pdfetcs.dvi_ExtGState = true
       end
-    else
-      texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
-      texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfextgs) then
+    texsprint"\\special{pdf:put @resources <</ExtGState @MPlibTr>>}"
   end
   return on
 end
@@ -2829,23 +2833,27 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
-  if not new then return on end
-  local key = format("MPlibSh%s", on)
-  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
-  if pdfmanagement then
-    texsprint(ccexplat,
-    format("\\pdfmanagement_add:nnn{Page/Resources/Shading}{%s}{%s}", key, val))
-  else
-    local res = format("/%s %s", key, val)
-    if pdfmode then
-      if not pdfetcs.Shading_res then
-        pdfetcs.initialize_resources"Shading"
-      end
-      pdfetcs.fallback_update_resources("Shading", res)
+  if new then
+    local key = format("MPlibSh%s", on)
+    local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+    if pdfmanagement then
+      texsprint(ccexplat,
+      format("\\pdfmanagement_add:nnn{Page/Resources/Shading}{%s}{%s}", key, val))
     else
-      texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
-      texsprint"\\special{pdf:put @resources<</Shading @MPlibSh>>}"
+      local res = format("/%s %s", key, val)
+      if pdfmode then
+        if not pdfetcs.Shading_res then
+          pdfetcs.initialize_resources"Shading"
+        end
+        pdfetcs.fallback_update_resources("Shading", res)
+      else
+        texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
+        pdfetcs.dvi_Shading = true
+      end
     end
+  end
+  if not pdfmode and not pdfmanagement then
+    texsprint"\\special{pdf:put @resources <</Shading @MPlibSh>>}"
   end
   return on
 end
@@ -3060,9 +3068,12 @@ function luamplib.registerpattern ( boxid, name, opts )
     local optres, t = opts.resources or "", { }
     if pdfmanagement then
       for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
-        run_tex_code(format(
-        [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],v,v),ccexplat)
-        t[#t+1] = texgettoks'mplibtmptoks'
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          run_tex_code(format(
+          [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],v,v),ccexplat)
+          t[#t+1] = texgettoks'mplibtmptoks'
+        end
       end
     elseif is_defined(pdfetcs.pgfextgs) then
       run_tex_code("\\mplibtmptoks\\expanded{{\z
@@ -3070,7 +3081,12 @@ function luamplib.registerpattern ( boxid, name, opts )
       \\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi}}",catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
     else
-      t[#t+1] = "/ExtGState @MPlibTr/Shading @MPlibSh/ColorSpace @MPlibCS"
+      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
+        if pdfetcs["dvi_"..v] then
+          local suffix = v == "ExtGState" and "Tr" or v == "Shading" and "Sh" or "CS"
+          t[#t+1] = format("/%s @MPlib%s", v, suffix)
+        end
+      end
     end
     optres = optres .. tableconcat(t)
     texsprint {
@@ -3106,9 +3122,12 @@ local function pattern_colorspace (cs)
         pdfetcs.fallback_update_resources("ColorSpace", res)
       else
         texsprint(format("\\special{pdf:put @MPlibCS<<%s>>}", res))
-        texsprint"\\special{pdf:put @resources<</ColorSpace @MPlibCS>>}"
+        pdfetcs.dvi_ColorSpace = true
       end
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfcolorspace) then
+    texsprint"\\special{pdf:put @resources <</ColorSpace @MPlibCS>>}"
   end
   return on
 end
@@ -3144,23 +3163,27 @@ local function do_preobj_PAT(object, prescript)
     end
     pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
   end
-  if patt.done then return end
-  local val = pdfmode and format("%s 0 R",index) or patterns[index]
-  if pdfmanagement then
-    texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
-  else
-    local res = format("/%s %s", key, val)
-    if is_defined(pdfetcs.pgfpattern) then
-      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
-    elseif pdfmode then
-      if not pdfetcs.Pattern_res then
-        pdfetcs.initialize_resources"Pattern"
-      end
-      pdfetcs.fallback_update_resources("Pattern", res)
+  if not patt.done then
+    local val = pdfmode and format("%s 0 R",index) or patterns[index]
+    if pdfmanagement then
+      texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
     else
-      texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
-      texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
+      local res = format("/%s %s", key, val)
+      if is_defined(pdfetcs.pgfpattern) then
+        texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
+      elseif pdfmode then
+        if not pdfetcs.Pattern_res then
+          pdfetcs.initialize_resources"Pattern"
+        end
+        pdfetcs.fallback_update_resources("Pattern", res)
+      else
+        texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
+        pdfetcs.dvi_Pattern = true
+      end
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfpattern) then
+    texsprint"\\special{pdf:put @resources <</Pattern @MPlibPt>>}"
   end
   patt.done = true
 end
