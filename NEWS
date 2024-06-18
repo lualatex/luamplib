@@ -1,5 +1,12 @@
                        History of the luamplib package
 
+2024/06/20 2.32.3
+   * 'coloured' is a synonym of the option 'colored' in pattern definition.
+
+   * users can access the lua table containing mplib instances
+   'luamplib.instances', through which metapost variables are also easily
+   accessible as documented in LuaTeX manual.
+
 2024/06/14 2.32.2
    * fix matrix conversion between MP and PDF
 
