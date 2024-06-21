@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/14 v2.32.2 Interface for using the mplib library]%
+  [2024/06/21 v2.32.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/14 v2.32.2}
+% \date{2024/06/21 v2.32.3}
 %
 % \maketitle
 %
@@ -632,33 +632,31 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{Lua table \texttt{luamplib.instances}}
 %   Users can access the Lua table containing mplib instances, |luamplib.instances|,
-%   through which MetaPost variables are also easily accessible
-%   as documented in \textsection\,11.2.8.4 in Lua\TeX{} manual (|texdoc luatex|).
+%   through which metapost variables are also easily accessible
+%   as documented in Lua\TeX{} manual \textsection\,11.2.8.4 (|texdoc luatex|).
 %   The following will print |false|, |3.0|, |MetaPost| and
 %   the points and the cyclicity of the path |unitsquare|, consecutively.
 %   \begin{verbatim}
-%       \begin{mplibcode}[instance1]
-%         boolean b; b = 1 > 2;
-%         numeric n; n = 3;
-%         string s; s = "MetaPost";
-%         path p; p = unitsquare;
-%       \end{mplibcode}
+%   \begin{mplibcode}[instance1]
+%     boolean b; b = 1 > 2;
+%     numeric n; n = 3;
+%     string s; s = "MetaPost";
+%     path p; p = unitsquare;
+%   \end{mplibcode}
 %
-%       \directlua{
-%         local instance1 = luamplib.instances.instance1
-%         print( instance1:get_boolean"b" )
-%         print( instance1:get_number"n" )
-%         print( instance1:get_string"s" )
-%         local t = instance1:get_path"p"
-%         for k,v in pairs(t) do
-%           if type(v) == "table" then
-%             print(k, table.concat(v,' '))
-%           else
-%             print(k, v)
-%           end
-%         end
-%       }
+%   \directlua{
+%     local instance1 = luamplib.instances.instance1
+%     print( instance1:get_boolean"b" )
+%     print( instance1:get_number"n" )
+%     print( instance1:get_string"s" )
+%     local t = instance1:get_path"p"
+%     for k,v in pairs(t) do
+%       print(k, type(v)=='table' and table.concat(v,' ') or v)
+%     end
+%   }
 %   \end{verbatim}
+%   In this way, it would not be difficult to define a paragraph shape
+%   (using \cs{parshape} \TeX\ primitive) which follows an arbitrary metapost path.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -692,8 +690,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.2",
-  date          = "2024/06/14",
+  version       = "2.32.3",
+  date          = "2024/06/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3497,7 +3495,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/14 v2.32.2 mplib package for LuaTeX]
+    [2024/06/21 v2.32.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
