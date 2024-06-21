@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/14 v2.32.2 Interface for using the mplib library]%
+  [2024/06/21 v2.32.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/14 v2.32.2}
+% \date{2024/06/21 v2.32.3}
 %
 % \maketitle
 %
@@ -431,7 +431,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |\mplibshowlog{disable}| will revert this functionality.
 %   This is a \TeX{} side interface for |luamplib.showlog|. (v2.20.8)
 %
-% \paragraph{Settings regarding cache files}
+% \paragraph{About cache files}
 %   To support |btex ... etex| in external |.mp| files, \textsf{luamplib}
 %   inspects the content of each and every |.mp| input files and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's mplib library.
@@ -576,10 +576,10 @@ See source file '\inFileName' for licencing and contact information.
 %     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |matrix|   &\textit{table} or \textit{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transformation code\\
+%     |matrix|   &\textit{table} or \textit{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
 %     |bbox|     &\textit{table} or \textit{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %     |resources|&\textit{string} & PDF resources if needed\\
-%     |colored|  &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%     |colored| or |coloured| &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
 %                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
 %   \end{center}
@@ -597,7 +597,7 @@ See source file '\inFileName' for licencing and contact information.
 %   However, as luamplib automatically includes the resources of the current page, this option
 %   is not needed in most cases.
 %
-%   Option |colored=false| will generate an uncolored pattern which shall have no color at all.
+%   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
 %   An example:
 %   \begin{verbatim}
@@ -629,6 +629,34 @@ See source file '\inFileName' for licencing and contact information.
 %        endfig;
 %      \end{mplibcode}
 %   \end{verbatim}
+%
+% \paragraph{Lua table \texttt{luamplib.instances}}
+%   Users can access the Lua table containing mplib instances, |luamplib.instances|,
+%   through which metapost variables are also easily accessible
+%   as documented in Lua\TeX{} manual \textsection\,11.2.8.4 (|texdoc luatex|).
+%   The following will print |false|, |3.0|, |MetaPost| and
+%   the points and the cyclicity of the path |unitsquare|, consecutively.
+%   \begin{verbatim}
+%   \begin{mplibcode}[instance1]
+%     boolean b; b = 1 > 2;
+%     numeric n; n = 3;
+%     string s; s = "MetaPost";
+%     path p; p = unitsquare;
+%   \end{mplibcode}
+%
+%   \directlua{
+%     local instance1 = luamplib.instances.instance1
+%     print( instance1:get_boolean"b" )
+%     print( instance1:get_number"n" )
+%     print( instance1:get_string"s" )
+%     local t = instance1:get_path"p"
+%     for k,v in pairs(t) do
+%       print(k, type(v)=='table' and table.concat(v,' ') or v)
+%     end
+%   }
+%   \end{verbatim}
+%   In this way, it would not be difficult to define a paragraph shape
+%   (using \cs{parshape} \TeX\ primitive) which follows an arbitrary metapost path.
 %
 % \paragraph{About figure box metrics}
 %   Notice that, after each figure is processed, macro \cs{MPwidth} stores
@@ -662,8 +690,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.2",
-  date          = "2024/06/14",
+  version       = "2.32.3",
+  date          = "2024/06/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1004,6 +1032,7 @@ end
 %    \begin{macrocode}
 luamplib.codeinherit = false
 local mplibinstances = {}
+luamplib.instances = mplibinstances
 local has_instancename = false
 
 local function reporterror (result, prevlog)
@@ -1200,8 +1229,7 @@ local function process_tex_text (str)
     else
       local boxid = texboxes.globalid + 1
       texboxes.globalid = boxid
-      run_tex_code(format(
-        [[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
+      run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
     run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
@@ -1549,15 +1577,7 @@ luamplib.shadecolor = function (str)
     local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
     local t, obj = res:explode()
     if pdfmode then
-      obj = t[1]:match"^/(.+)"
-      if ltx.pdf and ltx.pdf.object_id then
-        obj = format("%s 0 R", ltx.pdf.object_id(obj))
-      else
-        run_tex_code({
-          [[\edef\mplib_@tempa{\pdf_object_ref:n{]], obj, "}}",
-        },ccexplat)
-        obj = get_macro'mplib_@tempa'
-      end
+      obj = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
     else
       obj = t[2]
     end
@@ -2712,8 +2732,12 @@ if pdfmode then
     end
   end
   pdfetcs.fallback_update_resources = function (name, res)
+    local tabname = format("%s_res",name)
+    if not pdfetcs[tabname] then
+      pdfetcs.initialize_resources(name)
+    end
     if luatexbase.callbacktypes.finish_pdffile then
-      local t = pdfetcs[format("%s_res",name)]
+      local t = pdfetcs[tabname]
       t[#t+1] = res
     else
       local tpr, n = pdfetcs.getpageres() or "", 0
@@ -2725,8 +2749,12 @@ if pdfmode then
     end
   end
 else
-  texsprint("\\special{pdf:obj @MPlibTr<<>>}","\\special{pdf:obj @MPlibSh<<>>}",
-  "\\special{pdf:obj @MPlibCS<<>>}","\\special{pdf:obj @MPlibPt<<>>}")
+  texsprint {
+    "\\special{pdf:obj @MPlibTr<<>>}",
+    "\\special{pdf:obj @MPlibSh<<>>}",
+    "\\special{pdf:obj @MPlibCS<<>>}",
+    "\\special{pdf:obj @MPlibPt<<>>}",
+  }
 end
 
 %    \end{macrocode}
@@ -2744,37 +2772,38 @@ local transparancy_modes = { [0] = "Normal",
 local function update_tr_res(mode,opaq)
   local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
   local on, new = update_pdfobjs(os)
-  if not new then return on end
-  local key = format("MPlibTr%s", on)
-  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
-  if pdfmanagement then
-    texsprint(ccexplat,
-    format("\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{%s}{%s}", key, val))
-  else
-    local tr = format("/%s %s", key, val)
-    if is_defined(pdfetcs.pgfextgs) then
-      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfextgs,tr))
-    elseif pdfmode then
-      if is_defined"TRP@list" then
-        texsprint(catat11,{
-          [[\if@filesw\immediate\write\@auxout{]],
-          [[\string\g@addto@macro\string\TRP@list{]],
-          tr,
-          [[}}\fi]],
-        })
-        if not get_macro"TRP@list":find(tr) then
-          texsprint(catat11,[[\global\TRP@reruntrue]])
+  if new then
+    local key = format("MPlibTr%s", on)
+    local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+    if pdfmanagement then
+      texsprint {
+        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ExtGState}{", key, "}{", val, "}"
+      }
+    else
+      local tr = format("/%s %s", key, val)
+      if is_defined(pdfetcs.pgfextgs) then
+        texsprint { "\\csname ", pdfetcs.pgfextgs, "\\endcsname{", tr, "}" }
+      elseif pdfmode then
+        if is_defined"TRP@list" then
+          texsprint(catat11,{
+            [[\if@filesw\immediate\write\@auxout{]],
+            [[\string\g@addto@macro\string\TRP@list{]],
+            tr,
+            [[}}\fi]],
+          })
+          if not get_macro"TRP@list":find(tr) then
+            texsprint(catat11,[[\global\TRP@reruntrue]])
+          end
+        else
+          pdfetcs.fallback_update_resources("ExtGState", tr)
         end
       else
-        if not pdfetcs.ExtGState_res then
-          pdfetcs.initialize_resources"ExtGState"
-        end
-        pdfetcs.fallback_update_resources("ExtGState", tr)
+        texsprint { "\\special{pdf:put @MPlibTr<<", tr, ">>}" }
       end
-    else
-      texsprint(format("\\special{pdf:put @MPlibTr<<%s>>}",tr))
-      texsprint"\\special{pdf:put @resources<</ExtGState @MPlibTr>>}"
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfextgs) then
+    texsprint"\\special{pdf:put @resources <</ExtGState @MPlibTr>>}"
   end
   return on
 end
@@ -2829,23 +2858,24 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
-  if not new then return on end
-  local key = format("MPlibSh%s", on)
-  local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
-  if pdfmanagement then
-    texsprint(ccexplat,
-    format("\\pdfmanagement_add:nnn{Page/Resources/Shading}{%s}{%s}", key, val))
-  else
-    local res = format("/%s %s", key, val)
-    if pdfmode then
-      if not pdfetcs.Shading_res then
-        pdfetcs.initialize_resources"Shading"
-      end
-      pdfetcs.fallback_update_resources("Shading", res)
+  if new then
+    local key = format("MPlibSh%s", on)
+    local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+    if pdfmanagement then
+      texsprint {
+        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Shading}{", key, "}{", val, "}"
+      }
     else
-      texsprint(format("\\special{pdf:put @MPlibSh<<%s>>}", res))
-      texsprint"\\special{pdf:put @resources<</Shading @MPlibSh>>}"
+      local res = format("/%s %s", key, val)
+      if pdfmode then
+        pdfetcs.fallback_update_resources("Shading", res)
+      else
+        texsprint { "\\special{pdf:put @MPlibSh<<", res, ">>}" }
+      end
     end
+  end
+  if not pdfmode and not pdfmanagement then
+    texsprint"\\special{pdf:put @resources <</Shading @MPlibSh>>}"
   end
   return on
 end
@@ -3003,7 +3033,12 @@ function luamplib.registerpattern ( boxid, name, opts )
   info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
-  if opts.colored == nil then opts.colored = true end
+  if opts.colored == nil then
+    opts.colored = opts.coloured
+    if opts.colored == nil then
+      opts.colored = true
+    end
+  end
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
   if opts.matrix and opts.matrix:find"%a" then
@@ -3029,7 +3064,7 @@ function luamplib.registerpattern ( boxid, name, opts )
       for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
         local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
         if pp and pp:find"__prop_pair" then
-          t[#t+1] = format("/%s %s", v, ltx.__pdf.object["__pdf/Page/Resources/"..v])
+          t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
     else
@@ -3055,17 +3090,24 @@ function luamplib.registerpattern ( boxid, name, opts )
     local optres, t = opts.resources or "", { }
     if pdfmanagement then
       for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
-        run_tex_code(format(
-        [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],v,v),ccexplat)
-        t[#t+1] = texgettoks'mplibtmptoks'
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          run_tex_code {
+            "\\mplibtmptoks\\expanded{{",
+            format("/%s \\csname pdf_object_ref:n\\endcsname{__pdf/Page/Resources/%s}",v,v),
+            "}}",
+          }
+          t[#t+1] = texgettoks'mplibtmptoks'
+        end
       end
     elseif is_defined(pdfetcs.pgfextgs) then
-      run_tex_code("\\mplibtmptoks\\expanded{{\z
-      \\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi\z
-      \\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi}}",catat11)
+      run_tex_code ({
+        "\\mplibtmptoks\\expanded{{",
+        "\\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi",
+        "\\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi",
+        "}}",
+      }, catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
-    else
-      t[#t+1] = "/ExtGState @MPlibTr/Shading @MPlibSh/ColorSpace @MPlibCS"
     end
     optres = optres .. tableconcat(t)
     texsprint {
@@ -3089,21 +3131,22 @@ local function pattern_colorspace (cs)
     local key = format("MPlibCS%i",on)
     local val = pdfmode and format("%i 0 R",on) or format("@mplibpdfobj%i",on)
     if pdfmanagement then
-      texsprint(ccexplat,format("\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{%s}{%s}",key,val))
+      texsprint {
+        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ColorSpace}{", key, "}{", val, "}"
+      }
     else
       local res = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfcolorspace) then
-        texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfcolorspace, res))
+        texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
       elseif pdfmode then
-        if not pdfetcs.ColorSpace_res then
-          pdfetcs.initialize_resources"ColorSpace"
-        end
         pdfetcs.fallback_update_resources("ColorSpace", res)
       else
-        texsprint(format("\\special{pdf:put @MPlibCS<<%s>>}", res))
-        texsprint"\\special{pdf:put @resources<</ColorSpace @MPlibCS>>}"
+        texsprint { "\\special{pdf:put @MPlibCS<<", res, ">>}" }
       end
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfcolorspace) then
+    texsprint"\\special{pdf:put @resources <</ColorSpace @MPlibCS>>}"
   end
   return on
 end
@@ -3139,23 +3182,25 @@ local function do_preobj_PAT(object, prescript)
     end
     pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
   end
-  if patt.done then return end
-  local val = pdfmode and format("%s 0 R",index) or patterns[index]
-  if pdfmanagement then
-    texsprint(ccexplat, format("\\pdfmanagement_add:nnn{Page/Resources/Pattern}{%s}{%s}",key,val))
-  else
-    local res = format("/%s %s", key, val)
-    if is_defined(pdfetcs.pgfpattern) then
-      texsprint(format("\\csname %s\\endcsname{%s}", pdfetcs.pgfpattern, res))
-    elseif pdfmode then
-      if not pdfetcs.Pattern_res then
-        pdfetcs.initialize_resources"Pattern"
-      end
-      pdfetcs.fallback_update_resources("Pattern", res)
+  if not patt.done then
+    local val = pdfmode and format("%s 0 R",index) or patterns[index]
+    if pdfmanagement then
+      texsprint {
+        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Pattern}{", key, "}{", val, "}"
+      }
     else
-      texsprint(format("\\special{pdf:put @MPlibPt<<%s>>}", res))
-      texsprint"\\special{pdf:put @resources<</Pattern @MPlibPt>>}"
+      local res = format("/%s %s", key, val)
+      if is_defined(pdfetcs.pgfpattern) then
+        texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
+      elseif pdfmode then
+        pdfetcs.fallback_update_resources("Pattern", res)
+      else
+        texsprint { "\\special{pdf:put @MPlibPt<<", res, ">>}" }
+      end
     end
+  end
+  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfpattern) then
+    texsprint"\\special{pdf:put @resources <</Pattern @MPlibPt>>}"
   end
   patt.done = true
 end
@@ -3450,7 +3495,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/14 v2.32.2 mplib package for LuaTeX]
+    [2024/06/21 v2.32.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
