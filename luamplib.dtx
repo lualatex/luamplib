@@ -2718,13 +2718,14 @@ end
 
 if pdfmode then
   pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-  pdfetcs.initialize_resources = function (name)
+  local getpageres = pdfetcs.getpageres
+  local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  local initialize_resources = function (name)
     local tabname = format("%s_res",name)
     pdfetcs[tabname] = { }
     if luatexbase.callbacktypes.finish_pdffile then -- ltluatex
       local obj = pdf.reserveobj()
-      pdfetcs.setpageres(format("%s/%s %i 0 R", pdfetcs.getpageres() or "", name, obj))
+      setpageres(format("%s/%s %i 0 R", getpageres() or "", name, obj))
       luatexbase.add_to_callback("finish_pdffile", function()
         pdf.immediateobj(obj, format("<<%s>>", tableconcat(pdfetcs[tabname])))
       end,
@@ -2734,18 +2735,18 @@ if pdfmode then
   pdfetcs.fallback_update_resources = function (name, res)
     local tabname = format("%s_res",name)
     if not pdfetcs[tabname] then
-      pdfetcs.initialize_resources(name)
+      initialize_resources(name)
     end
     if luatexbase.callbacktypes.finish_pdffile then
       local t = pdfetcs[tabname]
       t[#t+1] = res
     else
-      local tpr, n = pdfetcs.getpageres() or "", 0
+      local tpr, n = getpageres() or "", 0
       tpr, n = tpr:gsub(format("/%s<<",name), "%1"..res)
       if n == 0 then
         tpr = format("%s/%s<<%s>>", tpr, name, res)
       end
-      pdfetcs.setpageres(tpr)
+      setpageres(tpr)
     end
   end
 else
@@ -3025,7 +3026,8 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { }
+pdfetcs.patterns = { }
+local patterns = pdfetcs.patterns
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   local wd = format("%.3f",box.width/factor)
