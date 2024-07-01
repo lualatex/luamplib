@@ -1076,6 +1076,12 @@ local function reporterror (result, prevlog)
   end
 end
 
+%    \end{macrocode}
+%
+%     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
+%     we should explicitly seed a unique interger to get random randomseed for each run.
+%    \begin{macrocode}
+if not math.initialseed then math.randomseed(currenttime) end
 local function luamplibload (name)
   local mpx = mplib.new {
     ini_version = true,
