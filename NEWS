@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2024/07/03 2.32.4
+   * make the variable 'patterns' local
+   * 'math.randomseed' on plain TeX
+   * remove redundant code 'fullcircle scaled 0'
+
 2024/06/21 2.32.3
    * 'coloured' is a synonym of the option 'colored' in pattern definition.
 

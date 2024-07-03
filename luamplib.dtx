@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/21 v2.32.3 Interface for using the mplib library]%
+  [2024/07/03 v2.32.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/21 v2.32.3}
+% \date{2024/07/03 v2.32.4}
 %
 % \maketitle
 %
@@ -690,8 +690,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.3",
-  date          = "2024/06/21",
+  version       = "2.32.4",
+  date          = "2024/07/03",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1894,7 +1894,7 @@ function luamplib.glyph (f, c)
   if not gid then return mperr"cannot get GID (glyph id)" end
   local fac = 1000 / (shapedata.units or 1000)
   local t = shapedata.glyphs[gid].segments
-  if not t then return "image(fill fullcircle scaled 0;)" end
+  if not t then return "image()" end
   for i,v in ipairs(t) do
     if type(v) == "table" then
       for ii,vv in ipairs(v) do
@@ -2148,7 +2148,7 @@ function luamplib.outlinetext (text)
   local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
   local box = texgetbox(id)
   local res = outline_horz({ }, box, box.head, 0, 0)
-  if #res == 0 then res = { "mpliboutlinepic[1]:=image(fill fullcircle scaled 0;);" } end
+  if #res == 0 then res = { "mpliboutlinepic[1]:=image();" } end
   return tableconcat(res) .. format("mpliboutlinenum:=%i;", #res)
 end
 
@@ -3503,7 +3503,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/21 v2.32.3 mplib package for LuaTeX]
+    [2024/07/03 v2.32.4 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
