@@ -1576,6 +1576,36 @@ luamplib.shadecolor = function (str)
 %     \end{mplibcode}
 %     \end{document}
 % \end{verbatim}
+%   another one: user-defined DeviceN colorspace
+% \begin{verbatim}
+%    \DocumentMetadata{ }
+%    \documentclass{article}
+%    \usepackage{luamplib}
+%    \mplibsetformat{metafun}
+%    \ExplSyntaxOn
+%    \color_model_new:nnn { pantone1215 }
+%      { Separation }
+%      { name = PANTONE~1215~U ,
+%        alternative-model = cmyk ,
+%        alternative-values = {0, 0.15, 0.51, 0}
+%      }
+%    \color_model_new:nnn { pantone+black }
+%      { DeviceN }
+%      {
+%        names = {pantone1215,black}
+%      }
+%    \color_set:nnn{purepantone}{pantone+black}{1,0}
+%    \color_set:nnn{pureblack} {pantone+black}{0,1}
+%    \ExplSyntaxOff
+%    \begin{document}
+%    \mpfig
+%    fill unitsquare xscaled \mpdim{\textwidth} yscaled 30
+%        withshademethod "linear"
+%        withshadecolors ("purepantone","pureblack")
+%        ;
+%    \endmpfig
+%    \end{document}
+% \end{verbatim}
 %    \begin{macrocode}
     run_tex_code({
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],

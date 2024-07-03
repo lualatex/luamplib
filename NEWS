@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/XX/XX 2.32.5
+   * fix spot-color shading routine to support user-defined colorspace
+
 2024/07/03 2.32.4
    * make the variable 'patterns' local
    * 'math.randomseed' on plain TeX
