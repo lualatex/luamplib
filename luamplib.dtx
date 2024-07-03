@@ -2963,7 +2963,7 @@ local function do_preobj_SH(object,prescript)
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
-          local t, name, value = script[i]:match"=(.+)":explode":"
+          local t, name, value = script[i]:explode"="[2]:explode":"
           value, objref, name = t[1], t[2], t[3]
           if not names[name] then
             pos = pos+1
