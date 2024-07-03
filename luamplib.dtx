@@ -1580,15 +1580,14 @@ luamplib.shadecolor = function (str)
     run_tex_code({
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
     },ccexplat)
-    local name = get_macro'mplib_@tempa':match'{(.-)}{.+}'
+    local name, value = get_macro'mplib_@tempa':match'{(.-)}{(.-)}'
     local t, obj = res:explode()
     if pdfmode then
       obj = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
     else
       obj = t[2]
     end
-    local value = t[3]:match"%[(.-)%]" or t[3]
-    return format('(%s) withprescript"mplib_spotcolor=%s:%s"', value,obj,name)
+    return format('(1) withprescript"mplib_spotcolor=%s:%s:%s"', value,obj,name)
   end
   return colorsplit(res)
 end
@@ -2964,15 +2963,14 @@ local function do_preobj_SH(object,prescript)
       local script = object.prescript:explode"\13+"
       for i=#script,1,-1 do
         if script[i]:find"mplib_spotcolor" then
-          local name, value
-          objref, name = script[i]:match"=(.-):(.+)"
-          value = script[i+1]:match"=(.+)"
+          local t, name, value = script[i]:match"=(.+)":explode":"
+          value, objref, name = t[1], t[2], t[3]
           if not names[name] then
             pos = pos+1
             names[name] = pos
             names[#names+1] = name
           end
-          local t = { }
+          t = { }
           for j=1,names[name] do t[#t+1] = 0 end
           t[#t+1] = value
           tableinsert(#ca == #cb and ca or cb, t)
