@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/06/21 v2.32.3 Interface for using the mplib library]%
+  [2024/07/03 v2.32.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/06/21 v2.32.3}
+% \date{2024/07/03 v2.32.4}
 %
 % \maketitle
 %
@@ -690,8 +690,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.3",
-  date          = "2024/06/21",
+  version       = "2.32.4",
+  date          = "2024/07/03",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1076,6 +1076,12 @@ local function reporterror (result, prevlog)
   end
 end
 
+%    \end{macrocode}
+%
+%     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
+%     we should explicitly seed a unique interger to get random randomseed for each run.
+%    \begin{macrocode}
+if not math.initialseed then math.randomseed(currenttime) end
 local function luamplibload (name)
   local mpx = mplib.new {
     ini_version = true,
@@ -1888,7 +1894,7 @@ function luamplib.glyph (f, c)
   if not gid then return mperr"cannot get GID (glyph id)" end
   local fac = 1000 / (shapedata.units or 1000)
   local t = shapedata.glyphs[gid].segments
-  if not t then return "image(fill fullcircle scaled 0;)" end
+  if not t then return "image()" end
   for i,v in ipairs(t) do
     if type(v) == "table" then
       for ii,vv in ipairs(v) do
@@ -2142,7 +2148,7 @@ function luamplib.outlinetext (text)
   local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
   local box = texgetbox(id)
   local res = outline_horz({ }, box, box.head, 0, 0)
-  if #res == 0 then res = { "mpliboutlinepic[1]:=image(fill fullcircle scaled 0;);" } end
+  if #res == 0 then res = { "mpliboutlinepic[1]:=image();" } end
   return tableconcat(res) .. format("mpliboutlinenum:=%i;", #res)
 end
 
@@ -2718,13 +2724,14 @@ end
 
 if pdfmode then
   pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
-  pdfetcs.setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
-  pdfetcs.initialize_resources = function (name)
+  local getpageres = pdfetcs.getpageres
+  local setpageres = pdf.setpageresources or function(s) pdf.pageresources = s end
+  local initialize_resources = function (name)
     local tabname = format("%s_res",name)
     pdfetcs[tabname] = { }
     if luatexbase.callbacktypes.finish_pdffile then -- ltluatex
       local obj = pdf.reserveobj()
-      pdfetcs.setpageres(format("%s/%s %i 0 R", pdfetcs.getpageres() or "", name, obj))
+      setpageres(format("%s/%s %i 0 R", getpageres() or "", name, obj))
       luatexbase.add_to_callback("finish_pdffile", function()
         pdf.immediateobj(obj, format("<<%s>>", tableconcat(pdfetcs[tabname])))
       end,
@@ -2734,18 +2741,18 @@ if pdfmode then
   pdfetcs.fallback_update_resources = function (name, res)
     local tabname = format("%s_res",name)
     if not pdfetcs[tabname] then
-      pdfetcs.initialize_resources(name)
+      initialize_resources(name)
     end
     if luatexbase.callbacktypes.finish_pdffile then
       local t = pdfetcs[tabname]
       t[#t+1] = res
     else
-      local tpr, n = pdfetcs.getpageres() or "", 0
+      local tpr, n = getpageres() or "", 0
       tpr, n = tpr:gsub(format("/%s<<",name), "%1"..res)
       if n == 0 then
         tpr = format("%s/%s<<%s>>", tpr, name, res)
       end
-      pdfetcs.setpageres(tpr)
+      setpageres(tpr)
     end
   end
 else
@@ -3025,7 +3032,8 @@ end
 %
 %    Patterns
 %    \begin{macrocode}
-patterns = { }
+pdfetcs.patterns = { }
+local patterns = pdfetcs.patterns
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   local wd = format("%.3f",box.width/factor)
@@ -3495,7 +3503,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/06/21 v2.32.3 mplib package for LuaTeX]
+    [2024/07/03 v2.32.4 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
