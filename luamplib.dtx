@@ -562,7 +562,8 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmppattern                % or \end{mppattern}
 %
 %     \mpfig
-%       fill fullcircle scaled 100 withpostscript "collect";
+%       fill fullcircle scaled 100
+%         withpostscript "collect" ;
 %       draw unitsquare shifted - center unitsquare scaled 45
 %         withpattern "mypatt"
 %         withpostscript "evenodd" ;
@@ -604,27 +605,28 @@ See source file '\inFileName' for licencing and contact information.
 %      \begin{mppattern}{pattuncolored}
 %        [
 %          colored = false,
-%          matrix = "rotated 30",
+%          matrix = "slanted .3 rotated 30",
 %        ]
 %        \tiny\TeX
 %      \end{mppattern}
 %
 %      \begin{mplibcode}
 %        beginfig(1)
-%        picture tex; tex := mpliboutlinetext.p ("\bfseries \TeX");
-%        i:=0;
-%        for item within tex:
-%          i:=i+1;
-%          if i < length tex:
-%            fill pathpart item scaled 10
-%                 withpostscript "collect";
-%          else:
+%        picture tex;
+%        tex = mpliboutlinetext.p ("\bfseries \TeX");
+%        for i=1 upto mpliboutlinenum:
+%          j:=0;
+%          for item within mpliboutlinepic[i]:
+%            j:=j+1;
 %            draw pathpart item scaled 10
-%                 withpattern "pattuncolored"
-%                 withpen pencircle scaled 0.5
-%                 withcolor 0.7 blue          % paints the pattern
-%                 ;
-%          fi
+%            if j < length mpliboutlinepic[i]:
+%                withpostscript "collect"
+%            else:
+%                withpattern "pattuncolored"
+%                withpen pencircle scaled 1/2
+%                withcolor (i/4)[red,blue]          % paints the pattern
+%            fi;
+%          endfor
 %        endfor
 %        endfig;
 %      \end{mplibcode}
@@ -2382,6 +2384,39 @@ vardef mplibtransformmatrix (text e) =
   & decimal ypart  t & ","
   & "}");
 enddef;
+primarydef p withfademethod s =
+  p withprescript "mplibfadetype=" & s
+    withprescript "mplibfadebbox=" &
+      decimal xpart llcorner p & ":" &
+      decimal ypart llcorner p & ":" &
+      decimal xpart urcorner p & ":" &
+      decimal ypart urcorner p
+enddef;
+def withfadeopacity (expr a,b) =
+  withprescript "mplibfadeopacity=" &
+    decimal a & ":" &
+    decimal b
+enddef;
+def withfadevector (expr a,b) =
+  withprescript "mplibfadevector=" &
+    decimal xpart a & ":" &
+    decimal ypart a & ":" &
+    decimal xpart b & ":" &
+    decimal ypart b
+enddef;
+let withfadecenter = withfadevector;
+def withfaderadius (expr a,b) =
+  withprescript "mplibfaderadius=" &
+    decimal a & ":" &
+    decimal b
+enddef;
+def withfadebbox (expr a,b) =
+  withprescript "mplibfadebbox=" &
+    decimal xpart a & ":" &
+    decimal ypart a & ":" &
+    decimal xpart b & ":" &
+    decimal ypart b
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -2735,19 +2770,29 @@ pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
 pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
 
-local function update_pdfobjs (os)
-  local on = pdfobjs[os]
+local function update_pdfobjs (os, stream)
+  local key = os
+  if stream then key = key..stream end
+  local on = pdfobjs[key]
   if on then
     return on,false
   end
   if pdfmode then
-    on = pdf.immediateobj(os)
+    if stream then
+      on = pdf.immediateobj("stream",stream,os)
+    else
+      on = pdf.immediateobj(os)
+    end
   else
     on = pdfetcs.cnt or 1
-    texsprint(format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+    if stream then
+      texsprint(format("\\special{pdf:stream @mplibpdfobj%s (%s) <<%s>>}",on,stream,os))
+    else
+      texsprint(format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+    end
     pdfetcs.cnt = on + 1
   end
-  pdfobjs[os] = on
+  pdfobjs[key] = on
   return on,true
 end
 
@@ -2804,12 +2849,9 @@ local transparancy_modes = { [0] = "Normal",
   "Hue",          "Saturation",   "Color",        "Luminosity",
   "Compatible",
 }
-
-local function update_tr_res(mode,opaq)
-  local os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
-  local on, new = update_pdfobjs(os)
+local function add_extgs_resources (on, new)
+  local key = format("MPlibTr%s", on)
   if new then
-    local key = format("MPlibTr%s", on)
     local val = format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
     if pdfmanagement then
       texsprint {
@@ -2841,21 +2883,22 @@ local function update_tr_res(mode,opaq)
   if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfextgs) then
     texsprint"\\special{pdf:put @resources <</ExtGState @MPlibTr>>}"
   end
-  return on
+  return key
 end
-
 local function do_preobj_TR(object,prescript)
   if object.postscript == "collect" then return end
   local opaq = prescript and prescript.tr_transparency
-  local tron_no
+  local on
   if opaq then
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)]
-    tron_no = update_tr_res(mode, opaq)
+    local os, new = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
+    on, new = update_pdfobjs(os)
+    local key = add_extgs_resources(on,new)
     start_pdf_code()
-    pdf_literalcode("/MPlibTr%i gs",tron_no)
+    pdf_literalcode("/%s gs",key)
   end
-  return tron_no
+  return on
 end
 
 %    \end{macrocode}
@@ -3243,6 +3286,87 @@ end
 
 %    \end{macrocode}
 %
+%    Fading
+%    \begin{macrocode}
+local function do_preobj_FADE (object, prescript)
+  local fd_type = prescript and prescript.mplibfadetype
+  if not fd_type then return end
+  local dx, dy = 0, 0
+  local bbox = prescript.mplibfadebbox; bbox = bbox:explode":"
+  if tonumber(bbox[1]) < 0 then
+    dx = -bbox[1]
+    bbox[1], bbox[3] = 0, bbox[3] + dx
+  end
+  if tonumber(bbox[2]) < 0 then
+    dy = -bbox[2]
+    bbox[2], bbox[4] = 0, bbox[4] + dy
+  end
+  local vec, coords = prescript.mplibfadevector, { }
+  if vec then
+    vec = vec:explode":"
+    for i=1,4 do
+      coords[#coords+1] = vec[i] + (i % 2 == 0 and dy or dx)
+    end
+  end
+  if fd_type == "linear" then
+    if not vec then
+      coords = { bbox[1], bbox[2], bbox[3], bbox[2] } -- left to right
+    end
+    coords = format("%f %f %f %f", table.unpack(coords))
+  elseif fd_type == "circular" then
+    local width, height = bbox[3]-bbox[1], bbox[4]-bbox[2]
+    if not vec then
+      coords = { width/2, height/2, width/2, height/2 } -- center for both circle
+    end
+    local radius = prescript.mplibfaderadius or format("0:%f",math.sqrt(width^2+height^2)/2);
+    radius = radius:explode":"
+    tableinsert(coords, 3, radius[1])
+    tableinsert(coords, radius[2])
+    coords = format("%f %f %f %f %f %f", table.unpack(coords))
+  else
+    err("unknown fading method '%s'", fd_type)
+  end
+  fd_type = fd_type == "linear" and 2 or 3
+  bbox = format("%f %f %f %f", bbox[1],bbox[2],bbox[3],bbox[4])
+  local opaq = prescript.mplibfadeopacity or "1:0"; opaq = opaq:explode":"
+  local ca, cb = {{ opaq[1] }}, {{ opaq[2] }}
+  local on, os, new
+  on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", ca, cb, coords, 1)
+  if pdfmode then
+    os = format("<</PatternType 2/Shading %s 0 R>>", on)
+  else
+    os = format("<</PatternType 2/Shading @mplibpdfobj%s>>", on)
+  end
+  on = update_pdfobjs(os)
+  local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
+  if pdfmode then
+    os = format("<</Pattern <</MPlibFd%s %s 0 R>> >>", on, on)
+  else
+    os = format("<</Pattern <</MPlibFd%s @mplibpdfobj%s>> >>", on, on)
+  end
+  on = update_pdfobjs(os)
+  local attr = tableconcat({
+    "/Subtype/Form",
+    "/Group<</CS/DeviceGray /S/Transparency>>",
+    format("/BBox[%s]", bbox),
+    format("/Matrix[1 0 0 1 %f %f]", -dx, -dy),
+    format(pdfmode and "/Resources %s 0 R" or "/Resources @mplibpdfobj%s", on),
+  }," ")
+  on = update_pdfobjs(attr, streamtext)
+  os = tableconcat {
+    "<</SMask <</Type/Mask/S/Luminosity",
+    format(pdfmode and "/G %s 0 R" or "/G @mplibpdfobj%s", on),
+    "/BC [0]>> >>",
+  }
+  on, new = update_pdfobjs(os)
+  local key = add_extgs_resources(on,new)
+  start_pdf_code()
+  pdf_literalcode("/%s gs", key)
+  return on
+end
+
+%    \end{macrocode}
+%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
 function luamplib.flush (result,flusher)
@@ -3284,13 +3408,14 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%    The following 6 lines are part of |btex...etex| patch.
+%    The following 7 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
               prescript = prescript and script2table(prescript) -- prescript is now a table
               local cr_over = do_preobj_CR(object,prescript) -- color
               local tr_opaq = do_preobj_TR(object,prescript) -- opacity
+              local fading_ = do_preobj_FADE(object,prescript) -- fading
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -3467,6 +3592,9 @@ function luamplib.flush (result,flusher)
                     pdf_literalcode("W n /MPlibSh%s sh Q",shade_no)
                   end
                 end
+              end
+              if fading_ then -- fading
+                stop_pdf_code() -- if collected, delay the Q.
               end
               if tr_opaq then -- opacity
                 stop_pdf_code()
