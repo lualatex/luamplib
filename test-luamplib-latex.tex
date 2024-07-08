@@ -7,7 +7,7 @@
 \usepackage{fontspec}
 \setmainfont{latin modern roman}
 \usepackage{luamplib}
-\usepackage{xcolor}
+\usepackage{graphicx,xcolor}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
@@ -280,12 +280,24 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
       else:
           withpattern "pattuncolored"
           withfademethod "linear"
-          withfadevector (llcorner mpliboutlinepic[i], lrcorner mpliboutlinepic[i])
+          withfadebbox (10 llcorner mpliboutlinepic[i], 10 urcorner mpliboutlinepic[i])
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;
     endfor
   endfor
+\endmpfig
+\par
+\mpfig
+  picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
+  draw mill;
+  mill := mill shifted 125right;
+  draw mill
+    withfademethod "circular"
+    withfadecenter (center mill, center mill)
+    withfaderadius (20, abs(lrcorner mill - llcorner mill)/2)
+    withfadeopacity (1, 0)
+    ;
 \endmpfig
 \tracingcommands0
 

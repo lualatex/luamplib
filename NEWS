@@ -1,6 +1,10 @@
                        History of the luamplib package
 
-2024/XX/XX 2.32.5
+2024/07/08 2.33.0
+   * provide a new metapost operator 'withfademethod' and related macros,
+   which make the color of an object gradiently transparent. see luamplib
+   document for details.
+
    * fix spot-color shading routine to support user-defined colorspace
 
 2024/07/03 2.32.4

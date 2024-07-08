@@ -272,6 +272,8 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
           withpostscript "collect"
       else:
           withpattern "pattuncolored"
+          withfademethod "linear"
+          withfadebbox (10 llcorner tex, 10 urcorner tex)
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/03 v2.32.4 Interface for using the mplib library]%
+  [2024/07/08 v2.33.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers ---
 % Support: \email{lualatex-dev@tug.org}}
-% \date{2024/07/03 v2.32.4}
+% \date{2024/07/08 v2.33.0}
 %
 % \maketitle
 %
@@ -632,6 +632,49 @@ See source file '\inFileName' for licencing and contact information.
 %      \end{mplibcode}
 %   \end{verbatim}
 %
+% \paragraph{\texttt{withfademethod} and related macros}
+%   |withfademethod| is a metapost operator which makes the color of an object gradiently transparent.
+%   The syntax is \textit{<path>}\texttt{\char"7C}\textit{<picture>} |withfademethod| \textit{<string>},
+%   the latter being either |"linear"| or |"circular"|.
+%   Though it is similar to the |withshademethod| provided by metafun,
+%   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
+%   (2) you cannot make gradient colors, but can only make gradient opacity.
+%
+%   Related macros to control optional values are:
+%   \begin{description}
+%   \item [|withfadeopacity (|\textit{\mdseries number, number}|)|]
+%     sets the starting opacity and the ending opacity, default value being |(1,0)|.
+%     `|1|' denotes full color; `|0|' full transparency.
+%   \item [|withfadevector (|\textit{\mdseries pair, pair}|)|]
+%     sets the starting and ending points. Default value in the linear mode is
+%     |(llcorner p, lrcorner p)|, where |p| is the operand,
+%     meaning that fading starts from the left edge and ends at the right edge.
+%     Default value in the circular mode is |(center p, center p)|, which means
+%     centers of both starting and ending circles are the center of the bounding box.
+%   \item [|withfadecenter|] is a synonym of |withfadevector|.
+%   \item [|withfaderadius (|\textit{\mdseries number, number}|)|]
+%     sets the radii of starting and ending circles. This is no-op in the linear mode.
+%     Default value is |(0, abs(center p - urcorner p))|, meaning that fading starts from the
+%     center and ends at the four corners of the bounding box.
+%   \item [|withfadebbox (|\textit{\mdseries pair, pair}|)|]
+%     sets the bounding box of the fading area, default value being |(llcorner p, urcorner p)|.
+%     Though this option is not needed in most cases, there could be cases when users want to
+%     explicitly control the bounding box.
+%   \end{description}
+%   An example:
+%   \begin{verbatim}
+%     \mpfig
+%       picture mill;
+%       mill = btex \includegraphics[width=100bp]{mill} etex;
+%       draw mill
+%         withfademethod  "circular"
+%         withfadecenter  (center mill, center mill)
+%         withfaderadius  (20, 50)
+%         withfadeopacity (1, 0)
+%         ;
+%     \endmpfig
+%   \end{verbatim}
+%
 % \paragraph{Lua table \texttt{luamplib.instances}}
 %   Users can access the Lua table containing mplib instances, |luamplib.instances|,
 %   through which metapost variables are also easily accessible
@@ -692,8 +735,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.32.4",
-  date          = "2024/07/03",
+  version       = "2.33.0",
+  date          = "2024/07/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -755,6 +798,7 @@ luamplib.showlog  = luamplib.showlog or false
 %    \begin{macrocode}
 local tableconcat = table.concat
 local tableinsert = table.insert
+local tableunpack = table.unpack
 local texsprint   = tex.sprint
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
@@ -1444,7 +1488,7 @@ function luamplib.runscript (code)
       return buffer
     end
     buffer = {}
-    mpprint(buffer, table.unpack(res))
+    mpprint(buffer, tableunpack(res))
     return tableconcat(buffer)
   end
   return ""
@@ -3289,10 +3333,11 @@ end
 %    Fading
 %    \begin{macrocode}
 local function do_preobj_FADE (object, prescript)
+  if object.postscript == "collect" then return end
   local fd_type = prescript and prescript.mplibfadetype
   if not fd_type then return end
   local dx, dy = 0, 0
-  local bbox = prescript.mplibfadebbox; bbox = bbox:explode":"
+  local bbox = prescript.mplibfadebbox:explode":"
   if tonumber(bbox[1]) < 0 then
     dx = -bbox[1]
     bbox[1], bbox[3] = 0, bbox[3] + dx
@@ -3312,7 +3357,7 @@ local function do_preobj_FADE (object, prescript)
     if not vec then
       coords = { bbox[1], bbox[2], bbox[3], bbox[2] } -- left to right
     end
-    coords = format("%f %f %f %f", table.unpack(coords))
+    coords = format("%f %f %f %f", tableunpack(coords))
   elseif fd_type == "circular" then
     local width, height = bbox[3]-bbox[1], bbox[4]-bbox[2]
     if not vec then
@@ -3322,13 +3367,13 @@ local function do_preobj_FADE (object, prescript)
     radius = radius:explode":"
     tableinsert(coords, 3, radius[1])
     tableinsert(coords, radius[2])
-    coords = format("%f %f %f %f %f %f", table.unpack(coords))
+    coords = format("%f %f %f %f %f %f", tableunpack(coords))
   else
     err("unknown fading method '%s'", fd_type)
   end
   fd_type = fd_type == "linear" and 2 or 3
-  bbox = format("%f %f %f %f", bbox[1],bbox[2],bbox[3],bbox[4])
-  local opaq = prescript.mplibfadeopacity or "1:0"; opaq = opaq:explode":"
+  bbox = format("%f %f %f %f", tableunpack(bbox))
+  local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
   local ca, cb = {{ opaq[1] }}, {{ opaq[2] }}
   local on, os, new
   on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", ca, cb, coords, 1)
@@ -3340,23 +3385,25 @@ local function do_preobj_FADE (object, prescript)
   on = update_pdfobjs(os)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   if pdfmode then
-    os = format("<</Pattern <</MPlibFd%s %s 0 R>> >>", on, on)
+    os = format("<</Pattern<</MPlibFd%s %s 0 R>>>>", on, on)
   else
-    os = format("<</Pattern <</MPlibFd%s @mplibpdfobj%s>> >>", on, on)
+    os = format("<</Pattern<</MPlibFd%s @mplibpdfobj%s>>>>", on, on)
   end
   on = update_pdfobjs(os)
-  local attr = tableconcat({
+  local resources = "/Resources "..format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on)
+  on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
+  local attr = tableconcat{
     "/Subtype/Form",
-    "/Group<</CS/DeviceGray /S/Transparency>>",
     format("/BBox[%s]", bbox),
     format("/Matrix[1 0 0 1 %f %f]", -dx, -dy),
-    format(pdfmode and "/Resources %s 0 R" or "/Resources @mplibpdfobj%s", on),
-  }," ")
+    resources,
+    "/Group ", format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on),
+  }
   on = update_pdfobjs(attr, streamtext)
   os = tableconcat {
-    "<</SMask <</Type/Mask/S/Luminosity",
-    format(pdfmode and "/G %s 0 R" or "/G @mplibpdfobj%s", on),
-    "/BC [0]>> >>",
+    "<</SMask<</S/Luminosity/G ",
+    format(pdfmode and "%s 0 R" or "@mplibpdfobj%s", on),
+    ">>>>",
   }
   on, new = update_pdfobjs(os)
   local key = add_extgs_resources(on,new)
@@ -3659,7 +3706,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/03 v2.32.4 mplib package for LuaTeX]
+    [2024/07/08 v2.33.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
