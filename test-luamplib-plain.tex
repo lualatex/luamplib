@@ -261,17 +261,23 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
   \fiverm\TeX
 \endmppattern
 \mpfig
-  picture tex; tex := mpliboutlinetext.p ("\bf \TeX");
-  i:=0;
-  for item within tex:
-    i:=i+1;
-    if i < length tex:
-      fill pathpart item scaled 10 withpostscript "collect";
-    else:
-      draw pathpart item scaled 10 withpattern "pattuncolored"
-      withpen pencircle scaled 1/2
-      withcolor 0.7 blue;
-    fi
+  picture tex;
+  tex = mpliboutlinetext.p ("\bf \TeX");
+  for i=1 upto mpliboutlinenum:
+    j:=0;
+    for item within mpliboutlinepic[i]:
+      j:=j+1;
+      draw pathpart item scaled 10
+      if j < length mpliboutlinepic[i]:
+          withpostscript "collect"
+      else:
+          withpattern "pattuncolored"
+          withfademethod "linear"
+          withfadebbox (10 llcorner tex, 10 urcorner tex)
+          withpen pencircle scaled 1/2
+          withcolor (i/4)[red,blue]
+      fi;
+    endfor
   endfor
 \endmpfig
 \tracingcommands0
