@@ -1125,7 +1125,7 @@ end
 %    \end{macrocode}
 %
 %     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
-%     we should explicitly seed a unique interger to get random randomseed for each run.
+%     we should explicitly seed a unique integer to get random randomseed for each run.
 %    \begin{macrocode}
 if not math.initialseed then math.randomseed(currenttime) end
 local function luamplibload (name)
@@ -1236,7 +1236,7 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 %
 %    |tex.scantoks| sometimes fail to read catcode properly, especially
 %    |\#|, |\&|, or |\%|. After some experiment, we dropped using it.
-%    Instead, a function containing |tex.script| seems to work nicely.
+%    Instead, a function containing |tex.sprint| seems to work nicely.
 %    \begin{verbatim}
 %      local function run_tex_code_no_use (str, cat)
 %        cat = cat or catlatex
@@ -1251,13 +1251,12 @@ end
 
 %    \end{macrocode}
 %
-%    Prepare textext box number containers,
-%    locals, globals and possibly instances.
+%    Prepare textext box number containers, locals and globals.
 %    |localid| can be any number. They are local anyway.
 %    The number will be reset at the start of a new code chunk.
 %    Global boxes will use |\newbox| command in |tex.runtoks| process.
 %    This is the same when |codeinherit| is declared as true.
-%    Boxes of an instance will also be global, so that
+%    Boxes of an instance with instance name will also be global, so that
 %    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
 local texboxes = { globalid = 0, localid = 4096 }
@@ -3336,16 +3335,9 @@ local function do_preobj_FADE (object, prescript)
   if object.postscript == "collect" then return end
   local fd_type = prescript and prescript.mplibfadetype
   if not fd_type then return end
-  local dx, dy = 0, 0
   local bbox = prescript.mplibfadebbox:explode":"
-  if tonumber(bbox[1]) < 0 then
-    dx = -bbox[1]
-    bbox[1], bbox[3] = 0, bbox[3] + dx
-  end
-  if tonumber(bbox[2]) < 0 then
-    dy = -bbox[2]
-    bbox[2], bbox[4] = 0, bbox[4] + dy
-  end
+  local dx, dy = -bbox[1], -bbox[2]
+  bbox = { 0, 0, bbox[3] + dx, bbox[4] + dy }
   local vec, coords = prescript.mplibfadevector, { }
   if vec then
     vec = vec:explode":"
