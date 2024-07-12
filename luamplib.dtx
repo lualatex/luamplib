@@ -205,7 +205,7 @@ See source file '\inFileName' for licencing and contact information.
 % It seems to be convenient to divide the explanations of some more changes and cautions
 % into three parts: \TeX, MetaPost, and Lua interfaces.
 %
-% \subsection{\TeX\ interfaces}
+% \subsection{\TeX}
 %
 % \paragraph{\cs{mplibforcehmode}}
 %   When this macro is declared, every metapost figure box will be
@@ -511,7 +511,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \subsection{MetaPost interfaces}
+% \subsection{MetaPost}
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
 %   These are MetaPost interfaces of the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
@@ -757,7 +757,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %   \end{verbatim}
 %
-% \subsection{Lua interfaces}
+% \subsection{Lua}
 %
 % \paragraph{\texttt{runscript ...}}
 %   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from MetaPost side
@@ -798,9 +798,6 @@ See source file '\inFileName' for licencing and contact information.
 %     end
 %   }
 %   \end{verbatim}
-%   In this way, it would not be difficult to define a paragraph shape
-%   (using \cs{parshape} \TeX\ primitive) which follows an arbitrary metapost path,
-%   if you are more familiar with Lua programming than MetaPost programming.
 %
 % \paragraph{Lua function \texttt{luamplib.process\_mplibcode}}
 %   Users can execute a MetaPost code chunk from Lua side by using this function:
@@ -810,8 +807,27 @@ See source file '\inFileName' for licencing and contact information.
 %   The second parameter cannot be absent, but can be an empty string (|""|) which
 %   means that it has no instance name.
 %
-%   \textsc{n.b.} The developers of luamplib have not tried to load the package
-%   with |texlua|. luamplib is intended to be used with |lua(la)tex|.
+%   Some other elements in the |luamplib| table, listed in Table~\ref{tab:elementsinluamplib},
+%   can have effects on the process of |process_mplibcode|.
+%   \begin{table}
+%     \centering
+%     \caption{elements in \texttt{luamplib} table (partial)}\label{tab:elementsinluamplib}
+%   \begin{tabular}{lll}\hline
+%     Key & Type & Related \TeX\ macro \\\hline
+%     |codeinherit|	& \emph{boolean} & \cs{mplibcodeinherit}\\
+%     |everyendmplib|	& \emph{table} & \cs{everyendmplib}\\
+%     |everymplib| & \emph{table} & \cs{everymplib}\\
+%     |getcachedir|	& \emph{function} (\emph{<string>}) & \cs{mplibcachedir}\\
+%     |globaltextext|	& \emph{boolean} & \cs{mplibglobaltextext}\\
+%     |legacy_verbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior}\\
+%     |noneedtoreplace|	& \emph{table} & \cs{mplibmakenocache}\\
+%     |numbersystem|	& \emph{string} & \cs{mplibnumbersystem}\\
+%     |setformat|	& \emph{function} (\emph{<string>}) & \cs{mplibsetformat}\\
+%     |showlog|	& \emph{boolean} & \cs{mplibshowlog}\\
+%     |textextlabel| & \emph{boolean} & \cs{mplibtextextlabel}\\
+%     |verbatiminput| & \emph{boolean} & \cs{mplibverbatim}\\\hline
+%   \end{tabular}
+%   \end{table}
 %
 %
 %    \section{Implementation}
