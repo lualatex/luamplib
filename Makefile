@@ -40,6 +40,7 @@ world: all ctan
 %.pdf: %.dtx
 	@$(DOLATEX)
 	@if( grep rerunfilecheck $(NAME).log |grep 'has changed' > /dev/null ); then $(DOLATEX); fi
+	@if( grep 'Rerun to get' $(NAME).log > /dev/null ); then $(DOLATEX); fi
 
 $(UNPACKED): $(DTX)
 	luatex -interaction=batchmode $< >/dev/null

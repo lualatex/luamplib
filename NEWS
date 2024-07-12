@@ -1,8 +1,8 @@
                        History of the luamplib package
 
 2024/xx/xx 2.33.1
-   * improve fade routine to get a little smaller pdf file
-   * refactor the document
+   * improve fade routine to get possibly smaller pdf file
+   * refactor the manual, including some minor items undocumented so far
 
 2024/07/08 2.33.0
    * provide a new metapost operator 'withfademethod' and related macros,
