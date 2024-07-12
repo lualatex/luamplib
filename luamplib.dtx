@@ -183,18 +183,18 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
-%   |textext()| is a more versatile macro equivalent to |TEX()| from TEX.mp.
+%   |textext()| is a more versatile macro equivalent to |TEX()| from \textsf{TEX.mp}.
 %   |TEX()| is also allowed and is a synonym of |textext()|.
 %   The argument of
 %   \textsf{mplib}'s primitive |maketext| will also be processed by the same routine.
 %
 % \item possibility to use |verbatimtex ... etex|, though it's behavior cannot
-%   be the same as the stand-alone |mpost|.
-%   Of course you cannot use \cs{documentclass}, \cs{usepackage} etc.
+%   be the same as the stand-alone \textsf{mpost}.
+%   Of course you cannot include \cs{documentclass}, \cs{usepackage} etc.
 %   When these \TeX\ commands are found in |verbatimtex ... etex|, the entire code will be
 %   ignored.
 %   The treatment of |verbatimtex| command has changed a lot since v2.20;
-%   see below regarding \cs{mpliblegacybehaviour}.
+%   see below regarding \cs{mpliblegacybehavior}.
 %
 % \item in the past,
 %   the package required PDF mode in order to have some output.
@@ -241,9 +241,10 @@ See source file '\inFileName' for licencing and contact information.
 %   and outlinetext is supported by our own alternative |mpliboutlinetext| (see below \S\,1.2).
 %
 %   \textcolor{red}{☞}
-%   Among these, transparency is so simple that you can use it with the \emph{plain} format as well
+%   Among these, transparency is so simple that you can apply it to an object,
+%   even with the \emph{plain} format,
 %   just by appending |withprescript "tr_transparency=|\emph{<number>}|"|, where
-%   $0 \le$ \emph{<number>} $\le 1$, to the end of a sentence.
+%   $0 \le \hbox{\emph{<number>}} \le 1$, to the end of the sentence.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -259,10 +260,17 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mplibnumbersystem\{decimal\}}.
 %   See also \url{http://github.com/lualatex/luamplib/issues/21}.
 %
+% \paragraph{\cs{mplibshowlog\{enable\char"7C disable\}}}
+%   Default: |disable|.
+%   When |\mplibshowlog{enable}|\footnote{As for user's setting,
+%   |enable|, |true| and |yes| are identical;
+%   |disable|, |false| and |no| are identical.} is declared, log messages returned by
+%   the metapost process will be printed to the |.log| file.
+%   |\mplibshowlog{disable}| will revert this behavior.
+%   This is the \TeX{} side interface for |luamplib.showlog|.
+%
 % \paragraph{\cs{mpliblegacybehavior\{enable\char"7C disable\}}}
-%   By default, |\mpliblegacybehavior{enable}|\footnote{%
-%   As for user's setting, |enable|, |true| and |yes| are identical;
-%   |disable|, |false| and |no| are identical.}
+%   By default, |\mpliblegacybehavior{enable}|
 %   is already declared for backward compatibility,
 %   in which case \TeX\ code in
 %   |verbatimtex| |...| |etex| that comes just before |beginfig()|
@@ -285,7 +293,7 @@ See source file '\inFileName' for licencing and contact information.
 %   On the other hand, \TeX\ code in |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
 %   after flushing out the metapost figure.
-%   In the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
+%   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
 %   \begin{verbatim}
 %     \mplibcode
 %       D := sqrt(2)**7;
@@ -396,20 +404,13 @@ See source file '\inFileName' for licencing and contact information.
 %   Users can issue |\mplibverbatim{enable}|, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
 %   except for |\mpdim| and |\mpcolor| (see below), all other \TeX\ commands outside of the
-%   |btex| |...| |etex| or |verbatimtex| |...| |etex| are not expanded and will be fed
-%   literally to the mplib process.
-%
-% \paragraph{\cs{mplibshowlog\{enable\char"7C disable\}}}
-%   Default: |disable|.
-%   When |\mplibshowlog{enable}| is declared, log messages returned by
-%   metapost process will be printed to the |.log| file.
-%   |\mplibshowlog{disable}| will revert this functionality.
-%   This is the \TeX{} side interface for |luamplib.showlog|.
+%   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
+%   literally to the \textsf{mplib} library.
 %
 % \paragraph{\cs{mpdim\{...\}}}
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
 %   in the mplibcode environment. This feature is inpired by \textsf{gmp} package authored by
-%   Enrico Gregorio. Please refer the manual of gmp package for details.
+%   Enrico Gregorio. Please refer to the manual of \textsf{gmp} package for details.
 %   \begin{verbatim}
 %     \begin{mplibcode}
 %       beginfig(1)
@@ -470,7 +471,7 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{About cache files}
 %   To support |btex ... etex| in external |.mp| files, luamplib
 %   inspects the content of each and every |.mp| file and makes caches
-%   if nececcsary, before returning their paths to \LuaTeX's mplib library.
+%   if nececcsary, before returning their paths to \LuaTeX's \textsf{mplib} library.
 %   This could waste the compilation time, as most |.mp| files
 %   do not contain |btex ... etex| commands.  So luamplib provides
 %   macros as follows, so that users can give instructions about files
@@ -764,7 +765,7 @@ See source file '\inFileName' for licencing and contact information.
 %   As the functionality is provided by the \textsf{mplib} library itself,
 %   luamplib does not have much to say about it.
 %
-%   One thing is worth to mention, however:
+%   One thing is worth mentioning, however:
 %   if you return a Lua \emph{table} to the metapost process,
 %   it is automatically converted to a relevant metapost value type
 %   such as pair, color, cmykcolor or transform.
