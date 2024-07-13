@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/08 v2.33.0 Interface for using the mplib library]%
+  [2024/07/14 v2.33.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Maintainer: LuaLaTeX Maintainers\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/08 v2.33.0}
+% \date{2024/07/14 v2.33.1}
 %
 % \maketitle
 %
@@ -218,7 +218,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{everymplib} and \cs{everyendmplib} redefine
 %   the lua table containing metapost code
 %   which will
-%   be automatically inserted at the beginning and ending of each |mplibcode|.
+%   be automatically inserted at the beginning and ending of each metapost code chunk.
 %   \begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -240,17 +240,17 @@ See source file '\inFileName' for licencing and contact information.
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext| (see below \S\,1.2).
 %
-%   \textcolor{red}{☞}
+%   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
 %   Among these, transparency is so simple that you can apply it to an object,
 %   even with the \emph{plain} format,
 %   just by appending |withprescript "tr_transparency=|\emph{<number>}|"|, where
-%   $0 \le \hbox{\emph{<number>}} \le 1$, to the end of the sentence.
+%   $0 \le \hbox{\emph{<number>}} \le 1$, to the sentence.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
 %   it is regarded by luamplib as
 %   a color expression of \TeX\ side.
-%   For instance, in case of |withshadecolors("orange", 2/3red)|, the first color |"orange"| will be
+%   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
 %   interpreted as an \textsf{xcolor}'s or \textsf{l3color}'s expression.
 %
 % \paragraph{\cs{mplibnumbersystem\{scaled\char"7C double\char"7C decimal\}}}
@@ -258,7 +258,6 @@ See source file '\inFileName' for licencing and contact information.
 %   The default value is |scaled|, which can be changed
 %   by declaring \cs{mplibnumbersystem\{double\}} or
 %   \cs{mplibnumbersystem\{decimal\}}.
-%   See also \url{http://github.com/lualatex/luamplib/issues/21}.
 %
 % \paragraph{\cs{mplibshowlog\{enable\char"7C disable\}}}
 %   Default: |disable|.
@@ -266,7 +265,6 @@ See source file '\inFileName' for licencing and contact information.
 %   |enable|, |true| and |yes| are identical;
 %   |disable|, |false| and |no| are identical.} is declared, log messages returned by
 %   the metapost process will be printed to the |.log| file.
-%   |\mplibshowlog{disable}| will revert this behavior.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
 % \paragraph{\cs{mpliblegacybehavior\{enable\char"7C disable\}}}
@@ -310,7 +308,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |verbatimtex| |...| |etex| will be executed, along with |btex| |...| |etex|,
 %   sequentially one by one.
 %   So, some \TeX\ code in |verbatimtex ... etex| will have effects on
-%   the following |btex| |...| |etex| codes.
+%   following |btex| |...| |etex| codes.
 %   \begin{verbatim}
 %     \begin{mplibcode}
 %       beginfig(0);
@@ -339,7 +337,7 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mplibcodeinherit\{enable\char"7C disable\}}}
 %   Default: |disable|.
 %   |\mplibcodeinherit{enable}| enables the inheritance
-%   of variables, constants, and macros defined by previous |mplibcode| chunks.
+%   of variables, constants, and macros defined by previous metapost code chunks.
 %   On the contrary, |\mplibcodeinherit{disable}| will make
 %   each code chunk being treated as an independent instance, never
 %   affected by previous code chunks.
@@ -489,8 +487,8 @@ See source file '\inFileName' for licencing and contact information.
 %   in the directory where output files are saved:
 %   to be specific, |$TEXMF_OUTPUT_DIRECTORY/luamplib_cache|,
 %   |./luamplib_cache|, |$TEXMFOUTPUT/luamplib_cache|, and |.|, in this order.
-%   (|$TEXMF_OUTPUT_DIRECTORY| is normally the value of |--output-directory|
-%   command-line option.)
+%   |$TEXMF_OUTPUT_DIRECTORY| is normally the value of |--output-directory|
+%   command-line option.
 %
 %   Users can change this behavior by the command
 %   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
@@ -514,7 +512,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsection{MetaPost}
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
-%   These are MetaPost interfaces of the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
+%   These are MetaPost interfaces for the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
 %   |mplibdimen("\linewidth")| is basically the same as |\mpdim{\linewidth}|, and
 %   |mplibcolor("red!50")| is basically the same as |\mpcolor{red!50}|.
 %   The difference is that these metapost operators can also be used in external |.mp| files,
@@ -547,7 +545,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{verbatim}
 %   |fakebold|, |drawcolor| and |fillcolor| are optional;
 %   default values are |2|, |"black"| and |"white"| respectively.
-%   When the color expressions are given as string, they are regarded as
+%   When the color expressions are given in string type, they are regarded as
 %   \textsf{xcolor}'s or \textsf{l3color}'s expressions.
 %   All from |mplibgraphictext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
@@ -592,7 +590,7 @@ See source file '\inFileName' for licencing and contact information.
 %   number rule. As a result, for instance, the area surrounded by inner path of ``O''
 %   will remain transparent.
 %
-%   \textcolor{red}{☞}
+%   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
 %   To apply the nonzero winding number rule to a picture containg paths,
 %   luamplib appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
@@ -651,6 +649,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   The available options are listed in Table~\ref{tab:mppatternoptions}.
 %   \begin{table}
+%   \centering
 %   \caption{options for \cs{mppattern}}\label{tab:mppatternoptions}
 %   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
@@ -804,7 +803,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{verbatim}
 %     luamplib.process_mplibcode (<string> metapost code, <string> instance name)
 %   \end{verbatim}
-%   The second parameter cannot be absent, but can be an empty string (|""|) which
+%   The second argument cannot be absent, but can be an empty string (|""|) which
 %   means that it has no instance name.
 %
 %   Some other elements in the |luamplib| table, listed in Table~\ref{tab:elementsinluamplib},
@@ -842,8 +841,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.33.0",
-  date          = "2024/07/08",
+  version       = "2.33.1",
+  date          = "2024/07/14",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3781,7 +3780,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/08 v2.33.0 mplib package for LuaTeX]
+    [2024/07/14 v2.33.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi

@@ -1,6 +1,6 @@
                        History of the luamplib package
 
-2024/xx/xx 2.33.1
+2024/07/14 2.33.1
    * improve fade routine to get possibly smaller pdf file
    * refactor the manual, including some minor items undocumented so far
 
