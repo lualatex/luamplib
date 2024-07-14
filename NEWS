@@ -2,7 +2,7 @@
 
 2024/07/14 2.33.1
    * refactor the manual, including some minor items undocumented so far
-   * improve fade routine to get possibly smaller pdf file
+   * improve fading routine to get possibly smaller pdf file
 
 2024/07/08 2.33.0
    * provide a new metapost operator 'withfademethod' and related macros,
