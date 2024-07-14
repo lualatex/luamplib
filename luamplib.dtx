@@ -2,8 +2,8 @@
 %
 % Copyright (C) 2008-2024 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
-% Currently maintained by the LuaLaTeX development team.
-% Support: <lualatex-dev@tug.org>
+% Currently maintained by Kim Dohyun.
+% Support: <https://github.com/lualatex/luamplib>
 %
 % This work is under the GPL v2.0 license.
 %
@@ -151,7 +151,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \title{The \textsf{luamplib} package}
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
-% Maintainer: LuaLaTeX Maintainers\\
+% Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
 % \date{2024/07/14 v2.33.1}
 %
@@ -232,7 +232,7 @@ See source file '\inFileName' for licencing and contact information.
 %   There are (basically) two formats for metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
-%   \cs{mplibsetformat}\marg{format name}.
+%   |\mplibsetformat{|\emph{<format name>}|}|.
 %
 %   \textsc{n.b.} As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
@@ -620,7 +620,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |\mppattern{<name>}| \ldots\ |\endmppattern| define a tiling pattern
 %   associated with the |<name>|.
 %   MetaPost operator |withpattern|, the syntax being
-%   \textit{<path>} |withpattern| \textit{<string>}, will return a metapost picture which fills
+%   \emph{<path>} |withpattern| \emph{<string>}, will return a metapost picture which fills
 %   the given path with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
 %   An example:
@@ -653,14 +653,14 @@ See source file '\inFileName' for licencing and contact information.
 %   \caption{options for \cs{mppattern}}\label{tab:mppatternoptions}
 %   \begin{tabular}{lll}\hline
 %     Key   & Value Type & Explanation\\\hline
-%     |xstep|    &\textit{number} & horizontal spacing between pattern cells\\
-%     |ystep|    &\textit{number} & vertical spacing between pattern cells\\
-%     |xshift|   &\textit{number} & horizontal shifting of pattern cells\\
-%     |yshift|   &\textit{number} & vertical shifting of pattern cells\\
-%     |matrix|   &\textit{table} or \textit{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
-%     |bbox|     &\textit{table} or \textit{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
-%     |resources|&\textit{string} & PDF resources if needed\\
-%     |colored| or |coloured| &\textit{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%     |xstep|    &\emph{number} & horizontal spacing between pattern cells\\
+%     |ystep|    &\emph{number} & vertical spacing between pattern cells\\
+%     |xshift|   &\emph{number} & horizontal shifting of pattern cells\\
+%     |yshift|   &\emph{number} & vertical shifting of pattern cells\\
+%     |matrix|   &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
+%     |bbox|     &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
+%     |resources|&\emph{string} & PDF resources if needed\\
+%     |colored| or |coloured| &\emph{boolean}& |false| for uncolored pattern. default: |true|\\\hline
 %                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
 %   \end{table}
@@ -714,7 +714,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\texttt{... withfademethod ...}, and related macros}
 %   |withfademethod| is a metapost operator which makes the color of an object gradiently transparent.
-%   The syntax is \textit{<path>}\texttt{\char"7C}\textit{<picture>} |withfademethod| \textit{<string>},
+%   The syntax is \emph{<path>}\texttt{\char"7C}\emph{<picture>} |withfademethod| \emph{<string>},
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| provided by metafun,
 %   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
