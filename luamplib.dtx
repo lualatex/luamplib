@@ -557,7 +557,7 @@ See source file '\inFileName' for licencing and contact information.
 %   or even than our own |mpliboutlinetext|,
 %   especially when processing complicated \TeX\ code
 %   such as the vertical writing in Chinese or Japanese.
-%   On the other hand, because the implementation is quite different from others,
+%   However, because the implementation is quite different from others,
 %   there are some limitations such that you can't
 %   apply shading (gradient colors) to the text. Again,
 %   in DVI mode, \textsf{unicode-math} package is needed for math formula,
@@ -806,7 +806,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The second argument cannot be absent, but can be an empty string (|""|) which
 %   means that it has no instance name.
 %
-%   Some other elements in the |luamplib| table, listed in Table~\ref{tab:elementsinluamplib},
+%   Some other elements in the |luamplib| namespace, listed in Table~\ref{tab:elementsinluamplib},
 %   can have effects on the process of |process_mplibcode|.
 %   \begin{table}
 %     \centering
@@ -818,7 +818,7 @@ See source file '\inFileName' for licencing and contact information.
 %     |everymplib| & \emph{table} & \cs{everymplib}\\
 %     |getcachedir|	& \emph{function} (\emph{<string>}) & \cs{mplibcachedir}\\
 %     |globaltextext|	& \emph{boolean} & \cs{mplibglobaltextext}\\
-%     |legacy_verbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior}\\
+%     |legacyverbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior}\\
 %     |noneedtoreplace|	& \emph{table} & \cs{mplibmakenocache}\\
 %     |numbersystem|	& \emph{string} & \cs{mplibnumbersystem}\\
 %     |setformat|	& \emph{function} (\emph{<string>}) & \cs{mplibsetformat}\\
@@ -909,13 +909,6 @@ local texsprint   = tex.sprint
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
-%    \end{macrocode}
-%
-%    We don't use |tex.scantoks| anymore. See below reagrding |tex.runtoks|.
-%    \begin{verbatim}
-%      local texscantoks = tex.scantoks
-%    \end{verbatim}
-%    \begin{macrocode}
 
 if not texruntoks then
   err("Your LuaTeX version is too old. Please upgrade it to the latest")
@@ -1259,7 +1252,7 @@ local function luamplibload (name)
   local preamble = tableconcat{
     format(preamble, replacesuffix(name,"mp")),
     luamplib.preambles.mplibcode,
-    luamplib.legacy_verbatimtex and luamplib.preambles.legacyverbatimtex or "",
+    luamplib.legacyverbatimtex and luamplib.preambles.legacyverbatimtex or "",
     luamplib.textextlabel and luamplib.preambles.textextlabel or "",
   }
   local result, log
@@ -1278,15 +1271,6 @@ end
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
 local function process (data, instancename)
-%    \end{macrocode}
-%    The workaround of issue \#70 seems to be unnecessary, as we use
-%    |make_text| now.
-%    \begin{verbatim}
-%    if not data:find(name_b.."beginfig%s*%([%+%-%s]*%d[%.%d%s]*%)") then
-%      data = data .. "beginfig(-1);endfig;"
-%    end
-%    \end{verbatim}
-%    \begin{macrocode}
   local currfmt
   if instancename and instancename ~= "" then
     currfmt = instancename
@@ -1296,7 +1280,7 @@ local function process (data, instancename)
       currentformat,
       luamplib.numbersystem or "scaled",
       tostring(luamplib.textextlabel),
-      tostring(luamplib.legacy_verbatimtex),
+      tostring(luamplib.legacyverbatimtex),
     }
     has_instancename = false
   end
@@ -1332,8 +1316,7 @@ end
 local pdfmode = tex.outputmode > 0
 %    \end{macrocode}
 %
-%    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|,
-%    which made possible running \TeX\ code snippets inside |\directlua|.
+%    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|.
 %    \begin{macrocode}
 local catlatex = luatexbase.registernumber("catcodetable@latex")
 local catat11  = luatexbase.registernumber("catcodetable@atletter")
@@ -1343,13 +1326,6 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 %    |tex.scantoks| sometimes fail to read catcode properly, especially
 %    |\#|, |\&|, or |\%|. After some experiment, we dropped using it.
 %    Instead, a function containing |tex.sprint| seems to work nicely.
-%    \begin{verbatim}
-%      local function run_tex_code_no_use (str, cat)
-%        cat = cat or catlatex
-%        texscantoks("mplibtmptoks", cat, str)
-%        texruntoks("mplibtmptoks")
-%      end
-%    \end{verbatim}
 %    \begin{macrocode}
 local function run_tex_code (str, cat)
   texruntoks(function() texsprint(cat or catlatex, str) end)
@@ -1361,8 +1337,8 @@ end
 %    |localid| can be any number. They are local anyway.
 %    The number will be reset at the start of a new code chunk.
 %    Global boxes will use |\newbox| command in |tex.runtoks| process.
-%    This is the same when |codeinherit| is declared as true.
-%    Boxes of an instance with instance name will also be global, so that
+%    This is the same when |codeinherit| is true.
+%    Boxes in instances with name will also be global, so that
 %    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
 local texboxes = { globalid = 0, localid = 4096 }
@@ -1404,7 +1380,6 @@ end
 %    Make |color| or |xcolor|'s color expressions usable,
 %    with \cs{mpcolor} or |mplibcolor|. These commands should be used
 %    with graphical objects.
-%
 %    Attempt to support l3color as well.
 %    \begin{macrocode}
 local mplibcolorfmt = {
@@ -1611,7 +1586,7 @@ local function protecttexcontents (str)
             :gsub("%s+", " ")
 end
 
-luamplib.legacy_verbatimtex = true
+luamplib.legacyverbatimtex = true
 
 function luamplib.maketext (str, what)
   if str and str ~= "" then
@@ -1621,7 +1596,7 @@ function luamplib.maketext (str, what)
          not str:find("\\begin%s*{document}") and
          not str:find("\\documentstyle"..name_e) and
          not str:find("\\usepackage"..name_e) then
-        if luamplib.legacy_verbatimtex then
+        if luamplib.legacyverbatimtex then
           if luamplib.in_the_fig then
             return process_verbatimtex_infig(str)
           else
@@ -2631,7 +2606,7 @@ function luamplib.process_mplibcode (data, instancename)
 %    \end{macrocode}
 %    This is needed for legacy behavior
 %    \begin{macrocode}
-  if luamplib.legacy_verbatimtex then
+  if luamplib.legacyverbatimtex then
     luamplib.figid, tex_code_pre_mplib = 1, {}
   end
 
@@ -2709,18 +2684,10 @@ end
 
 %    \end{macrocode}
 %
-%    Codes below for inserting PDF lieterals are mostly from ConTeXt general,
-%    with small changes when needed.
+%     pdfliterals will be stored in |figcontents| table, and written to pdf in one go
+%     at the end of the flushing figure.
+%     Subtable |post| is for the legacy behavior.
 %    \begin{macrocode}
-local function getobjects(result,figure,f)
-  return figure:objects()
-end
-
-function luamplib.convert (result, flusher)
-  luamplib.flush(result, flusher)
-  return true -- done
-end
-
 local figcontents = { post = { } }
 local function put2output(a,...)
   figcontents[#figcontents+1] = type(a) == "string" and format(a,...) or a
@@ -2741,96 +2708,6 @@ end
 %    \begin{macrocode}
 local function pdf_literalcode (fmt,...)
   put2output{-2, format(fmt,...)}
-end
-
-local function pdf_textfigure(font,size,text,width,height,depth)
-  text = text:gsub(".",function(c)
-    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
-  end)
-  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
-end
-
-local bend_tolerance = 131/65536
-
-local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
-
-local function pen_characteristics(object)
-  local t = mplib.pen_info(object)
-  rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
-  divider = sx*sy - rx*ry
-  return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
-end
-
-local function concat(px, py) -- no tx, ty here
-  return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
-end
-
-local function curved(ith,pth)
-  local d = pth.left_x - ith.right_x
-  if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
-    d = pth.left_y - ith.right_y
-    if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
-      return false
-    end
-  end
-  return true
-end
-
-local function flushnormalpath(path,open)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
-    elseif curved(ith,pth) then
-      pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
-    else
-      pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
-    end
-    ith = pth
-  end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
-    else
-      pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
-    end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
-  end
-end
-
-local function flushconcatpath(path,open)
-  pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
-    elseif curved(ith,pth) then
-      local a, b = concat(ith.right_x,ith.right_y)
-      local c, d = concat(pth.left_x,pth.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
-    else
-      pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
-    end
-    ith = pth
-  end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      local a, b = concat(pth.right_x,pth.right_y)
-      local c, d = concat(one.left_x,one.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
-    else
-      pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
-    end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
-  end
 end
 
 local function start_pdf_code()
@@ -3488,6 +3365,110 @@ end
 
 %    \end{macrocode}
 %
+%    Codes below for inserting PDF lieterals are mostly from ConTeXt general,
+%    with small changes when needed.
+%    \begin{macrocode}
+local function getobjects(result,figure,f)
+  return figure:objects()
+end
+
+function luamplib.convert (result, flusher)
+  luamplib.flush(result, flusher)
+  return true -- done
+end
+
+local function pdf_textfigure(font,size,text,width,height,depth)
+  text = text:gsub(".",function(c)
+    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
+  end)
+  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
+end
+
+local bend_tolerance = 131/65536
+
+local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
+
+local function pen_characteristics(object)
+  local t = mplib.pen_info(object)
+  rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
+  divider = sx*sy - rx*ry
+  return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
+end
+
+local function concat(px, py) -- no tx, ty here
+  return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
+end
+
+local function curved(ith,pth)
+  local d = pth.left_x - ith.right_x
+  if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+    d = pth.left_y - ith.right_y
+    if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+      return false
+    end
+  end
+  return true
+end
+
+local function flushnormalpath(path,open)
+  local pth, ith
+  for i=1,#path do
+    pth = path[i]
+    if not ith then
+      pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
+    elseif curved(ith,pth) then
+      pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+    else
+      pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
+    end
+    ith = pth
+  end
+  if not open then
+    local one = path[1]
+    if curved(pth,one) then
+      pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+    else
+      pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+    end
+  elseif #path == 1 then -- special case .. draw point
+    local one = path[1]
+    pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+  end
+end
+
+local function flushconcatpath(path,open)
+  pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
+  local pth, ith
+  for i=1,#path do
+    pth = path[i]
+    if not ith then
+      pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
+    elseif curved(ith,pth) then
+      local a, b = concat(ith.right_x,ith.right_y)
+      local c, d = concat(pth.left_x,pth.left_y)
+      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
+    else
+      pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+    end
+    ith = pth
+  end
+  if not open then
+    local one = path[1]
+    if curved(pth,one) then
+      local a, b = concat(pth.right_x,pth.right_y)
+      local c, d = concat(one.left_x,one.left_y)
+      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
+    else
+      pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+    end
+  elseif #path == 1 then -- special case .. draw point
+    local one = path[1]
+    pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+  end
+end
+
+%    \end{macrocode}
+%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
 function luamplib.flush (result,flusher)
@@ -3905,16 +3886,16 @@ end
 \long\def\mplibdomainmpfig#1\endmpfig{%
   \endgroup
   \directlua{
-    local legacy = luamplib.legacy_verbatimtex
+    local legacy = luamplib.legacyverbatimtex
     local everympfig = luamplib.everymplib["\mpfiginstancename"] or ""
     local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"] or ""
-    luamplib.legacy_verbatimtex = false
+    luamplib.legacyverbatimtex = false
     luamplib.everymplib["\mpfiginstancename"] = ""
     luamplib.everyendmplib["\mpfiginstancename"] = ""
     luamplib.process_mplibcode(
     "beginfig(0) "..everympfig.." "..[===[\unexpanded{#1}]===].." "..everyendmpfig.." endfig;",
     "\mpfiginstancename")
-    luamplib.legacy_verbatimtex = legacy
+    luamplib.legacyverbatimtex = legacy
     luamplib.everymplib["\mpfiginstancename"] = everympfig
     luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
   }%
@@ -3928,14 +3909,14 @@ end
 \long\def\mplibdoprempfig#1\endmpfig{%
   \endgroup
   \directlua{
-    local legacy = luamplib.legacy_verbatimtex
+    local legacy = luamplib.legacyverbatimtex
     local everympfig = luamplib.everymplib["\mpfiginstancename"]
     local everyendmpfig = luamplib.everyendmplib["\mpfiginstancename"]
-    luamplib.legacy_verbatimtex = false
+    luamplib.legacyverbatimtex = false
     luamplib.everymplib["\mpfiginstancename"] = ""
     luamplib.everyendmplib["\mpfiginstancename"] = ""
     luamplib.process_mplibcode([===[\unexpanded{#1}]===],"\mpfiginstancename")
-    luamplib.legacy_verbatimtex = legacy
+    luamplib.legacyverbatimtex = legacy
     luamplib.everymplib["\mpfiginstancename"] = everympfig
     luamplib.everyendmplib["\mpfiginstancename"] = everyendmpfig
   }%
@@ -4014,9 +3995,9 @@ end
 \def\mpliblegacybehavior#1{\directlua{
     local s = string.lower("#1")
     if s == "enable" or s == "true" or s == "yes" then
-      luamplib.legacy_verbatimtex = true
+      luamplib.legacyverbatimtex = true
     else
-      luamplib.legacy_verbatimtex = false
+      luamplib.legacyverbatimtex = false
     end
 }}
 \def\mplibverbatim#1{\directlua{
@@ -4088,7 +4069,6 @@ end
 %
 %    Allow \TeX\ dimen/color macros. Now |runscript| does the job,
 %    so the following lines are not needed for most cases.
-%    But the macros will be expanded when they are used in another macro.
 %    \begin{macrocode}
 \def\mpdim#1{ runscript("luamplibdimen{#1}") }
 \def\mpcolor#1#{\domplibcolor{#1}}
@@ -4160,12 +4140,13 @@ end
 %    \end{macrocode}
 %
 %    The followings are from ConTeXt general, mostly.
-%    %    We use a dedicated scratchbox.
+%
+%    We use a dedicated scratchbox.
 %    \begin{macrocode}
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 %    \end{macrocode}
 %
-%    We encapsulate the litterals.
+%    We encapsulate the literals.
 %    \begin{macrocode}
 \def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
