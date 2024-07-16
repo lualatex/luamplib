@@ -2924,17 +2924,22 @@ end
 local function do_preobj_TR(object,prescript)
   if object.postscript == "collect" then return end
   local opaq = prescript and prescript.tr_transparency
-  local on
   if opaq then
+    local key, on, os, new
     local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode)]
-    local os, new = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
-    on, new = update_pdfobjs(os)
-    local key = add_extgs_resources(on,new)
-    start_pdf_code()
-    pdf_literalcode("/%s gs",key)
+    mode = transparancy_modes[tonumber(mode) or mode]
+    for i,v in pairs{ {mode,opaq},{"Normal",1} } do
+      mode, opaq = v[1], v[2]
+      os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
+      on, new = update_pdfobjs(os)
+      key = add_extgs_resources(on,new)
+      if i == 1 then
+        pdf_literalcode("/%s gs",key)
+      else
+        return format("/%s gs",key)
+      end
+    end
   end
-  return on
 end
 
 %    \end{macrocode}
@@ -3454,12 +3459,12 @@ local function do_preobj_GRP (object, prescript)
   return grstate
 end
 
-local function stop_object_specials(fade,opaq,over)
+local function stop_special_effects(fade,opaq,over)
   if fade then -- fading
     stop_pdf_code()
   end
   if opaq then -- opacity
-    stop_pdf_code()
+    pdf_literalcode(opaq)
   end
   if over then -- color
     put2output"\\special{pdf:ec}"
@@ -3673,10 +3678,7 @@ function luamplib.flush (result,flusher)
                 else
 %    \end{macrocode}
 %    Removed from ConTeXt general: color stuff.
-%    Added instead : shading stuff
 %    \begin{macrocode}
-                  local shade_no = do_preobj_SH(object,prescript) -- shading
-                  local pattern_ = do_preobj_PAT(object,prescript) -- pattern
                   local ml = object.miterlimit
                   if ml and ml ~= miterlimit then
                     miterlimit = ml
@@ -3703,6 +3705,11 @@ function luamplib.flush (result,flusher)
                     pdf_literalcode("[] 0 d")
                     dashed = false
                   end
+%    \end{macrocode}
+%    Added : shading and pattern
+%    \begin{macrocode}
+                  local shade_no = do_preobj_SH(object,prescript) -- shading
+                  local pattern_ = do_preobj_PAT(object,prescript) -- pattern
                   local path = object.path
                   local transformed, penwidth = false, 1
                   local open = path and path[1].left_type and path[#path].right_type
@@ -3802,11 +3809,14 @@ function luamplib.flush (result,flusher)
               if trgroup == "start" then
                 pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
               else
-                stop_object_specials(fading_, tr_opaq, cr_over)
+                stop_special_effects(fading_, tr_opaq, cr_over)
               end
               if trgroup == "stop" then
                 local se = pdfetcs.tr_group.specialeffects
-                stop_object_specials(se[1], se[2], se[3])
+                stop_special_effects(se[1], se[2], se[3])
+              end
+              if fading_ or trgroup then -- extgs resetted
+                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
               end
             end
           end

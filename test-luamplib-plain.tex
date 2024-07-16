@@ -281,17 +281,16 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
   endfor
 \endmpfig
 \mpfig
-fill unitsquare scaled 100 shifted (-40,-50)
-  withcolor 2/3[red,white] ;
-draw btex \TeX etex ;
+fill fullcircle scaled 125 withcolor .8white;
 draw image(
-    fill fullcircle scaled 50
-      withcolor .7white ;
-    fill fullcircle scaled 50 shifted 20right
-      withcolor .7white ;
+  draw (left--right) rotated 45 scaled 50
+    withpen pencircle scaled 20
+    ;
+  draw (left--right) rotated -45 scaled 50
+    withpen pencircle scaled 20
+    ;
   )
-  asgroup "isolated,knockout"
-  withcolor red
+  asgroup ""
   withprescript "tr_transparency=.5"
   ;
 \endmpfig
