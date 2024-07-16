@@ -219,14 +219,14 @@ See source file '\inFileName' for licencing and contact information.
 %   the lua table containing metapost code
 %   which will
 %   be automatically inserted at the beginning and ending of each metapost code chunk.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
 %     \begin{mplibcode}
 %       % beginfig/endfig not needed
 %       draw fullcircle scaled 1cm;
 %     \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\cs{mplibsetformat\{plain\char"7C metafun\}}}
 %   There are (basically) two formats for metapost: \emph{plain} and
@@ -236,15 +236,22 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \textsc{n.b.} As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
-%   At least, however, transparency (actually opacity) and shading (gradient colors) effects
+%   At least, however, transparency (actually opacity), transparency group, and shading (gradient colors)
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext| (see below \S\,1.2).
 %
 %   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
 %   Among these, transparency is so simple that you can apply it to an object,
 %   even with the \emph{plain} format,
-%   just by appending |withprescript "tr_transparency=|\emph{<number>}|"|, where
-%   $0 \le \hbox{\emph{<number>}} \le 1$, to the sentence.
+%   just by appending |withprescript "tr_transparency=|\emph{<number>}|"| to the sentence.
+%   ($0 \le \hbox{\emph{<number>}} \le 1$)
+%
+%   As for transparency group, the current \emph{metafun} document \S\,8.8 is not correct.
+%   The true syntax is:
+%\begin{verbatim}
+%     draw <picture>|<path> asgroup <string>
+%\end{verbatim}
+%   where \emph{<string>} should be |""|, |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -277,14 +284,14 @@ See source file '\inFileName' for licencing and contact information.
 %   each figure box can be freely moved horizontally or vertically.
 %   Also, a box number can be assigned to a figure box, allowing it to be
 %   reused later.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \mplibcode
 %     verbatimtex \moveright 3cm etex; beginfig(0); ... endfig;
 %     verbatimtex \leavevmode etex; beginfig(1); ... endfig;
 %     verbatimtex \leavevmode\lower 1ex etex; beginfig(2); ... endfig;
 %     verbatimtex \endgraf\moveright 1cm etex; beginfig(3); ... endfig;
 %     \endmplibcode
-%   \end{verbatim}
+%\end{verbatim}
 %   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
 %   |verbatimtex ... etex|.
 %
@@ -292,7 +299,7 @@ See source file '\inFileName' for licencing and contact information.
 %   between |beginfig()| and |endfig| will be inserted
 %   after flushing out the metapost figure.
 %   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \mplibcode
 %       D := sqrt(2)**7;
 %       beginfig(0);
@@ -301,7 +308,7 @@ See source file '\inFileName' for licencing and contact information.
 %       endfig;
 %     \endmplibcode
 %     diameter: \Dia bp.
-%   \end{verbatim}
+%\end{verbatim}
 %
 %   By contrast,
 %   when |\mpliblegacybehavior{disabled}| is declared, any
@@ -309,7 +316,7 @@ See source file '\inFileName' for licencing and contact information.
 %   sequentially one by one.
 %   So, some \TeX\ code in |verbatimtex ... etex| will have effects on
 %   following |btex| |...| |etex| codes.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \begin{mplibcode}
 %       beginfig(0);
 %       draw btex ABC etex;
@@ -318,7 +325,7 @@ See source file '\inFileName' for licencing and contact information.
 %       draw btex GHI etex shifted (2cm,0); % bold face
 %       endfig;
 %     \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\cs{mplibtextextlabel\{enable\char"7C disable\}}}
 %   Default: |disable|.
@@ -347,11 +354,11 @@ See source file '\inFileName' for licencing and contact information.
 %   in \LaTeX{} |mplibcode| environment.
 %   Plain \TeX\ users also can use this functionality.
 %   The syntax for \LaTeX\ is:
-%   \begin{verbatim}
+%\begin{verbatim}
 %   \begin{mplibcode}[instanceName]
 %     % some mp code
 %   \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %   The behavior is as follows.
 %   \begin{itemize}
 %   \item  All the variables and functions are shared
@@ -371,10 +378,10 @@ See source file '\inFileName' for licencing and contact information.
 %   Unnamed \cs{everymplib} affects not only those instances with no name,
 %   but also those with name but with no corresponding \cs{everymplib}.
 %   The syntax is:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \everymplib[instanceName]{...}
 %     \everyendmplib[instanceName]{...}
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\cs{mplibglobaltextext\{enable\char"7C disable\}}}
 %   Default: |disable|.
@@ -382,8 +389,8 @@ See source file '\inFileName' for licencing and contact information.
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
 %   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
 %   is enabled.
-%   This optinal command still remains mostly for backward compatibility.
-%   \begin{verbatim}
+%   This optional command still remains mostly for backward compatibility.
+%\begin{verbatim}
 %   \mplibcodeinherit{enable}
 %   %\mplibglobaltextext{enable}
 %   \everymplib{ beginfig(0);} \everyendmplib{ endfig;}
@@ -395,7 +402,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \mplibcode
 %     currentpicture := pic scaled 2;
 %   \endmplibcode
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\cs{mplibverbatim\{enable\char"7C disable\}}}
 %   Default: |disable|.
@@ -409,14 +416,14 @@ See source file '\inFileName' for licencing and contact information.
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
 %   in the mplibcode environment. This feature is inpired by \textsf{gmp} package authored by
 %   Enrico Gregorio. Please refer to the manual of \textsf{gmp} package for details.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \begin{mplibcode}
 %       beginfig(1)
 %       draw origin--(.6\mpdim{\linewidth},0) withpen pencircle scaled 4
 %       dashed evenly scaled 4 withcolor \mpcolor{orange};
 %       endfig;
 %     \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\cs{mpcolor[...]\{...\}}}
 %   With \cs{mpcolor} command, color names or expressions of
@@ -435,7 +442,7 @@ See source file '\inFileName' for licencing and contact information.
 %   we also provide unexpandable \TeX\ macros |\mpfig ... \endmpfig| and its starred version
 %   |\mpfig* ... \endmpfig| to save typing toil.
 %   The former is roughly the same as follows:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \begin{mplibcode}[@mpfig]
 %     beginfig(0)
 %     token list declared by \everymplib[@mpfig]
@@ -443,24 +450,24 @@ See source file '\inFileName' for licencing and contact information.
 %     token list declared by \everyendmplib[@mpfig]
 %     endfig;
 %     \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %   and the starred version is roughly the same as follows:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \begin{mplibcode}[@mpfig]
 %     ...
 %     \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %   In these macros |\mpliblegacybehavior{disable}|
 %   is forcibly declared.
 %   Again, as both share the same instance name, metapost codes are inherited among them.
 %   A simple example:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
 %     \mpfig* input boxes \endmpfig
 %     \mpfig
 %       circleit.a(btex Box 1 etex); drawboxed(a);
 %     \endmpfig
-%   \end{verbatim}
+%\end{verbatim}
 %   The instance name (default: |@mpfig|) can be changed by redefining
 %   \cs{mpfiginstancename}, after which a new mplib instance will start and
 %   code inheritance too will begin anew.  |\let\mpfiginstancename\empty| will
@@ -523,10 +530,10 @@ See source file '\inFileName' for licencing and contact information.
 %   to a MetaPost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| operator.
 %   For instance:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     color col;
 %     col := mplibtexcolor "olive!50";
-%   \end{verbatim}
+%\end{verbatim}
 %   But the result may vary in its color model (gray/rgb/cmyk)
 %   according to the given \TeX\ color. (Spot colors are forced to
 %   cmyk model, so this operator is not recommended for spot colors.)
@@ -538,11 +545,11 @@ See source file '\inFileName' for licencing and contact information.
 %   |mplibgraphictext| is a metapost operator, the effect of which is similar to that of
 %   \ConTeXt's |graphictext| or our own |mpliboutlinetext| (see below).
 %   However the syntax is somewhat different.
-%   \begin{verbatim}
+%\begin{verbatim}
 %     mplibgraphictext "Funny"
 %       fakebold 2.3                        % fontspec option
 %       drawcolor .7blue fillcolor "red!50" % color expressions
-%   \end{verbatim}
+%\end{verbatim}
 %   |fakebold|, |drawcolor| and |fillcolor| are optional;
 %   default values are |2|, |"black"| and |"white"| respectively.
 %   When the color expressions are given in string type, they are regarded as
@@ -567,13 +574,13 @@ See source file '\inFileName' for licencing and contact information.
 %   From v2.30, we provide a new metapost operator |mplibglyph|, which returns a metapost picture
 %   containing outline paths of a glyph in opentype, truetype or type1 fonts.
 %   When a type1 font is specified, metapost primitive |glyph| will be called.
-%   \begin{verbatim}
+%\begin{verbatim}
 %      mplibglyph 50  of \fontid\font          % slot 50 of current font
 %      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
 %      mplibglyph "Q" of "texgyrepagella-regular.otf"     % raw filename
 %      mplibglyph "Q" of "Times.ttc(2)"                   % subfont number
 %      mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]" % instance name
-%   \end{verbatim}
+%\end{verbatim}
 %   Both arguments before and after of ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
 %   String argument at the left side is regarded as a glyph name in the font or a unicode character.
@@ -601,12 +608,12 @@ See source file '\inFileName' for licencing and contact information.
 %   From v2.31, a new metapost operator |mpliboutlinetext| is available, which mimicks
 %   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
 %   manual \S\,8.7 (|texdoc metafun|). A simple example:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
 %         (withcolor \mpcolor{red!50})
 %         (withpen pencircle scaled .2 withcolor red)
 %         scaled 2 ;
-%   \end{verbatim}
+%\end{verbatim}
 %   After the process, |mpliboutlinepic[]|
 %   and |mpliboutlinenum| will be preserved as global variables;
 %   |mpliboutlinepic[1]| \ldots{} |mpliboutlinepic[mpliboutlinenum]|
@@ -624,7 +631,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the given path with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
 %   An example:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \mppattern{mypatt}           % or \begin{mppattern}{mypatt}
 %       [                          % options: see below
 %         xstep = 10, ystep = 12,
@@ -645,7 +652,7 @@ See source file '\inFileName' for licencing and contact information.
 %         withpattern "mypatt"
 %         withpostscript "evenodd" ;
 %     \endmpfig
-%   \end{verbatim}
+%\end{verbatim}
 %
 %   The available options are listed in Table~\ref{tab:mppatternoptions}.
 %   \begin{table}
@@ -681,7 +688,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a metapost object.
 %   An example:
-%   \begin{verbatim}
+%\begin{verbatim}
 %      \begin{mppattern}{pattuncolored}
 %        [
 %          colored = false,
@@ -710,7 +717,7 @@ See source file '\inFileName' for licencing and contact information.
 %        endfor
 %        endfig;
 %      \end{mplibcode}
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{\texttt{... withfademethod ...}, and related macros}
 %   |withfademethod| is a metapost operator which makes the color of an object gradiently transparent.
@@ -743,7 +750,7 @@ See source file '\inFileName' for licencing and contact information.
 %     explicitly control the bounding box.
 %   \end{description}
 %   An example:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     \mpfig
 %       picture mill;
 %       mill = btex \includegraphics[width=100bp]{mill} etex;
@@ -754,7 +761,7 @@ See source file '\inFileName' for licencing and contact information.
 %         withfadeopacity (1, 0)
 %         ;
 %     \endmpfig
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \subsection{Lua}
 %
@@ -778,7 +785,7 @@ See source file '\inFileName' for licencing and contact information.
 %   as documented in Lua\TeX{} manual \S\,11.2.8.4 (|texdoc luatex|).
 %   The following will print |false|, |3.0|, |MetaPost| and
 %   the knots and the cyclicity of the path |unitsquare|, consecutively.
-%   \begin{verbatim}
+%\begin{verbatim}
 %   \begin{mplibcode}[instance1]
 %     boolean b; b = 1 > 2;
 %     numeric n; n = 3;
@@ -796,13 +803,13 @@ See source file '\inFileName' for licencing and contact information.
 %       print(k, type(v)=='table' and table.concat(v,' ') or v)
 %     end
 %   }
-%   \end{verbatim}
+%\end{verbatim}
 %
 % \paragraph{Lua function \texttt{luamplib.process\_mplibcode}}
 %   Users can execute a MetaPost code chunk from Lua side by using this function:
-%   \begin{verbatim}
+%\begin{verbatim}
 %     luamplib.process_mplibcode (<string> metapost code, <string> instance name)
-%   \end{verbatim}
+%\end{verbatim}
 %   The second argument cannot be absent, but can be an empty string (|""|) which
 %   means that it has no instance name.
 %
@@ -1655,7 +1662,7 @@ luamplib.shadecolor = function (str)
   if res:find" cs " or res:find"@pdf.obj" then -- spot color shade: l3 only
 %    \end{macrocode}
 %   An example of spot color shading:
-% \begin{verbatim}
+%\begin{verbatim}
 %     \documentclass{article}
 %     \usepackage{luamplib}
 %     \mplibsetformat{metafun}
@@ -1701,9 +1708,9 @@ luamplib.shadecolor = function (str)
 %     endfig;
 %     \end{mplibcode}
 %     \end{document}
-% \end{verbatim}
+%\end{verbatim}
 %   another one: user-defined DeviceN colorspace
-% \begin{verbatim}
+%\begin{verbatim}
 %    \DocumentMetadata{ }
 %    \documentclass{article}
 %    \usepackage{luamplib}
@@ -1731,7 +1738,7 @@ luamplib.shadecolor = function (str)
 %        ;
 %    \endmpfig
 %    \end{document}
-% \end{verbatim}
+%\end{verbatim}
 %    \begin{macrocode}
     run_tex_code({
       [[\color_export:nnN{]], str, [[}{backend}\mplib_@tempa]],
@@ -2863,6 +2870,7 @@ else
     "\\special{pdf:obj @MPlibCS<<>>}",
     "\\special{pdf:obj @MPlibPt<<>>}",
   }
+  pdfetcs.resadded = { }
 end
 
 %    \end{macrocode}
@@ -2909,6 +2917,7 @@ local function add_extgs_resources (on, new)
   end
   if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfextgs) then
     texsprint"\\special{pdf:put @resources <</ExtGState @MPlibTr>>}"
+    pdfetcs.resadded.ExtGState = "@MPlibTr"
   end
   return key
 end
@@ -2981,6 +2990,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   end
   if not pdfmode and not pdfmanagement then
     texsprint"\\special{pdf:put @resources <</Shading @MPlibSh>>}"
+    pdfetcs.resadded.Shading = "@MPlibSh"
   end
   return on
 end
@@ -3131,6 +3141,64 @@ end
 %    \begin{macrocode}
 pdfetcs.patterns = { }
 local patterns = pdfetcs.patterns
+local function gather_resources (do_pattern, optres)
+  local t = { }
+  local names = {"ExtGState","ColorSpace","Shading"}
+  if do_pattern then
+    names[#names+1] = "Pattern"
+  end
+  if pdfmode then
+    if pdfmanagement then
+      for _,v in ipairs(names) do
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
+        end
+      end
+    else
+      local res = pdfetcs.getpageres() or ""
+      run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
+      res = (res .. texgettoks'mplibtmptoks'):explode()
+      res = tableconcat(res," "):explode"/+"
+      for _,v in ipairs(res) do
+        if do_pattern or not v:find"Pattern" and not optres:find(v) then
+          t[#t+1] = "/" .. v
+        end
+      end
+    end
+  else
+    if pdfmanagement then
+      for _,v in ipairs(names) do
+        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
+        if pp and pp:find"__prop_pair" then
+          run_tex_code {
+            "\\mplibtmptoks\\expanded{{",
+            format("/%s \\csname pdf_object_ref:n\\endcsname{__pdf/Page/Resources/%s}",v,v),
+            "}}",
+          }
+          t[#t+1] = texgettoks'mplibtmptoks'
+        end
+      end
+    elseif is_defined(pdfetcs.pgfextgs) then
+      run_tex_code ({
+        "\\mplibtmptoks\\expanded{{",
+        "\\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi",
+        "\\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi",
+        do_pattern and "\\ifpgf@sys@pdf@patterns@exists /Pattern @pgfpatterns \\fi" or "",
+        "}}",
+      }, catat11)
+      t[#t+1] = texgettoks'mplibtmptoks'
+    elseif do_pattern then
+      for _,v in ipairs(names) do
+        local vv = pdfetcs.resadded[v]
+        if vv then
+          t[#t+1] = format("/%s %s", v, vv)
+        end
+      end
+    end
+  end
+  return t
+end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   local wd = format("%.3f",box.width/factor)
@@ -3163,27 +3231,10 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/YStep %s", opts.ystep or hd),
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
+  local optres = opts.resources or ""
+  local t = gather_resources(false, optres)
+  optres = optres .. tableconcat(t)
   if pdfmode then
-    local optres, t = opts.resources or "", { }
-    if pdfmanagement then
-      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
-          t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
-        end
-      end
-    else
-      local res = pdfetcs.getpageres() or ""
-      run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
-      res = (res .. texgettoks'mplibtmptoks'):explode()
-      res = tableconcat(res," "):explode"/+"
-      for _,v in ipairs(res) do
-        if not v:find"Pattern" and not optres:find(v) then
-          t[#t+1] = "/" .. v
-        end
-      end
-    end
-    optres = optres .. tableconcat(t)
     if opts.bbox then
       attr[#attr+1] = format("/BBox [%s]", opts.bbox)
     end
@@ -3192,29 +3243,6 @@ function luamplib.registerpattern ( boxid, name, opts )
   else
     local objname = "@mplibpattern"..name
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
-    local optres, t = opts.resources or "", { }
-    if pdfmanagement then
-      for _,v in ipairs{"ExtGState","ColorSpace","Shading"} do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
-          run_tex_code {
-            "\\mplibtmptoks\\expanded{{",
-            format("/%s \\csname pdf_object_ref:n\\endcsname{__pdf/Page/Resources/%s}",v,v),
-            "}}",
-          }
-          t[#t+1] = texgettoks'mplibtmptoks'
-        end
-      end
-    elseif is_defined(pdfetcs.pgfextgs) then
-      run_tex_code ({
-        "\\mplibtmptoks\\expanded{{",
-        "\\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi",
-        "\\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi",
-        "}}",
-      }, catat11)
-      t[#t+1] = texgettoks'mplibtmptoks'
-    end
-    optres = optres .. tableconcat(t)
     texsprint {
       [[\ifvmode\nointerlineskip\fi]],
       format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
@@ -3251,6 +3279,7 @@ local function pattern_colorspace (cs)
   end
   if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfcolorspace) then
     texsprint"\\special{pdf:put @resources <</ColorSpace @MPlibCS>>}"
+    pdfetcs.resadded.ColorSpace = "@MPlibCS"
   end
   return on
 end
@@ -3305,6 +3334,7 @@ local function do_preobj_PAT(object, prescript)
   end
   if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfpattern) then
     texsprint"\\special{pdf:put @resources <</Pattern @MPlibPt>>}"
+    pdfetcs.resadded.Pattern = "@MPlibPt"
   end
   patt.done = true
 end
@@ -3318,17 +3348,21 @@ local function do_preobj_FADE (object, prescript)
   local fd_type = prescript and prescript.mplibfadetype
   if not fd_type then return end
   local bbox = prescript.mplibfadebbox:explode":"
-  local width, height = bbox[3]-bbox[1], bbox[4]-bbox[2]
-  local vec = prescript.mplibfadevector
-  vec = vec and vec:explode":"
-        or fd_type == "linear" and {bbox[1], bbox[2], bbox[3], bbox[2]} -- left to right
-        or {width/2, height/2, width/2, height/2} -- center for both circles
   local dx, dy = -bbox[1], -bbox[2]
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
+  local vec = prescript.mplibfadevector; vec = vec and vec:explode":"
+  if not vec then
+    if fd_type == "linear" then
+      vec = {bbox[1], bbox[2], bbox[3], bbox[2]} -- left to right
+    else
+      local centerx, centery = (bbox[1]+bbox[3])/2, (bbox[2]+bbox[4])/2
+      vec = {centerx, centery, centerx, centery} -- center for both circles
+    end
+  end
   local coords = { vec[1]+dx, vec[2]+dy, vec[3]+dx, vec[4]+dy }
   if fd_type == "linear" then
     coords = format("%f %f %f %f", tableunpack(coords))
   elseif fd_type == "circular" then
+    local width, height = bbox[3]-bbox[1], bbox[4]-bbox[2]
     local radius = (prescript.mplibfaderadius or "0:"..math.sqrt(width^2+height^2)/2):explode":"
     tableinsert(coords, 3, radius[1])
     tableinsert(coords, radius[2])
@@ -3336,6 +3370,7 @@ local function do_preobj_FADE (object, prescript)
   else
     err("unknown fading method '%s'", fd_type)
   end
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
   fd_type = fd_type == "linear" and 2 or 3
   local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
   local on, os, new
@@ -3361,6 +3396,74 @@ local function do_preobj_FADE (object, prescript)
   start_pdf_code()
   pdf_literalcode("/%s gs", key)
   return on
+end
+
+%    \end{macrocode}
+%
+%    Transparency Group
+%    \begin{macrocode}
+pdfetcs.tr_group = { }
+local function do_preobj_GRP (object, prescript)
+  local grstate = prescript and prescript.gr_state
+  if not grstate then return end
+  local trgroup = pdfetcs.tr_group
+  if grstate == "start" then
+    trgroup.isolated, trgroup.knockout = false, false
+    for _,v in ipairs(prescript.gr_type:explode",+") do
+      trgroup[v] = true
+    end
+    local p = object.path
+    trgroup.bbox = {
+      math.min(p[1].x_coord, p[2].x_coord, p[3].x_coord, p[4].x_coord),
+      math.min(p[1].y_coord, p[2].y_coord, p[3].y_coord, p[4].y_coord),
+      math.max(p[1].x_coord, p[2].x_coord, p[3].x_coord, p[4].x_coord),
+      math.max(p[1].y_coord, p[2].y_coord, p[3].y_coord, p[4].y_coord),
+    }
+    put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup]]
+  elseif grstate == "stop" then
+    local llx,lly,urx,ury = tableunpack(trgroup.bbox)
+    local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
+    local res = tableconcat(gather_resources(true))
+    put2output(tableconcat{
+      "\\egroup",
+      format("\\wd\\mplibscratchbox %fbp", urx-llx),
+      format("\\ht\\mplibscratchbox %fbp", ury-lly),
+      "\\dp\\mplibscratchbox 0pt",
+    })
+    if pdfmode then
+      put2output(tableconcat{
+        "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
+        format("/BBox[%f %f %f %f]", llx,lly,urx,ury),
+        grattr, "} resources{", res, "}\\mplibscratchbox",
+        [[\setbox\mplibscratchbox\hbox{\useboxresource\lastsavedboxresourceindex}]],
+        [[\wd\mplibscratchbox 0pt\ht\mplibscratchbox 0pt\dp\mplibscratchbox 0pt]],
+        [[\box\mplibscratchbox\endgroup]],
+      })
+    else
+      trgroup.cnt = (trgroup.cnt or 0) + 1
+      local objname = format("@mplibtrgr%s", trgroup.cnt)
+      put2output(tableconcat{
+        "\\special{pdf:bxobj ", objname, " bbox ", format("%f %f %f %f", llx,lly,urx,ury), "}",
+        "\\unhbox\\mplibscratchbox",
+        "\\special{pdf:put @resources <<", res, ">>}",
+        "\\special{pdf:exobj <<", grattr, ">>}",
+        "\\special{pdf:uxobj ", objname, "}\\endgroup",
+      })
+    end
+  end
+  return grstate
+end
+
+local function stop_object_specials(fade,opaq,over)
+  if fade then -- fading
+    stop_pdf_code()
+  end
+  if opaq then -- opacity
+    stop_pdf_code()
+  end
+  if over then -- color
+    put2output"\\special{pdf:ec}"
+  end
 end
 
 %    \end{macrocode}
@@ -3488,11 +3591,11 @@ function luamplib.flush (result,flusher)
 %    luamplib silently ignores this invalid figure for those
 %    that do not contain |beginfig ... endfig|. (issue \#70)
 %    Original code of ConTeXt general was:
-%    \begin{verbatim}
+%\begin{verbatim}
 %    -- invalid
 %    pdf_startfigure(fignum,0,0,0,0)
 %    pdf_stopfigure()
-%    \end{verbatim}
+%\end{verbatim}
 %    \begin{macrocode}
         else
 %    \end{macrocode}
@@ -3510,7 +3613,7 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%    The following 7 lines are part of |btex...etex| patch.
+%    The following 8 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -3518,6 +3621,7 @@ function luamplib.flush (result,flusher)
               local cr_over = do_preobj_CR(object,prescript) -- color
               local tr_opaq = do_preobj_TR(object,prescript) -- opacity
               local fading_ = do_preobj_FADE(object,prescript) -- fading
+              local trgroup = do_preobj_GRP(object,prescript) -- transparency group
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -3543,7 +3647,7 @@ function luamplib.flush (result,flusher)
                 pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                 stop_pdf_code()
-              else
+              elseif not trgroup then
                 local evenodd, collect, both = false, false, false
                 local postscript = object.postscript
                 if not object.istext then
@@ -3695,14 +3799,14 @@ function luamplib.flush (result,flusher)
                   end
                 end
               end
-              if fading_ then -- fading
-                stop_pdf_code()
+              if trgroup == "start" then
+                pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
+              else
+                stop_object_specials(fading_, tr_opaq, cr_over)
               end
-              if tr_opaq then -- opacity
-                stop_pdf_code()
-              end
-              if cr_over then -- color
-                put2output"\\special{pdf:ec}"
+              if trgroup == "stop" then
+                local se = pdfetcs.tr_group.specialeffects
+                stop_object_specials(se[1], se[2], se[3])
               end
             end
           end

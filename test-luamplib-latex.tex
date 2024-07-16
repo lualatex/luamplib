@@ -287,7 +287,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     endfor
   endfor
 \endmpfig
-\par
+\par\leavevmode
 \mpfig
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
@@ -298,6 +298,21 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     withfaderadius (20, abs(lrcorner mill - llcorner mill)/2)
     withfadeopacity (1, 0)
     ;
+\endmpfig
+\mpfig
+fill unitsquare scaled 100 shifted (-40,-50)
+  withcolor 2/3[blue,white] ;
+draw btex \TeX etex ;
+draw image(
+    fill fullcircle scaled 50
+      withcolor .7white ;
+    fill fullcircle scaled 50 shifted 20right
+      withcolor .7white ;
+  )
+  asgroup "isolated"
+  withcolor blue
+  withprescript "tr_transparency=.3"
+  ;
 \endmpfig
 \tracingcommands0
 
