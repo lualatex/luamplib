@@ -287,7 +287,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     endfor
   endfor
 \endmpfig
-\par
+\par\leavevmode
 \mpfig
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
@@ -299,6 +299,33 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     withfadeopacity (1, 0)
     ;
 \endmpfig
+\par
+\def\test#1{%
+  \mpfig
+  fill unitsquare shifted -center unitsquare scaled 200
+    withshademethod "linear"
+    withshadecolors (.3[red,white], .3[blue,white])
+    ;
+  label( btex MetaPost etex scaled 3, origin) ;
+  draw image(
+    fill fullcircle scaled 100 shifted 25left
+      withcolor .8white
+      withtransparency (2,1)
+      ;
+    fill fullcircle scaled 100 shifted 25right
+      withcolor .8white
+      withtransparency (2,1)
+      ;
+  )
+  asgroup "#1"
+  withtransparency (1,.5)
+  ;
+  currentpicture := currentpicture scaled 3/4;
+  \endmpfig
+}%
+\hbox{\test{isolated,knockout}\,\test{isolated}\vbox to\MPheight{\vss\hbox{~isolated}\vss}}%
+\hbox{\test{knockout}\,\test{}}%
+\hbox to\MPwidth{\hss knockout\hss}%
 \tracingcommands0
 
 \vskip 2\baselineskip
