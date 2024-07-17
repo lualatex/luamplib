@@ -281,7 +281,7 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
   endfor
 \endmpfig
 \mpfig
-fill fullcircle scaled 125 withcolor .8white;
+fill fullcircle scaled 125 withcolor 2/3[blue,white];
 draw image(
   draw (left--right) rotated 45 scaled 50
     withpen pencircle scaled 20
@@ -291,7 +291,7 @@ draw image(
     ;
   )
   asgroup ""
-  withprescript "tr_transparency=.5"
+  withprescript "tr_transparency=.3"
   ;
 \endmpfig
 \tracingcommands0

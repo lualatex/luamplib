@@ -1,9 +1,9 @@
                        History of the luamplib package
 
-2024/xx/xx 2.34.0
+2024/07/17 2.34.0
    * support transparency group with metafun format
    * fix regarding default value in circular fading mode
-   * fix regarging the scope of graphic state
+   * fix regarging the scope of graphics state
 
 2024/07/14 2.33.1
    * refactor the manual, including some minor items undocumented so far

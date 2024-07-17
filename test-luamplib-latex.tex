@@ -320,10 +320,12 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
   asgroup "#1"
   withtransparency (1,.5)
   ;
+  currentpicture := currentpicture scaled 3/4;
   \endmpfig
 }%
-\hbox{\test{isolated,knockout}\,\test{isolated}}%
+\hbox{\test{isolated,knockout}\,\test{isolated}\vbox to\MPheight{\vss\hbox{~isolated}\vss}}%
 \hbox{\test{knockout}\,\test{}}%
+\hbox to\MPwidth{\hss knockout\hss}%
 \tracingcommands0
 
 \vskip 2\baselineskip

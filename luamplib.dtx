@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/14 v2.33.1 Interface for using the mplib library]%
+  [2024/07/17 v2.34.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/14 v2.33.1}
+% \date{2024/07/17 v2.34.0}
 %
 % \maketitle
 %
@@ -251,7 +251,9 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %     draw <picture>|<path> asgroup <string>
 %\end{verbatim}
-%   where \emph{<string>} should be |""|, |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
+%   where \emph{<string>} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
+%   Beware that currently many of the PDF rendering applications, except Adobe Acrobat Reader,
+%   cannot properly render the isolated or knockout effect.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -848,8 +850,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.33.1",
-  date          = "2024/07/14",
+  version       = "2.34.0",
+  date          = "2024/07/17",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2516,7 +2518,15 @@ vardef mplibtransformmatrix (text e) =
   & "}");
 enddef;
 primarydef p withfademethod s =
-  p withprescript "mplibfadetype=" & s
+  if picture p:
+    image(
+      draw p;
+      draw center p withprescript "mplibfadestate=stop";
+    )
+  else:
+    p withprescript "mplibfadestate=stop"
+  fi
+    withprescript "mplibfadetype=" & s
     withprescript "mplibfadebbox=" &
       decimal xpart llcorner p & ":" &
       decimal ypart llcorner p & ":" &
@@ -2927,7 +2937,7 @@ local function do_preobj_TR(object,prescript)
   if opaq then
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode) or mode]
+    mode = transparancy_modes[tonumber(mode)] or mode
     for i,v in pairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
       os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
@@ -3348,10 +3358,14 @@ end
 %
 %    Fading
 %    \begin{macrocode}
+pdfetcs.fading = { }
 local function do_preobj_FADE (object, prescript)
   if object.postscript == "collect" then return end
   local fd_type = prescript and prescript.mplibfadetype
-  if not fd_type then return end
+  local fd_stop = prescript and prescript.mplibfadestate
+  if not fd_type then
+    return fd_stop -- returns "stop" (if picture) or nil
+  end
   local bbox = prescript.mplibfadebbox:explode":"
   local dx, dy = -bbox[1], -bbox[2]
   local vec = prescript.mplibfadevector; vec = vec and vec:explode":"
@@ -3400,7 +3414,8 @@ local function do_preobj_FADE (object, prescript)
   local key = add_extgs_resources(on,new)
   start_pdf_code()
   pdf_literalcode("/%s gs", key)
-  return on
+  if fd_stop then return "standalone" end
+  return "start"
 end
 
 %    \end{macrocode}
@@ -3652,7 +3667,7 @@ function luamplib.flush (result,flusher)
                 pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
                 pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
                 stop_pdf_code()
-              elseif not trgroup then
+              elseif not trgroup and fading_ ~= "stop" then
                 local evenodd, collect, both = false, false, false
                 local postscript = object.postscript
                 if not object.istext then
@@ -3799,21 +3814,26 @@ function luamplib.flush (result,flusher)
                     end
                   end
 %    \end{macrocode}
-%    Added to ConTeXt general: post-object color and shading stuff.
+%    Added to ConTeXt general: post-object colors and shading stuff.
+%    We should beware the |q ... Q| scope.
 %    \begin{macrocode}
                   if shade_no then -- shading
                     pdf_literalcode("W n /MPlibSh%s sh Q",shade_no)
                   end
                 end
               end
-              if trgroup == "start" then
+              if fading_ == "start" then
+                pdfetcs.fading.specialeffects = {fading_, tr_opaq, cr_over}
+              elseif trgroup == "start" then
                 pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
+              elseif fading_ == "stop" then
+                local se = pdfetcs.fading.specialeffects
+                if se then stop_special_effects(se[1], se[2], se[3]) end
+              elseif trgroup == "stop" then
+                local se = pdfetcs.tr_group.specialeffects
+                if se then stop_special_effects(se[1], se[2], se[3]) end
               else
                 stop_special_effects(fading_, tr_opaq, cr_over)
-              end
-              if trgroup == "stop" then
-                local se = pdfetcs.tr_group.specialeffects
-                stop_special_effects(se[1], se[2], se[3])
               end
               if fading_ or trgroup then -- extgs resetted
                 miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
@@ -3875,7 +3895,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/14 v2.33.1 mplib package for LuaTeX]
+    [2024/07/17 v2.34.0 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
