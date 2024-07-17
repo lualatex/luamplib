@@ -2938,7 +2938,7 @@ local function do_preobj_TR(object,prescript)
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)] or mode
-    for i,v in pairs{ {mode,opaq},{"Normal",1} } do
+    for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
       os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
       on, new = update_pdfobjs(os)
@@ -3360,7 +3360,6 @@ end
 %    \begin{macrocode}
 pdfetcs.fading = { }
 local function do_preobj_FADE (object, prescript)
-  if object.postscript == "collect" then return end
   local fd_type = prescript and prescript.mplibfadetype
   local fd_stop = prescript and prescript.mplibfadestate
   if not fd_type then
