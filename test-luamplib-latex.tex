@@ -271,6 +271,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
   picture tex;
   tex = mpliboutlinetext.p ("\bfseries \TeX");
   for i=1 upto mpliboutlinenum:
+    draw image(
     j:=0;
     for item within mpliboutlinepic[i]:
       j:=j+1;
@@ -279,12 +280,13 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
           withpostscript "collect"
       else:
           withpattern "pattuncolored"
-          withfademethod "linear"
-          withfadebbox (10 llcorner mpliboutlinepic[i], 10 urcorner mpliboutlinepic[i])
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;
     endfor
+    )
+    withfademethod "linear"
+    ;
   endfor
 \endmpfig
 \par\leavevmode
@@ -295,7 +297,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
   draw mill
     withfademethod "circular"
     withfadecenter (center mill, center mill)
-    withfaderadius (20, abs(lrcorner mill - llcorner mill)/2)
+    withfaderadius (30, abs(lrcorner mill - llcorner mill)/2)
     withfadeopacity (1, 0)
     ;
 \endmpfig
