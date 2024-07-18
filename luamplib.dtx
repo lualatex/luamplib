@@ -2558,6 +2558,21 @@ def withfadebbox (expr a,b) =
     decimal xpart b & ":" &
     decimal ypart b
 enddef;
+primarydef p asgroup s =
+  image(
+    fill llcorner p--lrcorner p--urcorner p--ulcorner p--cycle
+      withprescript "gr_state=start"
+      withprescript "gr_type=" & s;
+    draw p;
+    draw center p withprescript "gr_state=stop";
+  )
+enddef;
+def withgroupname expr s =
+  withprescript "mplibgroupname=" & s
+enddef;
+def usemplibgroup primary s =
+  draw maketext("\usemplibgroup{" & s & "}")
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -3176,8 +3191,10 @@ local function gather_resources (do_pattern, optres)
       res = (res .. texgettoks'mplibtmptoks'):explode()
       res = tableconcat(res," "):explode"/+"
       for _,v in ipairs(res) do
-        if do_pattern or not v:find"Pattern" and not optres:find(v) then
-          t[#t+1] = "/" .. v
+        if v:find"%w" then
+          if do_pattern or not v:find"Pattern" and not optres:find(v) then
+            t[#t+1] = "/" .. v
+          end
         end
       end
     end
@@ -3426,6 +3443,7 @@ local function do_preobj_GRP (object, prescript)
   if not grstate then return end
   local trgroup = pdfetcs.tr_group
   if grstate == "start" then
+    trgroup.name = prescript.mplibgroupname or "latestmplibgroup"
     trgroup.isolated, trgroup.knockout = false, false
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
@@ -3456,6 +3474,9 @@ local function do_preobj_GRP (object, prescript)
         [[\setbox\mplibscratchbox\hbox{\useboxresource\lastsavedboxresourceindex}]],
         [[\wd\mplibscratchbox 0pt\ht\mplibscratchbox 0pt\dp\mplibscratchbox 0pt]],
         [[\box\mplibscratchbox\endgroup]],
+        "\\expandafter\\xdef\\csname luamplib.group.", trgroup.name, "\\endcsname{",
+        "\\noexpand\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
+        "\\useboxresource \\the\\lastsavedboxresourceindex\\noexpand\\mplibstoptoPDF}",
       })
     else
       trgroup.cnt = (trgroup.cnt or 0) + 1
@@ -3466,6 +3487,9 @@ local function do_preobj_GRP (object, prescript)
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
         "\\special{pdf:uxobj ", objname, "}\\endgroup",
+        "\\expandafter\\gdef\\csname luamplib.group.", trgroup.name, "\\endcsname{",
+        "\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
+        "\\special{pdf:uxobj ", objname, "}\\mplibstoptoPDF}",
       })
     end
   end
@@ -3955,6 +3979,11 @@ end
 %    Make |btex...etex| box zero-metric.
 %    \begin{macrocode}
 \def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+%    \end{macrocode}
+%
+%    use Transparency Group
+%    \begin{macrocode}
+\protected\def\usemplibgroup#1{\csname luamplib.group.#1\endcsname}
 %    \end{macrocode}
 %
 %    Patterns
