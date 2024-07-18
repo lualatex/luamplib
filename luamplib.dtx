@@ -3259,15 +3259,14 @@ function luamplib.registerpattern ( boxid, name, opts )
     local objname = "@mplibpattern"..name
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
     texsprint {
-      [[\ifvmode\nointerlineskip\fi]],
-      format([[\hbox to0pt{\vbox to0pt{\hsize=\wd %i\vss\noindent]], boxid), -- force horiz mode?
-      [[\special{pdf:bcontent}]],
-      [[\special{pdf:bxobj ]], objname, format(" %s}", metric),
-      format([[\raise\dp %i\box %i]], boxid, boxid),
-      format([[\special{pdf:put @resources <<%s>>}]], optres),
-      [[\special{pdf:exobj <<]], tableconcat(attr), ">>}",
-      [[\special{pdf:econtent}]],
-      [[\par}\hss}]],
+      "\\ifvmode\\nointerlineskip\\fi\\vbox to0pt{\\vss\\hbox to0pt{",
+      "\\special{pdf:bcontent}",
+      "\\special{pdf:bxobj ", objname, " ", metric, "}",
+      "\\raise\\dp ", boxid, "\\box ", boxid,
+      "\\special{pdf:put @resources <<", optres, ">>}",
+      "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
+      "\\special{pdf:econtent}",
+      "\\hss}}",
     }
     patterns[#patterns+1] = objname
     patterns[name] = { id = #patterns, colored = opts.colored }
