@@ -300,12 +300,12 @@ draw image(
   ;
 \endmpfig
 \mpfig
-picture p;
-p = image( usemplibgroup "testTRgroup" scaled 4/5;);
-draw p
+fill fullcircle scaled 125 withcolor 2/3[red,white];
+fill fullcircle scaled 80  withcolor 2/3[blue,white];
+usemplibgroup "testTRgroup"
   withfademethod "circular"
+  withfaderadius (0,60)
   ;
-label.rt("reused", point 1.5 of bbox p);
 \endmpfig
 \tracingcommands0
 

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/17 v2.34.0 Interface for using the mplib library]%
+  [2024/07/19 v2.34.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
 \usepackage[x11names]{xcolor}
@@ -153,7 +153,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/17 v2.34.0}
+% \date{2024/07/19 v2.34.1}
 %
 % \maketitle
 %
@@ -254,6 +254,8 @@ See source file '\inFileName' for licencing and contact information.
 %   where \emph{<string>} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
 %   Beware that currently many of the PDF rendering applications, except Adobe Acrobat Reader,
 %   cannot properly render the isolated or knockout effect.
+%   Transparency group is available with \emph{plain} format as well, with extended functionality.
+%   See below \S\,1.2.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -765,6 +767,61 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %
+% \paragraph{Transparency Group}
+% As said before,
+% transparency group is available with \emph{plain} as well as \emph{metafun} format.
+% The syntax is exactly the same:
+% \emph{<picture>} \char"7C\ \emph{<path>} |asgroup|
+% |""| \char"7C\ |"isolated"| \char"7C\ |"knockout"| \char"7C\ |"isolated,knockout"|,
+% which will return a metapost picture.
+%
+% The additional feature provided by luamplib is that
+% you can reuse the group as many times as you want
+% in the \TeX{} code or in other MetaPost code chunks,
+% with infinitesimal increase in the size of PDF file.
+% For this functionality we provide \TeX{} and MetaPost macros as follows:
+% \begin{description}
+%   \let\bfseries\relax
+% \item[|withgroupname| \emph{<string>}] associates a transparency group with the given name.
+%   When this is not appended to the sentense with |asgroup| operator,
+%   the default group name `|lastmplibgroup|' will be used.
+%
+% \item[\cs{usemplibgroup\{...\}}] is a \TeX\ command to reuse a transparency group of the name
+%   once used.
+%   Note that the position of the group will be origin-based:
+%   in other words, lower-left corner of the group will be shifted to the origin.
+%
+% \item[|usemplibgroup| \emph{<string>}] is a MetaPost command which will add
+%   a transparency group of the name to the |currentpicture|.
+%   Contrary to the \TeX\ command just mentioned,
+%   the position of the group is the same as the original transparency group.
+% \end{description}
+% An example showing the difference between the \TeX\ and MetaPost commands:
+%\begin{verbatim}
+%   \mpfig
+%     draw image(
+%       fill fullcircle scaled 100 shifted 25right withcolor .5[blue,white];
+%       fill fullcircle scaled 100 withcolor .5[red,white] ;
+%     ) asgroup "" withgroupname "mygroup";
+%     draw (left--right) scaled 10;
+%     draw (up--down) scaled 10;
+%   \endmpfig
+%
+%   \noindent
+%   \llap{\vrule width 10pt height .25pt depth .25pt}%
+%   \clap{\vrule width .5pt height 10pt depth 10pt}%
+%   \rlap{\vrule width 10pt height .25pt depth .25pt}%
+%   \usemplibgroup{mygroup}
+%
+%   \mpfig
+%     usemplibgroup "mygroup" rotated 15;
+%     draw (left--right) scaled 10;
+%     draw (up--down) scaled 10;
+%   \endmpfig
+%\end{verbatim}
+% Also note that reused transparency groups are not affected by color commands,
+% transparency/fading commands will have effects though.
+%
 % \subsection{Lua}
 %
 % \paragraph{\texttt{runscript ...}}
@@ -850,8 +907,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.0",
-  date          = "2024/07/17",
+  version       = "2.34.1",
+  date          = "2024/07/19",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2572,6 +2629,7 @@ def withgroupname expr s =
 enddef;
 def usemplibgroup primary s =
   draw maketext("\usemplibgroup{" & s & "}")
+    shifted runscript("return luamplib.trgroupshifts['" & s & "']")
 enddef;
 ]],
   legacyverbatimtex = [[
@@ -3171,8 +3229,8 @@ end
 %    \begin{macrocode}
 pdfetcs.patterns = { }
 local patterns = pdfetcs.patterns
-local function gather_resources (do_pattern, optres)
-  local t = { }
+local function gather_resources (optres)
+  local t, do_pattern = { }, not optres
   local names = {"ExtGState","ColorSpace","Shading"}
   if do_pattern then
     names[#names+1] = "Pattern"
@@ -3188,13 +3246,13 @@ local function gather_resources (do_pattern, optres)
     else
       local res = pdfetcs.getpageres() or ""
       run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
-      res = (res .. texgettoks'mplibtmptoks'):explode()
-      res = tableconcat(res," "):explode"/+"
+      res = res .. texgettoks'mplibtmptoks'
+      if do_pattern then return res end
+      res = res:explode"/+"
       for _,v in ipairs(res) do
-        if v:find"%w" then
-          if do_pattern or not v:find"Pattern" and not optres:find(v) then
-            t[#t+1] = "/" .. v
-          end
+        v = v:match"^%s*(.-)%s*$"
+        if not v:find"Pattern" and not optres:find(v) then
+          t[#t+1] = "/" .. v
         end
       end
     end
@@ -3229,7 +3287,7 @@ local function gather_resources (do_pattern, optres)
       end
     end
   end
-  return t
+  return tableconcat(t)
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
@@ -3264,8 +3322,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
-  local t = gather_resources(false, optres)
-  optres = optres .. tableconcat(t)
+  optres = optres .. gather_resources(optres)
   if pdfmode then
     if opts.bbox then
       attr[#attr+1] = format("/BBox [%s]", opts.bbox)
@@ -3437,13 +3494,14 @@ end
 %
 %    Transparency Group
 %    \begin{macrocode}
-pdfetcs.tr_group = { }
+pdfetcs.tr_group = { shifts = { } }
+luamplib.trgroupshifts = pdfetcs.tr_group.shifts
 local function do_preobj_GRP (object, prescript)
   local grstate = prescript and prescript.gr_state
   if not grstate then return end
   local trgroup = pdfetcs.tr_group
   if grstate == "start" then
-    trgroup.name = prescript.mplibgroupname or "latestmplibgroup"
+    trgroup.name = prescript.mplibgroupname or "lastmplibgroup"
     trgroup.isolated, trgroup.knockout = false, false
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
@@ -3459,7 +3517,7 @@ local function do_preobj_GRP (object, prescript)
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
     local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
-    local res = tableconcat(gather_resources(true))
+    local res = gather_resources()
     put2output(tableconcat{
       "\\egroup",
       format("\\wd\\mplibscratchbox %fbp", urx-llx),
@@ -3492,6 +3550,7 @@ local function do_preobj_GRP (object, prescript)
         "\\special{pdf:uxobj ", objname, "}\\mplibstoptoPDF}",
       })
     end
+    trgroup.shifts[trgroup.name] = { llx, lly }
   end
   return grstate
 end
@@ -3917,7 +3976,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/17 v2.34.0 mplib package for LuaTeX]
+    [2024/07/19 v2.34.1 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
