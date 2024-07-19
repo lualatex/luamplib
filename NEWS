@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2024/07/19 2.34.1
+   * transparency group is available with plain format as well.
+   * transparency group once used is reusable in the TeX code or
+   in other MetaPost code chunks. see the document for details.
+
 2024/07/17 2.34.0
    * support transparency group with metafun format
    * fix regarding default value in circular fading mode

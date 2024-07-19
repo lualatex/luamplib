@@ -263,6 +263,7 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
 \mpfig
   picture tex;
   tex = mpliboutlinetext.p ("\bf \TeX");
+  draw image(
   for i=1 upto mpliboutlinenum:
     j:=0;
     for item within mpliboutlinepic[i]:
@@ -272,16 +273,19 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
           withpostscript "collect"
       else:
           withpattern "pattuncolored"
-          withfademethod "linear"
-          withfadebbox (10 llcorner tex, 10 urcorner tex)
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;
     endfor
   endfor
+  )
+  withfademethod "linear"
+  ;
 \endmpfig
+\par\leavevmode
 \mpfig
 fill fullcircle scaled 125 withcolor 2/3[blue,white];
+fill fullcircle scaled 80  withcolor 2/3[red,white];
 draw image(
   draw (left--right) rotated 45 scaled 50
     withpen pencircle scaled 20
@@ -291,7 +295,16 @@ draw image(
     ;
   )
   asgroup ""
+  withgroupname "testTRgroup"
   withprescript "tr_transparency=.3"
+  ;
+\endmpfig
+\mpfig
+fill fullcircle scaled 125 withcolor 2/3[red,white];
+fill fullcircle scaled 80  withcolor 2/3[blue,white];
+usemplibgroup "testTRgroup"
+  withfademethod "circular"
+  withfaderadius (0,60)
   ;
 \endmpfig
 \tracingcommands0
