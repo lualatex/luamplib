@@ -128,7 +128,6 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\metapost {\textsc{metapost}\xspace}
 \newcommand*\mplib {\textsf{mplib}\xspace}
 
-
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
@@ -824,8 +823,9 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmpfig
 %\end{verbatim}
 % Also note that normally the reused transparency groups are not affected by color commands.
-% If you want colors have effect on the group, you have to make the original transparency group
-% with |withoutcolor| command.
+% However, if you have made the original transparency group using |withoutcolor| command
+% (just like the uncolored pattern),
+% colors will have effects on the reused groups.
 %
 % \subsection{Lua}
 %
@@ -3041,7 +3041,7 @@ end
 %    Shading with |metafun| format.
 %    \begin{macrocode}
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
+  local fun2fmt,os = "<</FunctionType 2/Domain[%s]/C0[%s]/C1[%s]/N 1>>"
   if steps > 1 then
     local list,bounds,encode = { },{ },{ }
     for i=1,steps do
@@ -3055,10 +3055,10 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     end
     os = tableconcat {
       "<</FunctionType 3",
-      format("/Bounds [%s]",    tableconcat(bounds,' ')),
-      format("/Encode [%s]",    tableconcat(encode,' ')),
-      format("/Functions [%s]", tableconcat(list,  ' ')),
-      format("/Domain [%s]>>",  domain),
+      format("/Bounds[%s]",    tableconcat(bounds,' ')),
+      format("/Encode[%s]",    tableconcat(encode,' ')),
+      format("/Functions[%s]", tableconcat(list,  ' ')),
+      format("/Domain[%s]>>",  domain),
     }
   else
     os = fun2fmt:format(domain,tableconcat(ca[1],' '),tableconcat(cb[1],' '))
@@ -3068,8 +3068,8 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("<</ShadingType %i", shtype),
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
-    format("/Coords [%s]",      coordinates :gsub("%.%d+", rmzeros)),
-    "/Extend [true true]/AntiAlias true>>",
+    format("/Coords[%s]",       coordinates :gsub("%.%d+", rmzeros)),
+    "/Extend[true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
   if new then
@@ -3330,13 +3330,13 @@ function luamplib.registerpattern ( boxid, name, opts )
     "/TilingType 2",
     format("/XStep %s", opts.xstep or wd),
     format("/YStep %s", opts.ystep or hd),
-    format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
+    format("/Matrix[%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
   optres = optres .. gather_resources(optres)
   if pdfmode then
     if opts.bbox then
-      attr[#attr+1] = format("/BBox [%s]", opts.bbox)
+      attr[#attr+1] = format("/BBox[%s]", opts.bbox)
     end
     local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
@@ -3472,23 +3472,23 @@ local function do_preobj_FADE (object, prescript)
   else
     err("unknown fading method '%s'", fd_type)
   end
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub("%.%d+", rmzeros)
-  local matrix = format("1 0 0 1 %f %f", -dx, -dy) :gsub("%.%d+", rmzeros)
   fd_type = fd_type == "linear" and 2 or 3
   local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
   local on, os, new
   on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
   os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub("%.%d+", rmzeros)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
   local resources = format(pdfetcs.resfmt, on)
   on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
+  local xyshift = format("%f %f", -dx, -dy) :gsub("%.%d+", rmzeros)
   local attr = tableconcat{
     "/Subtype/Form",
     format("/BBox[%s]", bbox),
-    format("/Matrix[%s]", matrix),
+    format("/Matrix[1 0 0 1 %s]", xyshift),
     format("/Resources %s", resources),
     "/Group ", format(pdfetcs.resfmt, on),
   }
@@ -3528,16 +3528,16 @@ local function do_preobj_GRP (object, prescript)
     put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup]]
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
-    local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
-    local res = gather_resources()
     put2output(tableconcat{
       "\\egroup",
       format("\\wd\\mplibscratchbox %fbp", urx-llx),
       format("\\ht\\mplibscratchbox %fbp", ury-lly),
       "\\dp\\mplibscratchbox 0pt",
     })
+    local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
+    local res = gather_resources()
+    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub("%.%d+", rmzeros)
     if pdfmode then
-      local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub("%.%d+", rmzeros)
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
         "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
@@ -3552,7 +3552,7 @@ local function do_preobj_GRP (object, prescript)
       trgroup.cnt = (trgroup.cnt or 0) + 1
       local objname = format("@mplibtrgr%s", trgroup.cnt)
       put2output(tableconcat{
-        "\\special{pdf:bxobj ", objname, " bbox ", format("%f %f %f %f", llx,lly,urx,ury), "}",
+        "\\special{pdf:bxobj ", objname, " bbox ", bbox, "}",
         "\\unhbox\\mplibscratchbox",
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
