@@ -1821,6 +1821,12 @@ end
 
 %    \end{macrocode}
 %
+% Remove trailing zeros for smaller PDF
+%    \begin{macrocode}
+local function rmzeros(str) return str:gsub("%.?0+$","") end
+
+%    \end{macrocode}
+%
 %    luamplib's mplibgraphictext operator
 %    \begin{macrocode}
 local running = -1073741824
@@ -1856,7 +1862,7 @@ local function getrulewhatsit (line, wd, ht, dp)
     fmt = "pdf:content "..fmt
     pl = node.new("whatsit","special")
   end
-  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B")
+  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub("%.%d+", rmzeros)
   local ss = node.new"glue"
   node.setglue(ss, 0, 65536, 65536, 2, 2)
   pl.next = ss
@@ -2801,8 +2807,8 @@ end
 %    |tex.sprint| with catcode regime -2, as sometimes |#| gets doubled
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
-local function pdf_literalcode (fmt,...)
-  put2output{-2, format(fmt,...)}
+local function pdf_literalcode (...)
+  put2output{ -2, format(...) :gsub("%.%d+", rmzeros) }
 end
 
 local function start_pdf_code()
@@ -3018,7 +3024,7 @@ local function do_preobj_TR(object,prescript)
     mode = transparancy_modes[tonumber(mode)] or mode
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
-      os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
+      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",mode,opaq,opaq)
       on, new = update_pdfobjs(os)
       key = add_extgs_resources(on,new)
       if i == 1 then
@@ -3062,7 +3068,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("<</ShadingType %i", shtype),
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
-    format("/Coords [%s]",      coordinates),
+    format("/Coords [%s]",      coordinates :gsub("%.%d+", rmzeros)),
     "/Extend [true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
@@ -3466,7 +3472,8 @@ local function do_preobj_FADE (object, prescript)
   else
     err("unknown fading method '%s'", fd_type)
   end
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub("%.%d+", rmzeros)
+  local matrix = format("1 0 0 1 %f %f", -dx, -dy) :gsub("%.%d+", rmzeros)
   fd_type = fd_type == "linear" and 2 or 3
   local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
   local on, os, new
@@ -3476,13 +3483,13 @@ local function do_preobj_FADE (object, prescript)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
-  local resources = "/Resources " .. format(pdfetcs.resfmt, on)
+  local resources = format(pdfetcs.resfmt, on)
   on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
   local attr = tableconcat{
     "/Subtype/Form",
     format("/BBox[%s]", bbox),
-    format("/Matrix[1 0 0 1 %f %f]", -dx, -dy),
-    resources,
+    format("/Matrix[%s]", matrix),
+    format("/Resources %s", resources),
     "/Group ", format(pdfetcs.resfmt, on),
   }
   on = update_pdfobjs(attr, streamtext)
@@ -3530,10 +3537,10 @@ local function do_preobj_GRP (object, prescript)
       "\\dp\\mplibscratchbox 0pt",
     })
     if pdfmode then
+      local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub("%.%d+", rmzeros)
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
-        format("/BBox[%f %f %f %f]", llx,lly,urx,ury),
-        grattr, "} resources{", res, "}\\mplibscratchbox",
+        "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
         [[\setbox\mplibscratchbox\hbox{\useboxresource\lastsavedboxresourceindex}]],
         [[\wd\mplibscratchbox 0pt\ht\mplibscratchbox 0pt\dp\mplibscratchbox 0pt]],
         [[\box\mplibscratchbox\endgroup]],

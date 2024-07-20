@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/xx/xx 2.34.2
+   * remove trailing zeros to get smaller PDF
+
 2024/07/19 2.34.1
    * transparency group is available with plain format as well.
    * transparency group once used is reusable in the TeX code or
