@@ -125,6 +125,10 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand \file       {\nolinkurl}
 \newcommand \pk         {\textsf}
 
+\newcommand*\metapost {\textsc{metapost}\xspace}
+\newcommand*\mplib {\textsf{mplib}\xspace}
+
+
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
@@ -158,23 +162,23 @@ See source file '\inFileName' for licencing and contact information.
 % \maketitle
 %
 % \begin{abstract}
-% Package to have metapost code typeset directly in a document with \LuaTeX.
+% Package to have \metapost code typeset directly in a document with \LuaTeX.
 % \end{abstract}
 %
 % \section{Documentation}
 %
-% This package aims at providing a simple way to typeset directly metapost
+% This package aims at providing a simple way to typeset directly \metapost
 % code in a document with \LuaTeX. \LuaTeX\ is built with the Lua
-% \textsf{mplib} library, that runs metapost code. This package is basically a
-% wrapper for the Lua \textsf{mplib} functions and some \TeX\
-% functions to have the output of the \textsf{mplib} functions in the pdf.
+% \mplib library, that runs \metapost code. This package is basically a
+% wrapper for the Lua \mplib functions and some \TeX\
+% functions to have the output of the \mplib functions in the pdf.
 %
-% Using this package is easy: in Plain, type your metapost code between the
+% Using this package is easy: in Plain, type your \metapost code between the
 % macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
 %
-% The resulting metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
-% adjusted to the metapost code.
+% The resulting \metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
+% adjusted to the \metapost code.
 %
 % The code of luamplib is basically from the |luatex-mplib.lua| and |luatex-mplib.tex| files
 % from \ConTeXt. They have been adapted to \LaTeX\ and Plain by Elie Roux and
@@ -186,7 +190,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from \textsf{TEX.mp}.
 %   |TEX()| is also allowed and is a synonym of |textext()|.
 %   The argument of
-%   \textsf{mplib}'s primitive |maketext| will also be processed by the same routine.
+%   \mplib's primitive |maketext| will also be processed by the same routine.
 %
 % \item possibility to use |verbatimtex ... etex|, though it's behavior cannot
 %   be the same as the stand-alone \textsf{mpost}.
@@ -203,12 +207,12 @@ See source file '\inFileName' for licencing and contact information.
 % \end{itemize}
 %
 % It seems to be convenient to divide the explanations of some more changes and cautions
-% into three parts: \TeX, MetaPost, and Lua interfaces.
+% into three parts: \TeX, \textsc{MetaPost}, and Lua interfaces.
 %
 % \subsection{\TeX}
 %
 % \paragraph{\cs{mplibforcehmode}}
-%   When this macro is declared, every metapost figure box will be
+%   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
 %   will have effects. |\mplibnoforcehmode|, being default, reverts this
 %   setting. (Actually these commands redefine |\prependtomplibbox|; you
@@ -216,9 +220,9 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
-%   the lua table containing metapost code
+%   the lua table containing \metapost code
 %   which will
-%   be automatically inserted at the beginning and ending of each metapost code chunk.
+%   be automatically inserted at the beginning and ending of each \metapost code chunk.
 %\begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -229,7 +233,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \paragraph{\cs{mplibsetformat\{plain\char"7C metafun\}}}
-%   There are (basically) two formats for metapost: \emph{plain} and
+%   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
 %   |\mplibsetformat{|\emph{<format name>}|}|.
@@ -275,7 +279,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When |\mplibshowlog{enable}|\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
 %   |disable|, |false| and |no| are identical.} is declared, log messages returned by
-%   the metapost process will be printed to the |.log| file.
+%   the \metapost process will be printed to the |.log| file.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
 % \paragraph{\cs{mpliblegacybehavior\{enable\char"7C disable\}}}
@@ -284,7 +288,7 @@ See source file '\inFileName' for licencing and contact information.
 %   in which case \TeX\ code in
 %   |verbatimtex| |...| |etex| that comes just before |beginfig()|
 %   will be inserted before the
-%   following metapost figure box.  In this way,
+%   following \metapost figure box.  In this way,
 %   each figure box can be freely moved horizontally or vertically.
 %   Also, a box number can be assigned to a figure box, allowing it to be
 %   reused later.
@@ -301,7 +305,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   On the other hand, \TeX\ code in |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
-%   after flushing out the metapost figure.
+%   after flushing out the \metapost figure.
 %   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
 %\begin{verbatim}
 %     \mplibcode
@@ -348,13 +352,13 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mplibcodeinherit\{enable\char"7C disable\}}}
 %   Default: |disable|.
 %   |\mplibcodeinherit{enable}| enables the inheritance
-%   of variables, constants, and macros defined by previous metapost code chunks.
+%   of variables, constants, and macros defined by previous \metapost code chunks.
 %   On the contrary, |\mplibcodeinherit{disable}| will make
 %   each code chunk being treated as an independent instance, never
 %   affected by previous code chunks.
 %
-% \paragraph{Separate MetaPost instances}
-%   luamplib v2.22 has added the support for several named metapost instances
+% \paragraph{Separate \metapost instances}
+%   luamplib v2.22 has added the support for several named \metapost instances
 %   in \LaTeX{} |mplibcode| environment.
 %   Plain \TeX\ users also can use this functionality.
 %   The syntax for \LaTeX\ is:
@@ -389,7 +393,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibglobaltextext\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   Formerly, to inherit |btex| |...| |etex| boxes as well as other metapost macros, variables and constants,
+%   Formerly, to inherit |btex| |...| |etex| boxes as well as other \metapost macros, variables and constants,
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
 %   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
 %   is enabled.
@@ -414,7 +418,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the contents of mplibcode environment will be read verbatim. As a result,
 %   except for |\mpdim| and |\mpcolor| (see below), all other \TeX\ commands outside of the
 %   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
-%   literally to the \textsf{mplib} library.
+%   literally to the \mplib library.
 %
 % \paragraph{\cs{mpdim\{...\}}}
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
@@ -463,7 +467,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %   In these macros |\mpliblegacybehavior{disable}|
 %   is forcibly declared.
-%   Again, as both share the same instance name, metapost codes are inherited among them.
+%   Again, as both share the same instance name, \metapost codes are inherited among them.
 %   A simple example:
 %\begin{verbatim}
 %     \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
@@ -473,14 +477,14 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %   The instance name (default: |@mpfig|) can be changed by redefining
-%   \cs{mpfiginstancename}, after which a new mplib instance will start and
+%   \cs{mpfiginstancename}, after which a new \mplib instance will start and
 %   code inheritance too will begin anew.  |\let\mpfiginstancename\empty| will
 %   prevent code inheritance if |\mplibcodeinherit{true}| is not declared.
 %
 % \paragraph{About cache files}
 %   To support |btex ... etex| in external |.mp| files, luamplib
 %   inspects the content of each and every |.mp| file and makes caches
-%   if nececcsary, before returning their paths to \LuaTeX's \textsf{mplib} library.
+%   if nececcsary, before returning their paths to \LuaTeX's \mplib library.
 %   This could waste the compilation time, as most |.mp| files
 %   do not contain |btex ... etex| commands.  So luamplib provides
 %   macros as follows, so that users can give instructions about files
@@ -520,18 +524,18 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \subsection{MetaPost}
+% \subsection{\textsc{MetaPost}}
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
-%   These are MetaPost interfaces for the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
+%   These are \metapost interfaces for the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
 %   |mplibdimen("\linewidth")| is basically the same as |\mpdim{\linewidth}|, and
 %   |mplibcolor("red!50")| is basically the same as |\mpcolor{red!50}|.
-%   The difference is that these metapost operators can also be used in external |.mp| files,
+%   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
 % \paragraph{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
-%   |mplibtexcolor|, which accepts a string argument, is a metapost operator that converts a \TeX\ color expression
-%   to a MetaPost color expression, that can be used anywhere color expression is expected
+%   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
+%   to a \metapost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| operator.
 %   For instance:
 %\begin{verbatim}
@@ -541,12 +545,12 @@ See source file '\inFileName' for licencing and contact information.
 %   But the result may vary in its color model (gray/rgb/cmyk)
 %   according to the given \TeX\ color. (Spot colors are forced to
 %   cmyk model, so this operator is not recommended for spot colors.)
-%   Therefore the example shown above would raise a metapost error:
+%   Therefore the example shown above would raise a \metapost error:
 %   |cmykcolor col;| should have been declared.
 %   By contrast, |mplibrgbtexcolor| \emph{<string>} always returns rgb model expressions.
 %
 % \paragraph{\texttt{mplibgraphictext ...}}
-%   |mplibgraphictext| is a metapost operator, the effect of which is similar to that of
+%   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
 %   \ConTeXt's |graphictext| or our own |mpliboutlinetext| (see below).
 %   However the syntax is somewhat different.
 %\begin{verbatim}
@@ -575,9 +579,9 @@ See source file '\inFileName' for licencing and contact information.
 %   as we cannot embolden type1 fonts in DVI mode.
 %
 %   \paragraph{\texttt{mplibglyph ... of ...}}
-%   From v2.30, we provide a new metapost operator |mplibglyph|, which returns a metapost picture
+%   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
 %   containing outline paths of a glyph in opentype, truetype or type1 fonts.
-%   When a type1 font is specified, metapost primitive |glyph| will be called.
+%   When a type1 font is specified, \metapost primitive |glyph| will be called.
 %\begin{verbatim}
 %      mplibglyph 50  of \fontid\font          % slot 50 of current font
 %      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
@@ -596,7 +600,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \paragraph{\texttt{mplibdrawglyph ...}}
 %   The picture returned by |mplibglyph| will be quite similar to the result of |glyph| primitive in its structure.
-%   So, metapost's |draw| command will fill the inner path of the picture with the background color.
+%   So, \metapost's |draw| command will fill the inner path of the picture with the background color.
 %   In contrast, |mplibdrawglyph| \emph{<picture>} command fills the paths according to the nonzero winding
 %   number rule. As a result, for instance, the area surrounded by inner path of ``O''
 %   will remain transparent.
@@ -609,7 +613,7 @@ See source file '\inFileName' for licencing and contact information.
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
 % \paragraph{\texttt{mpliboutlinetext (...)}}
-%   From v2.31, a new metapost operator |mpliboutlinetext| is available, which mimicks
+%   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
 %   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
 %   manual \S\,8.7 (|texdoc metafun|). A simple example:
 %\begin{verbatim}
@@ -630,8 +634,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \TeX\ macros
 %   |\mppattern{<name>}| \ldots\ |\endmppattern| define a tiling pattern
 %   associated with the |<name>|.
-%   MetaPost operator |withpattern|, the syntax being
-%   \emph{<path>} |withpattern| \emph{<string>}, will return a metapost picture which fills
+%   \metapost operator |withpattern|, the syntax being
+%   \emph{<path>} |withpattern| \emph{<string>}, will return a \metapost picture which fills
 %   the given path with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
 %   An example:
@@ -679,7 +683,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For the sake of convenience, the width and height values of tiling patterns will be written down
 %   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
-%   As for |matrix| option, metapost code such as `|rotated 30 slanted .2|' is allowed as well
+%   As for |matrix| option, \metapost code such as `|rotated 30 slanted .2|' is allowed as well
 %   as string or table of four numbers. You can also set |xshift| and |yshift|
 %   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
 %   given, they have precedence over the effect of `|shifted|' operator.
@@ -690,7 +694,7 @@ See source file '\inFileName' for licencing and contact information.
 %   is not needed in most cases.
 %
 %   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
-%   Uncolored pattern will be painted later by the color of a metapost object.
+%   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\begin{verbatim}
 %      \begin{mppattern}{pattuncolored}
@@ -724,7 +728,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \paragraph{\texttt{... withfademethod ...}, and related macros}
-%   |withfademethod| is a metapost operator which makes the color of an object gradiently transparent.
+%   |withfademethod| is a \metapost operator which makes the color of an object gradiently transparent.
 %   The syntax is \emph{<path>}\texttt{\char"7C}\emph{<picture>} |withfademethod| \emph{<string>},
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| provided by metafun,
@@ -773,13 +777,13 @@ See source file '\inFileName' for licencing and contact information.
 % The syntax is exactly the same:
 % \emph{<picture>} \char"7C\ \emph{<path>} |asgroup|
 % |""| \char"7C\ |"isolated"| \char"7C\ |"knockout"| \char"7C\ |"isolated,knockout"|,
-% which will return a metapost picture.
+% which will return a \metapost picture.
 %
 % The additional feature provided by luamplib is that
 % you can reuse the group as many times as you want
-% in the \TeX{} code or in other MetaPost code chunks,
+% in the \TeX{} code or in other \metapost code chunks,
 % with infinitesimal increase in the size of PDF file.
-% For this functionality we provide \TeX{} and MetaPost macros as follows:
+% For this functionality we provide \TeX{} and \metapost macros as follows:
 % \begin{description}
 %   \let\bfseries\relax
 % \item[|withgroupname| \emph{<string>}] associates a transparency group with the given name.
@@ -791,12 +795,12 @@ See source file '\inFileName' for licencing and contact information.
 %   Note that the position of the group will be origin-based:
 %   in other words, lower-left corner of the group will be shifted to the origin.
 %
-% \item[|usemplibgroup| \emph{<string>}] is a MetaPost command which will add
+% \item[|usemplibgroup| \emph{<string>}] is a \metapost command which will add
 %   a transparency group of the name to the |currentpicture|.
 %   Contrary to the \TeX\ command just mentioned,
 %   the position of the group is the same as the original transparency group.
 % \end{description}
-% An example showing the difference between the \TeX\ and MetaPost commands:
+% An example showing the difference between the \TeX\ and \metapost commands:
 %\begin{verbatim}
 %   \mpfig
 %     draw image(
@@ -819,28 +823,26 @@ See source file '\inFileName' for licencing and contact information.
 %     draw (up--down) scaled 10;
 %   \endmpfig
 %\end{verbatim}
-% Also note that reused transparency groups are not affected by color commands,
-% transparency/fading commands will have effects though.
 %
 % \subsection{Lua}
 %
 % \paragraph{\texttt{runscript ...}}
-%   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from MetaPost side
-%   and get some metapost code returned by Lua if you want.
-%   As the functionality is provided by the \textsf{mplib} library itself,
+%   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from \metapost side
+%   and get some \metapost code returned by Lua if you want.
+%   As the functionality is provided by the \mplib library itself,
 %   luamplib does not have much to say about it.
 %
 %   One thing is worth mentioning, however:
-%   if you return a Lua \emph{table} to the metapost process,
-%   it is automatically converted to a relevant metapost value type
+%   if you return a Lua \emph{table} to the \metapost process,
+%   it is automatically converted to a relevant \metapost value type
 %   such as pair, color, cmykcolor or transform.
 %   So users can save some extra toil of converting a table to a string, though it's not a big deal.
-%   For instance, |runscript "return {1,0,0}"| will give you the metapost color expression |(1,0,0)|
+%   For instance, |runscript "return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
 %   automatically.
 %
 % \paragraph{Lua table \texttt{luamplib.instances}}
-%   Users can access the Lua table containing mplib instances, |luamplib.instances|,
-%   through which metapost variables are also easily accessible from Lua side,
+%   Users can access the Lua table containing \mplib instances, |luamplib.instances|,
+%   through which \metapost variables are also easily accessible from Lua side,
 %   as documented in Lua\TeX{} manual \S\,11.2.8.4 (|texdoc luatex|).
 %   The following will print |false|, |3.0|, |MetaPost| and
 %   the knots and the cyclicity of the path |unitsquare|, consecutively.
@@ -865,7 +867,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \paragraph{Lua function \texttt{luamplib.process\_mplibcode}}
-%   Users can execute a MetaPost code chunk from Lua side by using this function:
+%   Users can execute a \metapost code chunk from Lua side by using this function:
 %\begin{verbatim}
 %     luamplib.process_mplibcode (<string> metapost code, <string> instance name)
 %\end{verbatim}
@@ -914,7 +916,7 @@ luatexbase.provides_module {
 
 %    \end{macrocode}
 %
-%    Use the |luamplib| namespace, since |mplib| is for the metapost library
+%    Use the |luamplib| namespace, since |mplib| is for the \metapost library
 %    itself. \ConTeXt{} uses |metapost|.
 %    \begin{macrocode}
 luamplib          = luamplib or { }
@@ -1024,7 +1026,7 @@ end
 %    \end{macrocode}
 %
 %    |btex ... etex| in input |.mp| files will be replaced in finder.
-%    Because of the limitation of MPLib regarding |make_text|,
+%    Because of the limitation of \mplib regarding |make_text|,
 %    we might have to make cache files modified from input files.
 %    \begin{macrocode}
 local luamplibtime = kpse.find_file("luamplib.lua")
@@ -1071,7 +1073,7 @@ end
 
 %    \end{macrocode}
 %
-%    Some basic MetaPost files not necessary to make cache files.
+%    Some basic \metapost files not necessary to make cache files.
 %    \begin{macrocode}
 local noneedtoreplace = {
   ["boxes.mp"] = true, --  ["format.mp"] = true,
@@ -1144,7 +1146,7 @@ local function replaceinputmpfile (name,file)
 
 %    \end{macrocode}
 %    ``|etex|'' must be preceded by a space and followed by a space or semicolon as specified in
-%    \LuaTeX\ manual, which is not the case of standalone MetaPost though.
+%    \LuaTeX\ manual, which is not the case of standalone \metapost though.
 %    \begin{macrocode}
   local count,cnt = 0,0
   data, cnt = data:gsub(btex_etex, "btex %1 etex ") -- space
@@ -1171,8 +1173,8 @@ end
 
 %    \end{macrocode}
 %
-%    As the finder function for MPLib, use the |kpse| library and
-%    make it behave like as if MetaPost was used. And replace it with
+%    As the finder function for \mplib, use the |kpse| library and
+%    make it behave like as if \metapost was used. And replace it with
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
@@ -1215,9 +1217,9 @@ end
 
 %    \end{macrocode}
 %
-%    Create and load MPLib instances.
-%    We do not support ancient version of MPLib any more.
-%    (Don't know which version of MPLib started to support
+%    Create and load \mplib instances.
+%    We do not support ancient version of \mplib any more.
+%    (Don't know which version of \mplib started to support
 %    |make_text| and |run_script|; let the users find it.)
 %    \begin{macrocode}
 local preamble = [[
@@ -1313,7 +1315,7 @@ local function luamplibload (name)
     extensions  = 1,
   }
 %    \end{macrocode}
-%    Append our own MetaPost preamble to the preamble above.
+%    Append our own \metapost preamble to the preamble above.
 %    \begin{macrocode}
   local preamble = tableconcat{
     format(preamble, replacesuffix(name,"mp")),
@@ -1536,8 +1538,8 @@ end
 %
 %    For legacy verbatimtex process.
 %    |verbatimtex ... etex| before |beginfig()| is not ignored,
-%    but the \TeX\ code is inserted just before the mplib box. And
-%    \TeX\ code inside |beginfig() ... endfig| is inserted after the mplib box.
+%    but the \TeX\ code is inserted just before the \mplib box. And
+%    \TeX\ code inside |beginfig() ... endfig| is inserted after the \mplib box.
 %    \begin{macrocode}
 local tex_code_pre_mplib = {}
 luamplib.figid = 1
@@ -1681,7 +1683,7 @@ end
 
 %    \end{macrocode}
 %
-%    luamplib's metapost color operators
+%    luamplib's \metapost color operators
 %    \begin{macrocode}
 local function colorsplit (res)
   local t, tt = { }, res:gsub("[%[%]]",""):explode()
@@ -2375,7 +2377,7 @@ end
 
 %    \end{macrocode}
 %
-%    Our MetaPost preambles
+%    Our \metapost preambles
 %    \begin{macrocode}
 luamplib.preambles = {
   mplibcode = [[
@@ -3998,7 +4000,7 @@ end
 \fi
 %    \end{macrocode}
 %
-%    Set the format for metapost.
+%    Set the format for \metapost.
 %    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
 %    \end{macrocode}
@@ -4083,7 +4085,7 @@ end
 }
 %    \end{macrocode}
 %
-%    simple way to use mplib:
+%    simple way to use \mplib:
 %    |\mpfig draw fullcircle scaled 10; \endmpfig|
 %    \begin{macrocode}
 \def\mpfiginstancename{@mpfig}
@@ -4295,7 +4297,7 @@ end
 \def\domplibcolor#1#2{ runscript("luamplibcolor{#1{#2}}") }
 %    \end{macrocode}
 %
-%    MPLib's number system. Now |binary| has gone away.
+%    \mplib's number system. Now |binary| has gone away.
 %    \begin{macrocode}
 \def\mplibnumbersystem#1{\directlua{
   local t = "#1"
