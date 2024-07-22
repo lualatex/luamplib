@@ -3484,11 +3484,10 @@ local function do_preobj_FADE (object, prescript)
   on = update_pdfobjs(os)
   local resources = format(pdfetcs.resfmt, on)
   on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
-  local xyshift = format("%f %f", -dx, -dy) :gsub("%.%d+", rmzeros)
   local attr = tableconcat{
     "/Subtype/Form",
     format("/BBox[%s]", bbox),
-    format("/Matrix[1 0 0 1 %s]", xyshift),
+    format("/Matrix[1 0 0 1 %s]", format("%f %f", -dx,-dy) :gsub("%.%d+", rmzeros)),
     format("/Resources %s", resources),
     "/Group ", format(pdfetcs.resfmt, on),
   }
