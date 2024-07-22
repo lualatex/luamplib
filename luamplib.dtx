@@ -3302,9 +3302,9 @@ local function gather_resources (optres)
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
-  local wd = format("%.3f",box.width/factor)
-  local hd = format("%.3f",(box.height+box.depth)/factor)
-  info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
+  local wd = format("%.3f",box.width/factor) :gsub("%.%d+", rmzeros)
+  local hd = format("%.3f",(box.height+box.depth)/factor) :gsub("%.%d+", rmzeros)
+  info("w/h/d of '%s': %s %s 0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then
