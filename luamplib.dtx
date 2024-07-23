@@ -811,9 +811,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmpfig
 %
 %   \noindent
-%   \llap{\vrule width 10pt height .25pt depth .25pt}%
+%   \clap{\vrule width 20pt height .25pt depth .25pt}%
 %   \clap{\vrule width .5pt height 10pt depth 10pt}%
-%   \rlap{\vrule width 10pt height .25pt depth .25pt}%
 %   \usemplibgroup{mygroup}
 %
 %   \mpfig
@@ -2811,20 +2810,12 @@ local function pdf_literalcode (...)
   put2output{ -2, format(...) :gsub("%.%d+", rmzeros) }
 end
 
-local function start_pdf_code()
-  if pdfmode then
-    pdf_literalcode("q")
-  else
-    put2output"\\special{pdf:bcontent}"
-  end
-end
-local function stop_pdf_code()
-  if pdfmode then
-    pdf_literalcode("Q")
-  else
-    put2output"\\special{pdf:econtent}"
-  end
-end
+local start_pdf_code = pdfmode
+  and function() pdf_literalcode"q" end
+  or  function() put2output"\\special{pdf:bcontent}" end
+local stop_pdf_code = pdfmode
+  and function() pdf_literalcode"Q" end
+  or  function() put2output"\\special{pdf:econtent}" end
 
 %    \end{macrocode}
 %
