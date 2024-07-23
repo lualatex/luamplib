@@ -1,8 +1,10 @@
                        History of the luamplib package
 
-2024/xx/xx 2.34.2
+2024/07/24 2.34.2
+   * document: more about transparency group, especially its relation
+   with color commands
+
    * remove trailing zeros to get smaller PDF
-   * document: be more precise about the color of transparency group
 
 2024/07/19 2.34.1
    * transparency group is available with plain format as well.
