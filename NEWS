@@ -1,5 +1,15 @@
                        History of the luamplib package
 
+2024/07/24 2.34.2
+   * With the newly introduced macros, \mplibgroup ... \endmplibgroup, users
+   can define a transparency group or a normal form XObject from TeX side.
+   The LaTeX environment 'mplibgroup' is identical to this pair of macros.
+   See the document for details.
+
+   * document: be more precise about the color effect of a transparency group
+
+   * remove trailing zeros from numeric objects to get smaller PDF
+
 2024/07/19 2.34.1
    * transparency group is available with plain format as well.
    * transparency group once used is reusable in the TeX code or

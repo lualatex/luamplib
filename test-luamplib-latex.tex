@@ -332,6 +332,11 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
 \leavevmode
 \mpfig usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
 \usemplibgroup{test:isolated,knockout}%
+\begin{mplibgroup}{mytex}[matrix="rotated 15"] \TeX \end{mplibgroup}%
+\hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
+\hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
+\usemplibgroup{mytex}%
+\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

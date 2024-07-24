@@ -85,9 +85,9 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/19 v2.34.1 Interface for using the mplib library]%
+  [2024/07/24 v2.34.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
-\usepackage{metalogo,multicol,mdwlist,fancyvrb,xspace}
+\usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
 %
 \def\primarycolor{DodgerBlue4}  %%-> rgb  16  78 139 | #104e8b
@@ -125,6 +125,9 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand \file       {\nolinkurl}
 \newcommand \pk         {\textsf}
 
+\newcommand*\metapost {\textsc{metapost}\xspace}
+\newcommand*\mplib {\textsf{mplib}\xspace}
+
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
@@ -153,28 +156,28 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/19 v2.34.1}
+% \date{2024/07/24 v2.34.2}
 %
 % \maketitle
 %
 % \begin{abstract}
-% Package to have metapost code typeset directly in a document with \LuaTeX.
+% Package to have \metapost code typeset directly in a document with \LuaTeX.
 % \end{abstract}
 %
 % \section{Documentation}
 %
-% This package aims at providing a simple way to typeset directly metapost
+% This package aims at providing a simple way to typeset directly \metapost
 % code in a document with \LuaTeX. \LuaTeX\ is built with the Lua
-% \textsf{mplib} library, that runs metapost code. This package is basically a
-% wrapper for the Lua \textsf{mplib} functions and some \TeX\
-% functions to have the output of the \textsf{mplib} functions in the pdf.
+% \mplib library, that runs \metapost code. This package is basically a
+% wrapper for the Lua \mplib functions and some \TeX\
+% functions to have the output of the \mplib functions in the pdf.
 %
-% Using this package is easy: in Plain, type your metapost code between the
+% Using this package is easy: in Plain, type your \metapost code between the
 % macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
 % \texttt{mplibcode} environment.
 %
-% The resulting metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
-% adjusted to the metapost code.
+% The resulting \metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
+% adjusted to the \metapost code.
 %
 % The code of luamplib is basically from the |luatex-mplib.lua| and |luatex-mplib.tex| files
 % from \ConTeXt. They have been adapted to \LaTeX\ and Plain by Elie Roux and
@@ -186,15 +189,15 @@ See source file '\inFileName' for licencing and contact information.
 %   |textext()| is a more versatile macro equivalent to |TEX()| from \textsf{TEX.mp}.
 %   |TEX()| is also allowed and is a synonym of |textext()|.
 %   The argument of
-%   \textsf{mplib}'s primitive |maketext| will also be processed by the same routine.
+%   \mplib's primitive |maketext| will also be processed by the same routine.
 %
 % \item possibility to use |verbatimtex ... etex|, though it's behavior cannot
 %   be the same as the stand-alone \textsf{mpost}.
 %   Of course you cannot include \cs{documentclass}, \cs{usepackage} etc.
 %   When these \TeX\ commands are found in |verbatimtex ... etex|, the entire code will be
 %   ignored.
-%   The treatment of |verbatimtex| command has changed a lot since v2.20;
-%   see below regarding \cs{mpliblegacybehavior}.
+%   The treatment of |verbatimtex| command has changed a lot since v2.20:
+%   see \hyperlink{mpliblegacybehavior}{below \S\,1.1}.
 %
 % \item in the past,
 %   the package required PDF mode in order to have some output.
@@ -203,22 +206,22 @@ See source file '\inFileName' for licencing and contact information.
 % \end{itemize}
 %
 % It seems to be convenient to divide the explanations of some more changes and cautions
-% into three parts: \TeX, MetaPost, and Lua interfaces.
+% into three parts: \TeX, \textsc{MetaPost}, and Lua interfaces.
 %
 % \subsection{\TeX}
 %
 % \paragraph{\cs{mplibforcehmode}}
-%   When this macro is declared, every metapost figure box will be
+%   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
-%   will have effects. |\mplibnoforcehmode|, being default, reverts this
-%   setting. (Actually these commands redefine |\prependtomplibbox|; you
+%   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
+%   setting. (Actually these commands redefine \cs{prependtomplibbox}; you
 %   can redefine this command with anything suitable before a box.)
 %
 % \paragraph{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
-%   the lua table containing metapost code
+%   the lua table containing \metapost code
 %   which will
-%   be automatically inserted at the beginning and ending of each metapost code chunk.
+%   be automatically inserted at the beginning and ending of each \metapost code chunk.
 %\begin{verbatim}
 %     \everymplib{ beginfig(0); }
 %     \everyendmplib{ endfig; }
@@ -229,23 +232,25 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \paragraph{\cs{mplibsetformat\{plain\char"7C metafun\}}}
-%   There are (basically) two formats for metapost: \emph{plain} and
+%   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
-%   |\mplibsetformat{|\emph{<format name>}|}|.
+%   \cs{mplibsetformat\{<format name>\}}.
 %
 %   \textsc{n.b.} As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
 %   At least, however, transparency (actually opacity), transparency group, and shading (gradient colors)
 %   are fully supported,
-%   and outlinetext is supported by our own alternative |mpliboutlinetext| (see below \S\,1.2).
+%   and outlinetext is supported by our own alternative |mpliboutlinetext|
+%   (see \hyperlink{mpliboutlinetext}{below \S\,1.2}).
 %
 %   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
 %   Among these, transparency is so simple that you can apply it to an object,
 %   even with the \emph{plain} format,
-%   just by appending |withprescript "tr_transparency=|\emph{<number>}|"| to the sentence.
+%   just by appending |withprescript| |"tr_transparency=<number>"| to the sentence.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
 %
+%   \hypertarget{metafunformat}{}\relax
 %   As for transparency group, the current \emph{metafun} document \S\,8.8 is not correct.
 %   The true syntax is:
 %\begin{verbatim}
@@ -255,7 +260,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Beware that currently many of the PDF rendering applications, except Adobe Acrobat Reader,
 %   cannot properly render the isolated or knockout effect.
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
-%   See below \S\,1.2.
+%   See \hyperlink{transparencygroup}{below \S\,1.2}.
 %
 %   One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -272,19 +277,20 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibshowlog\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   When |\mplibshowlog{enable}|\footnote{As for user's setting,
+%   When \cs{mplibshowlog\{enable\}}\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
 %   |disable|, |false| and |no| are identical.} is declared, log messages returned by
-%   the metapost process will be printed to the |.log| file.
+%   the \metapost process will be printed to the |.log| file.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
 % \paragraph{\cs{mpliblegacybehavior\{enable\char"7C disable\}}}
-%   By default, |\mpliblegacybehavior{enable}|
+%   \hypertarget{mpliblegacybehavior}{}\relax
+%   By default, \cs{mpliblegacybehavior\{enable\}}
 %   is already declared for backward compatibility,
 %   in which case \TeX\ code in
 %   |verbatimtex| |...| |etex| that comes just before |beginfig()|
 %   will be inserted before the
-%   following metapost figure box.  In this way,
+%   following \metapost figure box.  In this way,
 %   each figure box can be freely moved horizontally or vertically.
 %   Also, a box number can be assigned to a figure box, allowing it to be
 %   reused later.
@@ -301,7 +307,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   On the other hand, \TeX\ code in |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
-%   after flushing out the metapost figure.
+%   after flushing out the \metapost figure.
 %   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
 %\begin{verbatim}
 %     \mplibcode
@@ -315,7 +321,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 %   By contrast,
-%   when |\mpliblegacybehavior{disabled}| is declared, any
+%   when \cs{mpliblegacybehavior\{disabled\}} is declared, any
 %   |verbatimtex| |...| |etex| will be executed, along with |btex| |...| |etex|,
 %   sequentially one by one.
 %   So, some \TeX\ code in |verbatimtex ... etex| will have effects on
@@ -333,7 +339,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibtextextlabel\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   |\mplibtextextlabel{enable}| enables
+%   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
 %   So, |label("my text",origin)| thereafter is exactly the same as
 %   |label(textext("my text"),origin)|.
@@ -347,14 +353,14 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibcodeinherit\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   |\mplibcodeinherit{enable}| enables the inheritance
-%   of variables, constants, and macros defined by previous metapost code chunks.
-%   On the contrary, |\mplibcodeinherit{disable}| will make
+%   \cs{mplibcodeinherit\{enable\}} enables the inheritance
+%   of variables, constants, and macros defined by previous \metapost code chunks.
+%   On the contrary, \cs{mplibcodeinherit\{disable\}} will make
 %   each code chunk being treated as an independent instance, never
 %   affected by previous code chunks.
 %
-% \paragraph{Separate MetaPost instances}
-%   luamplib v2.22 has added the support for several named metapost instances
+% \paragraph{Separate \metapost instances}
+%   luamplib v2.22 has added the support for several named \metapost instances
 %   in \LaTeX{} |mplibcode| environment.
 %   Plain \TeX\ users also can use this functionality.
 %   The syntax for \LaTeX\ is:
@@ -389,7 +395,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibglobaltextext\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   Formerly, to inherit |btex| |...| |etex| boxes as well as other metapost macros, variables and constants,
+%   Formerly, to inherit |btex| |...| |etex| boxes as well as other \metapost macros, variables and constants,
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
 %   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
 %   is enabled.
@@ -410,13 +416,15 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mplibverbatim\{enable\char"7C disable\}}}
 %   Default: |disable|.
-%   Users can issue |\mplibverbatim{enable}|, after which
+%   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   except for |\mpdim| and |\mpcolor| (see below), all other \TeX\ commands outside of the
+%   except for \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{below}),
+%   all other \TeX\ commands outside of the
 %   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
-%   literally to the \textsf{mplib} library.
+%   literally to the \mplib library.
 %
 % \paragraph{\cs{mpdim\{...\}}}
+%   \hypertarget{mpdim}{}\relax
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
 %   in the mplibcode environment. This feature is inpired by \textsf{gmp} package authored by
 %   Enrico Gregorio. Please refer to the manual of \textsf{gmp} package for details.
@@ -433,7 +441,7 @@ See source file '\inFileName' for licencing and contact information.
 %   With \cs{mpcolor} command, color names or expressions of
 %   \textsf{color}, \textsf{xcolor} and \textsf{l3color} module/packages can be used in the mplibcode
 %   enviroment (after |withcolor| operator).
-%   See the example above.
+%   See the example \hyperlink{mpdim}{above}.
 %   The optional |[...]| means the option of \textsf{xcolor}'s \cs{color} command.
 %   For spot colors, \textsf{l3color} (in PDF/DVI mode),
 %   \textsf{colorspace}, \textsf{spotcolor}
@@ -443,8 +451,8 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
 %   \cs{mplibcode ...} \cs{endmplibcode} (for Plain),
-%   we also provide unexpandable \TeX\ macros |\mpfig ... \endmpfig| and its starred version
-%   |\mpfig* ... \endmpfig| to save typing toil.
+%   we also provide unexpandable \TeX\ macros \cs{mpfig} |...| \cs{endmpfig} and its starred version
+%   \cs{mpfig*} |...| \cs{endmpfig} to save typing toil.
 %   The former is roughly the same as follows:
 %\begin{verbatim}
 %     \begin{mplibcode}[@mpfig]
@@ -461,9 +469,9 @@ See source file '\inFileName' for licencing and contact information.
 %     ...
 %     \end{mplibcode}
 %\end{verbatim}
-%   In these macros |\mpliblegacybehavior{disable}|
+%   In these macros \cs{mpliblegacybehavior\{disable\}}
 %   is forcibly declared.
-%   Again, as both share the same instance name, metapost codes are inherited among them.
+%   Again, as both share the same instance name, \metapost codes are inherited among them.
 %   A simple example:
 %\begin{verbatim}
 %     \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
@@ -473,21 +481,21 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %   The instance name (default: |@mpfig|) can be changed by redefining
-%   \cs{mpfiginstancename}, after which a new mplib instance will start and
-%   code inheritance too will begin anew.  |\let\mpfiginstancename\empty| will
-%   prevent code inheritance if |\mplibcodeinherit{true}| is not declared.
+%   \cs{mpfiginstancename}, after which a new \mplib instance will start and
+%   code inheritance too will begin anew.  \cs{let}\cs{mpfiginstancename}\cs{empty} will
+%   prevent code inheritance if \cs{mplibcodeinherit\{true\}} is not declared.
 %
 % \paragraph{About cache files}
 %   To support |btex ... etex| in external |.mp| files, luamplib
 %   inspects the content of each and every |.mp| file and makes caches
-%   if nececcsary, before returning their paths to \LuaTeX's \textsf{mplib} library.
+%   if nececcsary, before returning their paths to \LuaTeX's \mplib library.
 %   This could waste the compilation time, as most |.mp| files
 %   do not contain |btex ... etex| commands.  So luamplib provides
 %   macros as follows, so that users can give instructions about files
 %   that do not require this functionality.
 %   \begin{itemize}
-%   \item |\mplibmakenocache{<filename>[,<filename>,...]}|
-%   \item |\mplibcancelnocache{<filename>[,<filename>,...]}|
+%   \item \cs{mplibmakenocache\{<filename>[,<filename>,...]\}}
+%   \item \cs{mplibcancelnocache\{<filename>[,<filename>,...]\}}
 %   \end{itemize}
 %   where |<filename>| is a filename excluding |.mp| extension.
 %   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
@@ -502,9 +510,9 @@ See source file '\inFileName' for licencing and contact information.
 %   command-line option.
 %
 %   Users can change this behavior by the command
-%   |\mplibcachedir{<directory path>}|, where tilde (|~|) is interpreted
+%   \cs{mplibcachedir\{<directory path>\}}, where tilde (|~|) is interpreted
 %   as the user's home directory (on a windows machine as well).
-%   As backslashes (|\|) should be escaped by users, it would be easier to use
+%   As backslashes (\cs{}) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
 %
 % \paragraph{About figure box metric}
@@ -520,18 +528,19 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \subsection{MetaPost}
+% \subsection{\textsc{MetaPost}}
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
-%   These are MetaPost interfaces for the \TeX\ commands \cs{mpdim} and \cs{mpcolor}. For example,
-%   |mplibdimen("\linewidth")| is basically the same as |\mpdim{\linewidth}|, and
-%   |mplibcolor("red!50")| is basically the same as |\mpcolor{red!50}|.
-%   The difference is that these metapost operators can also be used in external |.mp| files,
+%   These are \metapost interfaces for the \TeX\ commands
+%   \hyperlink{mpdim}{\cs{mpdim} \textcolor{black}{and} \cs{mpcolor}}. For example,
+%   |mplibdimen("\linewidth")| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
+%   |mplibcolor("red!50")| is basically the same as \cs{mpcolor\{red!50\}}.
+%   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
 % \paragraph{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
-%   |mplibtexcolor|, which accepts a string argument, is a metapost operator that converts a \TeX\ color expression
-%   to a MetaPost color expression, that can be used anywhere color expression is expected
+%   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
+%   to a \metapost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| operator.
 %   For instance:
 %\begin{verbatim}
@@ -541,13 +550,14 @@ See source file '\inFileName' for licencing and contact information.
 %   But the result may vary in its color model (gray/rgb/cmyk)
 %   according to the given \TeX\ color. (Spot colors are forced to
 %   cmyk model, so this operator is not recommended for spot colors.)
-%   Therefore the example shown above would raise a metapost error:
+%   Therefore the example shown above would raise a \metapost error:
 %   |cmykcolor col;| should have been declared.
 %   By contrast, |mplibrgbtexcolor| \emph{<string>} always returns rgb model expressions.
 %
 % \paragraph{\texttt{mplibgraphictext ...}}
-%   |mplibgraphictext| is a metapost operator, the effect of which is similar to that of
-%   \ConTeXt's |graphictext| or our own |mpliboutlinetext| (see below).
+%   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
+%   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
+%   (see \hyperlink{mpliboutlinetext}{below}).
 %   However the syntax is somewhat different.
 %\begin{verbatim}
 %     mplibgraphictext "Funny"
@@ -575,9 +585,9 @@ See source file '\inFileName' for licencing and contact information.
 %   as we cannot embolden type1 fonts in DVI mode.
 %
 %   \paragraph{\texttt{mplibglyph ... of ...}}
-%   From v2.30, we provide a new metapost operator |mplibglyph|, which returns a metapost picture
+%   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
 %   containing outline paths of a glyph in opentype, truetype or type1 fonts.
-%   When a type1 font is specified, metapost primitive |glyph| will be called.
+%   When a type1 font is specified, \metapost primitive |glyph| will be called.
 %\begin{verbatim}
 %      mplibglyph 50  of \fontid\font          % slot 50 of current font
 %      mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"    % font csname
@@ -596,7 +606,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \paragraph{\texttt{mplibdrawglyph ...}}
 %   The picture returned by |mplibglyph| will be quite similar to the result of |glyph| primitive in its structure.
-%   So, metapost's |draw| command will fill the inner path of the picture with the background color.
+%   So, \metapost's |draw| command will fill the inner path of the picture with the background color.
 %   In contrast, |mplibdrawglyph| \emph{<picture>} command fills the paths according to the nonzero winding
 %   number rule. As a result, for instance, the area surrounded by inner path of ``O''
 %   will remain transparent.
@@ -609,8 +619,9 @@ See source file '\inFileName' for licencing and contact information.
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
 % \paragraph{\texttt{mpliboutlinetext (...)}}
-%   From v2.31, a new metapost operator |mpliboutlinetext| is available, which mimicks
-%   metafun's |outlinetext|. So the syntax is the same as metafun's. See the metafun
+%   \hypertarget{mpliboutlinetext}{}\relax
+%   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
+%   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
 %   manual \S\,8.7 (|texdoc metafun|). A simple example:
 %\begin{verbatim}
 %     draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
@@ -627,11 +638,12 @@ See source file '\inFileName' for licencing and contact information.
 %   a single cluster might be separated apart.
 %
 % \paragraph{\cs{mppattern\{...\}} \texttt{...} \cs{endmppattern}, \texttt{... withpattern ...}}
+%   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
-%   |\mppattern{<name>}| \ldots\ |\endmppattern| define a tiling pattern
+%   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the |<name>|.
-%   MetaPost operator |withpattern|, the syntax being
-%   \emph{<path>} |withpattern| \emph{<string>}, will return a metapost picture which fills
+%   \metapost operator |withpattern|, the syntax being
+%   \emph{<path>} |withpattern| \emph{<string>}, will return a \metapost picture which fills
 %   the given path with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
 %   An example:
@@ -679,7 +691,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For the sake of convenience, the width and height values of tiling patterns will be written down
 %   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
-%   As for |matrix| option, metapost code such as `|rotated 30 slanted .2|' is allowed as well
+%   As for |matrix| option, \metapost code such as `|rotated 30 slanted .2|' is allowed as well
 %   as string or table of four numbers. You can also set |xshift| and |yshift|
 %   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
 %   given, they have precedence over the effect of `|shifted|' operator.
@@ -690,7 +702,7 @@ See source file '\inFileName' for licencing and contact information.
 %   is not needed in most cases.
 %
 %   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
-%   Uncolored pattern will be painted later by the color of a metapost object.
+%   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\begin{verbatim}
 %      \begin{mppattern}{pattuncolored}
@@ -723,11 +735,11 @@ See source file '\inFileName' for licencing and contact information.
 %      \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\texttt{... withfademethod ...}, and related macros}
-%   |withfademethod| is a metapost operator which makes the color of an object gradiently transparent.
+% \paragraph{\texttt{... withfademethod ...}}
+%   This is a \metapost operator which makes the color of an object gradiently transparent.
 %   The syntax is \emph{<path>}\texttt{\char"7C}\emph{<picture>} |withfademethod| \emph{<string>},
 %   the latter being either |"linear"| or |"circular"|.
-%   Though it is similar to the |withshademethod| provided by metafun,
+%   Though it is similar to the |withshademethod| from \emph{metafun},
 %   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
 %   (2) you cannot make gradient colors, but can only make gradient opacity.
 %
@@ -767,36 +779,42 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %
-% \paragraph{Transparency Group}
-% As said before,
+% \paragraph{\texttt{... asgroup ...}}
+% \hypertarget{transparencygroup}{}\relax
+% As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
 % \emph{<picture>} \char"7C\ \emph{<path>} |asgroup|
 % |""| \char"7C\ |"isolated"| \char"7C\ |"knockout"| \char"7C\ |"isolated,knockout"|,
-% which will return a metapost picture.
+% which will return a \metapost picture.
+% It is called \emph{Transparency Group} because the objects contained in the group are composited
+% to produce a single object, so that outer transparency effect, if any,
+% will be applied to the group as a whole, not to the individual objects cumulatively.
 %
 % The additional feature provided by luamplib is that
 % you can reuse the group as many times as you want
-% in the \TeX{} code or in other MetaPost code chunks,
+% in the \TeX{} code or in other \metapost code chunks,
 % with infinitesimal increase in the size of PDF file.
-% For this functionality we provide \TeX{} and MetaPost macros as follows:
+% For this functionality we provide \TeX{} and \metapost macros as follows:
 % \begin{description}
 %   \let\bfseries\relax
 % \item[|withgroupname| \emph{<string>}] associates a transparency group with the given name.
 %   When this is not appended to the sentense with |asgroup| operator,
 %   the default group name `|lastmplibgroup|' will be used.
 %
-% \item[\cs{usemplibgroup\{...\}}] is a \TeX\ command to reuse a transparency group of the name
+% \item[\cs{usemplibgroup\{...\}}]
+%   \hypertarget{usemplibgroup}{}\relax
+%   is a \TeX\ command to reuse a transparency group of the name
 %   once used.
 %   Note that the position of the group will be origin-based:
 %   in other words, lower-left corner of the group will be shifted to the origin.
 %
-% \item[|usemplibgroup| \emph{<string>}] is a MetaPost command which will add
+% \item[|usemplibgroup| \emph{<string>}] is a \metapost command which will add
 %   a transparency group of the name to the |currentpicture|.
 %   Contrary to the \TeX\ command just mentioned,
 %   the position of the group is the same as the original transparency group.
 % \end{description}
-% An example showing the difference between the \TeX\ and MetaPost commands:
+% An example showing the difference between the \TeX\ and \metapost commands:
 %\begin{verbatim}
 %   \mpfig
 %     draw image(
@@ -808,9 +826,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmpfig
 %
 %   \noindent
-%   \llap{\vrule width 10pt height .25pt depth .25pt}%
+%   \clap{\vrule width 20pt height .25pt depth .25pt}%
 %   \clap{\vrule width .5pt height 10pt depth 10pt}%
-%   \rlap{\vrule width 10pt height .25pt depth .25pt}%
 %   \usemplibgroup{mygroup}
 %
 %   \mpfig
@@ -819,28 +836,85 @@ See source file '\inFileName' for licencing and contact information.
 %     draw (up--down) scaled 10;
 %   \endmpfig
 %\end{verbatim}
-% Also note that reused transparency groups are not affected by color commands,
-% transparency/fading commands will have effects though.
+%
+% Also note that normally the reused transparency groups are not affected by outer color commands.
+% However, if you have made the original transparency group using |withoutcolor| command,
+% colors will have effects on the uncolored objects in the group.
+%
+% \paragraph{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
+% These \TeX\ macros are described here in this subsection, as they are
+% deeply related to the |asgroup| operator.
+% Users can define a transparency group or a normal \emph{form XObject}
+% with these macros from \TeX\ side.
+% The syntax is similar to the \cs{mppattern} command (see \hyperlink{mppattern}{above}).
+% An example:
+%\begin{verbatim}
+%   \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
+%     [                                 % options: see below
+%       asgroup="",
+%     ]
+%     \mpfig                            % or any other TeX code
+%       draw (left--right) scaled 30 rotated 45 withpen pencircle scaled 10;
+%       draw (left--right) scaled 30 rotated -45 withpen pencircle scaled 10;
+%     \endmpfig
+%   \endmplibgroup                      % or \end{mplibgroup}
+%
+%   \usemplibgroup{mygrx}
+%
+%   \mpfig
+%     usemplibgroup "mygrx" scaled 1.5 withprescript "tr_transparency=0.5";
+%   \endmpfig
+%\end{verbatim}
+% Availabe options, much fewer than those for \cs{mppattern},
+% are listed in Table~\ref{tab:mplibgroupoptions}.
+% \begin{table}
+% \centering
+% \caption{options for \cs{mplibgroup}}\label{tab:mplibgroupoptions}
+% \begin{tabular}{lll}
+% \hline
+%   Key         & Value Type    & Explanation\\
+% \hline
+%   |asgroup|   &\emph{string}  & |""|, |"isolated"|, |"knockout"|, or |"isolated,knockout"|\\
+%   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
+%   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
+%     or MP transform code\\
+%   |resources| &\emph{string}  & PDF resources if needed\\
+% \hline
+%               &               & \small *\,in string type, numbers are separated by spaces\\
+% \end{tabular}
+% \end{table}
+%
+% When |asgroup| option, including empty string, is not given,
+% a normal form XObject will be generated rather than a transparency group.
+% So, the individual objects, not the XObject as a whole, will be affected
+% by outer transparency command.
+%
+% As shown in the example, you can reuse the transparency group or the normal form XObject
+% once defined
+% using the \TeX\ command \cs{usemplibgroup} or
+% the \metapost command |usemplibgroup|.
+% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}.
+%
 %
 % \subsection{Lua}
 %
 % \paragraph{\texttt{runscript ...}}
-%   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from MetaPost side
-%   and get some metapost code returned by Lua if you want.
-%   As the functionality is provided by the \textsf{mplib} library itself,
+%   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from \metapost side
+%   and get some \metapost code returned by Lua if you want.
+%   As the functionality is provided by the \mplib library itself,
 %   luamplib does not have much to say about it.
 %
 %   One thing is worth mentioning, however:
-%   if you return a Lua \emph{table} to the metapost process,
-%   it is automatically converted to a relevant metapost value type
+%   if you return a Lua \emph{table} to the \metapost process,
+%   it is automatically converted to a relevant \metapost value type
 %   such as pair, color, cmykcolor or transform.
 %   So users can save some extra toil of converting a table to a string, though it's not a big deal.
-%   For instance, |runscript "return {1,0,0}"| will give you the metapost color expression |(1,0,0)|
+%   For instance, |runscript "return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
 %   automatically.
 %
 % \paragraph{Lua table \texttt{luamplib.instances}}
-%   Users can access the Lua table containing mplib instances, |luamplib.instances|,
-%   through which metapost variables are also easily accessible from Lua side,
+%   Users can access the Lua table containing \mplib instances, |luamplib.instances|,
+%   through which \metapost variables are also easily accessible from Lua side,
 %   as documented in Lua\TeX{} manual \S\,11.2.8.4 (|texdoc luatex|).
 %   The following will print |false|, |3.0|, |MetaPost| and
 %   the knots and the cyclicity of the path |unitsquare|, consecutively.
@@ -865,7 +939,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \paragraph{Lua function \texttt{luamplib.process\_mplibcode}}
-%   Users can execute a MetaPost code chunk from Lua side by using this function:
+%   Users can execute a \metapost code chunk from Lua side by using this function:
 %\begin{verbatim}
 %     luamplib.process_mplibcode (<string> metapost code, <string> instance name)
 %\end{verbatim}
@@ -907,14 +981,14 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.1",
-  date          = "2024/07/19",
+  version       = "2.34.2",
+  date          = "2024/07/24",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
 %    \end{macrocode}
 %
-%    Use the |luamplib| namespace, since |mplib| is for the metapost library
+%    Use the |luamplib| namespace, since |mplib| is for the \metapost library
 %    itself. \ConTeXt{} uses |metapost|.
 %    \begin{macrocode}
 luamplib          = luamplib or { }
@@ -950,7 +1024,6 @@ local function termorlog (target, text, kind)
     if kind == "Error" then error() end
   end
 end
-
 local function warn (...) -- beware '%' symbol
   termorlog("term and log", select("#",...) > 1 and format(...) or ...)
 end
@@ -975,18 +1048,14 @@ local texsprint   = tex.sprint
 local texgettoks  = tex.gettoks
 local texgetbox   = tex.getbox
 local texruntoks  = tex.runtoks
-
 if not texruntoks then
   err("Your LuaTeX version is too old. Please upgrade it to the latest")
 end
-
 local is_defined  = token.is_defined
 local get_macro   = token.get_macro
-
 local mplib = require ('mplib')
 local kpse  = require ('kpse')
 local lfs   = require ('lfs')
-
 local lfsattributes = lfs.attributes
 local lfsisdir      = lfs.isdir
 local lfsmkdir      = lfs.mkdir
@@ -1002,7 +1071,6 @@ local file = file or { }
 local replacesuffix = file.replacesuffix or function(filename, suffix)
   return (filename:gsub("%.[%a%d]+$","")) .. "." .. suffix
 end
-
 local is_writable = file.is_writable or function(name)
   if lfsisdir(name) then
     name = name .. "/_luam_plib_temp_file_"
@@ -1024,14 +1092,11 @@ end
 %    \end{macrocode}
 %
 %    |btex ... etex| in input |.mp| files will be replaced in finder.
-%    Because of the limitation of MPLib regarding |make_text|,
+%    Because of the limitation of \mplib regarding |make_text|,
 %    we might have to make cache files modified from input files.
 %    \begin{macrocode}
-local luamplibtime = kpse.find_file("luamplib.lua")
-luamplibtime = luamplibtime and lfsattributes(luamplibtime,"modification")
-
+local luamplibtime = lfsattributes(kpse.find_file"luamplib.lua", "modification")
 local currenttime = os.time()
-
 local outputdir, cachedir
 if lfstouch then
   for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
@@ -1068,10 +1133,9 @@ function luamplib.getcachedir(dir)
     end
   end
 end
-
 %    \end{macrocode}
 %
-%    Some basic MetaPost files not necessary to make cache files.
+%    Some basic \metapost files not necessary to make cache files.
 %    \begin{macrocode}
 local noneedtoreplace = {
   ["boxes.mp"] = true, --  ["format.mp"] = true,
@@ -1090,7 +1154,6 @@ local noneedtoreplace = {
   ["mp-tool.mpiv"] = true, ["mp-cont.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
-
 %    \end{macrocode}
 %
 %    |format.mp| is much complicated, so specially treated.
@@ -1112,7 +1175,6 @@ local function replaceformatmp(file,newfile,ofmodify)
   lfstouch(newfile,currenttime,ofmodify)
   return newfile
 end
-
 %    \end{macrocode}
 %
 %    Replace |btex ... etex| and |verbatimtex ... etex| in input files,
@@ -1122,7 +1184,6 @@ local name_b = "%f[%a_]"
 local name_e = "%f[^%a_]"
 local btex_etex = name_b.."btex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
 local verbatimtex_etex = name_b.."verbatimtex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
-
 local function replaceinputmpfile (name,file)
   local ofmodify = lfsattributes(file,"modification")
   if not ofmodify then return file end
@@ -1135,23 +1196,19 @@ local function replaceinputmpfile (name,file)
       return nf.size == 0 and file or newfile
     end
   end
-
   if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
-
   local fh = ioopen(file,"r")
   if not fh then return file end
   local data = fh:read("*all"); fh:close()
-
 %    \end{macrocode}
 %    ``|etex|'' must be preceded by a space and followed by a space or semicolon as specified in
-%    \LuaTeX\ manual, which is not the case of standalone MetaPost though.
+%    \LuaTeX\ manual, which is not the case of standalone \metapost though.
 %    \begin{macrocode}
   local count,cnt = 0,0
   data, cnt = data:gsub(btex_etex, "btex %1 etex ") -- space
   count = count + cnt
   data, cnt = data:gsub(verbatimtex_etex, "verbatimtex %1 etex;") -- semicolon
   count = count + cnt
-
   if count == 0 then
     noneedtoreplace[name] = true
     fh = ioopen(newfile,"w");
@@ -1161,7 +1218,6 @@ local function replaceinputmpfile (name,file)
     end
     return file
   end
-
   fh = ioopen(newfile,"w")
   if not fh then return file end
   fh:write(data); fh:close()
@@ -1171,8 +1227,8 @@ end
 
 %    \end{macrocode}
 %
-%    As the finder function for MPLib, use the |kpse| library and
-%    make it behave like as if MetaPost was used. And replace it with
+%    As the finder function for \mplib, use the |kpse| library and
+%    make it behave like as if \metapost was used. And replace it with
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
@@ -1184,12 +1240,10 @@ do
   end
   mpkpse = kpse.new(arg[exe], "mpost")
 end
-
 local special_ftype = {
   pfb = "type1 fonts",
   enc = "enc files",
 }
-
 function luamplib.finder (name, mode, ftype)
   if mode == "w" then
     if name and name ~= "mpout.log" then
@@ -1215,9 +1269,9 @@ end
 
 %    \end{macrocode}
 %
-%    Create and load MPLib instances.
-%    We do not support ancient version of MPLib any more.
-%    (Don't know which version of MPLib started to support
+%    Create and load \mplib instances.
+%    We do not support ancient version of \mplib any more.
+%    (Don't know which version of \mplib started to support
 %    |make_text| and |run_script|; let the users find it.)
 %    \begin{macrocode}
 local preamble = [[
@@ -1226,17 +1280,15 @@ local preamble = [[
   let normalfontsize = fontsize;
   input %s ;
 ]]
-
 %    \end{macrocode}
 %
-%    |plain| or |metafun|,
-%    though we cannot support |metafun| format fully.
+%    \emph{plain} or \emph{metafun},
+%    though we cannot support \emph{metafun} format fully.
 %    \begin{macrocode}
 local currentformat = "plain"
 function luamplib.setformat (name)
   currentformat = name
 end
-
 %    \end{macrocode}
 %
 %    v2.9 has introduced the concept of ``code inherit''
@@ -1245,7 +1297,6 @@ luamplib.codeinherit = false
 local mplibinstances = {}
 luamplib.instances = mplibinstances
 local has_instancename = false
-
 local function reporterror (result, prevlog)
   if not result then
     err("no result object returned")
@@ -1286,7 +1337,6 @@ local function reporterror (result, prevlog)
     return log
   end
 end
-
 %    \end{macrocode}
 %
 %     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
@@ -1313,7 +1363,7 @@ local function luamplibload (name)
     extensions  = 1,
   }
 %    \end{macrocode}
-%    Append our own MetaPost preamble to the preamble above.
+%    Append our own \metapost preamble to the preamble above.
 %    \begin{macrocode}
   local preamble = tableconcat{
     format(preamble, replacesuffix(name,"mp")),
@@ -1330,7 +1380,6 @@ local function luamplibload (name)
   log = reporterror(result)
   return mpx, result, log
 end
-
 %    \end{macrocode}
 %
 %    Here, excute each |mplibcode| data,
@@ -1380,13 +1429,13 @@ end
 %    |dvipdfmx| is supported, though nobody seems to use it.
 %    \begin{macrocode}
 local pdfmode = tex.outputmode > 0
+
 %    \end{macrocode}
 %
 %    |make_text| and some |run_script| uses \LuaTeX's |tex.runtoks|.
 %    \begin{macrocode}
 local catlatex = luatexbase.registernumber("catcodetable@latex")
 local catat11  = luatexbase.registernumber("catcodetable@atletter")
-
 %    \end{macrocode}
 %
 %    |tex.scantoks| sometimes fail to read catcode properly, especially
@@ -1396,7 +1445,6 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 local function run_tex_code (str, cat)
   texruntoks(function() texsprint(cat or catlatex, str) end)
 end
-
 %    \end{macrocode}
 %
 %    Prepare textext box number containers, locals and globals.
@@ -1412,11 +1460,9 @@ local texboxes = { globalid = 0, localid = 4096 }
 %    For conversion of |sp| to |bp|.
 %    \begin{macrocode}
 local factor = 65536*(7227/7200)
-
 local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
-xscaled %f yscaled %f shifted (0,-%f) \z
-withprescript "mplibtexboxid=%i:%f:%f")'
-
+  xscaled %f yscaled %f shifted (0,-%f) \z
+  withprescript "mplibtexboxid=%i:%f:%f")'
 local function process_tex_text (str)
   if str then
     local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
@@ -1461,7 +1507,6 @@ local mplibcolorfmt = {
     [[\color_select:n%s\endgroup]],
   },
 }
-
 local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
 if colfmt == "l3color" then
   run_tex_code{
@@ -1475,7 +1520,6 @@ if colfmt == "l3color" then
   }
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
-
 local function process_color (str)
   if str then
     if not str:find("%b{}") then
@@ -1536,20 +1580,18 @@ end
 %
 %    For legacy verbatimtex process.
 %    |verbatimtex ... etex| before |beginfig()| is not ignored,
-%    but the \TeX\ code is inserted just before the mplib box. And
-%    \TeX\ code inside |beginfig() ... endfig| is inserted after the mplib box.
+%    but the \TeX\ code is inserted just before the \mplib box. And
+%    \TeX\ code inside |beginfig() ... endfig| is inserted after the \mplib box.
 %    \begin{macrocode}
 local tex_code_pre_mplib = {}
 luamplib.figid = 1
 luamplib.in_the_fig = false
-
 local function process_verbatimtex_prefig (str)
   if str then
     tex_code_pre_mplib[luamplib.figid] = str
   end
   return ""
 end
-
 local function process_verbatimtex_infig (str)
   if str then
     return format('special "postmplibverbtex=%s";', str)
@@ -1568,17 +1610,16 @@ local runscript_funcs = {
 
 %    \end{macrocode}
 %
-%    For |metafun| format. see issue \#79.
+%    For \emph{metafun} format. see issue \#79.
 %    \begin{macrocode}
 mp = mp or {}
 local mp = mp
 mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 mp.report = mp.report or info
-
 %    \end{macrocode}
 %
-%    metafun 2021-03-09 changes crashes luamplib.
+%    \emph{metafun} 2021-03-09 changes crashes luamplib.
 %    \begin{macrocode}
 catcodes = catcodes or {}
 local catcodes = catcodes
@@ -1612,7 +1653,6 @@ local function mpprint(buffer,...)
     end
   end
 end
-
 function luamplib.runscript (code)
   local id, str = code:match("(.-){(.*)}")
   if id and str then
@@ -1651,9 +1691,7 @@ local function protecttexcontents (str)
             :gsub("%zPerCent%z", "\\%%")
             :gsub("%s+", " ")
 end
-
 luamplib.legacyverbatimtex = true
-
 function luamplib.maketext (str, what)
   if str and str ~= "" then
     str = protecttexcontents(str)
@@ -1681,7 +1719,7 @@ end
 
 %    \end{macrocode}
 %
-%    luamplib's metapost color operators
+%    luamplib's \metapost color operators
 %    \begin{macrocode}
 local function colorsplit (res)
   local t, tt = { }, res:gsub("[%[%]]",""):explode()
@@ -1816,6 +1854,12 @@ end
 
 %    \end{macrocode}
 %
+% Remove trailing zeros for smaller PDF
+%    \begin{macrocode}
+local function rmzeros(str) return str:gsub("%.?0+$","") end
+
+%    \end{macrocode}
+%
 %    luamplib's mplibgraphictext operator
 %    \begin{macrocode}
 local running = -1073741824
@@ -1851,7 +1895,7 @@ local function getrulewhatsit (line, wd, ht, dp)
     fmt = "pdf:content "..fmt
     pl = node.new("whatsit","special")
   end
-  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B")
+  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub("%.%d+", rmzeros)
   local ss = node.new"glue"
   node.setglue(ss, 0, 65536, 65536, 2, 2)
   pl.next = ss
@@ -2134,7 +2178,7 @@ end
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
 local rulefmt = "mpliboutlinepic[%i]:=image(addto currentpicture contour \z
-unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
+  unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
 local outline_horz, outline_vert
 function outline_vert (res, box, curr, xshift, yshift)
   local b2u = box.dir == "LTL"
@@ -2375,7 +2419,7 @@ end
 
 %    \end{macrocode}
 %
-%    Our MetaPost preambles
+%    Our \metapost preambles
 %    \begin{macrocode}
 luamplib.preambles = {
   mplibcode = [[
@@ -2660,7 +2704,6 @@ enddef;
 %    When \cs{mplibverbatim} is enabled, do not expand |mplibcode| data.
 %    \begin{macrocode}
 luamplib.verbatiminput = false
-
 %    \end{macrocode}
 %
 %    Do not expand |btex ... etex|, |verbatimtex ... etex|, and
@@ -2676,7 +2719,6 @@ local function protect_expansion (str)
     return format("\\unexpanded{%s}",str)
   end
 end
-
 local function unprotect_expansion (str)
   if str then
     return str:gsub("!!!Control!!!", "\\")
@@ -2686,25 +2728,20 @@ local function unprotect_expansion (str)
               :gsub("!!!RBrace!!!",  "}")
   end
 end
-
 luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
-
 function luamplib.process_mplibcode (data, instancename)
   texboxes.localid = 4096
-
 %    \end{macrocode}
 %    This is needed for legacy behavior
 %    \begin{macrocode}
   if luamplib.legacyverbatimtex then
     luamplib.figid, tex_code_pre_mplib = 1, {}
   end
-
   local everymplib    = luamplib.everymplib[instancename]
   local everyendmplib = luamplib.everyendmplib[instancename]
   data = format("\n%s\n%s\n%s\n",everymplib, data, everyendmplib)
   :gsub("\r","\n")
-
 %    \end{macrocode}
 %    These five lines are needed for |mplibverbatim| mode.
 %    \begin{macrocode}
@@ -2744,7 +2781,6 @@ function luamplib.process_mplibcode (data, instancename)
       return format("verbatimtex %s etex", unprotect_expansion(str))
     end)
   end
-
   process(data, instancename)
 end
 
@@ -2782,38 +2818,26 @@ local figcontents = { post = { } }
 local function put2output(a,...)
   figcontents[#figcontents+1] = type(a) == "string" and format(a,...) or a
 end
-
 local function pdf_startfigure(n,llx,lly,urx,ury)
   put2output("\\mplibstarttoPDF{%f}{%f}{%f}{%f}",llx,lly,urx,ury)
 end
-
 local function pdf_stopfigure()
   put2output("\\mplibstoptoPDF")
 end
-
 %    \end{macrocode}
 %
 %    |tex.sprint| with catcode regime -2, as sometimes |#| gets doubled
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
-local function pdf_literalcode (fmt,...)
-  put2output{-2, format(fmt,...)}
+local function pdf_literalcode (...)
+  put2output{ -2, format(...) :gsub("%.%d+", rmzeros) }
 end
-
-local function start_pdf_code()
-  if pdfmode then
-    pdf_literalcode("q")
-  else
-    put2output"\\special{pdf:bcontent}"
-  end
-end
-local function stop_pdf_code()
-  if pdfmode then
-    pdf_literalcode("Q")
-  else
-    put2output"\\special{pdf:econtent}"
-  end
-end
+local start_pdf_code = pdfmode
+  and function() pdf_literalcode"q" end
+  or  function() put2output"\\special{pdf:bcontent}" end
+local stop_pdf_code = pdfmode
+  and function() pdf_literalcode"Q" end
+  or  function() put2output"\\special{pdf:econtent}" end
 
 %    \end{macrocode}
 %
@@ -2885,7 +2909,6 @@ local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
 pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
-
 local function update_pdfobjs (os, stream)
   local key = os
   if stream then key = key..stream end
@@ -2912,7 +2935,6 @@ local function update_pdfobjs (os, stream)
   return on,true
 end
 pdfetcs.resfmt = pdfmode and "%s 0 R" or "@mplibpdfobj%s"
-
 if pdfmode then
   pdfetcs.getpageres = pdf.getpageresources or function() return pdf.pageresources end
   local getpageres = pdfetcs.getpageres
@@ -3013,7 +3035,7 @@ local function do_preobj_TR(object,prescript)
     mode = transparancy_modes[tonumber(mode)] or mode
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
-      os = format("<</BM /%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq)
+      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",mode,opaq,opaq)
       on, new = update_pdfobjs(os)
       key = add_extgs_resources(on,new)
       if i == 1 then
@@ -3027,10 +3049,10 @@ end
 
 %    \end{macrocode}
 %
-%    Shading with |metafun| format.
+%    Shading with \emph{metafun} format.
 %    \begin{macrocode}
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
-  local fun2fmt,os = "<</FunctionType 2/Domain [%s]/C0 [%s]/C1 [%s]/N 1>>"
+  local fun2fmt,os = "<</FunctionType 2/Domain[%s]/C0[%s]/C1[%s]/N 1>>"
   if steps > 1 then
     local list,bounds,encode = { },{ },{ }
     for i=1,steps do
@@ -3044,10 +3066,10 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     end
     os = tableconcat {
       "<</FunctionType 3",
-      format("/Bounds [%s]",    tableconcat(bounds,' ')),
-      format("/Encode [%s]",    tableconcat(encode,' ')),
-      format("/Functions [%s]", tableconcat(list,  ' ')),
-      format("/Domain [%s]>>",  domain),
+      format("/Bounds[%s]",    tableconcat(bounds,' ')),
+      format("/Encode[%s]",    tableconcat(encode,' ')),
+      format("/Functions[%s]", tableconcat(list,  ' ')),
+      format("/Domain[%s]>>",  domain),
     }
   else
     os = fun2fmt:format(domain,tableconcat(ca[1],' '),tableconcat(cb[1],' '))
@@ -3057,8 +3079,8 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("<</ShadingType %i", shtype),
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
-    format("/Coords [%s]",      coordinates),
-    "/Extend [true true]/AntiAlias true>>",
+    format("/Coords[%s]",       coordinates :gsub("%.%d+", rmzeros)),
+    "/Extend[true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
   if new then
@@ -3082,7 +3104,6 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   end
   return on
 end
-
 local function color_normalize(ca,cb)
   if #cb == 1 then
     if #ca == 4 then
@@ -3094,7 +3115,6 @@ local function color_normalize(ca,cb)
     cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
   end
 end
-
 pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
   run_tex_code({
     [[\color_model_new:nnn]],
@@ -3106,7 +3126,6 @@ pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
   t[names] = colorspace
   return colorspace
 end })
-
 local function do_preobj_SH(object,prescript)
   local shade_no
   local sh_type = prescript and prescript.sh_type
@@ -3291,9 +3310,9 @@ local function gather_resources (optres)
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
-  local wd = format("%.3f",box.width/factor)
-  local hd = format("%.3f",(box.height+box.depth)/factor)
-  info("w/h/d of '%s': %s %s 0.0", name, wd, hd)
+  local wd = format("%.3f",box.width/factor) :gsub("%.%d+", rmzeros)
+  local hd = format("%.3f",(box.height+box.depth)/factor) :gsub("%.%d+", rmzeros)
+  info("w/h/d of '%s': %s %s 0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then
@@ -3319,13 +3338,13 @@ function luamplib.registerpattern ( boxid, name, opts )
     "/TilingType 2",
     format("/XStep %s", opts.xstep or wd),
     format("/YStep %s", opts.ystep or hd),
-    format("/Matrix [%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
+    format("/Matrix[%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
   optres = optres .. gather_resources(optres)
   if pdfmode then
     if opts.bbox then
-      attr[#attr+1] = format("/BBox [%s]", opts.bbox)
+      attr[#attr+1] = format("/BBox[%s]", opts.bbox)
     end
     local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
@@ -3461,23 +3480,23 @@ local function do_preobj_FADE (object, prescript)
   else
     err("unknown fading method '%s'", fd_type)
   end
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
   fd_type = fd_type == "linear" and 2 or 3
   local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
   local on, os, new
   on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
   os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub("%.%d+", rmzeros)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
-  local resources = "/Resources " .. format(pdfetcs.resfmt, on)
+  local resources = format(pdfetcs.resfmt, on)
   on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
   local attr = tableconcat{
     "/Subtype/Form",
     format("/BBox[%s]", bbox),
-    format("/Matrix[1 0 0 1 %f %f]", -dx, -dy),
-    resources,
+    format("/Matrix[1 0 0 1 %s]", format("%f %f", -dx,-dy) :gsub("%.%d+", rmzeros)),
+    format("/Resources %s", resources),
     "/Group ", format(pdfetcs.resfmt, on),
   }
   on = update_pdfobjs(attr, streamtext)
@@ -3516,19 +3535,19 @@ local function do_preobj_GRP (object, prescript)
     put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup]]
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
-    local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
-    local res = gather_resources()
     put2output(tableconcat{
       "\\egroup",
       format("\\wd\\mplibscratchbox %fbp", urx-llx),
       format("\\ht\\mplibscratchbox %fbp", ury-lly),
       "\\dp\\mplibscratchbox 0pt",
     })
+    local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
+    local res = gather_resources()
+    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub("%.%d+", rmzeros)
     if pdfmode then
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
-        format("/BBox[%f %f %f %f]", llx,lly,urx,ury),
-        grattr, "} resources{", res, "}\\mplibscratchbox",
+        "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
         [[\setbox\mplibscratchbox\hbox{\useboxresource\lastsavedboxresourceindex}]],
         [[\wd\mplibscratchbox 0pt\ht\mplibscratchbox 0pt\dp\mplibscratchbox 0pt]],
         [[\box\mplibscratchbox\endgroup]],
@@ -3540,7 +3559,7 @@ local function do_preobj_GRP (object, prescript)
       trgroup.cnt = (trgroup.cnt or 0) + 1
       local objname = format("@mplibtrgr%s", trgroup.cnt)
       put2output(tableconcat{
-        "\\special{pdf:bxobj ", objname, " bbox ", format("%f %f %f %f", llx,lly,urx,ury), "}",
+        "\\special{pdf:bxobj ", objname, " bbox ", bbox, "}",
         "\\unhbox\\mplibscratchbox",
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
@@ -3553,6 +3572,61 @@ local function do_preobj_GRP (object, prescript)
     trgroup.shifts[trgroup.name] = { llx, lly }
   end
   return grstate
+end
+function luamplib.registergroup (boxid, name, opts)
+  local box = texgetbox(boxid)
+  local res = (opts.resources or "") .. gather_resources()
+  local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
+  if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
+  if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
+  if opts.matrix and opts.matrix:find"%a" then
+    local data = format("mplibtransformmatrix(%s);",opts.matrix)
+    process(data,"@mplibtransformmatrix")
+    opts.matrix = tableconcat(luamplib.transformmatrix, ' ')
+  end
+  local grtype = 3
+  if opts.bbox then
+    attr[#attr+1] = format("/BBox[%s]", opts.bbox :gsub("%.%d+", rmzeros))
+    grtype = 2
+  end
+  if opts.matrix then
+    attr[#attr+1] = format("/Matrix[%s]", opts.matrix :gsub("%.%d+", rmzeros))
+    grtype = opts.bbox and 4 or 1
+  end
+  if opts.asgroup then
+    local t = { isolated = false, knockout = false }
+    for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
+    attr[#attr+1] = format("/Group<</S/Transparency/I %s/K %s>>", t.isolated, t.knockout)
+  end
+  local trgroup = pdfetcs.tr_group
+  trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
+  if pdfmode then
+    local index = tex.saveboxresource(boxid, tableconcat(attr), res, true, grtype)
+    texsprint{
+      "\\expandafter\\gdef\\csname luamplib.group.", name,
+      "\\endcsname{\\useboxresource ", index, "}",
+    }
+  else
+    trgroup.cnt = (trgroup.cnt or 0) + 1
+    local objname = format("@mplibtrgr%s", trgroup.cnt)
+    local wd, ht, dp = node.getwhd(box)
+    texsprint {
+      "\\ifvmode\\nointerlineskip\\fi\\vbox to0pt{\\vss\\hbox to0pt{",
+      "\\special{pdf:bcontent}",
+      "\\special{pdf:bxobj ", objname, " width ", wd, "sp height ", ht, "sp depth ", dp, "sp}",
+      "\\unhbox ", boxid,
+      "\\special{pdf:put @resources <<", res, ">>}",
+      "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
+      "\\special{pdf:econtent}",
+      "\\hss}}",
+      "\\expandafter\\gdef\\csname luamplib.group.", name, "\\endcsname{",
+      "\\begingroup\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
+      "\\wd\\mplibscratchbox ", wd, "sp",
+      "\\ht\\mplibscratchbox ", ht, "sp",
+      "\\dp\\mplibscratchbox ", dp, "sp",
+      "\\box\\mplibscratchbox\\endgroup}",
+    }
+  end
 end
 
 local function stop_special_effects(fade,opaq,over)
@@ -3976,7 +4050,7 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/19 v2.34.1 mplib package for LuaTeX]
+    [2024/07/24 v2.34.2 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
   \fi
@@ -3998,7 +4072,7 @@ end
 \fi
 %    \end{macrocode}
 %
-%    Set the format for metapost.
+%    Set the format for \metapost.
 %    \begin{macrocode}
 \def\mplibsetformat#1{\directlua{luamplib.setformat("#1")}}
 %    \end{macrocode}
@@ -4043,6 +4117,34 @@ end
 %    use Transparency Group
 %    \begin{macrocode}
 \protected\def\usemplibgroup#1{\csname luamplib.group.#1\endcsname}
+\protected\def\mplibgroup#1{%
+  \begingroup
+  \def\MPllx{0}\def\MPlly{0}%
+  \def\mplibgroupname{#1}%
+  \mplibgroupgetnexttok
+}
+\def\mplibgroupgetnexttok{\futurelet\nexttok\mplibgroupbranch}
+\def\mplibgroupskipspace{\afterassignment\mplibgroupgetnexttok\let\nexttok= }
+\def\mplibgroupbranch{%
+  \ifx [\nexttok
+    \expandafter\mplibgroupopts
+  \else
+    \ifx\mplibsptoken\nexttok
+      \expandafter\expandafter\expandafter\mplibgroupskipspace
+    \else
+      \let\mplibgroupoptions\empty
+      \expandafter\expandafter\expandafter\mplibgroupmain
+    \fi
+  \fi
+}
+\def\mplibgroupopts[#1]{\def\mplibgroupoptions{#1}\mplibgroupmain}
+\def\mplibgroupmain{\setbox\mplibscratchbox\hbox\bgroup\ignorespaces}
+\protected\def\endmplibgroup{\egroup
+  \directlua{ luamplib.registergroup(
+    \the\mplibscratchbox, '\mplibgroupname', {\mplibgroupoptions}
+  )}%
+  \endgroup
+}
 %    \end{macrocode}
 %
 %    Patterns
@@ -4083,7 +4185,7 @@ end
 }
 %    \end{macrocode}
 %
-%    simple way to use mplib:
+%    simple way to use \mplib:
 %    |\mpfig draw fullcircle scaled 10; \endmpfig|
 %    \begin{macrocode}
 \def\mpfiginstancename{@mpfig}
@@ -4295,7 +4397,7 @@ end
 \def\domplibcolor#1#2{ runscript("luamplibcolor{#1{#2}}") }
 %    \end{macrocode}
 %
-%    MPLib's number system. Now |binary| has gone away.
+%    \mplib's number system. Now |binary| has gone away.
 %    \begin{macrocode}
 \def\mplibnumbersystem#1{\directlua{
   local t = "#1"

@@ -307,6 +307,11 @@ usemplibgroup "testTRgroup"
   withfaderadius (0,60)
   ;
 \endmpfig
+\mplibgroup{mytex}[matrix="rotated 15"] \TeX \endmplibgroup
+\hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
+\hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
+\usemplibgroup{mytex}%
+\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip
