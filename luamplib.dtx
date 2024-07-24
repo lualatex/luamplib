@@ -250,6 +250,7 @@ See source file '\inFileName' for licencing and contact information.
 %   just by appending |withprescript| |"tr_transparency=<number>"| to the sentence.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
 %
+%   \hypertarget{metafunformat}{}\relax
 %   As for transparency group, the current \emph{metafun} document \S\,8.8 is not correct.
 %   The true syntax is:
 %\begin{verbatim}
@@ -637,6 +638,7 @@ See source file '\inFileName' for licencing and contact information.
 %   a single cluster might be separated apart.
 %
 % \paragraph{\cs{mppattern\{...\}} \texttt{...} \cs{endmppattern}, \texttt{... withpattern ...}}
+%   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
 %   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the |<name>|.
@@ -779,14 +781,14 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\texttt{... asgroup ...}}
 % \hypertarget{transparencygroup}{}\relax
-% As said before,
+% As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
 % \emph{<picture>} \char"7C\ \emph{<path>} |asgroup|
 % |""| \char"7C\ |"isolated"| \char"7C\ |"knockout"| \char"7C\ |"isolated,knockout"|,
 % which will return a \metapost picture.
-% It is called `transparency group' because the objects contained in the group are composited
-% to produce a single object, so that transparency effect from outside
+% It is called \emph{Transparency Group} because the objects contained in the group are composited
+% to produce a single object, so that outer transparency effect, if any,
 % will be applied to the group as a whole, not to the individual objects cumulatively.
 %
 % The additional feature provided by luamplib is that
@@ -800,7 +802,9 @@ See source file '\inFileName' for licencing and contact information.
 %   When this is not appended to the sentense with |asgroup| operator,
 %   the default group name `|lastmplibgroup|' will be used.
 %
-% \item[\cs{usemplibgroup\{...\}}] is a \TeX\ command to reuse a transparency group of the name
+% \item[\cs{usemplibgroup\{...\}}]
+%   \hypertarget{usemplibgroup}{}\relax
+%   is a \TeX\ command to reuse a transparency group of the name
 %   once used.
 %   Note that the position of the group will be origin-based:
 %   in other words, lower-left corner of the group will be shifted to the origin.
@@ -832,9 +836,65 @@ See source file '\inFileName' for licencing and contact information.
 %     draw (up--down) scaled 10;
 %   \endmpfig
 %\end{verbatim}
+%
 % Also note that normally the reused transparency groups are not affected by outer color commands.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
+%
+% \paragraph{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
+% These \TeX\ macros are described here in this subsection, as they are
+% deeply related to the |asgroup| operator.
+% Users can define a transparency group or a normal \emph{form XObject}
+% with these macros from \TeX\ side.
+% The syntax is similar to the \cs{mppattern} command (see \hyperlink{mppattern}{above}).
+% An example:
+%\begin{verbatim}
+%   \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
+%     [                                 % options: see below
+%       asgroup="",
+%     ]
+%     \mpfig                            % or any other TeX code
+%       draw (left--right) scaled 30 rotated 45 withpen pencircle scaled 10;
+%       draw (left--right) scaled 30 rotated -45 withpen pencircle scaled 10;
+%     \endmpfig
+%   \endmplibgroup                      % or \end{mplibgroup}
+%
+%   \usemplibgroup{mygrx}
+%
+%   \mpfig
+%     usemplibgroup "mygrx" scaled 1.5 withprescript "tr_transparency=0.5";
+%   \endmpfig
+%\end{verbatim}
+% Availabe options, much fewer than those for \cs{mppattern},
+% are listed in Table~\ref{tab:mplibgroupoptions}.
+% \begin{table}
+% \centering
+% \caption{options for \cs{mplibgroup}}\label{tab:mplibgroupoptions}
+% \begin{tabular}{lll}
+% \hline
+%   Key         & Value Type    & Explanation\\
+% \hline
+%   |asgroup|   &\emph{string}  & |""|, |"isolated"|, |"knockout"|, or |"isolated,knockout"|\\
+%   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
+%   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
+%     or MP transform code\\
+%   |resources| &\emph{string}  & PDF resources if needed\\
+% \hline
+%               &               & \small *\,in string type, numbers are separated by spaces\\
+% \end{tabular}
+% \end{table}
+%
+% When |asgroup| option, including empty string, is not given,
+% a normal form XObject will be generated rather than a transparency group.
+% So, the individual objects, not the XObject as a whole, will be affected
+% by outer transparency command.
+%
+% As shown in the example, you can reuse the transparency group or the normal form XObject
+% once defined
+% using the \TeX\ command \cs{usemplibgroup} or
+% the \metapost command |usemplibgroup|.
+% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}.
+%
 %
 % \subsection{Lua}
 %
@@ -3513,6 +3573,61 @@ local function do_preobj_GRP (object, prescript)
   end
   return grstate
 end
+function luamplib.registergroup (boxid, name, opts)
+  local box = texgetbox(boxid)
+  local res = (opts.resources or "") .. gather_resources()
+  local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
+  if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
+  if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
+  if opts.matrix and opts.matrix:find"%a" then
+    local data = format("mplibtransformmatrix(%s);",opts.matrix)
+    process(data,"@mplibtransformmatrix")
+    opts.matrix = tableconcat(luamplib.transformmatrix, ' ')
+  end
+  local grtype = 3
+  if opts.bbox then
+    attr[#attr+1] = format("/BBox[%s]", opts.bbox :gsub("%.%d+", rmzeros))
+    grtype = 2
+  end
+  if opts.matrix then
+    attr[#attr+1] = format("/Matrix[%s]", opts.matrix :gsub("%.%d+", rmzeros))
+    grtype = opts.bbox and 4 or 1
+  end
+  if opts.asgroup then
+    local t = { isolated = false, knockout = false }
+    for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
+    attr[#attr+1] = format("/Group<</S/Transparency/I %s/K %s>>", t.isolated, t.knockout)
+  end
+  local trgroup = pdfetcs.tr_group
+  trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
+  if pdfmode then
+    local index = tex.saveboxresource(boxid, tableconcat(attr), res, true, grtype)
+    texsprint{
+      "\\expandafter\\gdef\\csname luamplib.group.", name,
+      "\\endcsname{\\useboxresource ", index, "}",
+    }
+  else
+    trgroup.cnt = (trgroup.cnt or 0) + 1
+    local objname = format("@mplibtrgr%s", trgroup.cnt)
+    local wd, ht, dp = node.getwhd(box)
+    texsprint {
+      "\\ifvmode\\nointerlineskip\\fi\\vbox to0pt{\\vss\\hbox to0pt{",
+      "\\special{pdf:bcontent}",
+      "\\special{pdf:bxobj ", objname, " width ", wd, "sp height ", ht, "sp depth ", dp, "sp}",
+      "\\unhbox ", boxid,
+      "\\special{pdf:put @resources <<", res, ">>}",
+      "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
+      "\\special{pdf:econtent}",
+      "\\hss}}",
+      "\\expandafter\\gdef\\csname luamplib.group.", name, "\\endcsname{",
+      "\\begingroup\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
+      "\\wd\\mplibscratchbox ", wd, "sp",
+      "\\ht\\mplibscratchbox ", ht, "sp",
+      "\\dp\\mplibscratchbox ", dp, "sp",
+      "\\box\\mplibscratchbox\\endgroup}",
+    }
+  end
+end
 
 local function stop_special_effects(fade,opaq,over)
   if fade then -- fading
@@ -4002,6 +4117,34 @@ end
 %    use Transparency Group
 %    \begin{macrocode}
 \protected\def\usemplibgroup#1{\csname luamplib.group.#1\endcsname}
+\protected\def\mplibgroup#1{%
+  \begingroup
+  \def\MPllx{0}\def\MPlly{0}%
+  \def\mplibgroupname{#1}%
+  \mplibgroupgetnexttok
+}
+\def\mplibgroupgetnexttok{\futurelet\nexttok\mplibgroupbranch}
+\def\mplibgroupskipspace{\afterassignment\mplibgroupgetnexttok\let\nexttok= }
+\def\mplibgroupbranch{%
+  \ifx [\nexttok
+    \expandafter\mplibgroupopts
+  \else
+    \ifx\mplibsptoken\nexttok
+      \expandafter\expandafter\expandafter\mplibgroupskipspace
+    \else
+      \let\mplibgroupoptions\empty
+      \expandafter\expandafter\expandafter\mplibgroupmain
+    \fi
+  \fi
+}
+\def\mplibgroupopts[#1]{\def\mplibgroupoptions{#1}\mplibgroupmain}
+\def\mplibgroupmain{\setbox\mplibscratchbox\hbox\bgroup\ignorespaces}
+\protected\def\endmplibgroup{\egroup
+  \directlua{ luamplib.registergroup(
+    \the\mplibscratchbox, '\mplibgroupname', {\mplibgroupoptions}
+  )}%
+  \endgroup
+}
 %    \end{macrocode}
 %
 %    Patterns
