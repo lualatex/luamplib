@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/24 v2.34.2 Interface for using the mplib library]%
+  [2024/07/27 v2.34.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -156,7 +156,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/24 v2.34.2}
+% \date{2024/07/27 v2.34.3}
 %
 % \maketitle
 %
@@ -321,7 +321,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 %   By contrast,
-%   when \cs{mpliblegacybehavior\{disabled\}} is declared, any
+%   when \cs{mpliblegacybehavior\{disable\}} is declared, any
 %   |verbatimtex| |...| |etex| will be executed, along with |btex| |...| |etex|,
 %   sequentially one by one.
 %   So, some \TeX\ code in |verbatimtex ... etex| will have effects on
@@ -612,10 +612,10 @@ See source file '\inFileName' for licencing and contact information.
 %   will remain transparent.
 %
 %   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
-%   To apply the nonzero winding number rule to a picture containg paths,
+%   To apply the nonzero winding number rule to a picture containing paths,
 %   luamplib appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
-%   If you want the even-odd rule instead, you can, even with \emph{plain} format,
+%   If you want the even-odd rule instead, you can, with \emph{plain} format as well,
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
 % \paragraph{\texttt{mpliboutlinetext (...)}}
@@ -981,8 +981,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.2",
-  date          = "2024/07/24",
+  version       = "2.34.3",
+  date          = "2024/07/27",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2970,10 +2970,11 @@ if pdfmode then
   end
 else
   texsprint {
+    "\\luamplibatfirstshipout{",
     "\\special{pdf:obj @MPlibTr<<>>}",
     "\\special{pdf:obj @MPlibSh<<>>}",
     "\\special{pdf:obj @MPlibCS<<>>}",
-    "\\special{pdf:obj @MPlibPt<<>>}",
+    "\\special{pdf:obj @MPlibPt<<>>}}",
   }
   pdfetcs.resadded = { }
 end
@@ -3349,20 +3350,23 @@ function luamplib.registerpattern ( boxid, name, opts )
     local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
-    local objname = "@mplibpattern"..name
+    local cnt = #patterns + 1
+    local objname = "@mplibpattern" .. cnt
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
     texsprint {
-      "\\ifvmode\\nointerlineskip\\fi\\vbox to0pt{\\vss\\hbox to0pt{",
+      "\\expandafter\\newbox\\csname luamplib.patternbox.", cnt, "\\endcsname",
+      "\\global\\setbox\\csname luamplib.patternbox.", cnt, "\\endcsname",
+      "\\hbox{\\unhbox ", boxid, "}\\luamplibatnextshipout{",
       "\\special{pdf:bcontent}",
       "\\special{pdf:bxobj ", objname, " ", metric, "}",
-      "\\raise\\dp ", boxid, "\\box ", boxid,
+      "\\raise\\dp\\csname luamplib.patternbox.", cnt, "\\endcsname",
+      "\\box\\csname luamplib.patternbox.", cnt, "\\endcsname",
       "\\special{pdf:put @resources <<", optres, ">>}",
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
-      "\\special{pdf:econtent}",
-      "\\hss}}",
+      "\\special{pdf:econtent}}",
     }
-    patterns[#patterns+1] = objname
-    patterns[name] = { id = #patterns, colored = opts.colored }
+    patterns[cnt] = objname
+    patterns[name] = { id = cnt, colored = opts.colored }
   end
 end
 local function pattern_colorspace (cs)
@@ -3611,14 +3615,15 @@ function luamplib.registergroup (boxid, name, opts)
     local objname = format("@mplibtrgr%s", trgroup.cnt)
     local wd, ht, dp = node.getwhd(box)
     texsprint {
-      "\\ifvmode\\nointerlineskip\\fi\\vbox to0pt{\\vss\\hbox to0pt{",
+      "\\expandafter\\newbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
+      "\\global\\setbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
+      "\\hbox{\\unhbox ", boxid, "}\\luamplibatnextshipout{",
       "\\special{pdf:bcontent}",
       "\\special{pdf:bxobj ", objname, " width ", wd, "sp height ", ht, "sp depth ", dp, "sp}",
-      "\\unhbox ", boxid,
+      "\\unhbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
       "\\special{pdf:put @resources <<", res, ">>}",
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
-      "\\special{pdf:econtent}",
-      "\\hss}}",
+      "\\special{pdf:econtent}}",
       "\\expandafter\\gdef\\csname luamplib.group.", name, "\\endcsname{",
       "\\begingroup\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
@@ -4050,9 +4055,25 @@ end
 \else
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/24 v2.34.2 mplib package for LuaTeX]
+    [2024/07/27 v2.34.3 mplib package for LuaTeX]
   \ifx\newluafunction\@undefined
   \input ltluatex
+  \fi
+\fi
+%    \end{macrocode}
+%
+% In DVI mode, a new XObject (mppattern, mplibgroup) must be encapsulated in an \cs{hbox}.
+% But this should not affect typesetting. So we use Hook mechanism provided by \LaTeX\ kernel.
+% In Plain, \pk{atbegshi.sty} is loaded.
+%    \begin{macrocode}
+\ifnum\outputmode=0
+  \ifdefined\AddToHookNext
+    \def\luamplibatnextshipout{\AddToHookNext{shipout/background}}
+    \def\luamplibatfirstshipout{\AddToHook{shipout/firstpage}}
+  \else
+    \input atbegshi.sty
+    \def\luamplibatnextshipout#1{\AtBeginShipoutNext{\AtBeginShipoutAddToBox{#1}}}
+    \let\luamplibatfirstshipout\AtBeginShipoutFirst
   \fi
 \fi
 %    \end{macrocode}
