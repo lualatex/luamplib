@@ -1,8 +1,10 @@
                        History of the luamplib package
 
 2024/07/27 2.34.3
-   * To generate new XObjects (mppattern, mplibgroup) in DVI mode, we now use
-   shipout hooks provided by LaTeX kernel. In Plain, atbegshi.sty is loaded.
+   * use LaTeX's shipout hooks to generate new XObjects in DVI mode
+   (in plain, atbegshi.sty is loaded)
+
+   * fix shading to allow the even-odd rule
 
 2024/07/24 2.34.2
    * With the newly introduced macros, \mplibgroup ... \endmplibgroup, users

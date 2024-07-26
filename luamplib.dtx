@@ -3979,7 +3979,7 @@ function luamplib.flush (result,flusher)
 %    We should beware the |q ... Q| scope.
 %    \begin{macrocode}
                   if shade_no then -- shading
-                    pdf_literalcode("W n /MPlibSh%s sh Q",shade_no)
+                    pdf_literalcode("W%s n /MPlibSh%s sh Q",evenodd and "*" or "",shade_no)
                   end
                 end
               end
