@@ -123,10 +123,9 @@ See source file '\inFileName' for licencing and contact information.
 
 \newcommand*\email [1] {<\href{mailto:#1}{#1}>}
 \newcommand \file       {\nolinkurl}
-\newcommand \pk         {\textsf}
 
 \newcommand*\metapost {\textsc{metapost}\xspace}
-\newcommand*\mplib {\textsf{mplib}\xspace}
+\newcommand*\mplib {\pkg{mplib}\xspace}
 
 \begin{document}
   \DocInput{luamplib.dtx}%
@@ -152,7 +151,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
 %
-% \title{The \textsf{luamplib} package}
+% \title{The \pkg{luamplib} package}
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
@@ -174,9 +173,9 @@ See source file '\inFileName' for licencing and contact information.
 %
 % Using this package is easy: in Plain, type your \metapost code between the
 % macros \cs{mplibcode} and \cs{endmplibcode}, and in \LaTeX\ in the
-% \texttt{mplibcode} environment.
+% |mplibcode| environment.
 %
-% The resulting \metapost figures are put in a \TeX\ \texttt{hbox} with dimensions
+% The resulting \metapost figures are put in a \TeX\ |hbox| with dimensions
 % adjusted to the \metapost code.
 %
 % The code of luamplib is basically from the |luatex-mplib.lua| and |luatex-mplib.tex| files
@@ -186,13 +185,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
-%   |textext()| is a more versatile macro equivalent to |TEX()| from \textsf{TEX.mp}.
+%   |textext()| is a more versatile macro equivalent to |TEX()| from \pkg{TEX.mp}.
 %   |TEX()| is also allowed and is a synonym of |textext()|.
 %   The argument of
 %   \mplib's primitive |maketext| will also be processed by the same routine.
 %
 % \item possibility to use |verbatimtex ... etex|, though it's behavior cannot
-%   be the same as the stand-alone \textsf{mpost}.
+%   be the same as the stand-alone \pkg{mpost}.
 %   Of course you cannot include \cs{documentclass}, \cs{usepackage} etc.
 %   When these \TeX\ commands are found in |verbatimtex ... etex|, the entire code will be
 %   ignored.
@@ -231,7 +230,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibsetformat\{plain\char"7C metafun\}}}
+% \paragraph{\cs{mplibsetformat\{plain\textbar metafun\}}}
 %   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
@@ -267,15 +266,15 @@ See source file '\inFileName' for licencing and contact information.
 %   it is regarded by luamplib as
 %   a color expression of \TeX\ side.
 %   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
-%   interpreted as an \textsf{xcolor}'s or \textsf{l3color}'s expression.
+%   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
-% \paragraph{\cs{mplibnumbersystem\{scaled\char"7C double\char"7C decimal\}}}
+% \paragraph{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
 %   Users can choose |numbersystem| option.
 %   The default value is |scaled|, which can be changed
 %   by declaring \cs{mplibnumbersystem\{double\}} or
 %   \cs{mplibnumbersystem\{decimal\}}.
 %
-% \paragraph{\cs{mplibshowlog\{enable\char"7C disable\}}}
+% \paragraph{\cs{mplibshowlog\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   When \cs{mplibshowlog\{enable\}}\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
@@ -283,7 +282,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the \metapost process will be printed to the |.log| file.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
-% \paragraph{\cs{mpliblegacybehavior\{enable\char"7C disable\}}}
+% \paragraph{\cs{mpliblegacybehavior\{enable\textbar disable\}}}
 %   \hypertarget{mpliblegacybehavior}{}\relax
 %   By default, \cs{mpliblegacybehavior\{enable\}}
 %   is already declared for backward compatibility,
@@ -337,7 +336,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibtextextlabel\{enable\char"7C disable\}}}
+% \paragraph{\cs{mplibtextextlabel\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
@@ -351,7 +350,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Also take care of |char| operator in the left side argument,
 %   as this might bring unpermitted characters into \TeX.
 %
-% \paragraph{\cs{mplibcodeinherit\{enable\char"7C disable\}}}
+% \paragraph{\cs{mplibcodeinherit\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   \cs{mplibcodeinherit\{enable\}} enables the inheritance
 %   of variables, constants, and macros defined by previous \metapost code chunks.
@@ -393,7 +392,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \everyendmplib[instanceName]{...}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibglobaltextext\{enable\char"7C disable\}}}
+% \paragraph{\cs{mplibglobaltextext\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   Formerly, to inherit |btex| |...| |etex| boxes as well as other \metapost macros, variables and constants,
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
@@ -414,7 +413,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmplibcode
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibverbatim\{enable\char"7C disable\}}}
+% \paragraph{\cs{mplibverbatim\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
@@ -426,8 +425,8 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{\cs{mpdim\{...\}}}
 %   \hypertarget{mpdim}{}\relax
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
-%   in the mplibcode environment. This feature is inpired by \textsf{gmp} package authored by
-%   Enrico Gregorio. Please refer to the manual of \textsf{gmp} package for details.
+%   in the mplibcode environment. This feature is inpired by \pkg{gmp} package authored by
+%   Enrico Gregorio. Please refer to the manual of \pkg{gmp} package for details.
 %\begin{verbatim}
 %     \begin{mplibcode}
 %       beginfig(1)
@@ -439,13 +438,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\cs{mpcolor[...]\{...\}}}
 %   With \cs{mpcolor} command, color names or expressions of
-%   \textsf{color}, \textsf{xcolor} and \textsf{l3color} module/packages can be used in the mplibcode
-%   enviroment (after |withcolor| operator).
+%   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
+%   environment (after |withcolor| operator).
 %   See the example \hyperlink{mpdim}{above}.
-%   The optional |[...]| means the option of \textsf{xcolor}'s \cs{color} command.
-%   For spot colors, \textsf{l3color} (in PDF/DVI mode),
-%   \textsf{colorspace}, \textsf{spotcolor}
-%   (in PDF mode) and \textsf{xespotcolor} (in DVI mode) packages are supported
+%   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
+%   For spot colors, \pkg{l3color} (in PDF/DVI mode),
+%   \pkg{colorspace}, \pkg{spotcolor}
+%   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
 %
 % \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
@@ -532,7 +531,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
 %   These are \metapost interfaces for the \TeX\ commands
-%   \hyperlink{mpdim}{\cs{mpdim} \textcolor{black}{and} \cs{mpcolor}}. For example,
+%   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above}). For example,
 %   |mplibdimen("\linewidth")| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
 %   |mplibcolor("red!50")| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
@@ -567,7 +566,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |fakebold|, |drawcolor| and |fillcolor| are optional;
 %   default values are |2|, |"black"| and |"white"| respectively.
 %   When the color expressions are given in string type, they are regarded as
-%   \textsf{xcolor}'s or \textsf{l3color}'s expressions.
+%   \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expressions.
 %   All from |mplibgraphictext| to the end of sentence will compose an
 %   anonymous |picture|, which can be drawn or assigned to a variable.
 %   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
@@ -581,7 +580,7 @@ See source file '\inFileName' for licencing and contact information.
 %   However, because the implementation is quite different from others,
 %   there are some limitations such that you can't
 %   apply shading (gradient colors) to the text. Again,
-%   in DVI mode, \textsf{unicode-math} package is needed for math formula,
+%   in DVI mode, \pkg{unicode-math} package is needed for math formula,
 %   as we cannot embolden type1 fonts in DVI mode.
 %
 %   \paragraph{\texttt{mplibglyph ... of ...}}
@@ -637,7 +636,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \paragraph{\cs{mppattern\{...\}} \texttt{...} \cs{endmppattern}, \texttt{... withpattern ...}}
+% \paragraph{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...}}
 %   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
 %   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
@@ -737,7 +736,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{\texttt{... withfademethod ...}}
 %   This is a \metapost operator which makes the color of an object gradiently transparent.
-%   The syntax is \emph{<path>}\texttt{\char"7C}\emph{<picture>} |withfademethod| \emph{<string>},
+%   The syntax is \emph{<path>}\texttt{\textbar}\emph{<picture>} |withfademethod| \emph{<string>},
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| from \emph{metafun},
 %   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
@@ -784,8 +783,8 @@ See source file '\inFileName' for licencing and contact information.
 % As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
-% \emph{<picture>} \char"7C\ \emph{<path>} |asgroup|
-% |""| \char"7C\ |"isolated"| \char"7C\ |"knockout"| \char"7C\ |"isolated,knockout"|,
+% \emph{<picture>} \textbar\ \emph{<path>} |asgroup|
+% |""| \textbar\ |"isolated"| \textbar\ |"knockout"| \textbar\ |"isolated,knockout"|,
 % which will return a \metapost picture.
 % It is called \emph{Transparency Group} because the objects contained in the group are composited
 % to produce a single object, so that outer transparency effect, if any,
@@ -1039,7 +1038,7 @@ luamplib.showlog  = luamplib.showlog or false
 %    \end{macrocode}
 %
 %    This module is a stripped down version of libraries that are used by
-%    \ConTeXt. Provide a few ``shortcuts'' expected by the imported code.
+%    \ConTeXt. Provide a few ``shortcuts'' expected by the code.
 %    \begin{macrocode}
 local tableconcat = table.concat
 local tableinsert = table.insert
@@ -1228,7 +1227,7 @@ end
 %    \end{macrocode}
 %
 %    As the finder function for \mplib, use the |kpse| library and
-%    make it behave like as if \metapost was used. And replace it with
+%    make it behave like as if \metapost was used. And replace |.mp| files with
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
@@ -1349,10 +1348,8 @@ local function luamplibload (name)
     find_file   = luamplib.finder,
 %    \end{macrocode}
 %    Make use of |make_text| and |run_script|, which will co-operate
-%    with \LuaTeX's |tex.runtoks|. And we
-%    provide |numbersystem| option since v2.4. Default value ``|scaled|''
-%    can be changed by declaring |\mplibnumbersystem{double}|
-%    or |\mplibnumbersystem{decimal}|.
+%    with \LuaTeX's |tex.runtoks| or other Lua functions. And we
+%    provide |numbersystem| option since v2.4.
 %    See \url{https://github.com/lualatex/luamplib/issues/21}.
 %    \begin{macrocode}
     make_text   = luamplib.maketext,
@@ -1862,7 +1859,6 @@ local function rmzeros(str) return str:gsub("%.?0+$","") end
 %
 %    luamplib's mplibgraphictext operator
 %    \begin{macrocode}
-local running = -1073741824
 local emboldenfonts = { }
 local function getemboldenwidth (curr, fakebold)
   local width = emboldenfonts.width
@@ -1902,6 +1898,7 @@ local function getrulewhatsit (line, wd, ht, dp)
   return pl
 end
 local function getrulemetric (box, curr, bp)
+  local running = -1073741824
   local wd,ht,dp = curr.width, curr.height, curr.depth
   wd = wd == running and box.width  or wd
   ht = ht == running and box.height or ht
@@ -3248,7 +3245,6 @@ end
 %    Patterns
 %    \begin{macrocode}
 pdfetcs.patterns = { }
-local patterns = pdfetcs.patterns
 local function gather_resources (optres)
   local t, do_pattern = { }, not optres
   local names = {"ExtGState","ColorSpace","Shading"}
@@ -3343,6 +3339,7 @@ function luamplib.registerpattern ( boxid, name, opts )
   }
   local optres = opts.resources or ""
   optres = optres .. gather_resources(optres)
+  local patterns = pdfetcs.patterns
   if pdfmode then
     if opts.bbox then
       attr[#attr+1] = format("/BBox[%s]", opts.bbox)
@@ -3397,6 +3394,7 @@ end
 local function do_preobj_PAT(object, prescript)
   local name = prescript and prescript.mplibpattern
   if not name then return end
+  local patterns = pdfetcs.patterns
   local patt = patterns[name]
   local index = patt and patt.id or err("cannot get pattern object '%s'", name)
   local key = format("MPlibPt%s",index)
@@ -3941,6 +3939,9 @@ function luamplib.flush (result,flusher)
                     stop_pdf_code()
                   end
                   local path = object.htap
+%    \end{macrocode}
+%    How can we generate an |htap| object? Please let us know if you have succeeded.
+%    \begin{macrocode}
                   if path then
                     if transformed then
                       start_pdf_code()
@@ -4049,22 +4050,23 @@ end
 %    First we need to load some packages.
 %
 %    \begin{macrocode}
-\bgroup\expandafter\expandafter\expandafter\egroup
-\expandafter\ifx\csname selectfont\endcsname\relax
-  \input ltluatex
-\else
-  \NeedsTeXFormat{LaTeX2e}
+\ifcsname ProvidesPackage\endcsname
+%    \end{macrocode}
+% We need \LaTeX\ 2024-06-01 as we use |ltx.pdf.object_id| when pdfmanagement is loaded.
+% So, though not acutally needed for every case, it is not bad to upgrade the \TeX\ system anyway.
+%    \begin{macrocode}
+  \NeedsTeXFormat{LaTeX2e}[2024/06/01]
   \ProvidesPackage{luamplib}
     [2024/07/27 v2.34.3 mplib package for LuaTeX]
-  \ifx\newluafunction\@undefined
+\fi
+\ifdefined\newluafunction\else
   \input ltluatex
-  \fi
 \fi
 %    \end{macrocode}
 %
 % In DVI mode, a new XObject (mppattern, mplibgroup) must be encapsulated in an \cs{hbox}.
 % But this should not affect typesetting. So we use Hook mechanism provided by \LaTeX\ kernel.
-% In Plain, \pk{atbegshi.sty} is loaded.
+% In Plain, \pkg{atbegshi.sty} is loaded.
 %    \begin{macrocode}
 \ifnum\outputmode=0
   \ifdefined\AddToHookNext
