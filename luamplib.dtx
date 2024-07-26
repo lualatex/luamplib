@@ -4053,9 +4053,9 @@ end
 \ifcsname ProvidesPackage\endcsname
 %    \end{macrocode}
 % We need \LaTeX\ 2024-06-01 as we use |ltx.pdf.object_id| when pdfmanagement is loaded.
-% So, though not acutally needed for every case, it is not bad to upgrade the \TeX\ system anyway.
+% But as \pkg{fp} package does not accept an option, we do not append the date option.
 %    \begin{macrocode}
-  \NeedsTeXFormat{LaTeX2e}[2024/06/01]
+  \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
     [2024/07/27 v2.34.3 mplib package for LuaTeX]
 \fi
