@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/07/27 2.34.3
+   * in DVI mode, use LaTeX's shipout hooks to generate new XObjects
+   or to put resources to pageresources. (in plain, load atbegshi.sty)
+
+   * fix shading to allow the even-odd rule
+
 2024/07/24 2.34.2
    * With the newly introduced macros, \mplibgroup ... \endmplibgroup, users
    can define a transparency group or a normal form XObject from TeX side.
