@@ -3557,10 +3557,11 @@ local function do_preobj_GRP (object, prescript)
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
         "\\special{pdf:uxobj ", objname, "}\\endgroup",
-        "\\expandafter\\gdef\\csname luamplib.group.", trgroup.name, "\\endcsname{",
-        "\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
-        "\\special{pdf:uxobj ", objname, "}\\mplibstoptoPDF}",
       })
+      token.set_macro("luamplib.group."..trgroup.name, tableconcat{
+        "\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
+        "\\special{pdf:uxobj ", objname, "}\\mplibstoptoPDF",
+      }, "global")
     end
     trgroup.shifts[trgroup.name] = { llx, lly }
   end
@@ -3595,10 +3596,7 @@ function luamplib.registergroup (boxid, name, opts)
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   if pdfmode then
     local index = tex.saveboxresource(boxid, tableconcat(attr), res, true, grtype)
-    texsprint{
-      "\\expandafter\\gdef\\csname luamplib.group.", name,
-      "\\endcsname{\\useboxresource ", index, "}",
-    }
+    token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3613,13 +3611,14 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:put @resources <<", res, ">>}",
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
       "\\special{pdf:econtent}}",
-      "\\expandafter\\gdef\\csname luamplib.group.", name, "\\endcsname{",
+    }
+    token.set_macro("luamplib.group."..name, tableconcat{
       "\\begingroup\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
-      "\\box\\mplibscratchbox\\endgroup}",
-    }
+      "\\box\\mplibscratchbox\\endgroup",
+    }, "global")
   end
 end
 

@@ -2,7 +2,7 @@
 
 2024/07/27 2.34.3
    * in DVI mode, use LaTeX's shipout hooks to generate new XObjects
-   or to put resources to pdfpageresources. (in plain, load atbegshi.sty)
+   or to put resources to pageresources. (in plain, load atbegshi.sty)
 
    * fix shading to allow the even-odd rule
 
