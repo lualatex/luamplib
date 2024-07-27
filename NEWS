@@ -1,8 +1,8 @@
                        History of the luamplib package
 
 2024/07/27 2.34.3
-   * use LaTeX's shipout hooks to generate new XObjects in DVI mode
-   (in plain, atbegshi.sty is loaded)
+   * in DVI mode, use LaTeX's shipout hooks to generate new XObjects
+   or to put resources to pdfpageresources. (in plain, load atbegshi.sty)
 
    * fix shading to allow the even-odd rule
 

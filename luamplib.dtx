@@ -2974,6 +2974,13 @@ else
     "\\special{pdf:obj @MPlibPt<<>>}}",
   }
   pdfetcs.resadded = { }
+  pdfetcs.fallback_update_resources = function (name,obj,res)
+    texsprint{"\\special{pdf:put ", obj, " <<", res, ">>}"}
+    if not pdfetcs.resadded[name] then
+      texsprint{"\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}"}
+      pdfetcs.resadded[name] = obj
+    end
+  end
 end
 
 %    \end{macrocode}
@@ -3014,13 +3021,9 @@ local function add_extgs_resources (on, new)
           pdfetcs.fallback_update_resources("ExtGState", tr)
         end
       else
-        texsprint { "\\special{pdf:put @MPlibTr<<", tr, ">>}" }
+        pdfetcs.fallback_update_resources("ExtGState","@MPlibTr",tr)
       end
     end
-  end
-  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfextgs) then
-    texsprint"\\special{pdf:put @resources <</ExtGState @MPlibTr>>}"
-    pdfetcs.resadded.ExtGState = "@MPlibTr"
   end
   return key
 end
@@ -3092,13 +3095,9 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       if pdfmode then
         pdfetcs.fallback_update_resources("Shading", res)
       else
-        texsprint { "\\special{pdf:put @MPlibSh<<", res, ">>}" }
+        pdfetcs.fallback_update_resources("Shading","@MPlibSh",res)
       end
     end
-  end
-  if not pdfmode and not pdfmanagement then
-    texsprint"\\special{pdf:put @resources <</Shading @MPlibSh>>}"
-    pdfetcs.resadded.Shading = "@MPlibSh"
   end
   return on
 end
@@ -3294,7 +3293,7 @@ local function gather_resources (optres)
         "}}",
       }, catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
-    elseif do_pattern then
+    else
       for _,v in ipairs(names) do
         local vv = pdfetcs.resadded[v]
         if vv then
@@ -3381,13 +3380,9 @@ local function pattern_colorspace (cs)
       elseif pdfmode then
         pdfetcs.fallback_update_resources("ColorSpace", res)
       else
-        texsprint { "\\special{pdf:put @MPlibCS<<", res, ">>}" }
+        pdfetcs.fallback_update_resources("ColorSpace","@MPlibCS",res)
       end
     end
-  end
-  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfcolorspace) then
-    texsprint"\\special{pdf:put @resources <</ColorSpace @MPlibCS>>}"
-    pdfetcs.resadded.ColorSpace = "@MPlibCS"
   end
   return on
 end
@@ -3437,13 +3432,9 @@ local function do_preobj_PAT(object, prescript)
       elseif pdfmode then
         pdfetcs.fallback_update_resources("Pattern", res)
       else
-        texsprint { "\\special{pdf:put @MPlibPt<<", res, ">>}" }
+        pdfetcs.fallback_update_resources("Pattern","@MPlibPt",res)
       end
     end
-  end
-  if not pdfmode and not pdfmanagement and not is_defined(pdfetcs.pgfpattern) then
-    texsprint"\\special{pdf:put @resources <</Pattern @MPlibPt>>}"
-    pdfetcs.resadded.Pattern = "@MPlibPt"
   end
   patt.done = true
 end
@@ -4072,10 +4063,12 @@ end
   \ifdefined\AddToHookNext
     \def\luamplibatnextshipout{\AddToHookNext{shipout/background}}
     \def\luamplibatfirstshipout{\AddToHook{shipout/firstpage}}
+    \def\luamplibateveryshipout{\AddToHook{shipout/background}}
   \else
     \input atbegshi.sty
     \def\luamplibatnextshipout#1{\AtBeginShipoutNext{\AtBeginShipoutAddToBox{#1}}}
     \let\luamplibatfirstshipout\AtBeginShipoutFirst
+    \def\luamplibateveryshipout#1{\AtBeginShipout{\AtBeginShipoutAddToBox{#1}}}
   \fi
 \fi
 %    \end{macrocode}
