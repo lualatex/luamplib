@@ -642,9 +642,12 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the |<name>|.
 %   \metapost operator |withpattern|, the syntax being
-%   \emph{<path>} |withpattern| \emph{<string>}, will return a \metapost picture which fills
-%   the given path with a tiling pattern of the |<name>|
+%   \emph{<path>}\textbar\emph{<textual picture>} |withpattern| \emph{<string>},
+%   will return a \metapost picture which fills
+%   the given path or text with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
+%   The \emph{textual picture} here means any text typeset by \TeX, normally the result
+%   of |btex| command or |infont| operator.
 %   An example:
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -738,6 +741,22 @@ See source file '\inFileName' for licencing and contact information.
 %            fi;
 %          endfor
 %        endfor
+%        endfig;
+%      \end{mplibcode}
+%\end{verbatim}
+% A much simpler way to obtain a similar result is giving a \emph{textual picture}
+% as the operand of |withpattern|:
+%\begin{verbatim}
+%      \begin{mplibcode}
+%        beginfig(2)
+%        draw
+%           btex
+%               \addfontfeature{FakeBold=0.5, Scale=10}
+%               \TeX
+%           etex
+%           withpattern "pattnocolor"
+%           withcolor 1/2[red,blue]                 % paints the pattern
+%           ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
@@ -2609,7 +2628,13 @@ vardef mpliboutlinetext@# (expr t) text rest =
   ) mplib_do_outline_options_r; )
 enddef ;
 primarydef t withpattern p =
-  image( fill t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
+  image(
+    if cycle t:
+      fill
+    else:
+      draw
+    fi
+    t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
 enddef;
 vardef mplibtransformmatrix (text e) =
   save t; transform t;
@@ -3789,7 +3814,7 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%    The following 8 lines are part of |btex...etex| patch.
+%    The following 9 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -3798,6 +3823,7 @@ function luamplib.flush (result,flusher)
               local tr_opaq = do_preobj_TR(object,prescript) -- opacity
               local fading_ = do_preobj_FADE(object,prescript) -- fading
               local trgroup = do_preobj_GRP(object,prescript) -- transparency group
+              local pattern_ = do_preobj_PAT(object,prescript) -- pattern
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -3877,10 +3903,9 @@ function luamplib.flush (result,flusher)
                     dashed = false
                   end
 %    \end{macrocode}
-%    Added : shading and pattern
+%    Added : shading
 %    \begin{macrocode}
                   local shade_no = do_preobj_SH(object,prescript) -- shading
-                  local pattern_ = do_preobj_PAT(object,prescript) -- pattern
                   local path = object.path
                   local transformed, penwidth = false, 1
                   local open = path and path[1].left_type and path[#path].right_type

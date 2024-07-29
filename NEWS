@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+   * 'withpattern' operator accepts a <textual picture> as well as a <path>
+   as its operand. This means that users can give pattern effects to the results
+   of btex command or infont operator.
+
 2024/07/27 2.34.3
    * in DVI mode, use LaTeX's shipout hooks to generate new XObjects
    or to put resources to pageresources. (in plain, load atbegshi.sty)
