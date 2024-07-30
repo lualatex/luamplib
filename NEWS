@@ -1,7 +1,7 @@
                        History of the luamplib package
 
    * 'withpattern' operator accepts a <textual picture> as well as a <path>
-   as its operand. This means that users can give pattern effects to the results
+   for its operand. This means that users can give pattern effect to the result
    of btex command or infont operator.
 
 2024/07/27 2.34.3

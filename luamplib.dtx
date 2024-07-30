@@ -647,7 +647,9 @@ See source file '\inFileName' for licencing and contact information.
 %   the given path or text with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
 %   The \emph{textual picture} here means any text typeset by \TeX, normally the result
-%   of |btex| command or |infont| operator.
+%   of the |btex| command (though technically this is not a true textual picture)
+%   or the |infont| operator.
+%
 %   An example:
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -744,19 +746,19 @@ See source file '\inFileName' for licencing and contact information.
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
-% A much simpler way to obtain a similar result is giving a \emph{textual picture}
-% as the operand of |withpattern|:
+% A much simpler and efficient way to obtain a similar result
+% (without colorful character colors in this example)
+% is to give a \emph{textual picture} as the operand of |withpattern|:
 %\begin{verbatim}
 %      \begin{mplibcode}
 %        beginfig(2)
-%        draw
-%           btex
-%               \addfontfeature{FakeBold=0.5, Scale=10}
-%               \TeX
-%           etex
-%           withpattern "pattnocolor"
-%           withcolor 1/2[red,blue]                 % paints the pattern
-%           ;
+%        picture pic;
+%        pic = mplibgraphictext "\bfseries\TeX"
+%                fakebold 1/2
+%                fillcolor 1/3[red,blue]            % paints the pattern
+%                drawcolor 2/3[red,blue]
+%                scaled 10 ;
+%        draw pic withpattern "pattnocolor" ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
