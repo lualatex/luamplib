@@ -1748,10 +1748,10 @@ end
 %    luamplib's \metapost color operators
 %    \begin{macrocode}
 local function colorsplit (res)
-  local t, tt = { }, res:gsub("[%[%]]",""):explode()
+  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
-    if tt[i]:find"^%a" then break end
+    if not tonumber(tt[i]) then break end
     t[#t+1] = tt[i]
   end
   return t
