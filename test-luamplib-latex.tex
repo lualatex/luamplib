@@ -337,6 +337,12 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
 \usemplibgroup{mytex}%
 \mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+\par
+\mpfig
+  picture test; test = mplibgraphictext "\textbf{MetaPost}"
+    fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7;
+  draw test withpattern "pattuncolored" ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

@@ -1979,7 +1979,8 @@ local function embolden (box, curr, fakebold)
       head, curr = node.remove(head, curr)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
       local f = curr.font
-      local i = emboldenfonts[f]
+      local key = format("%s:%s",f,fakebold)
+      local i = emboldenfonts[key]
       if not i then
         local ft = font.getfont(f) or font.getcopy(f)
         if pdfmode then
@@ -1995,7 +1996,7 @@ local function embolden (box, curr, fakebold)
           name = format('%s;embolden=%s;',name,fakebold)
           _, i = fonts.constructors.readanddefine(name,ft.size)
         end
-        emboldenfonts[f] = i
+        emboldenfonts[key] = i
       end
       curr.font = i
     end

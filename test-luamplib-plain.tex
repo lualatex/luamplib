@@ -312,6 +312,12 @@ usemplibgroup "testTRgroup"
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
 \usemplibgroup{mytex}%
 \mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+\par
+\mpfig
+  picture test; test = mplibgraphictext "\bf MetaPost"
+  fakebold 1 fillcolor .7[white,red] drawcolor .7red scaled 7;
+  draw test withpattern "pattuncolored" ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip
