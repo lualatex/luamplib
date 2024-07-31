@@ -1,8 +1,11 @@
                        History of the luamplib package
 
+2024/07/31 2.34.4
    * 'withpattern' operator accepts a <textual picture> as well as a <path>
-   for its operand. This means that users can give pattern effect to the result
-   of btex command or infont operator.
+   for its operand. Thus users can give pattern effect to the result of btex
+   command or infont operator.
+
+   * fix regarding line width in mplibgraphictext
 
 2024/07/27 2.34.3
    * in DVI mode, use LaTeX's shipout hooks to generate new XObjects

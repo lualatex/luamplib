@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/27 v2.34.3 Interface for using the mplib library]%
+  [2024/07/31 v2.34.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/27 v2.34.3}
+% \date{2024/07/31 v2.34.4}
 %
 % \maketitle
 %
@@ -654,15 +654,16 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
-%        xstep = 10, ystep = 12,
+%        xstep = 10,
+%        ystep = 12,
 %        matrix = {0, 1, -1, 0},      % or "0 1 -1 0"
 %      ]
 %      \mpfig                         % or any other TeX code,
-%        draw (llcorner unitsquare--urcorner unitsquare)
+%        draw (origin--(1,1))
 %          scaled 10
 %          withcolor 1/3[blue,white]
 %          ;
-%        draw (ulcorner unitsquare--lrcorner unitsquare)
+%        draw (up--right)
 %          scaled 10
 %          withcolor 1/3[red,white]
 %          ;
@@ -747,7 +748,7 @@ See source file '\inFileName' for licencing and contact information.
 %      \end{mplibcode}
 %\end{verbatim}
 % A much simpler and efficient way to obtain a similar result
-% (without colorful character colors in this example)
+% (without colorful characters in this example)
 % is to give a \emph{textual picture} as the operand of |withpattern|:
 %\begin{verbatim}
 %      \begin{mplibcode}
@@ -914,7 +915,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % When |asgroup| option, including empty string, is not given,
 % a normal form XObject will be generated rather than a transparency group.
-% So, the individual objects, not the XObject as a whole, will be affected
+% Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command.
 %
 % As shown in the example, you can reuse the transparency group or the normal form XObject
@@ -1009,8 +1010,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.3",
-  date          = "2024/07/27",
+  version       = "2.34.4",
+  date          = "2024/07/31",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3010,7 +3011,7 @@ else
     "\\special{pdf:obj @MPlibPt<<>>}}",
   }
   pdfetcs.resadded = { }
-  pdfetcs.fallback_update_resources = function (name,obj,res)
+  pdfetcs.fallback_update_resources = function (name,res,obj)
     texsprint{"\\special{pdf:put ", obj, " <<", res, ">>}"}
     if not pdfetcs.resadded[name] then
       texsprint{"\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}"}
@@ -3042,22 +3043,18 @@ local function add_extgs_resources (on, new)
       local tr = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfextgs) then
         texsprint { "\\csname ", pdfetcs.pgfextgs, "\\endcsname{", tr, "}" }
-      elseif pdfmode then
-        if is_defined"TRP@list" then
-          texsprint(catat11,{
-            [[\if@filesw\immediate\write\@auxout{]],
-            [[\string\g@addto@macro\string\TRP@list{]],
-            tr,
-            [[}}\fi]],
-          })
-          if not get_macro"TRP@list":find(tr) then
-            texsprint(catat11,[[\global\TRP@reruntrue]])
-          end
-        else
-          pdfetcs.fallback_update_resources("ExtGState", tr)
+      elseif is_defined"TRP@list" then
+        texsprint(catat11,{
+          [[\if@filesw\immediate\write\@auxout{]],
+          [[\string\g@addto@macro\string\TRP@list{]],
+          tr,
+          [[}}\fi]],
+        })
+        if not get_macro"TRP@list":find(tr) then
+          texsprint(catat11,[[\global\TRP@reruntrue]])
         end
       else
-        pdfetcs.fallback_update_resources("ExtGState","@MPlibTr",tr)
+        pdfetcs.fallback_update_resources("ExtGState",tr,"@MPlibTr")
       end
     end
   end
@@ -3072,7 +3069,7 @@ local function do_preobj_TR(object,prescript)
     mode = transparancy_modes[tonumber(mode)] or mode
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
-      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",mode,opaq,opaq)
+      os = format("<</BM/%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq) :gsub("%.%d+", rmzeros)
       on, new = update_pdfobjs(os)
       key = add_extgs_resources(on,new)
       if i == 1 then
@@ -3128,11 +3125,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       }
     else
       local res = format("/%s %s", key, val)
-      if pdfmode then
-        pdfetcs.fallback_update_resources("Shading", res)
-      else
-        pdfetcs.fallback_update_resources("Shading","@MPlibSh",res)
-      end
+      pdfetcs.fallback_update_resources("Shading",res,"@MPlibSh")
     end
   end
   return on
@@ -3166,14 +3159,14 @@ local function do_preobj_SH(object,prescript)
     return
   else
     local domain  = prescript.sh_domain or "0 1"
-    local centera = prescript.sh_center_a or "0 0"; centera = centera:explode()
-    local centerb = prescript.sh_center_b or "0 0"; centerb = centerb:explode()
+    local centera = (prescript.sh_center_a or "0 0"):explode()
+    local centerb = (prescript.sh_center_b or "0 0"):explode()
     local transform = prescript.sh_transform == "yes"
     local sx,sy,sr,dx,dy = 1,1,1,0,0
     if transform then
-      local first = prescript.sh_first or "0 0"; first = first:explode()
-      local setx = prescript.sh_set_x or "0 0";  setx = setx:explode()
-      local sety = prescript.sh_set_y or "0 0";  sety = sety:explode()
+      local first = (prescript.sh_first or "0 0"):explode()
+      local setx  = (prescript.sh_set_x or "0 0"):explode()
+      local sety  = (prescript.sh_set_y or "0 0"):explode()
       local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
       if x ~= 0 and y ~= 0 then
         local path = object.path
@@ -3413,10 +3406,8 @@ local function pattern_colorspace (cs)
       local res = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfcolorspace) then
         texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
-      elseif pdfmode then
-        pdfetcs.fallback_update_resources("ColorSpace", res)
       else
-        pdfetcs.fallback_update_resources("ColorSpace","@MPlibCS",res)
+        pdfetcs.fallback_update_resources("ColorSpace",res,"@MPlibCS")
       end
     end
   end
@@ -3465,10 +3456,8 @@ local function do_preobj_PAT(object, prescript)
       local res = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfpattern) then
         texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
-      elseif pdfmode then
-        pdfetcs.fallback_update_resources("Pattern", res)
       else
-        pdfetcs.fallback_update_resources("Pattern","@MPlibPt",res)
+        pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
       end
     end
   end
@@ -4083,7 +4072,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/27 v2.34.3 mplib package for LuaTeX]
+    [2024/07/31 v2.34.4 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
