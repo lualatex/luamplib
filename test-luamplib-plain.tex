@@ -1,4 +1,4 @@
-\input luaotfload.sty
+%\input luaotfload.sty
 \input miniltx
 \input color
 \definecolor{orange}{cmyk}{0,.5,1,0}
@@ -312,6 +312,12 @@ usemplibgroup "testTRgroup"
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
 \usemplibgroup{mytex}%
 \mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+\par
+\mpfig
+  picture test; test = mplibgraphictext "\bf MPLIB"
+  fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7;
+  draw test withpattern "pattuncolored" ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

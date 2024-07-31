@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/27 v2.34.3 Interface for using the mplib library]%
+  [2024/07/31 v2.34.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/27 v2.34.3}
+% \date{2024/07/31 v2.34.4}
 %
 % \maketitle
 %
@@ -642,22 +642,28 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the |<name>|.
 %   \metapost operator |withpattern|, the syntax being
-%   \emph{<path>} |withpattern| \emph{<string>}, will return a \metapost picture which fills
-%   the given path with a tiling pattern of the |<name>|
+%   \emph{<path>}\textbar\emph{<textual picture>} |withpattern| \emph{<string>},
+%   will return a \metapost picture which fills
+%   the given path or text with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
+%   The \emph{textual picture} here means any text typeset by \TeX, normally the result
+%   of the |btex| command (though technically this is not a true textual picture)
+%   or the |infont| operator.
+%
 %   An example:
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
-%        xstep = 10, ystep = 12,
+%        xstep = 10,
+%        ystep = 12,
 %        matrix = {0, 1, -1, 0},      % or "0 1 -1 0"
 %      ]
 %      \mpfig                         % or any other TeX code,
-%        draw (llcorner unitsquare--urcorner unitsquare)
+%        draw (origin--(1,1))
 %          scaled 10
 %          withcolor 1/3[blue,white]
 %          ;
-%        draw (ulcorner unitsquare--lrcorner unitsquare)
+%        draw (up--right)
 %          scaled 10
 %          withcolor 1/3[red,white]
 %          ;
@@ -738,6 +744,22 @@ See source file '\inFileName' for licencing and contact information.
 %            fi;
 %          endfor
 %        endfor
+%        endfig;
+%      \end{mplibcode}
+%\end{verbatim}
+% A much simpler and efficient way to obtain a similar result
+% (without colorful characters in this example)
+% is to give a \emph{textual picture} as the operand of |withpattern|:
+%\begin{verbatim}
+%      \begin{mplibcode}
+%        beginfig(2)
+%        picture pic;
+%        pic = mplibgraphictext "\bfseries\TeX"
+%                fakebold 1/2
+%                fillcolor 1/3[red,blue]            % paints the pattern
+%                drawcolor 2/3[red,blue]
+%                scaled 10 ;
+%        draw pic withpattern "pattnocolor" ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
@@ -893,7 +915,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % When |asgroup| option, including empty string, is not given,
 % a normal form XObject will be generated rather than a transparency group.
-% So, the individual objects, not the XObject as a whole, will be affected
+% Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command.
 %
 % As shown in the example, you can reuse the transparency group or the normal form XObject
@@ -988,8 +1010,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.3",
-  date          = "2024/07/27",
+  version       = "2.34.4",
+  date          = "2024/07/31",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1727,10 +1749,10 @@ end
 %    luamplib's \metapost color operators
 %    \begin{macrocode}
 local function colorsplit (res)
-  local t, tt = { }, res:gsub("[%[%]]",""):explode()
+  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
   local be = tt[1]:find"^%d" and 1 or 2
   for i=be, #tt do
-    if tt[i]:find"^%a" then break end
+    if not tonumber(tt[i]) then break end
     t[#t+1] = tt[i]
   end
   return t
@@ -1958,7 +1980,8 @@ local function embolden (box, curr, fakebold)
       head, curr = node.remove(head, curr)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
       local f = curr.font
-      local i = emboldenfonts[f]
+      local key = format("%s:%s",f,fakebold)
+      local i = emboldenfonts[key]
       if not i then
         local ft = font.getfont(f) or font.getcopy(f)
         if pdfmode then
@@ -1974,7 +1997,7 @@ local function embolden (box, curr, fakebold)
           name = format('%s;embolden=%s;',name,fakebold)
           _, i = fonts.constructors.readanddefine(name,ft.size)
         end
-        emboldenfonts[f] = i
+        emboldenfonts[key] = i
       end
       curr.font = i
     end
@@ -2609,7 +2632,13 @@ vardef mpliboutlinetext@# (expr t) text rest =
   ) mplib_do_outline_options_r; )
 enddef ;
 primarydef t withpattern p =
-  image( fill t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
+  image(
+    if cycle t:
+      fill
+    else:
+      draw
+    fi
+    t withprescript "mplibpattern=" & if numeric p: decimal fi p; )
 enddef;
 vardef mplibtransformmatrix (text e) =
   save t; transform t;
@@ -2982,7 +3011,7 @@ else
     "\\special{pdf:obj @MPlibPt<<>>}}",
   }
   pdfetcs.resadded = { }
-  pdfetcs.fallback_update_resources = function (name,obj,res)
+  pdfetcs.fallback_update_resources = function (name,res,obj)
     texsprint{"\\special{pdf:put ", obj, " <<", res, ">>}"}
     if not pdfetcs.resadded[name] then
       texsprint{"\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}"}
@@ -3014,22 +3043,18 @@ local function add_extgs_resources (on, new)
       local tr = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfextgs) then
         texsprint { "\\csname ", pdfetcs.pgfextgs, "\\endcsname{", tr, "}" }
-      elseif pdfmode then
-        if is_defined"TRP@list" then
-          texsprint(catat11,{
-            [[\if@filesw\immediate\write\@auxout{]],
-            [[\string\g@addto@macro\string\TRP@list{]],
-            tr,
-            [[}}\fi]],
-          })
-          if not get_macro"TRP@list":find(tr) then
-            texsprint(catat11,[[\global\TRP@reruntrue]])
-          end
-        else
-          pdfetcs.fallback_update_resources("ExtGState", tr)
+      elseif is_defined"TRP@list" then
+        texsprint(catat11,{
+          [[\if@filesw\immediate\write\@auxout{]],
+          [[\string\g@addto@macro\string\TRP@list{]],
+          tr,
+          [[}}\fi]],
+        })
+        if not get_macro"TRP@list":find(tr) then
+          texsprint(catat11,[[\global\TRP@reruntrue]])
         end
       else
-        pdfetcs.fallback_update_resources("ExtGState","@MPlibTr",tr)
+        pdfetcs.fallback_update_resources("ExtGState",tr,"@MPlibTr")
       end
     end
   end
@@ -3044,7 +3069,7 @@ local function do_preobj_TR(object,prescript)
     mode = transparancy_modes[tonumber(mode)] or mode
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       mode, opaq = v[1], v[2]
-      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",mode,opaq,opaq)
+      os = format("<</BM/%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq) :gsub("%.%d+", rmzeros)
       on, new = update_pdfobjs(os)
       key = add_extgs_resources(on,new)
       if i == 1 then
@@ -3100,11 +3125,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       }
     else
       local res = format("/%s %s", key, val)
-      if pdfmode then
-        pdfetcs.fallback_update_resources("Shading", res)
-      else
-        pdfetcs.fallback_update_resources("Shading","@MPlibSh",res)
-      end
+      pdfetcs.fallback_update_resources("Shading",res,"@MPlibSh")
     end
   end
   return on
@@ -3138,14 +3159,14 @@ local function do_preobj_SH(object,prescript)
     return
   else
     local domain  = prescript.sh_domain or "0 1"
-    local centera = prescript.sh_center_a or "0 0"; centera = centera:explode()
-    local centerb = prescript.sh_center_b or "0 0"; centerb = centerb:explode()
+    local centera = (prescript.sh_center_a or "0 0"):explode()
+    local centerb = (prescript.sh_center_b or "0 0"):explode()
     local transform = prescript.sh_transform == "yes"
     local sx,sy,sr,dx,dy = 1,1,1,0,0
     if transform then
-      local first = prescript.sh_first or "0 0"; first = first:explode()
-      local setx = prescript.sh_set_x or "0 0";  setx = setx:explode()
-      local sety = prescript.sh_set_y or "0 0";  sety = sety:explode()
+      local first = (prescript.sh_first or "0 0"):explode()
+      local setx  = (prescript.sh_set_x or "0 0"):explode()
+      local sety  = (prescript.sh_set_y or "0 0"):explode()
       local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
       if x ~= 0 and y ~= 0 then
         local path = object.path
@@ -3242,7 +3263,6 @@ local function do_preobj_SH(object,prescript)
     else
       err"unknown shading type"
     end
-    pdf_literalcode("q /Pattern cs")
   end
   return shade_no
 end
@@ -3385,10 +3405,8 @@ local function pattern_colorspace (cs)
       local res = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfcolorspace) then
         texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
-      elseif pdfmode then
-        pdfetcs.fallback_update_resources("ColorSpace", res)
       else
-        pdfetcs.fallback_update_resources("ColorSpace","@MPlibCS",res)
+        pdfetcs.fallback_update_resources("ColorSpace",res,"@MPlibCS")
       end
     end
   end
@@ -3437,10 +3455,8 @@ local function do_preobj_PAT(object, prescript)
       local res = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfpattern) then
         texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
-      elseif pdfmode then
-        pdfetcs.fallback_update_resources("Pattern", res)
       else
-        pdfetcs.fallback_update_resources("Pattern","@MPlibPt",res)
+        pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
       end
     end
   end
@@ -3789,7 +3805,7 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%    The following 8 lines are part of |btex...etex| patch.
+%    The following 9 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
@@ -3798,6 +3814,7 @@ function luamplib.flush (result,flusher)
               local tr_opaq = do_preobj_TR(object,prescript) -- opacity
               local fading_ = do_preobj_FADE(object,prescript) -- fading
               local trgroup = do_preobj_GRP(object,prescript) -- transparency group
+              local pattern_ = do_preobj_PAT(object,prescript) -- pattern
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -3876,11 +3893,6 @@ function luamplib.flush (result,flusher)
                     pdf_literalcode("[] 0 d")
                     dashed = false
                   end
-%    \end{macrocode}
-%    Added : shading and pattern
-%    \begin{macrocode}
-                  local shade_no = do_preobj_SH(object,prescript) -- shading
-                  local pattern_ = do_preobj_PAT(object,prescript) -- pattern
                   local path = object.path
                   local transformed, penwidth = false, 1
                   local open = path and path[1].left_type and path[#path].right_type
@@ -3895,6 +3907,14 @@ function luamplib.flush (result,flusher)
                     else -- calculated by mplib itself
                       objecttype = 'fill'
                     end
+                  end
+%    \end{macrocode}
+%    Added : shading
+%    \begin{macrocode}
+                  local shade_no = do_preobj_SH(object,prescript) -- shading
+                  if shade_no then
+                    pdf_literalcode"q /Pattern cs"
+                    objecttype = false
                   end
                   if transformed then
                     start_pdf_code()
@@ -3916,21 +3936,16 @@ function luamplib.flush (result,flusher)
                     else
                       flushnormalpath(path,open)
                     end
-%    \end{macrocode}
-%    Shading seems to conflict with these ops
-%    \begin{macrocode}
-                    if not shade_no then -- conflict with shading
-                      if objecttype == "fill" then
-                        pdf_literalcode(evenodd and "h f*" or "h f")
-                      elseif objecttype == "outline" then
-                        if both then
-                          pdf_literalcode(evenodd and "h B*" or "h B")
-                        else
-                          pdf_literalcode(open and "S" or "h S")
-                        end
-                      elseif objecttype == "both" then
+                    if objecttype == "fill" then
+                      pdf_literalcode(evenodd and "h f*" or "h f")
+                    elseif objecttype == "outline" then
+                      if both then
                         pdf_literalcode(evenodd and "h B*" or "h B")
+                      else
+                        pdf_literalcode(open and "S" or "h S")
                       end
+                    elseif objecttype == "both" then
+                      pdf_literalcode(evenodd and "h B*" or "h B")
                     end
                   end
                   if transformed then
@@ -4055,7 +4070,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/27 v2.34.3 mplib package for LuaTeX]
+    [2024/07/31 v2.34.4 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
