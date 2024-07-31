@@ -3263,7 +3263,6 @@ local function do_preobj_SH(object,prescript)
     else
       err"unknown shading type"
     end
-    pdf_literalcode("q /Pattern cs")
   end
   return shade_no
 end
@@ -3894,10 +3893,6 @@ function luamplib.flush (result,flusher)
                     pdf_literalcode("[] 0 d")
                     dashed = false
                   end
-%    \end{macrocode}
-%    Added : shading
-%    \begin{macrocode}
-                  local shade_no = do_preobj_SH(object,prescript) -- shading
                   local path = object.path
                   local transformed, penwidth = false, 1
                   local open = path and path[1].left_type and path[#path].right_type
@@ -3912,6 +3907,14 @@ function luamplib.flush (result,flusher)
                     else -- calculated by mplib itself
                       objecttype = 'fill'
                     end
+                  end
+%    \end{macrocode}
+%    Added : shading
+%    \begin{macrocode}
+                  local shade_no = do_preobj_SH(object,prescript) -- shading
+                  if shade_no then
+                    pdf_literalcode"q /Pattern cs"
+                    objecttype = false
                   end
                   if transformed then
                     start_pdf_code()
@@ -3933,21 +3936,16 @@ function luamplib.flush (result,flusher)
                     else
                       flushnormalpath(path,open)
                     end
-%    \end{macrocode}
-%    Shading seems to conflict with these ops
-%    \begin{macrocode}
-                    if not shade_no then -- conflict with shading
-                      if objecttype == "fill" then
-                        pdf_literalcode(evenodd and "h f*" or "h f")
-                      elseif objecttype == "outline" then
-                        if both then
-                          pdf_literalcode(evenodd and "h B*" or "h B")
-                        else
-                          pdf_literalcode(open and "S" or "h S")
-                        end
-                      elseif objecttype == "both" then
+                    if objecttype == "fill" then
+                      pdf_literalcode(evenodd and "h f*" or "h f")
+                    elseif objecttype == "outline" then
+                      if both then
                         pdf_literalcode(evenodd and "h B*" or "h B")
+                      else
+                        pdf_literalcode(open and "S" or "h S")
                       end
+                    elseif objecttype == "both" then
+                      pdf_literalcode(evenodd and "h B*" or "h B")
                     end
                   end
                   if transformed then
