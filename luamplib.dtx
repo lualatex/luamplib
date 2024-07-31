@@ -2702,6 +2702,13 @@ primarydef p asgroup s =
     draw center p withprescript "gr_state=stop";
   )
 enddef;
+def withgroupbbox (expr a,b) =
+  withprescript "mplibgroupbbox=" &
+    decimal xpart a & ":" &
+    decimal ypart a & ":" &
+    decimal xpart b & ":" &
+    decimal ypart b
+enddef;
 def withgroupname expr s =
   withprescript "mplibgroupname=" & s
 enddef;
@@ -3542,13 +3549,11 @@ local function do_preobj_GRP (object, prescript)
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
     end
-    local p = object.path
-    trgroup.bbox = {
-      math.min(p[1].x_coord, p[2].x_coord, p[3].x_coord, p[4].x_coord),
-      math.min(p[1].y_coord, p[2].y_coord, p[3].y_coord, p[4].y_coord),
-      math.max(p[1].x_coord, p[2].x_coord, p[3].x_coord, p[4].x_coord),
-      math.max(p[1].y_coord, p[2].y_coord, p[3].y_coord, p[4].y_coord),
-    }
+    trgroup.bbox = (prescript.mplibgroupbbox or ""):explode":"
+    if #trgroup.bbox ~= 4 then
+      local p = object.path
+      trgroup.bbox = { p[1].x_coord, p[1].y_coord, p[3].x_coord, p[3].y_coord, }
+    end
     put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup]]
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
@@ -3593,6 +3598,7 @@ local function do_preobj_GRP (object, prescript)
 end
 function luamplib.registergroup (boxid, name, opts)
   local box = texgetbox(boxid)
+  local wd, ht, dp = node.getwhd(box)
   local res = (opts.resources or "") .. gather_resources()
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
@@ -3624,7 +3630,6 @@ function luamplib.registergroup (boxid, name, opts)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
-    local wd, ht, dp = node.getwhd(box)
     texsprint {
       "\\expandafter\\newbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
       "\\global\\setbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
@@ -3644,6 +3649,9 @@ function luamplib.registergroup (boxid, name, opts)
       "\\box\\mplibscratchbox\\endgroup",
     }, "global")
   end
+  local whd = pdfmode and format("%.3f %.3f 0",    wd/factor, (ht+dp)/factor)
+                      or  format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
+  info("w/h/d of %s: %s", name, whd :gsub("%.%d+", rmzeros))
 end
 
 local function stop_special_effects(fade,opaq,over)
