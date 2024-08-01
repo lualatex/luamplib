@@ -1,8 +1,5 @@
                        History of the luamplib package
 
-   * enlarge the default bounding box of fading area or transparency group
-   considering the thickness of the pen
-
    * provide 'withgroupbbox' macro for transparency group to enable users to
    control the bounding box
 

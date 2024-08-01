@@ -780,20 +780,20 @@ See source file '\inFileName' for licencing and contact information.
 %     `|1|' denotes full color; `|0|' full transparency.
 %   \item [|withfadevector (|\emph{pair, pair}|)|]
 %     sets the starting and ending points. Default value in the linear mode is
-%     |(lft llcorner p, rt lrcorner p)|, where |p| is the operand,
+%     |(llcorner p, lrcorner p)|, where |p| is the operand,
 %     meaning that fading starts from the left edge and ends at the right edge.
 %     Default value in the circular mode is |(center p, center p)|, which means
 %     centers of both starting and ending circles are the center of the bounding box.
 %   \item [|withfadecenter|] is a synonym of |withfadevector|.
 %   \item [|withfaderadius (|\emph{number, number}|)|]
 %     sets the radii of starting and ending circles. This is no-op in the linear mode.
-%     Default value is |(0, abs(center p - top rt urcorner p))|, meaning that fading starts from the
+%     Default value is |(0, abs(center p - urcorner p))|, meaning that fading starts from the
 %     center and ends at the four corners of the bounding box.
 %   \item [|withfadebbox (|\emph{pair, pair}|)|]
-%     sets the bounding box of the fading area,
-%     default value being |(bot lft llcorner p, top rt urcorner p)|.
+%     sets the bounding box of the fading area, default value being |(llcorner p, urcorner p)|.
 %     Though this option is not needed in most cases, there could be cases when users want to
-%     explicitly control the bounding box.
+%     explicitly control the bounding box,
+%     especially when you draw with a thick pen a path that touches the boundary.
 %   \end{description}
 %   An example:
 %\begin{verbatim}
@@ -845,8 +845,9 @@ See source file '\inFileName' for licencing and contact information.
 %   the position of the group is the same as the original transparency group.
 %
 % \item[|withgroupbbox (|\emph{pair}|,|\emph{pair}|)|]
-%   sets the bounding box of the transparency group, default value being
-%   |(bot lft llcorner p, top rt urcorner p)|.
+%   sets the bounding box of the transparency group,
+%   default value being |(llcorner p, urcorner p)|.
+%   This option might be needed when you draw with a thick pen a path that touches the boundary.
 %
 % \end{description}
 % An example showing the difference between the \TeX\ and \metapost commands:
@@ -2670,10 +2671,10 @@ primarydef p withfademethod s =
   fi
     withprescript "mplibfadetype=" & s
     withprescript "mplibfadebbox=" &
-      decimal lft xpart llcorner p & ":" &
-      decimal bot ypart llcorner p & ":" &
-      decimal rt  xpart urcorner p & ":" &
-      decimal top ypart urcorner p
+      decimal xpart llcorner p & ":" &
+      decimal ypart llcorner p & ":" &
+      decimal xpart urcorner p & ":" &
+      decimal ypart urcorner p
 enddef;
 def withfadeopacity (expr a,b) =
   withprescript "mplibfadeopacity=" &
@@ -2702,7 +2703,12 @@ def withfadebbox (expr a,b) =
 enddef;
 primarydef p asgroup s =
   image(
-    fill bot lft llcorner p--bot rt lrcorner p--top rt urcorner p--top lft ulcorner p--cycle
+    draw center p
+      withprescript "mplibgroupbbox=" &
+        decimal xpart llcorner p & ":" &
+        decimal ypart llcorner p & ":" &
+        decimal xpart urcorner p & ":" &
+        decimal ypart urcorner p
       withprescript "gr_state=start"
       withprescript "gr_type=" & s;
     draw p;
@@ -3556,11 +3562,7 @@ local function do_preobj_GRP (object, prescript)
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
     end
-    trgroup.bbox = (prescript.mplibgroupbbox or ""):explode":"
-    if #trgroup.bbox ~= 4 then
-      local p = object.path
-      trgroup.bbox = { p[1].x_coord, p[1].y_coord, p[3].x_coord, p[3].y_coord, }
-    end
+    trgroup.bbox = prescript.mplibgroupbbox:explode":"
     put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup]]
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
