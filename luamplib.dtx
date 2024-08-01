@@ -642,11 +642,11 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the |<name>|.
 %   \metapost operator |withpattern|, the syntax being
-%   \emph{<path>}\textbar\emph{<textual picture>} |withpattern| \emph{<string>},
+%   \emph{<path>}\,\textbar\,\emph{<textual picture>} |withpattern| \emph{<string>},
 %   will return a \metapost picture which fills
 %   the given path or text with a tiling pattern of the |<name>|
 %   by replicating it horizontally and vertically.
-%   The \emph{textual picture} here means any text typeset by \TeX, normally the result
+%   The \emph{textual picture} here means any text typeset by \TeX, mostly the result
 %   of the |btex| command (though technically this is not a true textual picture)
 %   or the |infont| operator.
 %
@@ -780,17 +780,18 @@ See source file '\inFileName' for licencing and contact information.
 %     `|1|' denotes full color; `|0|' full transparency.
 %   \item [|withfadevector (|\emph{pair, pair}|)|]
 %     sets the starting and ending points. Default value in the linear mode is
-%     |(llcorner p, lrcorner p)|, where |p| is the operand,
+%     |(lft llcorner p, rt lrcorner p)|, where |p| is the operand,
 %     meaning that fading starts from the left edge and ends at the right edge.
 %     Default value in the circular mode is |(center p, center p)|, which means
 %     centers of both starting and ending circles are the center of the bounding box.
 %   \item [|withfadecenter|] is a synonym of |withfadevector|.
 %   \item [|withfaderadius (|\emph{number, number}|)|]
 %     sets the radii of starting and ending circles. This is no-op in the linear mode.
-%     Default value is |(0, abs(center p - urcorner p))|, meaning that fading starts from the
+%     Default value is |(0, abs(center p - top rt urcorner p))|, meaning that fading starts from the
 %     center and ends at the four corners of the bounding box.
 %   \item [|withfadebbox (|\emph{pair, pair}|)|]
-%     sets the bounding box of the fading area, default value being |(llcorner p, urcorner p)|.
+%     sets the bounding box of the fading area,
+%     default value being |(bot lft llcorner p, top rt urcorner p)|.
 %     Though this option is not needed in most cases, there could be cases when users want to
 %     explicitly control the bounding box.
 %   \end{description}
@@ -842,6 +843,11 @@ See source file '\inFileName' for licencing and contact information.
 %   a transparency group of the name to the |currentpicture|.
 %   Contrary to the \TeX\ command just mentioned,
 %   the position of the group is the same as the original transparency group.
+%
+% \item[|withgroupbbox (|\emph{pair}|,|\emph{pair}|)|]
+%   sets the bounding box of the transparency group, default value being
+%   |(bot lft llcorner p, top rt urcorner p)|.
+%
 % \end{description}
 % An example showing the difference between the \TeX\ and \metapost commands:
 %\begin{verbatim}
@@ -894,8 +900,10 @@ See source file '\inFileName' for licencing and contact information.
 %     usemplibgroup "mygrx" scaled 1.5 withprescript "tr_transparency=0.5";
 %   \endmpfig
 %\end{verbatim}
+%
 % Availabe options, much fewer than those for \cs{mppattern},
 % are listed in Table~\ref{tab:mplibgroupoptions}.
+% Again, the width/height/depth values of the mplibgroup will be written down into the log file.
 % \begin{table}
 % \centering
 % \caption{options for \cs{mplibgroup}}\label{tab:mplibgroupoptions}
@@ -918,8 +926,7 @@ See source file '\inFileName' for licencing and contact information.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command.
 %
-% As shown in the example, you can reuse the transparency group or the normal form XObject
-% once defined
+% As shown in the example, you can reuse the mplibgroup once defined
 % using the \TeX\ command \cs{usemplibgroup} or
 % the \metapost command |usemplibgroup|.
 % The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}.
@@ -2663,10 +2670,10 @@ primarydef p withfademethod s =
   fi
     withprescript "mplibfadetype=" & s
     withprescript "mplibfadebbox=" &
-      decimal xpart llcorner p & ":" &
-      decimal ypart llcorner p & ":" &
-      decimal xpart urcorner p & ":" &
-      decimal ypart urcorner p
+      decimal lft xpart llcorner p & ":" &
+      decimal bot ypart llcorner p & ":" &
+      decimal rt  xpart urcorner p & ":" &
+      decimal top ypart urcorner p
 enddef;
 def withfadeopacity (expr a,b) =
   withprescript "mplibfadeopacity=" &
@@ -2695,7 +2702,7 @@ def withfadebbox (expr a,b) =
 enddef;
 primarydef p asgroup s =
   image(
-    fill llcorner p--lrcorner p--urcorner p--ulcorner p--cycle
+    fill bot lft llcorner p--bot rt lrcorner p--top rt urcorner p--top lft ulcorner p--cycle
       withprescript "gr_state=start"
       withprescript "gr_type=" & s;
     draw p;
@@ -3343,7 +3350,7 @@ function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
   local wd = format("%.3f",box.width/factor) :gsub("%.%d+", rmzeros)
   local hd = format("%.3f",(box.height+box.depth)/factor) :gsub("%.%d+", rmzeros)
-  info("w/h/d of '%s': %s %s 0", name, wd, hd)
+  info("w/h/d of pattern '%s': %s %s 0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then
@@ -3624,9 +3631,11 @@ function luamplib.registergroup (boxid, name, opts)
   end
   local trgroup = pdfetcs.tr_group
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
+  local whd
   if pdfmode then
     local index = tex.saveboxresource(boxid, tableconcat(attr), res, true, grtype)
     token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
+    whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3648,10 +3657,9 @@ function luamplib.registergroup (boxid, name, opts)
       "\\dp\\mplibscratchbox ", dp, "sp",
       "\\box\\mplibscratchbox\\endgroup",
     }, "global")
+    whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
   end
-  local whd = pdfmode and format("%.3f %.3f 0",    wd/factor, (ht+dp)/factor)
-                      or  format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
-  info("w/h/d of %s: %s", name, whd :gsub("%.%d+", rmzeros))
+  info("w/h/d of group '%s': %s", name, whd :gsub("%.%d+", rmzeros))
 end
 
 local function stop_special_effects(fade,opaq,over)

@@ -1,5 +1,13 @@
                        History of the luamplib package
 
+   * enlarge the default bounding box of fading area or transparency group
+   considering the thickness of the pen
+
+   * provide 'withgroupbbox' macro for transparency group to enable users to
+   control the bounding box
+
+   * write down the width/height/depth values of mplibgroup to the log file
+
 2024/07/31 2.34.4
    * 'withpattern' operator accepts a <textual picture> as well as a <path>
    for its operand. Thus users can give pattern effect to the result of btex
