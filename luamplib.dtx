@@ -1936,7 +1936,7 @@ local function getrulewhatsit (line, wd, ht, dp)
     fmt = "pdf:content "..fmt
     pl = node.new("whatsit","special")
   end
-  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals, rmzeros)
+  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals,rmzeros)
   local ss = node.new"glue"
   node.setglue(ss, 0, 65536, 65536, 2, 2)
   pl.next = ss
@@ -2885,7 +2885,7 @@ end
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
 local function pdf_literalcode (...)
-  put2output{ -2, format(...) :gsub(decimals, rmzeros) }
+  put2output{ -2, format(...) :gsub(decimals,rmzeros) }
 end
 local start_pdf_code = pdfmode
   and function() pdf_literalcode"q" end
@@ -2972,7 +2972,9 @@ local function update_pdfobjs (os, stream)
     return on,false
   end
   if pdfmode then
+    os = os:gsub(decimals,rmzeros)
     if stream then
+      stream = stream:gsub(decimals,rmzeros)
       on = pdf.immediateobj("stream",stream,os)
     else
       on = pdf.immediateobj(os)
@@ -3088,7 +3090,7 @@ local function do_preobj_TR(object,prescript)
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)] or mode
-    opaq = format("%.3f", opaq) :gsub(decimals, rmzeros)
+    opaq = format("%.3f", opaq)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
       on, new = update_pdfobjs(os)
@@ -3110,7 +3112,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   for _,v in ipairs{ca,cb} do
     for i,vv in ipairs(v) do
       for ii,vvv in ipairs(vv) do
-        v[i][ii] = tonumber(vvv) and format("%.3f",vvv) :gsub(decimals, rmzeros) or vvv
+        v[i][ii] = tonumber(vvv) and format("%.3f",vvv) or vvv
       end
     end
   end
@@ -3119,7 +3121,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     local list,bounds,encode = { },{ },{ }
     for i=1,steps do
       if i < steps then
-        bounds[i] = format("%.3f",fractions[i] or 1) :gsub(decimals, rmzeros)
+        bounds[i] = format("%.3f", fractions[i] or 1)
       end
       encode[2*i-1] = 0
       encode[2*i]   = 1
@@ -3141,7 +3143,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("<</ShadingType %i", shtype),
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
-    format("/Coords[%s]",       coordinates :gsub(decimals, rmzeros)),
+    format("/Coords[%s]",       coordinates),
     "/Extend[true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
@@ -3362,9 +3364,9 @@ local function gather_resources (optres)
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
-  local wd = format("%.3f",box.width/factor) :gsub(decimals, rmzeros)
-  local hd = format("%.3f",(box.height+box.depth)/factor) :gsub(decimals, rmzeros)
-  info("w/h/d of pattern '%s': %s %s 0", name, wd, hd)
+  local wd = format("%.3f",box.width/factor)
+  local hd = format("%.3f",(box.height+box.depth)/factor)
+  info("w/h/d of pattern '%s': %s 0", name, format("%s %s",wd, hd):gsub(decimals,rmzeros))
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
   if opts.colored == nil then
@@ -3379,9 +3381,9 @@ function luamplib.registerpattern ( boxid, name, opts )
     local data = format("mplibtransformmatrix(%s);",opts.matrix)
     process(data,"@mplibtransformmatrix")
     local t = luamplib.transformmatrix
-    opts.matrix = format("%f %f %f %f", t[1], t[2], t[3], t[4]) :gsub(decimals, rmzeros)
-    opts.xshift = opts.xshift or format("%f",t[5]) :gsub(decimals, rmzeros)
-    opts.yshift = opts.yshift or format("%f",t[6]) :gsub(decimals, rmzeros)
+    opts.matrix = format("%f %f %f %f", t[1], t[2], t[3], t[4])
+    opts.xshift = opts.xshift or format("%f",t[5])
+    opts.yshift = opts.yshift or format("%f",t[6])
   end
   local attr = {
     "/Type/Pattern",
@@ -3399,7 +3401,8 @@ function luamplib.registerpattern ( boxid, name, opts )
     if opts.bbox then
       attr[#attr+1] = format("/BBox[%s]", opts.bbox)
     end
-    local index = tex.saveboxresource(boxid, tableconcat(attr), optres, true, opts.bbox and 4 or 1)
+    attr = tableconcat(attr) :gsub(decimals,rmzeros)
+    local index = tex.saveboxresource(boxid, attr, optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
     local cnt = #patterns + 1
@@ -3531,7 +3534,7 @@ local function do_preobj_FADE (object, prescript)
   on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
   os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub(decimals, rmzeros)
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
@@ -3539,9 +3542,9 @@ local function do_preobj_FADE (object, prescript)
   on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
   local attr = tableconcat{
     "/Subtype/Form",
-    format("/BBox[%s]", bbox),
-    format("/Matrix[1 0 0 1 %s]", format("%f %f", -dx,-dy) :gsub(decimals, rmzeros)),
-    format("/Resources %s", resources),
+    "/BBox[", bbox, "]",
+    "/Matrix[1 0 0 1 ", format("%f %f", -dx,-dy), "]",
+    "/Resources ", resources,
     "/Group ", format(pdfetcs.resfmt, on),
   }
   on = update_pdfobjs(attr, streamtext)
@@ -3582,7 +3585,7 @@ local function do_preobj_GRP (object, prescript)
     })
     local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
     local res = gather_resources()
-    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals, rmzeros)
+    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
@@ -3627,11 +3630,11 @@ function luamplib.registergroup (boxid, name, opts)
   end
   local grtype = 3
   if opts.bbox then
-    attr[#attr+1] = format("/BBox[%s]", opts.bbox :gsub(decimals, rmzeros))
+    attr[#attr+1] = format("/BBox[%s]", opts.bbox)
     grtype = 2
   end
   if opts.matrix then
-    attr[#attr+1] = format("/Matrix[%s]", opts.matrix :gsub(decimals, rmzeros))
+    attr[#attr+1] = format("/Matrix[%s]", opts.matrix)
     grtype = opts.bbox and 4 or 1
   end
   if opts.asgroup then
@@ -3643,7 +3646,8 @@ function luamplib.registergroup (boxid, name, opts)
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   local whd
   if pdfmode then
-    local index = tex.saveboxresource(boxid, tableconcat(attr), res, true, grtype)
+    attr = tableconcat(attr) :gsub(decimals,rmzeros)
+    local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor)
   else
@@ -3669,7 +3673,7 @@ function luamplib.registergroup (boxid, name, opts)
     }, "global")
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
   end
-  info("w/h/d of group '%s': %s", name, whd :gsub(decimals, rmzeros))
+  info("w/h/d of group '%s': %s", name, whd:gsub(decimals,rmzeros))
 end
 
 local function stop_special_effects(fade,opaq,over)
