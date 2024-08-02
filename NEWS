@@ -1,5 +1,6 @@
                        History of the luamplib package
 
+2024/08/03 2.34.5
    * provide 'withgroupbbox' macro for transparency group to enable users to
    control the bounding box
 

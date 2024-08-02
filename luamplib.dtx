@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/07/31 v2.34.4 Interface for using the mplib library]%
+  [2024/08/03 v2.34.5 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/07/31 v2.34.4}
+% \date{2024/08/03 v2.34.5}
 %
 % \maketitle
 %
@@ -792,8 +792,9 @@ See source file '\inFileName' for licencing and contact information.
 %   \item [|withfadebbox (|\emph{pair, pair}|)|]
 %     sets the bounding box of the fading area, default value being |(llcorner p, urcorner p)|.
 %     Though this option is not needed in most cases, there could be cases when users want to
-%     explicitly control the bounding box,
-%     especially when you draw with a thick pen a path that touches the boundary.
+%     explicitly control the bounding box.
+%     Particularly, see the description \hyperlink{withgroupbbox}{below}
+%     on the analogous |withgroupbbox| macro.
 %   \end{description}
 %   An example:
 %\begin{verbatim}
@@ -845,9 +846,14 @@ See source file '\inFileName' for licencing and contact information.
 %   the position of the group is the same as the original transparency group.
 %
 % \item[|withgroupbbox (|\emph{pair}|,|\emph{pair}|)|]
+%   \hypertarget{withgroupbbox}{}\relax
 %   sets the bounding box of the transparency group,
 %   default value being |(llcorner p, urcorner p)|.
-%   This option might be needed when you draw with a thick pen a path that touches the boundary.
+%   This option might be needed especially when you draw with a thick pen
+%   a path that touches the boundary.
+%   In this case you would probably want to append to the sentense
+%   `|withgroupbbox| |(bot| |lft| |llcorner| |p,| |top| |rt| |urcorner| |p)|',
+%   supposing that the pen was selected by the |pickup| command.
 %
 % \end{description}
 % An example showing the difference between the \TeX\ and \metapost commands:
@@ -1018,8 +1024,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.4",
-  date          = "2024/07/31",
+  version       = "2.34.5",
+  date          = "2024/08/03",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1891,6 +1897,7 @@ end
 %
 % Remove trailing zeros for smaller PDF
 %    \begin{macrocode}
+local decimals = "%.%d+"
 local function rmzeros(str) return str:gsub("%.?0+$","") end
 
 %    \end{macrocode}
@@ -1929,7 +1936,7 @@ local function getrulewhatsit (line, wd, ht, dp)
     fmt = "pdf:content "..fmt
     pl = node.new("whatsit","special")
   end
-  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub("%.%d+", rmzeros)
+  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals, rmzeros)
   local ss = node.new"glue"
   node.setglue(ss, 0, 65536, 65536, 2, 2)
   pl.next = ss
@@ -2017,6 +2024,9 @@ end
 local function graphictextcolor (col, filldraw)
   if col:find"^[%d%.:]+$" then
     col = col:explode":"
+    for i=1,#col do
+      col[i] = format("%.3f", col[i])
+    end
     if pdfmode then
       local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
       col[#col+1] = filldraw == "fill" and op or op:upper()
@@ -2671,10 +2681,10 @@ primarydef p withfademethod s =
   fi
     withprescript "mplibfadetype=" & s
     withprescript "mplibfadebbox=" &
-      decimal xpart llcorner p & ":" &
-      decimal ypart llcorner p & ":" &
-      decimal xpart urcorner p & ":" &
-      decimal ypart urcorner p
+      decimal (xpart llcorner p -1/4) & ":" &
+      decimal (ypart llcorner p -1/4) & ":" &
+      decimal (xpart urcorner p +1/4) & ":" &
+      decimal (ypart urcorner p +1/4)
 enddef;
 def withfadeopacity (expr a,b) =
   withprescript "mplibfadeopacity=" &
@@ -2705,10 +2715,10 @@ primarydef p asgroup s =
   image(
     draw center p
       withprescript "mplibgroupbbox=" &
-        decimal xpart llcorner p & ":" &
-        decimal ypart llcorner p & ":" &
-        decimal xpart urcorner p & ":" &
-        decimal ypart urcorner p
+        decimal (xpart llcorner p -1/4) & ":" &
+        decimal (ypart llcorner p -1/4) & ":" &
+        decimal (xpart urcorner p +1/4) & ":" &
+        decimal (ypart urcorner p +1/4)
       withprescript "gr_state=start"
       withprescript "gr_type=" & s;
     draw p;
@@ -2842,21 +2852,12 @@ end
 %
 %    For parsing |prescript| materials.
 %    \begin{macrocode}
-local further_split_keys = {
-  mplibtexboxid = true,
-  sh_color_a    = true,
-  sh_color_b    = true,
-}
 local function script2table(s)
   local t = {}
   for _,i in ipairs(s:explode("\13+")) do
     local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
     if k and v and k ~= "" and not t[k] then
-      if further_split_keys[k] or further_split_keys[k:sub(1,10)] then
-        t[k] = v:explode(":")
-      else
-        t[k] = v
-      end
+      t[k] = v
     end
   end
   return t
@@ -2884,7 +2885,7 @@ end
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
 local function pdf_literalcode (...)
-  put2output{ -2, format(...) :gsub("%.%d+", rmzeros) }
+  put2output{ -2, format(...) :gsub(decimals, rmzeros) }
 end
 local start_pdf_code = pdfmode
   and function() pdf_literalcode"q" end
@@ -2899,7 +2900,7 @@ local stop_pdf_code = pdfmode
 %    |textext(...)| or |TEX(...)|, all being the same internally.
 %    \begin{macrocode}
 local function put_tex_boxes (object,prescript)
-  local box = prescript.mplibtexboxid
+  local box = prescript.mplibtexboxid:explode":"
   local n,tw,th = box[1],tonumber(box[2]),tonumber(box[3])
   if n and tw and th then
     local op = object.path
@@ -3087,9 +3088,9 @@ local function do_preobj_TR(object,prescript)
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)] or mode
+    opaq = format("%.3f", opaq) :gsub(decimals, rmzeros)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
-      mode, opaq = v[1], v[2]
-      os = format("<</BM/%s/ca %.3f/CA %.3f/AIS false>>",mode,opaq,opaq) :gsub("%.%d+", rmzeros)
+      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
       on, new = update_pdfobjs(os)
       key = add_extgs_resources(on,new)
       if i == 1 then
@@ -3106,12 +3107,19 @@ end
 %    Shading with \emph{metafun} format.
 %    \begin{macrocode}
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
+  for _,v in ipairs{ca,cb} do
+    for i,vv in ipairs(v) do
+      for ii,vvv in ipairs(vv) do
+        v[i][ii] = tonumber(vvv) and format("%.3f",vvv) :gsub(decimals, rmzeros) or vvv
+      end
+    end
+  end
   local fun2fmt,os = "<</FunctionType 2/Domain[%s]/C0[%s]/C1[%s]/N 1>>"
   if steps > 1 then
     local list,bounds,encode = { },{ },{ }
     for i=1,steps do
       if i < steps then
-        bounds[i] = fractions[i] or 1
+        bounds[i] = format("%.3f",fractions[i] or 1) :gsub(decimals, rmzeros)
       end
       encode[2*i-1] = 0
       encode[2*i]   = 1
@@ -3133,7 +3141,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("<</ShadingType %i", shtype),
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
-    format("/Coords[%s]",       coordinates :gsub("%.%d+", rmzeros)),
+    format("/Coords[%s]",       coordinates :gsub(decimals, rmzeros)),
     "/Extend[true true]/AntiAlias true>>",
   }
   local on, new = update_pdfobjs(os)
@@ -3208,15 +3216,15 @@ local function do_preobj_SH(object,prescript)
       end
     end
     local ca, cb, colorspace, steps, fractions
-    ca = { prescript.sh_color_a_1 or prescript.sh_color_a or {0} }
-    cb = { prescript.sh_color_b_1 or prescript.sh_color_b or {1} }
+    ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "0"):explode":" }
+    cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "1"):explode":" }
     steps = tonumber(prescript.sh_step) or 1
     if steps > 1 then
       fractions = { prescript.sh_fraction_1 or 0 }
       for i=2,steps do
         fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
-        ca[i] = prescript[format("sh_color_a_%i",i)] or {0}
-        cb[i] = prescript[format("sh_color_b_%i",i)] or {1}
+        ca[i] = (prescript[format("sh_color_a_%i",i)] or "0"):explode":"
+        cb[i] = (prescript[format("sh_color_b_%i",i)] or "1"):explode":"
       end
     end
     if prescript.mplib_spotcolor then
@@ -3354,8 +3362,8 @@ local function gather_resources (optres)
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
-  local wd = format("%.3f",box.width/factor) :gsub("%.%d+", rmzeros)
-  local hd = format("%.3f",(box.height+box.depth)/factor) :gsub("%.%d+", rmzeros)
+  local wd = format("%.3f",box.width/factor) :gsub(decimals, rmzeros)
+  local hd = format("%.3f",(box.height+box.depth)/factor) :gsub(decimals, rmzeros)
   info("w/h/d of pattern '%s': %s %s 0", name, wd, hd)
   if opts.xstep == 0 then opts.xstep = nil end
   if opts.ystep == 0 then opts.ystep = nil end
@@ -3371,9 +3379,9 @@ function luamplib.registerpattern ( boxid, name, opts )
     local data = format("mplibtransformmatrix(%s);",opts.matrix)
     process(data,"@mplibtransformmatrix")
     local t = luamplib.transformmatrix
-    opts.matrix = format("%s %s %s %s", t[1], t[2], t[3], t[4])
-    opts.xshift = opts.xshift or t[5]
-    opts.yshift = opts.yshift or t[6]
+    opts.matrix = format("%f %f %f %f", t[1], t[2], t[3], t[4]) :gsub(decimals, rmzeros)
+    opts.xshift = opts.xshift or format("%f",t[5]) :gsub(decimals, rmzeros)
+    opts.yshift = opts.yshift or format("%f",t[6]) :gsub(decimals, rmzeros)
   end
   local attr = {
     "/Type/Pattern",
@@ -3523,7 +3531,7 @@ local function do_preobj_FADE (object, prescript)
   on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
   os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
-  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub("%.%d+", rmzeros)
+  bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy) :gsub(decimals, rmzeros)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
@@ -3532,7 +3540,7 @@ local function do_preobj_FADE (object, prescript)
   local attr = tableconcat{
     "/Subtype/Form",
     format("/BBox[%s]", bbox),
-    format("/Matrix[1 0 0 1 %s]", format("%f %f", -dx,-dy) :gsub("%.%d+", rmzeros)),
+    format("/Matrix[1 0 0 1 %s]", format("%f %f", -dx,-dy) :gsub(decimals, rmzeros)),
     format("/Resources %s", resources),
     "/Group ", format(pdfetcs.resfmt, on),
   }
@@ -3574,7 +3582,7 @@ local function do_preobj_GRP (object, prescript)
     })
     local grattr = format("/Group<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout)
     local res = gather_resources()
-    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub("%.%d+", rmzeros)
+    local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals, rmzeros)
     if pdfmode then
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
@@ -3615,15 +3623,15 @@ function luamplib.registergroup (boxid, name, opts)
   if opts.matrix and opts.matrix:find"%a" then
     local data = format("mplibtransformmatrix(%s);",opts.matrix)
     process(data,"@mplibtransformmatrix")
-    opts.matrix = tableconcat(luamplib.transformmatrix, ' ')
+    opts.matrix = format("%f %f %f %f %f %f",tableunpack(luamplib.transformmatrix))
   end
   local grtype = 3
   if opts.bbox then
-    attr[#attr+1] = format("/BBox[%s]", opts.bbox :gsub("%.%d+", rmzeros))
+    attr[#attr+1] = format("/BBox[%s]", opts.bbox :gsub(decimals, rmzeros))
     grtype = 2
   end
   if opts.matrix then
-    attr[#attr+1] = format("/Matrix[%s]", opts.matrix :gsub("%.%d+", rmzeros))
+    attr[#attr+1] = format("/Matrix[%s]", opts.matrix :gsub(decimals, rmzeros))
     grtype = opts.bbox and 4 or 1
   end
   if opts.asgroup then
@@ -3661,7 +3669,7 @@ function luamplib.registergroup (boxid, name, opts)
     }, "global")
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
   end
-  info("w/h/d of group '%s': %s", name, whd :gsub("%.%d+", rmzeros))
+  info("w/h/d of group '%s': %s", name, whd :gsub(decimals, rmzeros))
 end
 
 local function stop_special_effects(fade,opaq,over)
@@ -4088,7 +4096,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/07/31 v2.34.4 mplib package for LuaTeX]
+    [2024/08/03 v2.34.5 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
