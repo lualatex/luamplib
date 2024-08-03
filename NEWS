@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/08/03 2.34.5
+   * provide 'withgroupbbox' macro for transparency group to enable users to
+   control the bounding box
+
+   * write down the width/height/depth values of mplibgroup to the log file
+
 2024/07/31 2.34.4
    * 'withpattern' operator accepts a <textual picture> as well as a <path>
    for its operand. Thus users can give pattern effect to the result of btex
