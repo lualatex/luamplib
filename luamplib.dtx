@@ -794,7 +794,7 @@ See source file '\inFileName' for licencing and contact information.
 %     Though this option is not needed in most cases, there could be cases when users want to
 %     explicitly control the bounding box.
 %     Particularly, see the description \hyperlink{withgroupbbox}{below}
-%     on the analogous |withgroupbbox| macro.
+%     on the analogous macro |withgroupbbox|.
 %   \end{description}
 %   An example:
 %\begin{verbatim}
@@ -896,8 +896,9 @@ See source file '\inFileName' for licencing and contact information.
 %       asgroup="",
 %     ]
 %     \mpfig                            % or any other TeX code
-%       draw (left--right) scaled 30 rotated 45 withpen pencircle scaled 10;
-%       draw (left--right) scaled 30 rotated -45 withpen pencircle scaled 10;
+%       pickup pencircle scaled 10;
+%       draw (left--right) scaled 30 rotated 45 ;
+%       draw (left--right) scaled 30 rotated -45 ;
 %     \endmpfig
 %   \endmplibgroup                      % or \end{mplibgroup}
 %
@@ -2972,9 +2973,7 @@ local function update_pdfobjs (os, stream)
     return on,false
   end
   if pdfmode then
-    os = os:gsub(decimals,rmzeros)
     if stream then
-      stream = stream:gsub(decimals,rmzeros)
       on = pdf.immediateobj("stream",stream,os)
     else
       on = pdf.immediateobj(os)
@@ -3090,7 +3089,7 @@ local function do_preobj_TR(object,prescript)
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
     mode = transparancy_modes[tonumber(mode)] or mode
-    opaq = format("%.3f", opaq)
+    opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
       on, new = update_pdfobjs(os)
@@ -3126,6 +3125,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       encode[2*i-1] = 0
       encode[2*i]   = 1
       os = fun2fmt:format(domain,tableconcat(ca[i],' '),tableconcat(cb[i],' '))
+        :gsub(decimals,rmzeros)
       list[i] = format(pdfetcs.resfmt, update_pdfobjs(os))
     end
     os = tableconcat {
@@ -3134,9 +3134,10 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
       format("/Encode[%s]",    tableconcat(encode,' ')),
       format("/Functions[%s]", tableconcat(list,  ' ')),
       format("/Domain[%s]>>",  domain),
-    }
+    } :gsub(decimals,rmzeros)
   else
     os = fun2fmt:format(domain,tableconcat(ca[1],' '),tableconcat(cb[1],' '))
+      :gsub(decimals,rmzeros)
   end
   local objref = format(pdfetcs.resfmt, update_pdfobjs(os))
   os = tableconcat {
@@ -3145,7 +3146,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("/Function %s",      objref),
     format("/Coords[%s]",       coordinates),
     "/Extend[true true]/AntiAlias true>>",
-  }
+  } :gsub(decimals,rmzeros)
   local on, new = update_pdfobjs(os)
   if new then
     local key, val = format("MPlibSh%s", on), format(pdfetcs.resfmt, on)
@@ -3536,6 +3537,7 @@ local function do_preobj_FADE (object, prescript)
   on = update_pdfobjs(os)
   bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
   local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
+    :gsub(decimals,rmzeros)
   os = format("<</Pattern<</MPlibFd%s %s>>>>", on, format(pdfetcs.resfmt, on))
   on = update_pdfobjs(os)
   local resources = format(pdfetcs.resfmt, on)
@@ -3546,7 +3548,7 @@ local function do_preobj_FADE (object, prescript)
     "/Matrix[1 0 0 1 ", format("%f %f", -dx,-dy), "]",
     "/Resources ", resources,
     "/Group ", format(pdfetcs.resfmt, on),
-  }
+  } :gsub(decimals,rmzeros)
   on = update_pdfobjs(attr, streamtext)
   os = "<</SMask<</S/Luminosity/G " .. format(pdfetcs.resfmt, on) .. ">>>>"
   on, new = update_pdfobjs(os)
@@ -3649,7 +3651,7 @@ function luamplib.registergroup (boxid, name, opts)
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
-    whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor)
+    whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3671,9 +3673,9 @@ function luamplib.registergroup (boxid, name, opts)
       "\\dp\\mplibscratchbox ", dp, "sp",
       "\\box\\mplibscratchbox\\endgroup",
     }, "global")
-    whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor)
+    whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
   end
-  info("w/h/d of group '%s': %s", name, whd:gsub(decimals,rmzeros))
+  info("w/h/d of group '%s': %s", name, whd)
 end
 
 local function stop_special_effects(fade,opaq,over)
