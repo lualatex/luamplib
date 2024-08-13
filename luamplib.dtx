@@ -114,7 +114,7 @@ See source file '\inFileName' for licencing and contact information.
 ]{Linux Libertine O}
 \setmonofont[Scale=MatchLowercase]{InconsolataN}
 %setsansfont[Ligatures=TeX]{Linux Biolinum O}
-\setsansfont[Ligatures=TeX,Scale=MatchLowercase]{Iwona Medium}
+\setsansfont[UprightFont=*Medium,BoldFont=*Heavy,Ligatures=TeX,Scale=MatchLowercase]{Iwona}
 %setmathfont{XITS Math}
 
 \usepackage{hologo}
@@ -527,6 +527,31 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
+% \paragraph{\pkg{tagpdf} support}
+% When \pkg{tagpdf} is active, |mplibcode| environment accepts additional options for tagged PDF.
+% Available optional keys are |alt|, |artifact|, |actualtext|, |correct-BBox|, and |tag|.
+% The same is for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
+%\begin{verbatim}
+%     \begin{mplibcode}[InstanceName, alt=figure drawing a circle]
+%     ...
+%     \end{mplibcode}
+%
+%     \mpfig[alt=figure drawing a square box]
+%     ...
+%     \endmpfig
+%
+%     \usemplibgroup[alt=figure drawing a triangle]{mytriangle}
+%
+%     \mppattern{mypattern}     % see below
+%     \mpfig[tag=false]         % do not tag this figure
+%     ...
+%     \endmpfig
+%     \endmppattern
+%\end{verbatim}
+% As for the instance name of an |mplibcode| environment,
+% |instance=<name>| (|instancename| is a synonym of the |instance| key) is also allowed
+% in addition to the raw instance name as shown above.
+%
 % \subsection{\textsc{MetaPost}}
 %
 % \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
@@ -630,7 +655,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %   After the process, |mpliboutlinepic[]|
 %   and |mpliboutlinenum| will be preserved as global variables;
-%   |mpliboutlinepic[1]| \ldots{} |mpliboutlinepic[mpliboutlinenum]|
+%   |mpliboutlinepic[1]| |...| |mpliboutlinepic[mpliboutlinenum]|
 %   will be an array of images each of which containing a glyph or a rule.
 %
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
@@ -693,8 +718,8 @@ See source file '\inFileName' for licencing and contact information.
 %     |ystep|    &\emph{number} & vertical spacing between pattern cells\\
 %     |xshift|   &\emph{number} & horizontal shifting of pattern cells\\
 %     |yshift|   &\emph{number} & vertical shifting of pattern cells\\
-%     |matrix|   &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
 %     |bbox|     &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
+%     |matrix|   &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
 %     |resources|&\emph{string} & PDF resources if needed\\
 %     |colored| or |coloured| &\emph{boolean}& |false| for uncolored pattern. default: |true|\\\hline
 %                &                & \small *\,in string type, numbers are separated by spaces\\
@@ -850,8 +875,8 @@ See source file '\inFileName' for licencing and contact information.
 %   sets the bounding box of the transparency group,
 %   default value being |(llcorner p, urcorner p)|.
 %   This option might be needed especially when you draw with a thick pen
-%   a path that touches the boundary.
-%   In this case you would probably want to append to the sentense
+%   a path that touches the boundary;
+%   you would probably want to append to the sentense
 %   `|withgroupbbox| |(bot| |lft| |llcorner| |p,| |top| |rt| |urcorner| |p)|',
 %   supposing that the pen was selected by the |pickup| command.
 %
@@ -860,9 +885,10 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %   \mpfig
 %     draw image(
-%       fill fullcircle scaled 100 shifted 25right withcolor .5[blue,white];
-%       fill fullcircle scaled 100 withcolor .5[red,white] ;
-%     ) asgroup "" withgroupname "mygroup";
+%       fill fullcircle scaled 100 shifted 25right withcolor blue;
+%       fill fullcircle scaled 100 withcolor red ;
+%     ) asgroup ""
+%       withgroupname "mygroup";
 %     draw (left--right) scaled 10;
 %     draw (up--down) scaled 10;
 %   \endmpfig
@@ -873,7 +899,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \usemplibgroup{mygroup}
 %
 %   \mpfig
-%     usemplibgroup "mygroup" rotated 15;
+%     usemplibgroup "mygroup" rotated 15
+%       withprescript "tr_transparency=0.5";
 %     draw (left--right) scaled 10;
 %     draw (up--down) scaled 10;
 %   \endmpfig
@@ -905,7 +932,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \usemplibgroup{mygrx}
 %
 %   \mpfig
-%     usemplibgroup "mygrx" scaled 1.5 withprescript "tr_transparency=0.5";
+%     usemplibgroup "mygrx" scaled 1.5
+%       withprescript "tr_transparency=0.5" ;
 %   \endmpfig
 %\end{verbatim}
 %
@@ -1519,7 +1547,7 @@ local function process_tex_text (str)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
+    run_tex_code(format("%s\\setbox%i\\hbox{\\csname tag_stop:\\endcsname %s}", global, tex_box_id, str))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -4602,6 +4630,138 @@ end
   \closein0
   \input luamplib.cfg
 \fi
+%    \end{macrocode}
+%
+%    Code for \pkg{tagpdf}
+%    \begin{macrocode}
+\ifcsname tag_if_active:TF\endcsname\else\endinput\fi
+\csname tag_if_active:F\endcsname{\endinput}
+\ExplSyntaxOn
+\keys_define:nn{tag/luamplib}
+  {
+    ,alt .code:n =
+      {\tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{#1}}}
+    ,artifact .code:n =
+      {
+        \bool_set_true:N \l__tag_graphic_artifact_bool
+        \bool_set_false:N \l__tag_graphic_BBox_bool
+      }
+    ,actualtext .code:n =
+      {
+        \tl_set:Ne\l__tag_graphic_actual_tl{\text_purify:n{#1}}
+        \bool_set_false:N \l__tag_graphic_BBox_bool
+      }
+    ,correct-BBox .code:n =
+      {
+        \bool_set_true:N \l__tag_graphic_bboxcorr_bool
+        \seq_set_split:Nnn\l__tag_graphic_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
+      }
+    ,tag .code:n =
+      {
+        \str_case:nnF {#1}
+          {
+            {artifact}
+            {
+              \bool_set_true:N \l__tag_graphic_artifact_bool
+              \bool_set_false:N \l__tag_graphic_BBox_bool
+            }
+            {false}{\tag_stop:}
+          }
+          {\tl_set:Nn\l__tag_graphic_struct_tl{#1}}
+      }
+    ,instance .code:n =
+      { \tl_gset:Nn \currentmpinstancename {#1} }
+    ,instancename .meta:n = { instance = {#1} }
+    ,unknown .code:n =
+      { \tl_gset:Nn \currentmpinstancename {\l_keys_key_str} }
+  }
+\RenewDocumentCommand\mplibcode{O{}}
+  {
+    \msg_set:nnn {tag}{alt-text-missing}
+    {
+      Alternative~text~for~mplibcode~is~missing.\\
+      Using~the~default~value~'##1'~instead.
+    }
+    \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
+    \keys_set:nn{tag/luamplib}{#1}
+    \tl_if_empty:NTF \currentmpinstancename
+      { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure} }
+      { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
+    \mplibtmptoks{}\ltxdomplibcode
+  }
+\RenewDocumentCommand\mpfig{s O{}}
+  {
+    \begingroup
+    \IfBooleanTF{#1}
+    { \mplibprempfig }
+    {
+      \msg_set:nnn {tag}{alt-text-missing}
+      {
+        Alternative~text~for~mpfig~is~missing.\\
+        Using~the~default~value~'##1'~instead.
+      }
+      \keys_set:nn{tag/luamplib}{#2}
+      \tl_if_empty:NTF \mpfiginstancename
+        { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure} }
+        { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
+      \mplibmainmpfig
+    }
+  }
+\RenewDocumentCommand\usemplibgroup{O{} m}
+  {
+    \begingroup
+    \msg_set:nnn {tag}{alt-text-missing}
+    {
+      Alternative~text~for~usemplibgroup~is~missing.\\
+      Using~the~default~value~'##1'~instead.
+    }
+    \keys_set:nn{tag/luamplib}{#1}
+    \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~group~figure}
+    \csname luamplib.group.#2\endcsname
+    \endgroup
+  }
+\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{%
+  \chardef\mplibtmpnum=#1\relax
+  \tag_mc_reset_box:N \mplibtmpnum
+  \raise\dp#1\copy#1\hss}}}
+\def\mplibstarttoPDF#1#2#3#4{%
+  \prependtomplibbox
+  \hbox dir TLT\bgroup
+  \Gin@tag@struct@begin % begin tag
+  \xdef\MPllx{#1}\xdef\MPlly{#2}%
+  \xdef\MPurx{#3}\xdef\MPury{#4}%
+  \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
+  \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
+  \parskip0pt%
+  \leftskip0pt%
+  \parindent0pt%
+  \everypar{}%
+  \setbox\mplibscratchbox\vbox\bgroup
+  \tag_stop: % stop tag inside figure
+  \noindent
+}
+\def\mplibstoptoPDF{%
+  \par
+  \egroup %
+  \setbox\mplibscratchbox\hbox %
+    {\hskip-\MPllx bp%
+     \raise-\MPlly bp%
+     \box\mplibscratchbox}%
+  \setbox\mplibscratchbox\vbox to \MPheight
+    {\vfill
+     \hsize\MPwidth
+     \wd\mplibscratchbox0pt%
+     \ht\mplibscratchbox0pt%
+     \dp\mplibscratchbox0pt%
+     \box\mplibscratchbox}%
+  \wd\mplibscratchbox\MPwidth
+  \ht\mplibscratchbox\MPheight
+  \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute % BBox
+  \box\mplibscratchbox
+  \Gin@tag@struct@end % end tag
+  \egroup
+}
+\ExplSyntaxOff
 %    \end{macrocode}
 %
 %    That's all folks!
