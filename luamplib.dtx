@@ -3680,7 +3680,16 @@ function luamplib.registergroup (boxid, name, opts)
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
-    token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
+    if is_defined'Gin@tag@struct@begin' then
+      token.set_macro(ccexplat, "luamplib.group."..name,
+      "\\hbox\\bgroup\\Gin@tag@struct@begin\\setbox\\mplibscratchbox\\hbox\\bgroup\z
+      \\useboxresource " .. index .. "\\egroup\z
+      \\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute\z
+      \\unhbox\\mplibscratchbox\\Gin@tag@struct@end\\egroup",
+      "global")
+    else
+      token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
+    end
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
@@ -4636,8 +4645,7 @@ end
 %
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
-\ifcsname tag_if_active:TF\endcsname\else\endinput\fi
-\csname tag_if_active:F\endcsname{\endinput}
+\ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
 \ExplSyntaxOn
 \keys_define:nn{tag/luamplib}
   {
@@ -4720,7 +4728,7 @@ end
       Using~the~default~value~'##1'~instead.
     }
     \keys_set:nn{tag/luamplib}{#1}
-    \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~group~figure}
+    \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~#2}
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
