@@ -527,9 +527,11 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \paragraph{\pkg{tagpdf} support}
-% When \pkg{tagpdf} is active, |mplibcode| environment accepts additional options for tagged PDF.
-% Available optional keys are |alt|, |artifact|, |actualtext|, |correct-BBox|, and |tag|.
+% \paragraph{support \pkg{tagpdf} package}
+% When \pkg{tagpdf} is active, |mplibcode| environment accepts additional options for tagged PDF\@.
+% Like the \LaTeX's |picture| environment,
+% available optional keys are |tag|, |alt|, |artifact|, |actualtext|, |correct-BBox|, and
+% |debug| (|texdoc| |latex-lab-graphic|).
 % The same is for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[InstanceName, alt=figure drawing a circle]
@@ -540,15 +542,15 @@ See source file '\inFileName' for licencing and contact information.
 %     ...
 %     \endmpfig
 %
-%     \usemplibgroup[alt=figure drawing a triangle]{mytriangle}
+%     \usemplibgroup[alt=figure drawing a triangle]{...}
 %
-%     \mppattern{mypattern}     % see below
+%     \mppattern{...}           % see below
 %     \mpfig[tag=false]         % do not tag this figure
 %     ...
 %     \endmpfig
 %     \endmppattern
 %\end{verbatim}
-% As for the instance name of an |mplibcode| environment,
+% As for the instance name of the |mplibcode| environment,
 % |instance=<name>| (|instancename| is a synonym of the |instance| key) is also allowed
 % in addition to the raw instance name as shown above.
 %
@@ -4669,6 +4671,8 @@ end
           }
           {\tl_set:Nn\l__tag_graphic_struct_tl{#1}}
       }
+    ,debug .code:n =
+      { \bool_set_true:N \l__tag_graphic_debug_bool }
     ,instance .code:n =
       { \tl_gset:Nn \currentmpinstancename {#1} }
     ,instancename .meta:n = { instance = {#1} }
