@@ -3682,13 +3682,15 @@ function luamplib.registergroup (boxid, name, opts)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     if is_defined'Gin@tag@struct@begin' then
       token.set_macro(ccexplat, "luamplib.group."..name,
-      "\\hbox\\bgroup\\Gin@tag@struct@begin\\setbox\\mplibscratchbox\\hbox\\bgroup\z
-      \\useboxresource " .. index .. "\\egroup\z
+      "\\prependtomplibbox\\hbox\\bgroup\\Gin@tag@struct@begin\z
+      \\setbox\\mplibscratchbox\\hbox\\bgroup\\useboxresource " .. index .. "\\egroup\z
       \\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute\z
       \\unhbox\\mplibscratchbox\\Gin@tag@struct@end\\egroup",
       "global")
     else
-      token.set_macro("luamplib.group."..name, "\\useboxresource "..index, "global")
+      token.set_macro("luamplib.group." .. name,
+      "\\prependtomplibbox\\hbox{\\useboxresource " .. index .. "}",
+      "global")
     end
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
@@ -3705,13 +3707,26 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
       "\\special{pdf:econtent}}",
     }
-    token.set_macro("luamplib.group."..name, tableconcat{
-      "\\begingroup\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
-      "\\wd\\mplibscratchbox ", wd, "sp",
-      "\\ht\\mplibscratchbox ", ht, "sp",
-      "\\dp\\mplibscratchbox ", dp, "sp",
-      "\\box\\mplibscratchbox\\endgroup",
-    }, "global")
+    if is_defined'Gin@tag@struct@begin' then
+      token.set_macro(ccexplat, "luamplib.group."..name,
+      "\\prependtomplibbox\\hbox\\bgroup\\Gin@tag@struct@begin\z
+      \\setbox\\mplibscratchbox\\hbox\\bgroup\\special{pdf:uxobj " .. objname .. "}\\egroup\z
+      \\wd\\mplibscratchbox " .. wd .. "sp\z
+      \\ht\\mplibscratchbox " .. ht .. "sp\z
+      \\dp\\mplibscratchbox " .. dp .. "sp\z
+      \\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute\z
+      \\box\\mplibscratchbox\\Gin@tag@struct@end\\egroup",
+      "global")
+    else
+      token.set_macro("luamplib.group."..name,
+      "\\prependtomplibbox\\hbox\\bgroup\z
+      \\setbox\\mplibscratchbox\\hbox\\bgroup\\special{pdf:uxobj " .. objname .. "}\\egroup\z
+      \\wd\\mplibscratchbox " .. wd .. "sp\z
+      \\ht\\mplibscratchbox " .. ht .. "sp\z
+      \\dp\\mplibscratchbox " .. dp .. "sp\z
+      \\box\\mplibscratchbox\\egroup",
+      "global")
+    end
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
   end
   info("w/h/d of group '%s': %s", name, whd)
