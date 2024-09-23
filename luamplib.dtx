@@ -1549,7 +1549,7 @@ local function process_tex_text (str)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("%s\\setbox%i\\hbox{\\csname tag_stop:\\endcsname %s}", global, tex_box_id, str))
+    run_tex_code(format("%s\\setbox%i\\hbox{\\SuspendTagging{luamplib.textext}%s}", global, tex_box_id, str))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -4649,6 +4649,7 @@ end
 %
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
+\ifcsname SuspendTagging\endcsname\else \def\SuspendTagging#1{}\fi
 \ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
 \ExplSyntaxOn
 \keys_define:nn{tag/luamplib}
@@ -4679,7 +4680,7 @@ end
               \bool_set_true:N \l__tag_graphic_artifact_bool
               \bool_set_false:N \l__tag_graphic_BBox_bool
             }
-            {false}{\tag_stop:}
+            {false}{\tag_suspend:n{luamplib.tagkey}}
           }
           {\tl_set:Nn\l__tag_graphic_struct_tl{#1}}
       }
@@ -4753,7 +4754,7 @@ end
   \parindent0pt%
   \everypar{}%
   \setbox\mplibscratchbox\vbox\bgroup
-  \tag_stop: % stop tag inside figure
+  \tag_suspend:n{luamplib.mplibtopdf}% stop tag inside figure
   \noindent
 }
 \def\mplibstoptoPDF{%
