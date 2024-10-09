@@ -527,14 +527,14 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \paragraph{support \pkg{tagpdf} package}
-% When \pkg{tagpdf} is active, |mplibcode| environment accepts additional options for tagged PDF\@.
+% \paragraph{Tagged PDF}
+% When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % Like the \LaTeX's |picture| environment,
 % available optional keys are |tag|, |alt|, |artifact|, |actualtext|, |correct-BBox|, and
 % |debug| (|texdoc| |latex-lab-graphic|).
-% The same is for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
+% The same keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
-%     \begin{mplibcode}[InstanceName, alt=figure drawing a circle]
+%     \begin{mplibcode}[myInstanceName, alt=figure drawing a circle]
 %     ...
 %     \end{mplibcode}
 %
@@ -1549,7 +1549,7 @@ local function process_tex_text (str)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("%s\\setbox%i\\hbox{\\SuspendTagging{luamplib.textext}%s}", global, tex_box_id, str))
+    run_tex_code(format("%s\\setbox%i\\hbox{%s}", global, tex_box_id, str))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -4649,7 +4649,6 @@ end
 %
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
-\ifcsname SuspendTagging\endcsname\else \def\SuspendTagging#1{}\fi
 \ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
 \ExplSyntaxOn
 \keys_define:nn{tag/luamplib}
