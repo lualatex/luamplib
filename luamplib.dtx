@@ -238,16 +238,23 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \textsc{n.b.} As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
-%   At least, however, transparency (actually opacity), transparency group, and shading (gradient colors)
+%   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
 %   (see \hyperlink{mpliboutlinetext}{below \S\,1.2}).
 %
 %   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
-%   Among these, transparency is so simple that you can apply it to an object,
-%   even with the \emph{plain} format,
-%   just by appending |withprescript| |"tr_transparency=<number>"| to the sentence.
+%   Among these, transparency (|texdoc metafun| \S\,8.2) is so simple that you can apply it to an object,
+%   with \emph{plain} format as well,
+%   just by appending |withprescript| |"tr_transparency=|\hskip0pt\relax|<number>"| to the sentence.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
+%
+%   One thing worth mentioning about shading (|texdoc metafun| \S\,8.3) is:
+%   when a color expression is given in string type,
+%   it is regarded by luamplib as
+%   a color expression of \TeX\ side.
+%   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
+%   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
 %   \hypertarget{metafunformat}{}\relax
 %   As for transparency group, the current \emph{metafun} document \S\,8.8 is not correct.
@@ -260,13 +267,6 @@ See source file '\inFileName' for licencing and contact information.
 %   cannot properly render the isolated or knockout effect.
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
 %   See \hyperlink{transparencygroup}{below \S\,1.2}.
-%
-%   One thing worth mentioning about shading is:
-%   when a color expression is given in string type,
-%   it is regarded by luamplib as
-%   a color expression of \TeX\ side.
-%   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
-%   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
 % \paragraph{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
 %   Users can choose |numbersystem| option.
@@ -553,6 +553,10 @@ See source file '\inFileName' for licencing and contact information.
 % As for the instance name of the |mplibcode| environment,
 % |instance=<name>| (|instancename| is a synonym of the |instance| key) is also allowed
 % in addition to the raw instance name as shown above.
+%
+% For tagged PDF, luamplib redefines the internal macros \cs{mplibstarttoPDF},
+% \cs{mplibstoptoPDF} and \cs{mplibputtextbox}. The original macros are preserved as
+% \cs{mplibstarttoPDFuntagged}, \cs{mplibstoptoPDFuntagged} and \cs{mplibputtextboxuntagged}.
 %
 % \subsection{\textsc{MetaPost}}
 %
@@ -4650,6 +4654,9 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
+\let\mplibstarttoPDFuntagged\mplibstarttoPDF
+\let\mplibstoptoPDFuntagged\mplibstoptoPDF
+\let\mplibputtextboxuntagged\mplibputtextbox
 \ExplSyntaxOn
 \keys_define:nn{tag/luamplib}
   {
