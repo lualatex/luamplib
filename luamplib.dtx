@@ -556,7 +556,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % For tagged PDF, luamplib redefines the internal macros \cs{mplibstarttoPDF},
 % \cs{mplibstoptoPDF} and \cs{mplibputtextbox}. The original macros are preserved as
-% \cs{mplibstarttoPDFuntagged}, \cs{mplibstoptoPDFuntagged} and \cs{mplibputtextboxuntagged}.
+% \cs{mplibstarttoPDForiginal}, \cs{mplibstoptoPDForiginal} and \cs{mplibputtextboxoriginal}.
 %
 % \subsection{\textsc{MetaPost}}
 %
@@ -4654,9 +4654,9 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
-\let\mplibstarttoPDFuntagged\mplibstarttoPDF
-\let\mplibstoptoPDFuntagged\mplibstoptoPDF
-\let\mplibputtextboxuntagged\mplibputtextbox
+\let\mplibstarttoPDForiginal\mplibstarttoPDF
+\let\mplibstoptoPDForiginal\mplibstoptoPDF
+\let\mplibputtextboxoriginal\mplibputtextbox
 \ExplSyntaxOn
 \keys_define:nn{tag/luamplib}
   {
