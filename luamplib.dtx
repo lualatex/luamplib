@@ -530,8 +530,19 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{Tagged PDF}
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % Like the \LaTeX's |picture| environment,
-% available optional keys are |tag|, |alt|, |artifact|, |actualtext|, |correct-BBox|, and
-% |debug| (|texdoc| |latex-lab-graphic|).
+% available optional keys are |tag|, |artifact|, |alt|, |actualtext|, |debug| and |correct-BBox|
+% (|texdoc| |latex-lab-graphic|). Additionally, luamplib provides its own |text| key.
+% \begin{itemize}
+% \item |alt=...| starts a |Figure| tag implicitly and sets an alternative text as given.
+% \item |debug| draws bounding box of the figure, which you can correct by |correct-BBox| key
+%   with space-separated four dimen values.
+% \item |actualtext=...| starts a |Span| tag implicitly and sets an actualtext as given.
+% \item |artifact| starts an |artifact| MC (marked content). This is intended for decorative items.
+% \item |text| starts an |artifact| MC implicitly and activates tagging on
+%   |btex| |...| |etex| boxes.  This is intended for text materials.
+% \item With |tag=...| you can set any type of tag available.
+%   When the value is |false|, tagging is deactivated.
+% \end{itemize}
 % The same keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[myInstanceName, alt=figure drawing a circle]
@@ -551,7 +562,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmppattern
 %\end{verbatim}
 % As for the instance name of the |mplibcode| environment,
-% |instance=<name>| (|instancename| is a synonym of the |instance| key) is also allowed
+% |instance=...| (|instancename| is a synonym of the key) is also allowed
 % in addition to the raw instance name as shown above.
 %
 % For tagged PDF, luamplib redefines the internal macros \cs{mplibstarttoPDF},
@@ -4653,24 +4664,83 @@ end
 %
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
-\ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
+\ifcsname SuspendTagging\endcsname\else\endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
 \ExplSyntaxOn
+\bool_new:N\l__tag_luamplib_usetext_bool
+\cs_set_nopar:Npn \mplibputtextbox #1
+  {
+    \vbox to 0pt{\vss\hbox to 0pt{%
+      \bool_if:NTF \l__tag_luamplib_usetext_bool
+      {
+        \raise\dp#1\copy#1\hss
+      }
+      {
+        \setbox\mplibscratchbox\hbox{\unhcopy#1}
+        \tag_mc_reset_box:N \mplibscratchbox
+        \raise\dp\mplibscratchbox\box\mplibscratchbox\hss
+      }
+    }}
+  }
+\cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
+  {
+    \prependtomplibbox
+    \hbox dir TLT\bgroup
+    \csname Gin@tag@struct@begin\endcsname % begin tag
+    \xdef\MPllx{#1}\xdef\MPlly{#2}
+    \xdef\MPurx{#3}\xdef\MPury{#4}
+    \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}
+    \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}
+    \parskip0pt
+    \leftskip0pt
+    \parindent0pt
+    \everypar{}
+    \setbox\mplibscratchbox\vbox\bgroup
+    \SuspendTagging{luamplib.mplibtopdf}% stop tag inside figure
+    \noindent
+  }
+\cs_set_nopar:Npn \mplibstoptoPDF
+  {
+    \par
+    \egroup %
+    \setbox\mplibscratchbox\hbox %
+      {\hskip-\MPllx bp
+       \raise-\MPlly bp
+       \box\mplibscratchbox}%
+    \setbox\mplibscratchbox\vbox to \MPheight
+      {\vfill
+       \hsize\MPwidth
+       \wd\mplibscratchbox0pt
+       \ht\mplibscratchbox0pt
+       \dp\mplibscratchbox0pt
+       \box\mplibscratchbox}%
+    \wd\mplibscratchbox\MPwidth
+    \ht\mplibscratchbox\MPheight
+    \let\@picbox\mplibscratchbox \csname picture@tag@bbox@attribute\endcsname % BBox
+    \box\mplibscratchbox
+    \csname Gin@tag@struct@end\endcsname % end tag
+    \egroup
+  }
 \keys_define:nn{tag/luamplib}
   {
     ,alt .code:n =
-      {\tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{#1}}}
+      {
+        \tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{#1}}
+      }
     ,artifact .code:n =
       {
         \bool_set_true:N \l__tag_graphic_artifact_bool
-        \bool_set_false:N \l__tag_graphic_BBox_bool
       }
     ,actualtext .code:n =
       {
         \tl_set:Ne\l__tag_graphic_actual_tl{\text_purify:n{#1}}
-        \bool_set_false:N \l__tag_graphic_BBox_bool
+      }
+    ,text .code:n = % added
+      {
+        \bool_set_true:N \l__tag_graphic_artifact_bool
+        \bool_set_true:N \l__tag_luamplib_usetext_bool
       }
     ,correct-BBox .code:n =
       {
@@ -4684,9 +4754,16 @@ end
             {artifact}
             {
               \bool_set_true:N \l__tag_graphic_artifact_bool
-              \bool_set_false:N \l__tag_graphic_BBox_bool
             }
-            {false}{\tag_suspend:n{luamplib.tagkey}}
+            {text}
+            {
+              \bool_set_true:N \l__tag_graphic_artifact_bool
+              \bool_set_true:N \l__tag_luamplib_usetext_bool
+            }
+            {false}
+            {
+              \SuspendTagging{luamplib.tagfalse}
+            }
           }
           {\tl_set:Nn\l__tag_graphic_struct_tl{#1}}
       }
@@ -4743,47 +4820,6 @@ end
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{%
-  \chardef\mplibtmpnum=#1\relax
-  \tag_mc_reset_box:N \mplibtmpnum
-  \raise\dp#1\copy#1\hss}}}
-\def\mplibstarttoPDF#1#2#3#4{%
-  \prependtomplibbox
-  \hbox dir TLT\bgroup
-  \Gin@tag@struct@begin % begin tag
-  \xdef\MPllx{#1}\xdef\MPlly{#2}%
-  \xdef\MPurx{#3}\xdef\MPury{#4}%
-  \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
-  \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
-  \parskip0pt%
-  \leftskip0pt%
-  \parindent0pt%
-  \everypar{}%
-  \setbox\mplibscratchbox\vbox\bgroup
-  \tag_suspend:n{luamplib.mplibtopdf}% stop tag inside figure
-  \noindent
-}
-\def\mplibstoptoPDF{%
-  \par
-  \egroup %
-  \setbox\mplibscratchbox\hbox %
-    {\hskip-\MPllx bp%
-     \raise-\MPlly bp%
-     \box\mplibscratchbox}%
-  \setbox\mplibscratchbox\vbox to \MPheight
-    {\vfill
-     \hsize\MPwidth
-     \wd\mplibscratchbox0pt%
-     \ht\mplibscratchbox0pt%
-     \dp\mplibscratchbox0pt%
-     \box\mplibscratchbox}%
-  \wd\mplibscratchbox\MPwidth
-  \ht\mplibscratchbox\MPheight
-  \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute % BBox
-  \box\mplibscratchbox
-  \Gin@tag@struct@end % end tag
-  \egroup
-}
 \ExplSyntaxOff
 %    \end{macrocode}
 %
