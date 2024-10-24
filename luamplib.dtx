@@ -534,16 +534,17 @@ See source file '\inFileName' for licencing and contact information.
 % (|texdoc| |latex-lab-graphic|). Additionally, luamplib provides its own |text| key.
 % \begin{itemize}
 % \item |alt=...| starts a |Figure| tag implicitly and sets an alternative text as given.
+%   Also BBox info will be added automatically.
 % \item |debug| draws bounding box of the figure, which you can correct by |correct-BBox| key
 %   with space-separated four dimen values.
 % \item |actualtext=...| starts a |Span| tag implicitly and sets an actualtext as given.
 % \item |artifact| starts an |artifact| MC (marked content). This is intended for decorative items.
 % \item |text| starts an |artifact| MC implicitly and activates tagging on
 %   |btex| |...| |etex| boxes.  This is intended for text materials.
-% \item With |tag=...| you can set any type of tag available.
+% \item With |tag=...| you can choose any type of tag available, default value being |Figure|.
 %   When the value is |false|, tagging is deactivated.
 % \end{itemize}
-% The same keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
+% These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[myInstanceName, alt=figure drawing a circle]
 %     ...
@@ -561,7 +562,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %     \endmppattern
 %\end{verbatim}
-% As for the instance name of the |mplibcode| environment,
+% As for the instance name of |mplibcode| environment,
 % |instance=...| (|instancename| is a synonym of the key) is also allowed
 % in addition to the raw instance name as shown above.
 %
@@ -4665,6 +4666,7 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
+\ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
@@ -4680,7 +4682,7 @@ end
       {
         \setbox\mplibscratchbox\hbox{\unhcopy#1}
         \tag_mc_reset_box:N \mplibscratchbox
-        \raise\dp\mplibscratchbox\box\mplibscratchbox\hss
+        \raise\dp#1\box\mplibscratchbox\hss
       }
     }}
   }
@@ -4688,15 +4690,15 @@ end
   {
     \prependtomplibbox
     \hbox dir TLT\bgroup
-    \csname Gin@tag@struct@begin\endcsname % begin tag
-    \xdef\MPllx{#1}\xdef\MPlly{#2}
-    \xdef\MPurx{#3}\xdef\MPury{#4}
-    \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}
-    \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}
+    \Gin@tag@struct@begin % begin tag
+    \xdef\MPllx{#1}\xdef\MPlly{#2}%
+    \xdef\MPurx{#3}\xdef\MPury{#4}%
+    \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
+    \xdef\MPheight{\the\dimexpr#4bp-#2bp\relax}%
     \parskip0pt
     \leftskip0pt
     \parindent0pt
-    \everypar{}
+    \everypar{}%
     \setbox\mplibscratchbox\vbox\bgroup
     \SuspendTagging{luamplib.mplibtopdf}% stop tag inside figure
     \noindent
@@ -4704,8 +4706,8 @@ end
 \cs_set_nopar:Npn \mplibstoptoPDF
   {
     \par
-    \egroup %
-    \setbox\mplibscratchbox\hbox %
+    \egroup
+    \setbox\mplibscratchbox\hbox
       {\hskip-\MPllx bp
        \raise-\MPlly bp
        \box\mplibscratchbox}%
@@ -4718,9 +4720,9 @@ end
        \box\mplibscratchbox}%
     \wd\mplibscratchbox\MPwidth
     \ht\mplibscratchbox\MPheight
-    \let\@picbox\mplibscratchbox \csname picture@tag@bbox@attribute\endcsname % BBox
+    \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute % BBox
     \box\mplibscratchbox
-    \csname Gin@tag@struct@end\endcsname % end tag
+    \Gin@tag@struct@end % end tag
     \egroup
   }
 \keys_define:nn{tag/luamplib}
@@ -4793,7 +4795,7 @@ end
   {
     \begingroup
     \IfBooleanTF{#1}
-    { \mplibprempfig }
+    {\mplibprempfig *}
     {
       \msg_set:nnn {tag}{alt-text-missing}
       {
