@@ -529,20 +529,20 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{Tagged PDF}
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
+% The code related to this functionality is currently in experimental stage.
 % Like the \LaTeX's |picture| environment,
-% available optional keys are |tag|, |artifact|, |alt|, |actualtext|, |debug| and |correct-BBox|
-% (|texdoc| |latex-lab-graphic|). Additionally, luamplib provides its own |text| key.
+% available optional keys are |tag|, |alt|, |actualtext|, |artifact|, |debug| and |correct-BBox|
+% (|texdoc| |latex-lab-graphic|).
 % \begin{itemize}
 % \item |alt=...| starts a |Figure| tag implicitly and sets an alternative text as given.
-%   Also BBox info will be added automatically.
+%   Also BBox info will be added automatically to the PDF.
 % \item |debug| draws bounding box of the figure, which you can correct by |correct-BBox| key
 %   with space-separated four dimen values.
-% \item |actualtext=...| starts a |Span| tag implicitly and sets an actualtext as given.
-% \item |artifact| starts an |artifact| MC (marked content). This is intended for decorative items.
-% \item |text| starts an |artifact| MC implicitly and activates tagging on
-%   |btex| |...| |etex| boxes.  This is intended for text materials.
+% \item |actualtext=...| starts a |Span| tag implicitly and sets an actual text as given.
+% \item |artifact| starts an |artifact| MC (marked content). This is intended mostly for decorative items which has no semantic meaning.
 % \item With |tag=...| you can choose any type of tag available, default value being |Figure|.
 %   When the value is |false|, tagging is deactivated.
+% \item[\textsc{n.b.}] |text| is a reserved key for future development. Please do not use this key.
 % \end{itemize}
 % These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
@@ -563,7 +563,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmppattern
 %\end{verbatim}
 % As for the instance name of |mplibcode| environment,
-% |instance=...| (|instancename| is a synonym of the key) is also allowed
+% |instance=...| or |instancename=...| is also allowed
 % in addition to the raw instance name as shown above.
 %
 % For tagged PDF, luamplib redefines the internal macros \cs{mplibstarttoPDF},
@@ -873,7 +873,7 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 %   \let\bfseries\relax
 % \item[|withgroupname| \emph{<string>}] associates a transparency group with the given name.
-%   When this is not appended to the sentense with |asgroup| operator,
+%   When this is not appended to the sentence with |asgroup| operator,
 %   the default group name `|lastmplibgroup|' will be used.
 %
 % \item[\cs{usemplibgroup\{...\}}]
@@ -894,7 +894,7 @@ See source file '\inFileName' for licencing and contact information.
 %   default value being |(llcorner p, urcorner p)|.
 %   This option might be needed especially when you draw with a thick pen
 %   a path that touches the boundary;
-%   you would probably want to append to the sentense
+%   you would probably want to append to the sentence
 %   `|withgroupbbox| |(bot| |lft| |llcorner| |p,| |top| |rt| |urcorner| |p)|',
 %   supposing that the pen was selected by the |pickup| command.
 %
@@ -1565,7 +1565,7 @@ local function process_tex_text (str)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("\\luamplibtagtextbegin{%s}%s\\setbox%i\\hbox{%s}\\luamplibtagtextend", tex_box_id, global, tex_box_id, str))
+    run_tex_code(format("\\luamplibtagtextbegin{%i}%s\\setbox%i\\hbox{%s}\\luamplibtagtextend{%i}", tex_box_id, global, tex_box_id, str, tex_box_id))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -4666,41 +4666,21 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \def\luamplibtagtextbegin#1{}
-\let\luamplibtagtextend\relax
+\let\luamplibtagtextend\luamplibtagtextbegin
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
 \ExplSyntaxOn
-\cs_set_nopar:Npn \luamplibtagtextbegin #1
-  {
-    \tag_mc_end_push:
-    \tagstructbegin{tag=NonStruct,stash,label=luamplib.tagbox.#1}
-  }
-\cs_set_nopar:Npn \luamplibtagtextend
-  {
-    \tagstructend
-    \tag_mc_begin_pop:n{}
-  }
-\bool_new:N\l__tag_luamplib_usetext_bool
+\cs_set_nopar:Npn \luamplibtagtextbegin #1 {\SuspendTagging{luamplib.textext}}
+\cs_set_nopar:Npn \luamplibtagtextend #1 {\ResumeTagging{luamplib.textext}}
 \cs_set_nopar:Npn \mplibputtextbox #1
   {
     \vbox to 0pt{\vss\hbox to 0pt{%
-      \bool_if:NTF \l__tag_luamplib_usetext_bool
-      {
-        \ResumeTagging{luamplib.puttextbox}
-        \tag_mc_end_push:
-        \tagstructuse{luamplib.tagbox.#1}
-        \raise\dp#1\copy#1\hss
-        \tag_mc_begin_pop:n{artifact}
-        \SuspendTagging{luamplib.puttextbox}
-      }
-      {
-        \setbox\mplibscratchbox\hbox{\unhcopy#1}
-        \tag_mc_reset_box:N \mplibscratchbox
-        \raise\dp#1\box\mplibscratchbox\hss
-      }
+      \chardef\mplibtmpnum=#1\relax
+      \tag_mc_reset_box:N \mplibtmpnum
+      \raise\dp#1\copy#1\hss
     }}
   }
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
@@ -4758,8 +4738,8 @@ end
       }
     ,text .code:n = % added
       {
-        \bool_set_true:N \l__tag_graphic_artifact_bool
-        \bool_set_true:N \l__tag_luamplib_usetext_bool
+        \tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{text}}
+        \PackageWarning{luamplib}{'text'~is~a~reserved~key~for~future~development}
       }
     ,correct-BBox .code:n =
       {
@@ -4776,8 +4756,8 @@ end
             }
             {text}
             {
-              \bool_set_true:N \l__tag_graphic_artifact_bool
-              \bool_set_true:N \l__tag_luamplib_usetext_bool
+              \tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{text}}
+              \PackageWarning{luamplib}{'text'~is~a~reserved~key~for~future~development}
             }
             {false}
             {
