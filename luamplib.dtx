@@ -1569,7 +1569,7 @@ local function process_tex_text (str)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("\\luamplibtagtextbegin{%i}%s\\setbox%i\\hbox{%s}\\luamplibtagtextend{%i}", tex_box_id, global, tex_box_id, str, tex_box_id))
+    run_tex_code(format("\\luamplibtagtextbegin{%i}%s\\setbox%i\\hbox{%s}\\luamplibtagtextend", tex_box_id, global, tex_box_id, str))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -4670,7 +4670,7 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \def\luamplibtagtextbegin#1{}
-\let\luamplibtagtextend\luamplibtagtextbegin
+\let\luamplibtagtextend\relax
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname picture@tag@bbox@attribute\endcsname\else\endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
@@ -4690,22 +4690,18 @@ end
   \bool_if:NTF \l__tag_luamplib_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct,stash}
-    \edef\myboxnum{\tag_get:n{struct_num}}
-    \edef\statebeforebox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
+    \tag_struct_begin:n{tag=text,stash,label=luamplib.tagbox.#1}
+    \tag_mc_begin:n{}
   }
   {
     \SuspendTagging{luamplib.textext}
   }
 }
-\cs_set_nopar:Npn \luamplibtagtextend #1
+\cs_set_nopar:Npn \luamplibtagtextend
 {
   \bool_if:NTF \l__tag_luamplib_usetext_bool
   {
-    \edef\stateafterbox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
-    \ifnum\stateafterbox=\statebeforebox \else
-      \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\myboxnum}
-    \fi
+    \tag_mc_end:
     \tag_struct_end:
     \tag_mc_begin_pop:n{}
   }
@@ -4719,18 +4715,10 @@ end
     \bool_if:NTF \l__tag_luamplib_usetext_bool
     {
       \ResumeTagging{luamplib.puttextbox}
-      \cs_if_exist:cTF {luamplib.tagbox.#1}
-      {
-        \tag_mc_end:
-        \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
-        \raise\dp#1\copy#1\hss
-        \tag_mc_begin:n{artifact}
-      }
-      {
-        \chardef\mplibtmpnum=#1\relax
-        \tag_mc_reset_box:N \mplibtmpnum
-        \raise\dp#1\copy#1\hss
-      }
+      \tag_mc_end:
+      \tag_struct_use:n {luamplib.tagbox.#1}
+      \raise\dp#1\copy#1\hss
+      \tag_mc_begin:n{artifact}
     }
     {
       \chardef\mplibtmpnum=#1\relax
