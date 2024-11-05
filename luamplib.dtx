@@ -535,7 +535,7 @@ See source file '\inFileName' for licencing and contact information.
 % (|texdoc| |latex-lab-graphic|).
 % Additionally, luamplib provides its own |text| key.
 % \begin{description}
-% \item[|alt=...|] starts a |Figure| tag implicitly and sets an alternative text as given.
+% \item[|alt=...|] starts a |Figure| tag by default and sets an alternative text as given.
 %   Also BBox info will be added automatically to the PDF.
 % \item[|debug|] draws bounding box of the figure, which you can correct by |correct-BBox| key
 %   with space-separated four dimen values.
@@ -545,7 +545,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item[|text|] starts an |artifact| MC and enables tagging on |btex| |...| |etex| boxes.
 %   This is intended for text materials.
 % \item[|tag=...|] You can choose a tag name, default value being |Figure|.
-%   BBox info will be added automatically to the PDF.
+%   Also BBox info will be added automatically by default.
 %   When the value is |false|, tagging is deactivated.
 % \end{description}
 % These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
@@ -3697,16 +3697,16 @@ function luamplib.registergroup (boxid, name, opts)
   local trgroup = pdfetcs.tr_group
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   local whd
-  local tagpdf = is_defined'Gin@tag@struct@begin'
+  local tagpdf = is_defined'picture@tag@bbox@attribute'
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro(ccexplat, "luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\Gin@tag@struct@begin\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
+      tagpdf and "\\UseSocket{luamplib/tagging/begin}\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
       "\\useboxresource ", index,
       tagpdf and "\\egroup\\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute\z
-      \\unhbox\\mplibscratchbox\\Gin@tag@struct@end" or "",
+      \\unhbox\\mplibscratchbox\\UseSocket{luamplib/tagging/end}" or "",
       "\\egroup",
     }, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
@@ -3726,14 +3726,14 @@ function luamplib.registergroup (boxid, name, opts)
     }
     token.set_macro(ccexplat, "luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\Gin@tag@struct@begin" or "",
+      tagpdf and "\\UseSocket{luamplib/tagging/begin}" or "",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
       tagpdf and "\\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute" or "",
       "\\box\\mplibscratchbox",
-      tagpdf and "\\Gin@tag@struct@end" or "",
+      tagpdf and "\\UseSocket{luamplib/tagging/end}" or "",
       "\\egroup",
     }, "global")
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
@@ -4672,12 +4672,19 @@ end
 \def\luamplibtagtextbegin#1{}
 \let\luamplibtagtextend\luamplibtagtextbegin
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
-\ifcsname Gin@tag@struct@begin\endcsname\else\endinput\fi
+\ifcsname picture@tag@bbox@attribute\endcsname\else\endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
 \ExplSyntaxOn
+\tl_new:N \l__tag_luamplib_alt_tl
+\tl_new:N \l__tag_luamplib_alt_dflt_tl
+\tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure}
+\tl_new:N \l__tag_luamplib_actual_tl
+\tl_new:N \l__tag_luamplib_struct_tl
+\tl_set:Nn\l__tag_luamplib_struct_tl {Figure}
 \bool_new:N \l__tag_luamplib_usetext_bool
+\bool_set_false:N \l__tag_luamplib_usetext_bool
 \cs_set_nopar:Npn \luamplibtagtextbegin #1
 {
   \bool_if:NTF \l__tag_luamplib_usetext_bool
@@ -4709,34 +4716,173 @@ end
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{%
-  \bool_if:NTF \l__tag_luamplib_usetext_bool
-  {
-    \ResumeTagging{luamplib.puttextbox}
-    \tagmcend
-    \cs_if_exist:cTF {luamplib.tagbox.#1}
+    \bool_if:NTF \l__tag_luamplib_usetext_bool
     {
-      \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
-      \raise\dp#1\copy#1\hss
+      \ResumeTagging{luamplib.puttextbox}
+      \tagmcend
+      \cs_if_exist:cTF {luamplib.tagbox.#1}
+      {
+        \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
+        \raise\dp#1\copy#1\hss
+      }
+      {
+        \chardef\mplibtmpnum=#1\relax
+        \tag_mc_reset_box:N \mplibtmpnum
+        \raise\dp#1\copy#1\hss
+      }
+      \tagmcbegin{artifact}
     }
     {
       \chardef\mplibtmpnum=#1\relax
       \tag_mc_reset_box:N \mplibtmpnum
       \raise\dp#1\copy#1\hss
     }
-    \tagmcbegin{artifact}
-  }
-  {
-    \chardef\mplibtmpnum=#1\relax
-    \tag_mc_reset_box:N \mplibtmpnum
-    \raise\dp#1\copy#1\hss
-  }
   }}
 }
+\NewSocket{luamplib/tagging/begin}{0}
+\NewSocket{luamplib/tagging/end}{0}
+\NewSocketPlug{luamplib/tagging/begin}{figure}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end_push:
+    \tl_if_empty:NT\l__tag_luamplib_alt_tl
+    {
+      \msg_warning:nne{luamplib}{alt-text-missing}{\l__tag_luamplib_alt_dflt_tl}
+      \tl_set:Ne\l__tag_luamplib_alt_tl {\l__tag_luamplib_alt_dflt_tl}
+    }
+    \tag_struct_begin:n
+    {
+      tag=\l__tag_luamplib_struct_tl,
+      alt=\l__tag_luamplib_alt_tl,
+    }
+    \tag_mc_begin:n{}
+  }
+}
+\NewSocketPlug{luamplib/tagging/end}{figure}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end:
+    \tag_struct_end:
+    \tag_mc_begin_pop:n{}
+  }
+}
+\NewSocketPlug{luamplib/tagging/begin}{actualtext}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end_push:
+    \tag_struct_begin:n
+    {
+      tag=Span,
+      actualtext=\l__tag_luamplib_actual_tl,
+    }
+    \tag_mc_begin:n{}
+  }
+}
+\NewSocketPlug{luamplib/tagging/end}{actualtext}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end:
+    \tag_struct_end:
+    \tag_mc_begin_pop:n{}
+  }
+}
+\NewSocketPlug{luamplib/tagging/begin}{artifact}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end_push:
+    \tag_mc_begin:n{artifact}
+  }
+}
+\NewSocketPlug{luamplib/tagging/end}{artifact}
+{
+  \tag_if_active:T
+  {
+    \tag_mc_end:
+    \tag_mc_begin_pop:n{}
+  }
+}
+\AssignSocketPlug{luamplib/tagging/begin}{figure}
+\AssignSocketPlug{luamplib/tagging/end}{figure}
+\keys_define:nn{tag/luamplib}
+  {
+    ,alt .code:n =
+      {
+        \bool_set_true:N \l__tag_graphic_BBox_bool
+        \bool_set_false:N \l__tag_luamplib_usetext_bool
+        \tl_set:Ne\l__tag_luamplib_alt_tl{\text_purify:n{#1}}
+      }
+    ,actualtext .code:n =
+      {
+        \bool_set_false:N \l__tag_graphic_BBox_bool
+        \bool_set_false:N \l__tag_luamplib_usetext_bool
+        \tl_set:Ne\l__tag_luamplib_actual_tl{\text_purify:n{#1}}
+        \AssignSocketPlug{luamplib/tagging/begin}{actualtext}
+        \AssignSocketPlug{luamplib/tagging/end}{actualtext}
+      }
+    ,artifact .code:n =
+      {
+        \bool_set_false:N \l__tag_graphic_BBox_bool
+        \bool_set_false:N \l__tag_luamplib_usetext_bool
+        \AssignSocketPlug{luamplib/tagging/begin}{artifact}
+        \AssignSocketPlug{luamplib/tagging/end}{artifact}
+      }
+    ,text .code:n =
+      {
+        \bool_set_false:N \l__tag_graphic_BBox_bool
+        \bool_set_true:N \l__tag_luamplib_usetext_bool
+        \AssignSocketPlug{luamplib/tagging/begin}{artifact}
+        \AssignSocketPlug{luamplib/tagging/end}{artifact}
+      }
+    ,correct-BBox .code:n =
+      {
+        \bool_set_true:N \l__tag_graphic_bboxcorr_bool
+        \seq_set_split:Nnn\l__tag_graphic_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
+      }
+    ,tag .code:n =
+      {
+        \str_case:nnF {#1}
+          {
+            {artifact}
+            {
+              \bool_set_false:N \l__tag_graphic_BBox_bool
+              \bool_set_false:N \l__tag_luamplib_usetext_bool
+              \AssignSocketPlug{luamplib/tagging/begin}{artifact}
+              \AssignSocketPlug{luamplib/tagging/end}{artifact}
+            }
+            {text}
+            {
+              \bool_set_false:N \l__tag_graphic_BBox_bool
+              \bool_set_true:N \l__tag_luamplib_usetext_bool
+              \AssignSocketPlug{luamplib/tagging/begin}{artifact}
+              \AssignSocketPlug{luamplib/tagging/end}{artifact}
+            }
+            {false}
+            {
+              \SuspendTagging{luamplib.tagfalse}
+            }
+          }
+          {
+            \tl_set:Nn\l__tag_luamplib_struct_tl{#1}
+          }
+      }
+    ,debug .code:n =
+      { \bool_set_true:N \l__tag_graphic_debug_bool }
+    ,instance .code:n =
+      { \tl_gset:Nn \currentmpinstancename {#1} }
+    ,instancename .meta:n = { instance = {#1} }
+    ,unknown .code:n =
+      { \tl_gset:Nn \currentmpinstancename {\l_keys_key_str} }
+  }
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
     \prependtomplibbox
     \hbox dir TLT\bgroup
-    \Gin@tag@struct@begin % begin tag
+    \UseSocket{luamplib/tagging/begin}
     \xdef\MPllx{#1}\xdef\MPlly{#2}%
     \xdef\MPurx{#3}\xdef\MPury{#4}%
     \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
@@ -4768,80 +4914,20 @@ end
     \ht\mplibscratchbox\MPheight
     \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute % BBox
     \box\mplibscratchbox
-    \Gin@tag@struct@end % end tag
+    \UseSocket{luamplib/tagging/end}
     \egroup
-  }
-\keys_define:nn{tag/luamplib}
-  {
-    ,alt .code:n =
-      {
-        \tl_set:Ne\l__tag_graphic_alt_tl{\text_purify:n{#1}}
-      }
-    ,actualtext .code:n =
-      {
-        \tl_set:Ne\l__tag_graphic_actual_tl{\text_purify:n{#1}}
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-      }
-    ,artifact .code:n =
-      {
-        \bool_set_true:N \l__tag_graphic_artifact_bool
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-      }
-    ,text .code:n = % added
-      {
-        \bool_set_true:N \l__tag_graphic_artifact_bool
-        \bool_set_true:N \l__tag_luamplib_usetext_bool
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-      }
-    ,correct-BBox .code:n =
-      {
-        \bool_set_true:N \l__tag_graphic_bboxcorr_bool
-        \seq_set_split:Nnn\l__tag_graphic_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
-      }
-    ,tag .code:n =
-      {
-        \str_case:nnF {#1}
-          {
-            {artifact}
-            {
-              \bool_set_true:N \l__tag_graphic_artifact_bool
-              \bool_set_false:N \l__tag_graphic_BBox_bool
-            }
-            {text}
-            {
-              \bool_set_true:N \l__tag_graphic_artifact_bool
-              \bool_set_true:N \l__tag_luamplib_usetext_bool
-              \bool_set_false:N \l__tag_graphic_BBox_bool
-            }
-            {false}
-            {
-              \SuspendTagging{luamplib.tagfalse}
-            }
-          }
-          {
-            \tl_set:Nn\l__tag_graphic_struct_tl{#1}
-          }
-      }
-    ,debug .code:n =
-      { \bool_set_true:N \l__tag_graphic_debug_bool }
-    ,instance .code:n =
-      { \tl_gset:Nn \currentmpinstancename {#1} }
-    ,instancename .meta:n = { instance = {#1} }
-    ,unknown .code:n =
-      { \tl_gset:Nn \currentmpinstancename {\l_keys_key_str} }
   }
 \RenewDocumentCommand\mplibcode{O{}}
   {
-    \msg_set:nnn {tag}{alt-text-missing}
+    \msg_set:nnn {luamplib}{alt-text-missing}
     {
       Alternative~text~for~mplibcode~is~missing.\\
       Using~the~default~value~'##1'~instead.
     }
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
     \keys_set:nn{tag/luamplib}{#1}
-    \tl_if_empty:NTF \currentmpinstancename
-      { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure} }
-      { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
+    \tl_if_empty:NF \currentmpinstancename
+      { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
   }
 \RenewDocumentCommand\mpfig{s O{}}
@@ -4850,28 +4936,27 @@ end
     \IfBooleanTF{#1}
     {\mplibprempfig *}
     {
-      \msg_set:nnn {tag}{alt-text-missing}
+      \msg_set:nnn {luamplib}{alt-text-missing}
       {
         Alternative~text~for~mpfig~is~missing.\\
         Using~the~default~value~'##1'~instead.
       }
       \keys_set:nn{tag/luamplib}{#2}
-      \tl_if_empty:NTF \mpfiginstancename
-        { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure} }
-        { \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
+      \tl_if_empty:NF \mpfiginstancename
+        { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
     }
   }
 \RenewDocumentCommand\usemplibgroup{O{} m}
   {
     \begingroup
-    \msg_set:nnn {tag}{alt-text-missing}
+    \msg_set:nnn {luamplib}{alt-text-missing}
     {
       Alternative~text~for~usemplibgroup~is~missing.\\
       Using~the~default~value~'##1'~instead.
     }
     \keys_set:nn{tag/luamplib}{#1}
-    \tl_set:Nn\l__tag_graphic_alt_dflt_tl {metapost~figure~#2}
+    \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~#2}
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
