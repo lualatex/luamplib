@@ -4690,7 +4690,7 @@ end
   \bool_if:NTF \l__tag_luamplib_usetext_bool
   {
     \tag_mc_end_push:
-    \tagstructbegin{tag=NonStruct,stash}
+    \tag_struct_begin:n{tag=NonStruct,stash}
     \edef\myboxnum{\tag_get:n{struct_num}}
     \edef\statebeforebox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
   }
@@ -4706,7 +4706,7 @@ end
     \ifnum\stateafterbox=\statebeforebox \else
       \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\myboxnum}
     \fi
-    \tagstructend
+    \tag_struct_end:
     \tag_mc_begin_pop:n{}
   }
   {
@@ -4721,10 +4721,10 @@ end
       \ResumeTagging{luamplib.puttextbox}
       \cs_if_exist:cTF {luamplib.tagbox.#1}
       {
-        \tag_mc_end_push:
+        \tag_mc_end:
         \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
         \raise\dp#1\copy#1\hss
-        \tag_mc_begin_pop:n{}
+        \tag_mc_begin:n{artifact}
       }
       {
         \chardef\mplibtmpnum=#1\relax
