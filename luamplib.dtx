@@ -4719,18 +4719,18 @@ end
     \bool_if:NTF \l__tag_luamplib_usetext_bool
     {
       \ResumeTagging{luamplib.puttextbox}
-      \tagmcend
       \cs_if_exist:cTF {luamplib.tagbox.#1}
       {
+        \tag_mc_end_push:
         \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
         \raise\dp#1\copy#1\hss
+        \tag_mc_begin_pop:n{}
       }
       {
         \chardef\mplibtmpnum=#1\relax
         \tag_mc_reset_box:N \mplibtmpnum
         \raise\dp#1\copy#1\hss
       }
-      \tagmcbegin{artifact}
     }
     {
       \chardef\mplibtmpnum=#1\relax
