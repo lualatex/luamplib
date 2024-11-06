@@ -537,9 +537,13 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[|alt=...|] starts a |Figure| tag by default and sets an alternative text as given.
 %   Also BBox info will be added automatically to the PDF.
-% \item[|debug|] draws bounding box of the figure, which you can correct by |correct-BBox| key
+%   Alternative text can be set within \metapost code as well:
+%   |verbatimtex| |\mplibtagalt{...}| |etex;|
+% \item[|debug|] draws bounding box of the figure for checking, which you can correct by |correct-BBox| key
 %   with space-separated four dimen values.
 % \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
+%   Actual text can be set within \metapost code as well:
+%   |verbatimtex| |\mplibtagactual{...}| |etex;|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   This is intended mostly for decorative items which has no semantic quality.
 % \item[|text|] starts an |artifact| MC and enables tagging on |btex| |...| |etex| boxes.
@@ -4948,6 +4952,14 @@ end
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
+\cs_new_nopar:Npn \mplibtagalt #1
+{
+  \tl_set:Ne \l__tag_luamplib_alt_tl {\text_purify:n{#1}}
+}
+\cs_new_nopar:Npn \mplibtagactual #1
+{
+  \tl_set:Ne \l__tag_luamplib_actual_tl {\text_purify:n{#1}}
+}
 \ExplSyntaxOff
 %    \end{macrocode}
 %
