@@ -4694,7 +4694,8 @@ end
   \bool_if:NTF \l__tag_luamplib_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=text,stash,label=luamplib.tagbox.#1}
+    \tag_struct_begin:n{tag=text,stash}
+    \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\tag_get:n{struct_num}}
     \tag_mc_begin:n{}
   }
   {
@@ -4713,6 +4714,11 @@ end
     \ResumeTagging{luamplib.textext}
   }
 }
+\msg_new:nnn {luamplib}{figure-text-reuse}
+{
+  textext~box~#1~probably~is~incorrectly~tagged.\\
+  Reusing~a~box~from~FIGURE~to~TEXT~is~strongly~discouraged.
+}
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{%
@@ -4720,7 +4726,15 @@ end
     {
       \ResumeTagging{luamplib.puttextbox}
       \tag_mc_end:
-      \tag_struct_use:n {luamplib.tagbox.#1}
+      \cs_if_exist:cTF {luamplib.tagbox.#1}
+      {
+        \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
+      }
+      {
+        \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
+        \chardef\mplibtmpnum=#1\relax
+        \tag_mc_reset_box:N \mplibtmpnum
+      }
       \raise\dp#1\copy#1\hss
       \tag_mc_begin:n{artifact}
     }
