@@ -3705,7 +3705,7 @@ function luamplib.registergroup (boxid, name, opts)
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
-    token.set_macro(ccexplat, "luamplib.group."..name, tableconcat{
+    token.set_macro(catat11, "luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
       tagpdf and "\\UseSocket{luamplib/tagging/begin}\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
       "\\useboxresource ", index,
@@ -3728,7 +3728,7 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
       "\\special{pdf:econtent}}",
     }
-    token.set_macro(ccexplat, "luamplib.group."..name, tableconcat{
+    token.set_macro(catat11, "luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
       tagpdf and "\\UseSocket{luamplib/tagging/begin}" or "",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
@@ -4253,7 +4253,8 @@ end
 %
 %    use Transparency Group
 %    \begin{macrocode}
-\protected\def\usemplibgroup#1{\csname luamplib.group.#1\endcsname}
+\protected\def\usemplibgroup#1#{\usemplibgroupmain}
+\def\usemplibgroupmain#1{\csname luamplib.group.#1\endcsname}
 \protected\def\mplibgroup#1{%
   \begingroup
   \def\MPllx{0}\def\MPlly{0}%
@@ -4334,9 +4335,14 @@ end
   \ifx *\nexttok
     \expandafter\mplibprempfig
   \else
-    \expandafter\mplibmainmpfig
+    \ifx [\nexttok
+      \expandafter\expandafter\expandafter\mplibgobbleoptsmpfig
+    \else
+      \expandafter\expandafter\expandafter\mplibmainmpfig
+    \fi
   \fi
 }
+\def\mplibgobbleoptsmpfig[#1]{\mplibmainmpfig}
 \def\mplibmainmpfig{%
   \begingroup
   \mplibsetupcatcodes
