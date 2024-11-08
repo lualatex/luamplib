@@ -529,28 +529,31 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{Tagged PDF}
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
-% The code related to this functionality is currently in experimental stage.
+% The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Like the \LaTeX's |picture| environment,
 % available optional keys are |tag|, |alt|, |actualtext|, |artifact|, |debug| and |correct-BBox|
 % (|texdoc| |latex-lab-graphic|).
 % Additionally, luamplib provides its own |text| key.
 % \begin{description}
-% \item[|alt=...|] starts a |Figure| tag by default and sets an alternative text as given.
-%   Also BBox info will be added automatically to the PDF.
-%   Alternative text can be set within \metapost code as well:
-%   |verbatimtex| |\mplibtagalt{...}| |etex;|
-% \item[|debug|] draws bounding box of the figure for checking, which you can correct by |correct-BBox| key
-%   with space-separated four dimen values.
-% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
-%   Actual text can be set within \metapost code as well:
-%   |verbatimtex| |\mplibtagactual{...}| |etex;|
-% \item[|artifact|] starts an |artifact| MC (marked content).
-%   This is intended mostly for decorative items which has no semantic quality.
-% \item[|text|] starts an |artifact| MC and enables tagging on |btex| |...| |etex| boxes.
-%   This is intended for text materials.
 % \item[|tag=...|] You can choose a tag name, default value being |Figure|.
-%   Also BBox info will be added automatically by default.
+%   BBox info will be added automatically to the PDF
+%   unless the value is |artifact|, |text|, or |false|.
 %   When the value is |false|, tagging is deactivated.
+% \item[|debug|] draws bounding box of the figure for checking, which you can correct
+%   by |correct-BBox| key with space-separated four dimen values.
+% \item[|alt=...|] sets an alternative text as given.
+%   Alternative text can be set within \metapost code as well:
+%   |verbatimtex| |\mplibalttext{...}| |etex;|
+% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
+%   BBox info will not be added.
+%   Actual text can be set within \metapost code as well:
+%   |verbatimtex| |\mplibactualtext{...}| |etex;|
+% \item[|artifact|] starts an |artifact| MC (marked content).
+%   BBox info will not be added.
+%   This key is intended mostly for decorative materials which has no semantic quality.
+% \item[|text|] starts an |artifact| MC and enables tagging on textext boxes.
+%   Horizontal mode is forced and BBox info will not be added.
+%   This key is intended mostly for text materials. Reusing textext boxes is strongly discouraged.
 % \end{description}
 % These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
@@ -565,18 +568,15 @@ See source file '\inFileName' for licencing and contact information.
 %     \usemplibgroup[alt=figure drawing a triangle]{...}
 %
 %     \mppattern{...}           % see below
-%     \mpfig[tag=false]         % do not tag this figure
-%     ...
-%     \endmpfig
+%       \mpfig[tag=false]       % do not tag this figure
+%       ...
+%       \endmpfig
 %     \endmppattern
 %\end{verbatim}
 % As for the instance name of |mplibcode| environment,
 % |instance=...| or |instancename=...| is also allowed
 % in addition to the raw instance name as shown above.
 %
-% For tagged PDF, luamplib redefines the internal macros \cs{mplibstarttoPDF},
-% \cs{mplibstoptoPDF} and \cs{mplibputtextbox}. The original macros are preserved as
-% \cs{mplibstarttoPDForiginal}, \cs{mplibstoptoPDForiginal} and \cs{mplibputtextboxoriginal}.
 %
 % \subsection{\textsc{MetaPost}}
 %
@@ -2791,7 +2791,7 @@ def withgroupname expr s =
   withprescript "mplibgroupname=" & s
 enddef;
 def usemplibgroup primary s =
-  draw maketext("\usemplibgroup{" & s & "}")
+  draw maketext("\mplibnoforcehmode\csname luamplib.group." & s & "\endcsname")
     shifted runscript("return luamplib.trgroupshifts['" & s & "']")
 enddef;
 ]],
@@ -4682,7 +4682,31 @@ end
 \def\luamplibtagtextbegin#1{}
 \let\luamplibtagtextend\relax
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
-\ifcsname picture@tag@bbox@attribute\endcsname\else\endinput\fi
+\ifcsname picture@tag@bbox@attribute\endcsname \else
+  \ExplSyntaxOn
+  \keys_define:nn{luamplib/notag}
+    {
+      ,alt          .code:n = { }
+      ,actualtext   .code:n = { }
+      ,artifact     .code:n = { }
+      ,text         .code:n = { }
+      ,correct-BBox .code:n = { }
+      ,tag          .code:n = { }
+      ,debug        .code:n = { }
+      ,instance     .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
+      ,instancename .meta:n = { instance = {#1} }
+      ,unknown      .code:n = { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
+    }
+  \RenewDocumentCommand\mplibcode{O{}}
+    {
+      \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
+      \keys_set:nn{luamplib/notag}{#1}
+      \mplibtmptoks{}\ltxdomplibcode
+    }
+  \ExplSyntaxOff
+  \let\mplibalttext \luamplibtagtextbegin
+  \let\mplibactualtext \mplibalttext
+  \endinput\fi
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
@@ -4735,13 +4759,16 @@ end
       \cs_if_exist:cTF {luamplib.tagbox.#1}
       {
         \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
+        \raise\dp#1\copy#1\hss
       }
       {
         \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
+        \tag_mc_begin:n{}
         \chardef\mplibtmpnum=#1\relax
         \tag_mc_reset_box:N \mplibtmpnum
+        \raise\dp#1\copy#1\hss
+        \tag_mc_end:
       }
-      \raise\dp#1\copy#1\hss
       \tag_mc_begin:n{artifact}
     }
     {
@@ -4820,7 +4847,7 @@ end
 }
 \AssignSocketPlug{luamplib/tagging/begin}{figure}
 \AssignSocketPlug{luamplib/tagging/end}{figure}
-\keys_define:nn{tag/luamplib}
+\keys_define:nn{luamplib/tag}
   {
     ,alt .code:n =
       {
@@ -4849,6 +4876,7 @@ end
         \bool_set_true:N \l__tag_luamplib_usetext_bool
         \AssignSocketPlug{luamplib/tagging/begin}{artifact}
         \AssignSocketPlug{luamplib/tagging/end}{artifact}
+        \leavevmode
       }
     ,correct-BBox .code:n =
       {
@@ -4872,6 +4900,7 @@ end
               \bool_set_true:N \l__tag_luamplib_usetext_bool
               \AssignSocketPlug{luamplib/tagging/begin}{artifact}
               \AssignSocketPlug{luamplib/tagging/end}{artifact}
+              \leavevmode
             }
             {false}
             {
@@ -4888,7 +4917,7 @@ end
       { \tl_gset:Nn \currentmpinstancename {#1} }
     ,instancename .meta:n = { instance = {#1} }
     ,unknown .code:n =
-      { \tl_gset:Nn \currentmpinstancename {\l_keys_key_str} }
+      { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
   }
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
@@ -4937,7 +4966,7 @@ end
       Using~the~default~value~'##1'~instead.
     }
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-    \keys_set:nn{tag/luamplib}{#1}
+    \keys_set:nn{luamplib/tag}{#1}
     \tl_if_empty:NF \currentmpinstancename
       { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
@@ -4953,7 +4982,7 @@ end
         Alternative~text~for~mpfig~is~missing.\\
         Using~the~default~value~'##1'~instead.
       }
-      \keys_set:nn{tag/luamplib}{#2}
+      \keys_set:nn{luamplib/tag}{#2}
       \tl_if_empty:NF \mpfiginstancename
         { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
@@ -4967,16 +4996,16 @@ end
       Alternative~text~for~usemplibgroup~is~missing.\\
       Using~the~default~value~'##1'~instead.
     }
-    \keys_set:nn{tag/luamplib}{#1}
+    \keys_set:nn{luamplib/tag}{#1}
     \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~#2}
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
-\cs_new_nopar:Npn \mplibtagalt #1
+\cs_new_nopar:Npn \mplibalttext #1
 {
   \tl_set:Ne \l__tag_luamplib_alt_tl {\text_purify:n{#1}}
 }
-\cs_new_nopar:Npn \mplibtagactual #1
+\cs_new_nopar:Npn \mplibactualtext #1
 {
   \tl_set:Ne \l__tag_luamplib_actual_tl {\text_purify:n{#1}}
 }
