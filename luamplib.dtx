@@ -541,19 +541,24 @@ See source file '\inFileName' for licencing and contact information.
 %   When the value is |false|, tagging is deactivated.
 % \item[|debug|] draws bounding box of the figure for checking, which you can correct
 %   by |correct-BBox| key with space-separated four dimen values.
-% \item[|alt=...|] sets an alternative text as given.
-%   Alternative text can be set within \metapost code as well:
+% \item[|alt=...|] sets an alternative text of the figure as given.
+%   This key is needed for ordinary \metapost figures.
+%   You can give alternative text within \metapost code as well:
 %   |verbatimtex| |\mplibalttext{...}| |etex;|
 % \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
 %   BBox info will not be added.
-%   Actual text can be set within \metapost code as well:
+%   This key is intended for figures which can be represented by a character or
+%   a small sequence of characters.
+%   You can give actual text within \metapost code as well:
 %   |verbatimtex| |\mplibactualtext{...}| |etex;|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
-%   This key is intended mostly for decorative materials which has no semantic quality.
-% \item[|text|] starts an |artifact| MC and enables tagging on textext boxes.
-%   Horizontal mode is forced and BBox info will not be added.
-%   This key is intended mostly for text materials. Reusing textext boxes is strongly discouraged.
+%   This key is intended for decorative figures which have no semantic quality.
+% \item[|text|] starts an |artifact| MC and enables tagging on textext
+%   (the same as |btex| |...| |etex|) boxes.
+%   Horizontal mode is forced. BBox info will not be added.
+%   This key is intended for figures made mostly of textext boxes.
+%   Inside text-keyed figures, reusing textext boxes is strongly discouraged.
 % \end{description}
 % These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
@@ -4725,7 +4730,9 @@ end
   {
     \tag_mc_end_push:
     \tag_struct_begin:n{tag=text,stash}
-    \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\tag_get:n{struct_num}}
+    \tag_if_active:T {
+      \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\tag_get:n{struct_num}}
+    }
     \tag_mc_begin:n{}
   }
   {
@@ -4876,7 +4883,7 @@ end
         \bool_set_true:N \l__tag_luamplib_usetext_bool
         \AssignSocketPlug{luamplib/tagging/begin}{artifact}
         \AssignSocketPlug{luamplib/tagging/end}{artifact}
-        \leavevmode
+        \tag_if_active:T {\leavevmode}
       }
     ,correct-BBox .code:n =
       {
@@ -4900,7 +4907,7 @@ end
               \bool_set_true:N \l__tag_luamplib_usetext_bool
               \AssignSocketPlug{luamplib/tagging/begin}{artifact}
               \AssignSocketPlug{luamplib/tagging/end}{artifact}
-              \leavevmode
+              \tag_if_active:T {\leavevmode}
             }
             {false}
             {
