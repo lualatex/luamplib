@@ -4736,6 +4736,9 @@ end
     \tag_mc_begin:n{}
   }
   {
+    \tag_if_active:TF
+      { \chardef\mplibtmpnum\@ne }
+      { \chardef\mplibtmpnum\z@ }
     \SuspendTagging{luamplib.textext}
   }
 }
@@ -4748,7 +4751,9 @@ end
     \tag_mc_begin_pop:n{}
   }
   {
-    \ResumeTagging{luamplib.textext}
+    \ifnum\mplibtmpnum=\@ne
+      \ResumeTagging{luamplib.textext}
+    \fi
   }
 }
 \msg_new:nnn {luamplib}{figure-text-reuse}
