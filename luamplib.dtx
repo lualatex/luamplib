@@ -3710,12 +3710,11 @@ function luamplib.registergroup (boxid, name, opts)
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
-    token.set_macro(catat11, "luamplib.group."..name, tableconcat{
+    token.set_macro("luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\UseSocket{luamplib/tagging/begin}\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
+      tagpdf and "\\luamplibtaggingbegin\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
       "\\useboxresource ", index,
-      tagpdf and "\\egroup\\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute\z
-      \\unhbox\\mplibscratchbox\\UseSocket{luamplib/tagging/end}" or "",
+      tagpdf and "\\egroup\\luamplibtaggingBBox\\unhbox\\mplibscratchbox\\luamplibtaggingend" or "",
       "\\egroup",
     }, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
@@ -3733,16 +3732,16 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
       "\\special{pdf:econtent}}",
     }
-    token.set_macro(catat11, "luamplib.group."..name, tableconcat{
+    token.set_macro("luamplib.group."..name, tableconcat{
       "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\UseSocket{luamplib/tagging/begin}" or "",
+      tagpdf and "\\luamplibtaggingbegin" or "",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
-      tagpdf and "\\let\\@picbox\\mplibscratchbox\\picture@tag@bbox@attribute" or "",
+      tagpdf and "\\luamplibtaggingBBox" or "",
       "\\box\\mplibscratchbox",
-      tagpdf and "\\UseSocket{luamplib/tagging/end}" or "",
+      tagpdf and "\\luamplibtaggingend" or "",
       "\\egroup",
     }, "global")
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
@@ -4790,9 +4789,7 @@ end
     }
   }}
 }
-\NewSocket{luamplib/tagging/begin}{0}
-\NewSocket{luamplib/tagging/end}{0}
-\NewSocketPlug{luamplib/tagging/begin}{figure}
+\cs_new_nopar:Npn \__luamplib_tagging_begin_figure:
 {
   \tag_if_active:T
   {
@@ -4810,7 +4807,7 @@ end
     \tag_mc_begin:n{}
   }
 }
-\NewSocketPlug{luamplib/tagging/end}{figure}
+\cs_new_nopar:Npn \__luamplib_tagging_end_figure:
 {
   \tag_if_active:T
   {
@@ -4819,7 +4816,7 @@ end
     \tag_mc_begin_pop:n{}
   }
 }
-\NewSocketPlug{luamplib/tagging/begin}{actualtext}
+\cs_new_nopar:Npn \__luamplib_tagging_begin_actualtext:
 {
   \tag_if_active:T
   {
@@ -4832,7 +4829,7 @@ end
     \tag_mc_begin:n{}
   }
 }
-\NewSocketPlug{luamplib/tagging/end}{actualtext}
+\cs_new_nopar:Npn \__luamplib_tagging_end_actualtext:
 {
   \tag_if_active:T
   {
@@ -4841,7 +4838,7 @@ end
     \tag_mc_begin_pop:n{}
   }
 }
-\NewSocketPlug{luamplib/tagging/begin}{artifact}
+\cs_new_nopar:Npn \__luamplib_tagging_begin_artifact:
 {
   \tag_if_active:T
   {
@@ -4849,7 +4846,7 @@ end
     \tag_mc_begin:n{artifact}
   }
 }
-\NewSocketPlug{luamplib/tagging/end}{artifact}
+\cs_new_nopar:Npn \__luamplib_tagging_end_artifact:
 {
   \tag_if_active:T
   {
@@ -4857,8 +4854,8 @@ end
     \tag_mc_begin_pop:n{}
   }
 }
-\AssignSocketPlug{luamplib/tagging/begin}{figure}
-\AssignSocketPlug{luamplib/tagging/end}{figure}
+\cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_figure:
+\cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_figure:
 \keys_define:nn{luamplib/tag}
   {
     ,alt .code:n =
@@ -4872,22 +4869,22 @@ end
         \bool_set_false:N \l__tag_graphic_BBox_bool
         \bool_set_false:N \l__tag_luamplib_usetext_bool
         \tl_set:Ne\l__tag_luamplib_actual_tl{\text_purify:n{#1}}
-        \AssignSocketPlug{luamplib/tagging/begin}{actualtext}
-        \AssignSocketPlug{luamplib/tagging/end}{actualtext}
+        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_actualtext:
+        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_actualtext:
       }
     ,artifact .code:n =
       {
         \bool_set_false:N \l__tag_graphic_BBox_bool
         \bool_set_false:N \l__tag_luamplib_usetext_bool
-        \AssignSocketPlug{luamplib/tagging/begin}{artifact}
-        \AssignSocketPlug{luamplib/tagging/end}{artifact}
+        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
+        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
       }
     ,text .code:n =
       {
         \bool_set_false:N \l__tag_graphic_BBox_bool
         \bool_set_true:N \l__tag_luamplib_usetext_bool
-        \AssignSocketPlug{luamplib/tagging/begin}{artifact}
-        \AssignSocketPlug{luamplib/tagging/end}{artifact}
+        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
+        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
         \tag_if_active:T {\leavevmode}
       }
     ,correct-BBox .code:n =
@@ -4903,15 +4900,15 @@ end
             {
               \bool_set_false:N \l__tag_graphic_BBox_bool
               \bool_set_false:N \l__tag_luamplib_usetext_bool
-              \AssignSocketPlug{luamplib/tagging/begin}{artifact}
-              \AssignSocketPlug{luamplib/tagging/end}{artifact}
+              \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
+              \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
             }
             {text}
             {
               \bool_set_false:N \l__tag_graphic_BBox_bool
               \bool_set_true:N \l__tag_luamplib_usetext_bool
-              \AssignSocketPlug{luamplib/tagging/begin}{artifact}
-              \AssignSocketPlug{luamplib/tagging/end}{artifact}
+              \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
+              \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
               \tag_if_active:T {\leavevmode}
             }
             {false}
@@ -4931,11 +4928,15 @@ end
     ,unknown .code:n =
       { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
   }
+\cs_new_nopar:Npn \luamplibtaggingBBox
+{
+  \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute
+}
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
     \prependtomplibbox
     \hbox dir TLT\bgroup
-    \UseSocket{luamplib/tagging/begin}
+    \luamplibtaggingbegin % begin tagging
     \xdef\MPllx{#1}\xdef\MPlly{#2}%
     \xdef\MPurx{#3}\xdef\MPury{#4}%
     \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
@@ -4965,9 +4966,9 @@ end
        \box\mplibscratchbox}%
     \wd\mplibscratchbox\MPwidth
     \ht\mplibscratchbox\MPheight
-    \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute % BBox
+    \luamplibtaggingBBox % BBox
     \box\mplibscratchbox
-    \UseSocket{luamplib/tagging/end}
+    \luamplibtaggingend % end tagging
     \egroup
   }
 \RenewDocumentCommand\mplibcode{O{}}
