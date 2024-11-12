@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/08/03 v2.34.5 Interface for using the mplib library]%
+  [2024/11/12 v2.35.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/08/03 v2.34.5}
+% \date{2024/11/12 v2.35.0}
 %
 % \maketitle
 %
@@ -345,9 +345,17 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \textsc{n.b.} In the background,
 %   luamplib redefines |infont| operator so that the right side
-%   argument (the font part) is totally ignored. Therefore the left side arguemnt
+%   argument (the font part) is totally ignored. Therefore the left side arguemnt (the text part)
 %   will be typeset with the current \TeX\ font.
-%   Also take care of |char| operator in the left side argument,
+%
+%   From v2.35, however, the redefinition of |infont| operator has been revised:
+%   when the character slot of the text argument is less than $32$~(control characters),
+%   or is equal to $35$~(|#|), $36$~(|$|), \iffalse |$|\fi
+%   $37$~(|%|), $38$~(|&|), $92$~(|\|), $94$~(|^|),
+%   $95$~(|_|), $123$~(|{|), $125$~(|}|), $126$~(|~|) or $127$~(DEL),
+%   the original |infont| operator will be used instead of |textext| operator
+%   so that the font part will be honored.
+%   Despite the revision, please take care of |char| operator in the text argument,
 %   as this might bring unpermitted characters into \TeX.
 %
 % \paragraph{\cs{mplibcodeinherit\{enable\textbar disable\}}}
@@ -545,18 +553,18 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is needed for ordinary \metapost figures.
 %   You can give alternative text within \metapost code as well:
 %   |verbatimtex| |\mplibalttext{...}| |etex;|
-% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
+% \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
+%   This key is intended for decorative figures which have no semantic quality.
+% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
+%   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can give actual text within \metapost code as well:
 %   |verbatimtex| |\mplibactualtext{...}| |etex;|
-% \item[|artifact|] starts an |artifact| MC (marked content).
-%   BBox info will not be added.
-%   This key is intended for decorative figures which have no semantic quality.
 % \item[|text|] starts an |artifact| MC and enables tagging on textext
 %   (the same as |btex| |...| |etex|) boxes.
-%   Horizontal mode is forced. BBox info will not be added.
+%   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
 %   This key is intended for figures made mostly of textext boxes.
 %   Inside text-keyed figures, reusing textext boxes is strongly discouraged.
 % \end{description}
@@ -1084,8 +1092,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.34.5",
-  date          = "2024/08/03",
+  version       = "2.35.0",
+  date          = "2024/11/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2812,7 +2820,25 @@ extra_endfig := extra_endfig & " let VerbatimTeX = specialVerbatimTeX;"&
   "luamplib.in_the_fig=false" &ditto& ");";
 ]],
   textextlabel = [[
-primarydef s infont f = rawtextext(s) enddef;
+let luampliboriginalinfont = infont;
+primarydef s infont f =
+  if   (s < char 32)
+    or (s = char 35) % #
+    or (s = char 36) % $
+    or (s = char 37) % %
+    or (s = char 38) % &
+    or (s = char 92) % \
+    or (s = char 94) % ^
+    or (s = char 95) % _
+    or (s = char 123) % {
+    or (s = char 125) % }
+    or (s = char 126) % ~
+    or (s = char 127) :
+    s luampliboriginalinfont f
+  else :
+    rawtextext(s)
+  fi
+enddef;
 def fontsize expr f =
   begingroup
   save size; numeric size;
@@ -4173,7 +4199,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/08/03 v2.34.5 mplib package for LuaTeX]
+    [2024/11/12 v2.35.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -4728,7 +4754,7 @@ end
   \bool_if:NTF \l__tag_luamplib_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=text,stash}
+    \tag_struct_begin:n{tag=NonStruct,stash}
     \tag_if_active:T {
       \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\tag_get:n{struct_num}}
     }
@@ -4758,7 +4784,7 @@ end
 \msg_new:nnn {luamplib}{figure-text-reuse}
 {
   textext~box~#1~probably~is~incorrectly~tagged.\\
-  Reusing~a~box~from~FIGURE~to~TEXT~is~strongly~discouraged.
+  Reusing~a~box~in~text-keyed~figures~is~strongly~discouraged.
 }
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
@@ -4829,15 +4855,7 @@ end
     \tag_mc_begin:n{}
   }
 }
-\cs_new_nopar:Npn \__luamplib_tagging_end_actualtext:
-{
-  \tag_if_active:T
-  {
-    \tag_mc_end:
-    \tag_struct_end:
-    \tag_mc_begin_pop:n{}
-  }
-}
+\cs_set_eq:NN \__luamplib_tagging_end_actualtext: \__luamplib_tagging_end_figure:
 \cs_new_nopar:Npn \__luamplib_tagging_begin_artifact:
 {
   \tag_if_active:T
@@ -4871,6 +4889,7 @@ end
         \tl_set:Ne\l__tag_luamplib_actual_tl{\text_purify:n{#1}}
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_actualtext:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_actualtext:
+        \tag_if_active:T {\noindent}
       }
     ,artifact .code:n =
       {
@@ -4885,7 +4904,7 @@ end
         \bool_set_true:N \l__tag_luamplib_usetext_bool
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
-        \tag_if_active:T {\leavevmode}
+        \tag_if_active:T {\noindent}
       }
     ,correct-BBox .code:n =
       {
@@ -4909,7 +4928,7 @@ end
               \bool_set_true:N \l__tag_luamplib_usetext_bool
               \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
               \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
-              \tag_if_active:T {\leavevmode}
+              \tag_if_active:T {\noindent}
             }
             {false}
             {
