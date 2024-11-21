@@ -4194,19 +4194,18 @@ function luamplib.TagAddBBox (num, wd, ht, corr, debug)
   local urx = h + wd + corr[3]
   local ury = v + ht + corr[4]
 
-  local bbox = format("%f %f %f %f", llx, lly, urx, ury)
-    :gsub(decimals,rmzeros)
+  local bbox = format("%f %f %f %f", llx, lly, urx, ury) :gsub(decimals,rmzeros)
   run_tex_code(
     "\\__tag_prop_gput:cnn{g__tag_struct_"..num.."_prop}{A}{<</O/Layout/BBox["..bbox.."]>>}",
     ccexplat)
 
   if debug then
     run_tex_code(
-      "\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{opacity0.5}{<</ca 0.5 /CA 0.5>>}",
+      "\\pdfmanagement_add:nnn{Page/Resources/ExtGState}{opacity0.5}{<</ca 0.5/CA 0.5>>}",
       ccexplat)
-    bbox = format("q /opacity0.5 gs 1 0 0 rg %f %f %f %f re f Q\n", llx, lly, urx-llx, ury-lly)
-      :gsub(decimals,rmzeros)
-    pdf.print("page", bbox)
+    bbox = format("q /opacity0.5 gs 1 0 0 rg %f %f %f %f re f Q\n",
+      corr[1], corr[2], urx-llx, ury-lly) :gsub(decimals,rmzeros)
+    pdf.print(bbox)
   end
 end
 %    \end{macrocode}
