@@ -1572,8 +1572,9 @@ local factor = 65536*(7227/7200)
 local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
   xscaled %f yscaled %f shifted (0,-%f) \z
   withprescript "mplibtexboxid=%i:%f:%f")'
-local function process_tex_text (str)
+local function process_tex_text (str, maketext)
   if str then
+    if not maketext then str = str:gsub("\r.-$","") end
     local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
                    and "\\global" or ""
     local tex_box_id
@@ -1798,6 +1799,7 @@ local function protecttexcontents (str)
             :gsub("%%.-\n", "")
             :gsub("%%.-$",  "")
             :gsub("%zPerCent%z", "\\%%")
+            :gsub("\r.-$",  "")
             :gsub("%s+", " ")
 end
 luamplib.legacyverbatimtex = true
@@ -1820,7 +1822,7 @@ function luamplib.maketext (str, what)
         end
       end
     else
-      return process_tex_text(str)
+      return process_tex_text(str, true) -- bool is for 'char13'
     end
   end
   return ""
@@ -4781,7 +4783,7 @@ end
 \bool_new:N \l__luamplib_tag_usetext_bool
 \bool_set_false:N \l__luamplib_tag_usetext_bool
 \bool_new:N \l__luamplib_tag_BBox_bool
-\bool_set_false:N \l__luamplib_tag_BBox_bool
+\bool_set_true:N \l__luamplib_tag_BBox_bool
 \bool_new:N \l__luamplib_tag_debug_bool
 \bool_set_false:N \l__luamplib_tag_debug_bool
 \cs_set_nopar:Npn \luamplibtagtextbegin #1
