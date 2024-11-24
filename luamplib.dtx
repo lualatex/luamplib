@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/11/12 v2.35.0 Interface for using the mplib library]%
+  [2024/11/25 v2.35.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/11/12 v2.35.0}
+% \date{2024/11/25 v2.35.1}
 %
 % \maketitle
 %
@@ -243,21 +243,25 @@ See source file '\inFileName' for licencing and contact information.
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
 %   (see \hyperlink{mpliboutlinetext}{below \S\,1.2}).
 %
-%   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
-%   Among these, transparency (|texdoc metafun| \S\,8.2) is so simple that you can apply it to an object,
-%   with \emph{plain} format as well,
+% \begin{description}
+% \item[transparency]
+%   (|texdoc metafun| \S\,8.2) Transparency is so simple that you can apply it to an object,
+%   with \emph{plain} format as well as \emph{metafun},
 %   just by appending |withprescript| |"tr_transparency=|\hskip0pt\relax|<number>"| to the sentence.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
 %
-%   One thing worth mentioning about shading (|texdoc metafun| \S\,8.3) is:
+% \item[shading]
+%   (|texdoc metafun| \S\,8.3) One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
 %   it is regarded by luamplib as
 %   a color expression of \TeX\ side.
 %   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
+% \item[transparency group]
 %   \hypertarget{metafunformat}{}\relax
-%   As for transparency group, the current \emph{metafun} document \S\,8.8 is not correct.
+%   (|texdoc metafun| \S\,8.8)
+%   As for transparency group, the current \emph{metafun} document is not correct.
 %   The true syntax is:
 %\begin{verbatim}
 %     draw <picture>|<path> asgroup <string>
@@ -267,6 +271,7 @@ See source file '\inFileName' for licencing and contact information.
 %   cannot properly render the isolated or knockout effect.
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
 %   See \hyperlink{transparencygroup}{below \S\,1.2}.
+% \end{description}
 %
 % \paragraph{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
 %   Users can choose |numbersystem| option.
@@ -552,7 +557,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item[|alt=...|] sets an alternative text of the figure as given.
 %   This key is needed for ordinary \metapost figures.
 %   You can give alternative text within \metapost code as well:
-%   |verbatimtex| |\mplibalttext{...}| |etex;|
+%   |VerbatimTeX| |("\mplibalttext{...}");|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic quality.
@@ -561,7 +566,7 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can give actual text within \metapost code as well:
-%   |verbatimtex| |\mplibactualtext{...}| |etex;|
+%   |VerbatimTeX| |("\mplibactualtext{...}");|
 % \item[|text|] starts an |artifact| MC and enables tagging on textext
 %   (the same as |btex| |...| |etex|) boxes.
 %   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
@@ -1092,8 +1097,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.35.0",
-  date          = "2024/11/12",
+  version       = "2.35.1",
+  date          = "2024/11/25",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1572,8 +1577,9 @@ local factor = 65536*(7227/7200)
 local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
   xscaled %f yscaled %f shifted (0,-%f) \z
   withprescript "mplibtexboxid=%i:%f:%f")'
-local function process_tex_text (str)
+local function process_tex_text (str, maketext)
   if str then
+    if not maketext then str = str:gsub("\r.-$","") end
     local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
                    and "\\global" or ""
     local tex_box_id
@@ -1798,6 +1804,7 @@ local function protecttexcontents (str)
             :gsub("%%.-\n", "")
             :gsub("%%.-$",  "")
             :gsub("%zPerCent%z", "\\%%")
+            :gsub("\r.-$",  "")
             :gsub("%s+", " ")
 end
 luamplib.legacyverbatimtex = true
@@ -1820,7 +1827,7 @@ function luamplib.maketext (str, what)
         end
       end
     else
-      return process_tex_text(str)
+      return process_tex_text(str, true) -- bool is for 'char13'
     end
   end
   return ""
@@ -3732,18 +3739,16 @@ function luamplib.registergroup (boxid, name, opts)
   local trgroup = pdfetcs.tr_group
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   local whd
-  local tagpdf = is_defined'picture@tag@bbox@attribute'
+  local urx, ury = wd/factor, (ht+dp)/factor
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\luamplibtaggingbegin\\setbox\\mplibscratchbox\\hbox\\bgroup" or "",
+      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
       "\\useboxresource ", index,
-      tagpdf and "\\egroup\\luamplibtaggingBBox\\unhbox\\mplibscratchbox\\luamplibtaggingend" or "",
-      "\\egroup",
+      "\\mplibstoptoPDF",
     }, "global")
-    whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f 0", urx, ury) :gsub(decimals,rmzeros)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3759,18 +3764,15 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:econtent}}",
     }
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\prependtomplibbox\\hbox\\bgroup",
-      tagpdf and "\\luamplibtaggingbegin" or "",
+      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
-      tagpdf and "\\luamplibtaggingBBox" or "",
       "\\box\\mplibscratchbox",
-      tagpdf and "\\luamplibtaggingend" or "",
-      "\\egroup",
+      "\\mplibstoptoPDF",
     }, "global")
-    whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f %.3f", urx, ht/factor, dp/factor) :gsub(decimals,rmzeros)
   end
   info("w/h/d of group '%s': %s", name, whd)
 end
@@ -4199,7 +4201,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/11/12 v2.35.0 mplib package for LuaTeX]
+    [2024/11/25 v2.35.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -4712,7 +4714,7 @@ end
 \def\luamplibtagtextbegin#1{}
 \let\luamplibtagtextend\relax
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
-\ifcsname picture@tag@bbox@attribute\endcsname \else
+\ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
   \keys_define:nn{luamplib/notag}
     {
@@ -4741,24 +4743,33 @@ end
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
 \ExplSyntaxOn
-\tl_new:N \l__tag_luamplib_alt_tl
-\tl_new:N \l__tag_luamplib_alt_dflt_tl
-\tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure}
-\tl_new:N \l__tag_luamplib_actual_tl
-\tl_new:N \l__tag_luamplib_struct_tl
-\tl_set:Nn\l__tag_luamplib_struct_tl {Figure}
-\bool_new:N \l__tag_luamplib_usetext_bool
-\bool_set_false:N \l__tag_luamplib_usetext_bool
+\tl_new:N \l__luamplib_tag_alt_tl
+\tl_new:N \l__luamplib_tag_alt_dflt_tl
+\tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure}
+\tl_new:N \l__luamplib_tag_actual_tl
+\tl_new:N \l__luamplib_tag_struct_tl
+\tl_set:Nn\l__luamplib_tag_struct_tl {Figure}
+\bool_new:N \l__luamplib_tag_usetext_bool
+\bool_new:N \l__luamplib_tag_BBox_bool
+\bool_set_true:N \l__luamplib_tag_BBox_bool
+\seq_new:N\l__luamplib_tag_bboxcorr_seq
+\bool_new:N\l__luamplib_tag_bboxcorr_bool
+\bool_new:N \l__luamplib_tag_debug_bool
+\tl_new:N \l__luamplib_BBox_label_tl
+\tl_new:N \l__luamplib_BBox_llx_tl
+\tl_new:N \l__luamplib_BBox_lly_tl
+\tl_new:N \l__luamplib_BBox_urx_tl
+\tl_new:N \l__luamplib_BBox_ury_tl
 \cs_set_nopar:Npn \luamplibtagtextbegin #1
 {
-  \bool_if:NTF \l__tag_luamplib_usetext_bool
+  \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct,stash}
-    \tag_if_active:T {
-      \expandafter\xdef\csname luamplib.tagbox.#1\endcsname{\tag_get:n{struct_num}}
-    }
     \tag_mc_begin:n{}
+    \tag_struct_begin:n{tag=NonStruct,stash}
+    \def\myboxnum{#1}
+    \edef\mystructnum{\tag_get:n{struct_num}}
+    \edef\statebeforebox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
   }
   {
     \tag_if_active:TF
@@ -4769,10 +4780,19 @@ end
 }
 \cs_set_nopar:Npn \luamplibtagtextend
 {
-  \bool_if:NTF \l__tag_luamplib_usetext_bool
+  \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
-    \tag_mc_end:
+    \edef\stateafterbox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
+    \tag_if_active:T {
+      \int_compare:nNnTF
+      {\stateafterbox}
+      =
+      {\statebeforebox}
+      { \cs_gset_nopar:cpe {luamplib.notagbox.\myboxnum} {\mystructnum} }
+      { \cs_gset_nopar:cpe {luamplib.tagbox.\myboxnum} {\mystructnum} }
+    }
     \tag_struct_end:
+    \tag_mc_end:
     \tag_mc_begin_pop:n{}
   }
   {
@@ -4789,21 +4809,24 @@ end
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{%
-    \bool_if:NTF \l__tag_luamplib_usetext_bool
+    \bool_if:NTF \l__luamplib_tag_usetext_bool
     {
       \ResumeTagging{luamplib.puttextbox}
       \tag_mc_end:
       \cs_if_exist:cTF {luamplib.tagbox.#1}
       {
         \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
-        \raise\dp#1\copy#1\hss
+        \raise\dp#1\copy#1
       }
       {
-        \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
+        \cs_if_exist:cF {luamplib.notagbox.#1}
+        {
+          \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
+        }
         \tag_mc_begin:n{}
         \chardef\mplibtmpnum=#1\relax
         \tag_mc_reset_box:N \mplibtmpnum
-        \raise\dp#1\copy#1\hss
+        \raise\dp#1\copy#1
         \tag_mc_end:
       }
       \tag_mc_begin:n{artifact}
@@ -4811,24 +4834,24 @@ end
     {
       \chardef\mplibtmpnum=#1\relax
       \tag_mc_reset_box:N \mplibtmpnum
-      \raise\dp#1\copy#1\hss
+      \raise\dp#1\copy#1
     }
-  }}
+  \hss}}
 }
 \cs_new_nopar:Npn \__luamplib_tagging_begin_figure:
 {
   \tag_if_active:T
   {
     \tag_mc_end_push:
-    \tl_if_empty:NT\l__tag_luamplib_alt_tl
+    \tl_if_empty:NT\l__luamplib_tag_alt_tl
     {
-      \msg_warning:nne{luamplib}{alt-text-missing}{\l__tag_luamplib_alt_dflt_tl}
-      \tl_set:Ne\l__tag_luamplib_alt_tl {\l__tag_luamplib_alt_dflt_tl}
+      \msg_warning:nne{luamplib}{alt-text-missing}{\l__luamplib_tag_alt_dflt_tl}
+      \tl_set:Ne\l__luamplib_tag_alt_tl {\l__luamplib_tag_alt_dflt_tl}
     }
     \tag_struct_begin:n
     {
-      tag=\l__tag_luamplib_struct_tl,
-      alt=\l__tag_luamplib_alt_tl,
+      tag=\l__luamplib_tag_struct_tl,
+      alt=\l__luamplib_tag_alt_tl,
     }
     \tag_mc_begin:n{}
   }
@@ -4850,7 +4873,7 @@ end
     \tag_struct_begin:n
     {
       tag=Span,
-      actualtext=\l__tag_luamplib_actual_tl,
+      actualtext=\l__luamplib_tag_actual_tl,
     }
     \tag_mc_begin:n{}
   }
@@ -4878,38 +4901,33 @@ end
   {
     ,alt .code:n =
       {
-        \bool_set_true:N \l__tag_graphic_BBox_bool
-        \bool_set_false:N \l__tag_luamplib_usetext_bool
-        \tl_set:Ne\l__tag_luamplib_alt_tl{\text_purify:n{#1}}
+        \bool_set_true:N  \l__luamplib_tag_BBox_bool
+        \bool_set_false:N \l__luamplib_tag_usetext_bool
+        \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
       }
     ,actualtext .code:n =
       {
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-        \bool_set_false:N \l__tag_luamplib_usetext_bool
-        \tl_set:Ne\l__tag_luamplib_actual_tl{\text_purify:n{#1}}
+        \bool_set_false:N \l__luamplib_tag_BBox_bool
+        \bool_set_false:N \l__luamplib_tag_usetext_bool
+        \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_actualtext:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_actualtext:
         \tag_if_active:T {\noindent}
       }
     ,artifact .code:n =
       {
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-        \bool_set_false:N \l__tag_luamplib_usetext_bool
+        \bool_set_false:N \l__luamplib_tag_BBox_bool
+        \bool_set_false:N \l__luamplib_tag_usetext_bool
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
       }
     ,text .code:n =
       {
-        \bool_set_false:N \l__tag_graphic_BBox_bool
-        \bool_set_true:N \l__tag_luamplib_usetext_bool
+        \bool_set_false:N \l__luamplib_tag_BBox_bool
+        \bool_set_true:N  \l__luamplib_tag_usetext_bool
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
         \tag_if_active:T {\noindent}
-      }
-    ,correct-BBox .code:n =
-      {
-        \bool_set_true:N \l__tag_graphic_bboxcorr_bool
-        \seq_set_split:Nnn\l__tag_graphic_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
       }
     ,tag .code:n =
       {
@@ -4917,15 +4935,15 @@ end
           {
             {artifact}
             {
-              \bool_set_false:N \l__tag_graphic_BBox_bool
-              \bool_set_false:N \l__tag_luamplib_usetext_bool
+              \bool_set_false:N \l__luamplib_tag_BBox_bool
+              \bool_set_false:N \l__luamplib_tag_usetext_bool
               \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
               \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
             }
             {text}
             {
-              \bool_set_false:N \l__tag_graphic_BBox_bool
-              \bool_set_true:N \l__tag_luamplib_usetext_bool
+              \bool_set_false:N \l__luamplib_tag_BBox_bool
+              \bool_set_true:N  \l__luamplib_tag_usetext_bool
               \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
               \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
               \tag_if_active:T {\noindent}
@@ -4936,11 +4954,16 @@ end
             }
           }
           {
-            \tl_set:Nn\l__tag_luamplib_struct_tl{#1}
+            \tl_set:Nn\l__luamplib_tag_struct_tl{#1}
           }
       }
+    ,correct-BBox .code:n =
+      {
+        \bool_set_true:N \l__luamplib_tag_bboxcorr_bool
+        \seq_set_split:Nnn \l__luamplib_tag_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
+      }
     ,debug .code:n =
-      { \bool_set_true:N \l__tag_graphic_debug_bool }
+      { \bool_set_true:N \l__luamplib_tag_debug_bool }
     ,instance .code:n =
       { \tl_gset:Nn \currentmpinstancename {#1} }
     ,instancename .meta:n = { instance = {#1} }
@@ -4949,7 +4972,115 @@ end
   }
 \cs_new_nopar:Npn \luamplibtaggingBBox
 {
-  \let\@picbox\mplibscratchbox \picture@tag@bbox@attribute
+  \bool_lazy_and:nnT
+  {\tag_if_active_p:}
+  {\l__luamplib_tag_BBox_bool}
+  {
+    \tl_set:Ne \l__luamplib_BBox_label_tl {luamplib.BBox.\tag_get:n{struct_num}}
+    \tex_savepos:D
+    \property_record:ee{\l__luamplib_BBox_label_tl}{xpos,ypos,abspage}
+    \tl_set:Ne \l__luamplib_BBox_llx_tl
+      {
+        \dim_to_decimal_in_bp:n
+        { \property_ref:een {\l__luamplib_BBox_label_tl}{xpos}{0}sp }
+      }
+    \tl_set:Ne \l__luamplib_BBox_lly_tl
+      {
+        \dim_to_decimal_in_bp:n
+        { \property_ref:een {\l__luamplib_BBox_label_tl}{ypos}{0}sp - \dp\mplibscratchbox }
+      }
+    \tl_set:Ne \l__luamplib_BBox_urx_tl
+      {
+        \dim_to_decimal_in_bp:n
+        { \l__luamplib_BBox_llx_tl bp + \wd\mplibscratchbox }
+      }
+    \tl_set:Ne \l__luamplib_BBox_ury_tl
+      {
+        \dim_to_decimal_in_bp:n
+        { \l__luamplib_BBox_lly_tl bp + \ht\mplibscratchbox + \dp\mplibscratchbox }
+      }
+    \bool_if:NT \l__luamplib_tag_bboxcorr_bool
+      {
+        \tl_set:Ne \l__luamplib_BBox_llx_tl
+          {
+            \fp_eval:n
+            {
+              \l__luamplib_BBox_llx_tl
+              +
+              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {1} }
+            }
+          }
+        \tl_set:Ne \l__luamplib_BBox_lly_tl
+          {
+            \fp_eval:n
+            {
+              \l__luamplib_BBox_lly_tl
+              +
+              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {2} }
+            }
+          }
+        \tl_set:Ne \l__luamplib_BBox_urx_tl
+          {
+            \fp_eval:n
+            {
+              \l__luamplib_BBox_urx_tl
+              +
+              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {3} }
+            }
+          }
+        \tl_set:Ne \l__luamplib_BBox_ury_tl
+          {
+            \fp_eval:n
+            {
+              \l__luamplib_BBox_ury_tl
+              +
+              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {4} }
+            }
+          }
+      }
+    \prop_gput:cne
+      { g__tag_struct_\tag_get:n{struct_num}_prop }
+      {A}
+      {
+        << /O /Layout /BBox [
+          \l__luamplib_BBox_llx_tl\c_space_tl
+          \l__luamplib_BBox_lly_tl\c_space_tl
+          \l__luamplib_BBox_urx_tl\c_space_tl
+          \l__luamplib_BBox_ury_tl
+        ] >>
+      }
+    \bool_if:NT \l__luamplib_tag_debug_bool
+      {
+        \iow_log:e
+          {
+            luamplib/tag/debug:~BBox~of~structure~\tag_get:n{struct_num}~is~
+            \l__luamplib_BBox_llx_tl\c_space_tl
+            \l__luamplib_BBox_lly_tl\c_space_tl
+            \l__luamplib_BBox_urx_tl\c_space_tl
+            \l__luamplib_BBox_ury_tl
+          }
+        \use:e
+        {
+          \exp_not:N\AddToHookNext{shipout/foreground}
+          {
+            \exp_not:N\int_compare:nNnT
+            {\exp_not:N\g_shipout_readonly_int}
+            =
+            {\property_ref:een{\l__luamplib_BBox_label_tl}{abspage}{0}}
+            {
+              \exp_not:N\put
+              (\l__luamplib_BBox_llx_tl bp, \dim_eval:n{\l__luamplib_BBox_lly_tl bp -\paperheight})
+              {
+                \exp_not:N\opacity_select:n{0.5} \exp_not:N\color_select:n{red}
+                \exp_not:N\rule
+                  {\dim_eval:n {\l__luamplib_BBox_urx_tl bp - \l__luamplib_BBox_llx_tl bp}}
+                  {\dim_eval:n {\l__luamplib_BBox_ury_tl bp - \l__luamplib_BBox_lly_tl bp}}
+              }
+            }
+          }
+        }
+      }
+  }
 }
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
@@ -5000,7 +5131,7 @@ end
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
     \keys_set:nn{luamplib/tag}{#1}
     \tl_if_empty:NF \currentmpinstancename
-      { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
+      { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
   }
 \RenewDocumentCommand\mpfig{s O{}}
@@ -5016,7 +5147,7 @@ end
       }
       \keys_set:nn{luamplib/tag}{#2}
       \tl_if_empty:NF \mpfiginstancename
-        { \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
+        { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
     }
   }
@@ -5029,17 +5160,17 @@ end
       Using~the~default~value~'##1'~instead.
     }
     \keys_set:nn{luamplib/tag}{#1}
-    \tl_set:Nn\l__tag_luamplib_alt_dflt_tl {metapost~figure~#2}
+    \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
     \csname luamplib.group.#2\endcsname
     \endgroup
   }
 \cs_new_nopar:Npn \mplibalttext #1
 {
-  \tl_set:Ne \l__tag_luamplib_alt_tl {\text_purify:n{#1}}
+  \tl_set:Ne \l__luamplib_tag_alt_tl {\text_purify:n{#1}}
 }
 \cs_new_nopar:Npn \mplibactualtext #1
 {
-  \tl_set:Ne \l__tag_luamplib_actual_tl {\text_purify:n{#1}}
+  \tl_set:Ne \l__luamplib_tag_actual_tl {\text_purify:n{#1}}
 }
 \ExplSyntaxOff
 %    \end{macrocode}

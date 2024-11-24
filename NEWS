@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/11/25 2.35.1
+   * cope with 'TEX(char13)': remove everything from char13 to the end of
+   input string (https://tug.org/pipermail/metapost/2024-November/003572.html)
+
+   * (WIP) avoid internal command names of tagpdf/kernel code (#151)
+
 2024/11/12 2.35.0
    * even under \mplibtextextlabel{true}, the original 'infont' operator will
    be used when the character slot of the text argument is less than 32, or is
