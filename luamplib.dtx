@@ -1009,7 +1009,8 @@ See source file '\inFileName' for licencing and contact information.
 % As shown in the example, you can reuse the mplibgroup once defined
 % using the \TeX\ command \cs{usemplibgroup} or
 % the \metapost command |usemplibgroup|.
-% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}.
+% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
+% excepting that mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
 %
 % \subsection{Lua}
@@ -3739,16 +3740,18 @@ function luamplib.registergroup (boxid, name, opts)
   local trgroup = pdfetcs.tr_group
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   local whd
-  local urx, ury = wd/factor, (ht+dp)/factor
+  local urx, ury, lly = wd/factor, ht/factor, dp/factor
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
+      "\\hbox{\\lower",lly,"bp\\hbox{",
+      "\\mplibstarttoPDF{0}{",-lly,"}{",urx,"}{",ury,"}",
       "\\useboxresource ", index,
       "\\mplibstoptoPDF",
+      "}}",
     }, "global")
-    whd = format("%.3f %.3f 0", urx, ury) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f 0", urx, lly+ury) :gsub(decimals,rmzeros)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3764,15 +3767,17 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:econtent}}",
     }
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
+      "\\hbox{\\lower",lly,"bp\\hbox{",
+      "\\mplibstarttoPDF{0}{",-lly,"}{",urx,"}{",ury,"}",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
-      "\\wd\\mplibscratchbox ", wd, "sp",
-      "\\ht\\mplibscratchbox ", ht, "sp",
-      "\\dp\\mplibscratchbox ", dp, "sp",
+      "\\wd\\mplibscratchbox ", urx, "bp",
+      "\\ht\\mplibscratchbox ", ury, "bp",
+      "\\dp\\mplibscratchbox ", lly, "bp",
       "\\box\\mplibscratchbox",
       "\\mplibstoptoPDF",
+      "}}",
     }, "global")
-    whd = format("%.3f %.3f %.3f", urx, ht/factor, dp/factor) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f %.3f", urx, ury, lly) :gsub(decimals,rmzeros)
   end
   info("w/h/d of group '%s': %s", name, whd)
 end
@@ -4773,8 +4778,8 @@ end
   }
   {
     \tag_if_active:TF
-      { \chardef\mplibtmpnum\@ne }
-      { \chardef\mplibtmpnum\z@ }
+      { \bool_set_true:N \l_tmpa_bool }
+      { \bool_set_false:N \l_tmpa_bool }
     \SuspendTagging{luamplib.textext}
   }
 }
@@ -4796,9 +4801,8 @@ end
     \tag_mc_begin_pop:n{}
   }
   {
-    \ifnum\mplibtmpnum=\@ne
-      \ResumeTagging{luamplib.textext}
-    \fi
+    \bool_if:NT \l_tmpa_bool
+      { \ResumeTagging{luamplib.textext} }
   }
 }
 \msg_new:nnn {luamplib}{figure-text-reuse}
