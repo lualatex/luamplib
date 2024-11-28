@@ -354,7 +354,7 @@ See source file '\inFileName' for licencing and contact information.
 %   will be typeset with the current \TeX\ font.
 %
 %   From v2.35, however, the redefinition of |infont| operator has been revised:
-%   when the character slot of the text argument is less than $32$~(control characters),
+%   when the character code of the text argument is less than $32$~(control characters),
 %   or is equal to $35$~(|#|), $36$~(|$|), \iffalse |$|\fi
 %   $37$~(|%|), $38$~(|&|), $92$~(|\|), $94$~(|^|),
 %   $95$~(|_|), $123$~(|{|), $125$~(|}|), $126$~(|~|) or $127$~(DEL),
@@ -2812,7 +2812,7 @@ def withgroupname expr s =
   withprescript "mplibgroupname=" & s
 enddef;
 def usemplibgroup primary s =
-  draw maketext("\mplibnoforcehmode\csname luamplib.group." & s & "\endcsname")
+  draw maketext("\csname luamplib.group." & s & "\endcsname")
     shifted runscript("return luamplib.trgroupshifts['" & s & "']")
 enddef;
 ]],
@@ -3692,31 +3692,27 @@ local function do_preobj_GRP (object, prescript)
         "\\luamplibtagasgroupend",
         "\\endgroup",
         "\\expandafter\\xdef\\csname luamplib.group.", trgroup.name, "\\endcsname{",
-        "\\noexpand\\mplibstarttousemplibgroup",
         "\\setbox\\mplibscratchbox\\hbox{\\hskip",-llx,"bp\\raise",-lly,"bp\\hbox{",
         "\\useboxresource \\the\\lastsavedboxresourceindex",
         "}}\\wd\\mplibscratchbox",urx-llx,"bp\\ht\\mplibscratchbox",ury-lly,"bp",
-        "\\box\\mplibscratchbox\\noexpand\\mplibstoptousemplibgroup}",
+        "\\box\\mplibscratchbox}",
       })
     else
       trgroup.cnt = (trgroup.cnt or 0) + 1
       local objname = format("@mplibtrgr%s", trgroup.cnt)
       put2output(tableconcat{
-        "\\luamplibtagasgroupbegin",
         "\\special{pdf:bxobj ", objname, " bbox ", bbox, "}",
         "\\unhbox\\mplibscratchbox",
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
         "\\special{pdf:uxobj ", objname, "}",
-        "\\luamplibtagasgroupend",
         "\\endgroup",
       })
       token.set_macro("luamplib.group."..trgroup.name, tableconcat{
-        "\\mplibstarttousemplibgroup",
         "\\setbox\\mplibscratchbox\\hbox{\\hskip",-llx,"bp\\raise",-lly,"bp\\hbox{",
         "\\special{pdf:uxobj ", objname, "}",
         "}}\\wd\\mplibscratchbox",urx-llx,"bp\\ht\\mplibscratchbox",ury-lly,"bp",
-        "\\box\\mplibscratchbox\\mplibstoptousemplibgroup",
+        "\\box\\mplibscratchbox",
       }, "global")
     end
     trgroup.shifts[trgroup.name] = { llx, lly }
@@ -3756,9 +3752,7 @@ function luamplib.registergroup (boxid, name, opts)
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttousemplibgroup",
       "\\useboxresource ", index,
-      "\\mplibstoptousemplibgroup",
     }, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
@@ -3776,13 +3770,11 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:econtent}}",
     }
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttousemplibgroup",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
       "\\box\\mplibscratchbox",
-      "\\mplibstoptousemplibgroup",
     }, "global")
     whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
   end
@@ -4298,7 +4290,11 @@ end
 %    use Transparency Group
 %    \begin{macrocode}
 \protected\def\usemplibgroup#1#{\usemplibgroupmain}
-\def\usemplibgroupmain#1{\csname luamplib.group.#1\endcsname}
+\def\usemplibgroupmain#1{%
+  \mplibstarttousemplibgroup
+  \csname luamplib.group.#1\endcsname
+  \mplibstoptousemplibgroup
+}
 \def\mplibstarttousemplibgroup{\prependtomplibbox\hbox\bgroup}
 \def\mplibstoptousemplibgroup{\egroup}
 \protected\def\mplibgroup#1{%
@@ -5118,15 +5114,25 @@ end
 \cs_set_nopar:Npn \mplibstarttousemplibgroup
 {
   \prependtomplibbox\hbox\bgroup
-  \bool_if:NF \l__luamplib_tag_usetext_bool { \luamplibtaggingbegin }
+  \luamplibtaggingbegin
   \setbox\mplibscratchbox\hbox\bgroup
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \tag_mc_end:
+    \tag_mc_begin:n{}
+  }
 }
 \cs_set_nopar:Npn \mplibstoptousemplibgroup
 {
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \tag_mc_end:
+    \tag_mc_begin:n{artifact}
+  }
   \egroup
   \luamplibtaggingBBox
   \unhbox\mplibscratchbox
-  \bool_if:NF \l__luamplib_tag_usetext_bool { \luamplibtaggingend }
+  \luamplibtaggingend
   \egroup
 }
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
@@ -5208,7 +5214,9 @@ end
     }
     \keys_set:nn{luamplib/tag}{#1}
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
+    \mplibstarttousemplibgroup
     \csname luamplib.group.#2\endcsname
+    \mplibstoptousemplibgroup
     \endgroup
   }
 \cs_new_nopar:Npn \mplibalttext #1
