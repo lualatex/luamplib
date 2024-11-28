@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2024/11/28 2.35.2
+   * fix height/depth of boxes made by \mplibgroup command
+   * enhanced tagging of \usemplibgroup
+
 2024/11/25 2.35.1
    * cope with 'TEX(char13)': remove everything from char13 to the end of
    input string (https://tug.org/pipermail/metapost/2024-November/003572.html)

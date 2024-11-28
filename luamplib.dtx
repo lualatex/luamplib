@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/11/25 v2.35.1 Interface for using the mplib library]%
+  [2024/11/28 v2.35.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/11/25 v2.35.1}
+% \date{2024/11/28 v2.35.2}
 %
 % \maketitle
 %
@@ -354,7 +354,7 @@ See source file '\inFileName' for licencing and contact information.
 %   will be typeset with the current \TeX\ font.
 %
 %   From v2.35, however, the redefinition of |infont| operator has been revised:
-%   when the character slot of the text argument is less than $32$~(control characters),
+%   when the character code of the text argument is less than $32$~(control characters),
 %   or is equal to $35$~(|#|), $36$~(|$|), \iffalse |$|\fi
 %   $37$~(|%|), $38$~(|&|), $92$~(|\|), $94$~(|^|),
 %   $95$~(|_|), $123$~(|{|), $125$~(|}|), $126$~(|~|) or $127$~(DEL),
@@ -1009,7 +1009,8 @@ See source file '\inFileName' for licencing and contact information.
 % As shown in the example, you can reuse the mplibgroup once defined
 % using the \TeX\ command \cs{usemplibgroup} or
 % the \metapost command |usemplibgroup|.
-% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}.
+% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
+% excepting that mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
 %
 % \subsection{Lua}
@@ -1097,8 +1098,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.35.1",
-  date          = "2024/11/25",
+  version       = "2.35.2",
+  date          = "2024/11/28",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2811,7 +2812,7 @@ def withgroupname expr s =
   withprescript "mplibgroupname=" & s
 enddef;
 def usemplibgroup primary s =
-  draw maketext("\mplibnoforcehmode\csname luamplib.group." & s & "\endcsname")
+  draw maketext("\csname luamplib.group." & s & "\endcsname")
     shifted runscript("return luamplib.trgroupshifts['" & s & "']")
 enddef;
 ]],
@@ -3684,12 +3685,17 @@ local function do_preobj_GRP (object, prescript)
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
         "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
+        "\\luamplibtagasgroupbegin",
         [[\setbox\mplibscratchbox\hbox{\useboxresource\lastsavedboxresourceindex}]],
         [[\wd\mplibscratchbox 0pt\ht\mplibscratchbox 0pt\dp\mplibscratchbox 0pt]],
-        [[\box\mplibscratchbox\endgroup]],
+        [[\box\mplibscratchbox]],
+        "\\luamplibtagasgroupend",
+        "\\endgroup",
         "\\expandafter\\xdef\\csname luamplib.group.", trgroup.name, "\\endcsname{",
-        "\\noexpand\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
-        "\\useboxresource \\the\\lastsavedboxresourceindex\\noexpand\\mplibstoptoPDF}",
+        "\\setbox\\mplibscratchbox\\hbox{\\hskip",-llx,"bp\\raise",-lly,"bp\\hbox{",
+        "\\useboxresource \\the\\lastsavedboxresourceindex",
+        "}}\\wd\\mplibscratchbox",urx-llx,"bp\\ht\\mplibscratchbox",ury-lly,"bp",
+        "\\box\\mplibscratchbox}",
       })
     else
       trgroup.cnt = (trgroup.cnt or 0) + 1
@@ -3699,11 +3705,14 @@ local function do_preobj_GRP (object, prescript)
         "\\unhbox\\mplibscratchbox",
         "\\special{pdf:put @resources <<", res, ">>}",
         "\\special{pdf:exobj <<", grattr, ">>}",
-        "\\special{pdf:uxobj ", objname, "}\\endgroup",
+        "\\special{pdf:uxobj ", objname, "}",
+        "\\endgroup",
       })
       token.set_macro("luamplib.group."..trgroup.name, tableconcat{
-        "\\mplibstarttoPDF{",llx,"}{",lly,"}{",urx,"}{",ury,"}",
-        "\\special{pdf:uxobj ", objname, "}\\mplibstoptoPDF",
+        "\\setbox\\mplibscratchbox\\hbox{\\hskip",-llx,"bp\\raise",-lly,"bp\\hbox{",
+        "\\special{pdf:uxobj ", objname, "}",
+        "}}\\wd\\mplibscratchbox",urx-llx,"bp\\ht\\mplibscratchbox",ury-lly,"bp",
+        "\\box\\mplibscratchbox",
       }, "global")
     end
     trgroup.shifts[trgroup.name] = { llx, lly }
@@ -3739,16 +3748,13 @@ function luamplib.registergroup (boxid, name, opts)
   local trgroup = pdfetcs.tr_group
   trgroup.shifts[name] = { get_macro'MPllx', get_macro'MPlly' }
   local whd
-  local urx, ury = wd/factor, (ht+dp)/factor
   if pdfmode then
     attr = tableconcat(attr) :gsub(decimals,rmzeros)
     local index = tex.saveboxresource(boxid, attr, res, true, grtype)
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
       "\\useboxresource ", index,
-      "\\mplibstoptoPDF",
     }, "global")
-    whd = format("%.3f %.3f 0", urx, ury) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
@@ -3764,15 +3770,13 @@ function luamplib.registergroup (boxid, name, opts)
       "\\special{pdf:econtent}}",
     }
     token.set_macro("luamplib.group."..name, tableconcat{
-      "\\mplibstarttoPDF{0}{0}{",urx,"}{",ury,"}",
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
       "\\ht\\mplibscratchbox ", ht, "sp",
       "\\dp\\mplibscratchbox ", dp, "sp",
       "\\box\\mplibscratchbox",
-      "\\mplibstoptoPDF",
     }, "global")
-    whd = format("%.3f %.3f %.3f", urx, ht/factor, dp/factor) :gsub(decimals,rmzeros)
+    whd = format("%.3f %.3f %.3f", wd/factor, ht/factor, dp/factor) :gsub(decimals,rmzeros)
   end
   info("w/h/d of group '%s': %s", name, whd)
 end
@@ -4201,7 +4205,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/11/25 v2.35.1 mplib package for LuaTeX]
+    [2024/11/28 v2.35.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -4286,7 +4290,13 @@ end
 %    use Transparency Group
 %    \begin{macrocode}
 \protected\def\usemplibgroup#1#{\usemplibgroupmain}
-\def\usemplibgroupmain#1{\csname luamplib.group.#1\endcsname}
+\def\usemplibgroupmain#1{%
+  \mplibstarttousemplibgroup
+  \csname luamplib.group.#1\endcsname
+  \mplibstoptousemplibgroup
+}
+\def\mplibstarttousemplibgroup{\prependtomplibbox\hbox\bgroup}
+\def\mplibstoptousemplibgroup{\egroup}
 \protected\def\mplibgroup#1{%
   \begingroup
   \def\MPllx{0}\def\MPlly{0}%
@@ -4713,6 +4723,8 @@ end
 %    \begin{macrocode}
 \def\luamplibtagtextbegin#1{}
 \let\luamplibtagtextend\relax
+\let\luamplibtagasgroupbegin\relax
+\let\luamplibtagasgroupend\relax
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
@@ -4742,6 +4754,8 @@ end
 \let\mplibstarttoPDForiginal\mplibstarttoPDF
 \let\mplibstoptoPDForiginal\mplibstoptoPDF
 \let\mplibputtextboxoriginal\mplibputtextbox
+\let\mplibstarttousemplibgrouporiginal\mplibstarttousemplibgroup
+\let\mplibstoptousemplibgrouporiginal\mplibstoptousemplibgroup
 \ExplSyntaxOn
 \tl_new:N \l__luamplib_tag_alt_tl
 \tl_new:N \l__luamplib_tag_alt_dflt_tl
@@ -4773,8 +4787,8 @@ end
   }
   {
     \tag_if_active:TF
-      { \chardef\mplibtmpnum\@ne }
-      { \chardef\mplibtmpnum\z@ }
+      { \bool_set_true:N \l_tmpa_bool }
+      { \bool_set_false:N \l_tmpa_bool }
     \SuspendTagging{luamplib.textext}
   }
 }
@@ -4796,9 +4810,8 @@ end
     \tag_mc_begin_pop:n{}
   }
   {
-    \ifnum\mplibtmpnum=\@ne
-      \ResumeTagging{luamplib.textext}
-    \fi
+    \bool_if:NT \l_tmpa_bool
+      { \ResumeTagging{luamplib.textext} }
   }
 }
 \msg_new:nnn {luamplib}{figure-text-reuse}
@@ -5082,6 +5095,46 @@ end
       }
   }
 }
+\cs_set_nopar:Npn \luamplibtagasgroupbegin
+{
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \ResumeTagging{luamplib.asgroup}
+    \tag_mc_begin:n{}
+  }
+}
+\cs_set_nopar:Npn \luamplibtagasgroupend
+{
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \tag_mc_end:
+    \SuspendTagging{luamplib.asgroup}
+  }
+}
+\cs_set_nopar:Npn \mplibstarttousemplibgroup
+{
+  \prependtomplibbox\hbox\bgroup
+  \luamplibtaggingbegin
+  \setbox\mplibscratchbox\hbox\bgroup
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \tag_mc_end:
+    \tag_mc_begin:n{}
+  }
+}
+\cs_set_nopar:Npn \mplibstoptousemplibgroup
+{
+  \bool_if:NT \l__luamplib_tag_usetext_bool
+  {
+    \tag_mc_end:
+    \tag_mc_begin:n{artifact}
+  }
+  \egroup
+  \luamplibtaggingBBox
+  \unhbox\mplibscratchbox
+  \luamplibtaggingend
+  \egroup
+}
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
     \prependtomplibbox
@@ -5161,7 +5214,9 @@ end
     }
     \keys_set:nn{luamplib/tag}{#1}
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
+    \mplibstarttousemplibgroup
     \csname luamplib.group.#2\endcsname
+    \mplibstoptousemplibgroup
     \endgroup
   }
 \cs_new_nopar:Npn \mplibalttext #1
