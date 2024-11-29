@@ -242,6 +242,7 @@ See source file '\inFileName' for licencing and contact information.
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
 %   (see \hyperlink{mpliboutlinetext}{below \S\,1.2}).
+%   You can try other effects as well, though we did not fully tested their proper functioning.
 %
 % \begin{description}
 % \item[transparency]
@@ -550,23 +551,25 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[|tag=...|] You can choose a tag name, default value being |Figure|.
 %   BBox info will be added automatically to the PDF
-%   unless the value is |artifact|, |text|, or |false|.
+%   unless the value is |text| or |false|.
 %   When the value is |false|, tagging is deactivated.
+%
+%   \textsc{n.b.} |tag=artifact| option is removed. Use |artifact| option instead.
 % \item[|debug|] draws bounding box of the figure for checking, which you can correct
 %   by |correct-BBox| key with space-separated four dimen values.
 % \item[|alt=...|] sets an alternative text of the figure as given.
 %   This key is needed for ordinary \metapost figures.
 %   You can give alternative text within \metapost code as well:
 %   |VerbatimTeX| |("\mplibalttext{...}");|
-% \item[|artifact|] starts an |artifact| MC (marked content).
-%   BBox info will not be added.
-%   This key is intended for decorative figures which have no semantic quality.
 % \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
 %   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can give actual text within \metapost code as well:
 %   |VerbatimTeX| |("\mplibactualtext{...}");|
+% \item[|artifact|] starts an |artifact| MC (marked content).
+%   BBox info will not be added.
+%   This key is intended for decorative figures which have no semantic quality.
 % \item[|text|] starts an |artifact| MC and enables tagging on textext
 %   (the same as |btex| |...| |etex|) boxes.
 %   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
@@ -4295,7 +4298,7 @@ end
   \csname luamplib.group.#1\endcsname
   \mplibstoptousemplibgroup
 }
-\def\mplibstarttousemplibgroup{\prependtomplibbox\hbox\bgroup}
+\def\mplibstarttousemplibgroup{\prependtomplibbox\hbox dir TLT\bgroup}
 \def\mplibstoptousemplibgroup{\egroup}
 \protected\def\mplibgroup#1{%
   \begingroup
@@ -4837,16 +4840,16 @@ end
           \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
         }
         \tag_mc_begin:n{}
-        \chardef\mplibtmpnum=#1\relax
-        \tag_mc_reset_box:N \mplibtmpnum
+        \int_set:Nn \l_tmpa_int {#1}
+        \tag_mc_reset_box:N \l_tmpa_int
         \raise\dp#1\copy#1
         \tag_mc_end:
       }
       \tag_mc_begin:n{artifact}
     }
     {
-      \chardef\mplibtmpnum=#1\relax
-      \tag_mc_reset_box:N \mplibtmpnum
+      \int_set:Nn \l_tmpa_int {#1}
+      \tag_mc_reset_box:N \l_tmpa_int
       \raise\dp#1\copy#1
     }
   \hss}}
@@ -4914,14 +4917,11 @@ end
   {
     ,alt .code:n =
       {
-        \bool_set_true:N  \l__luamplib_tag_BBox_bool
-        \bool_set_false:N \l__luamplib_tag_usetext_bool
         \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
       }
     ,actualtext .code:n =
       {
         \bool_set_false:N \l__luamplib_tag_BBox_bool
-        \bool_set_false:N \l__luamplib_tag_usetext_bool
         \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_actualtext:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_actualtext:
@@ -4930,7 +4930,6 @@ end
     ,artifact .code:n =
       {
         \bool_set_false:N \l__luamplib_tag_BBox_bool
-        \bool_set_false:N \l__luamplib_tag_usetext_bool
         \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
         \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
       }
@@ -4946,13 +4945,6 @@ end
       {
         \str_case:nnF {#1}
           {
-            {artifact}
-            {
-              \bool_set_false:N \l__luamplib_tag_BBox_bool
-              \bool_set_false:N \l__luamplib_tag_usetext_bool
-              \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
-              \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
-            }
             {text}
             {
               \bool_set_false:N \l__luamplib_tag_BBox_bool
@@ -5113,7 +5105,7 @@ end
 }
 \cs_set_nopar:Npn \mplibstarttousemplibgroup
 {
-  \prependtomplibbox\hbox\bgroup
+  \prependtomplibbox\hbox dir TLT\bgroup
   \luamplibtaggingbegin
   \setbox\mplibscratchbox\hbox\bgroup
   \bool_if:NT \l__luamplib_tag_usetext_bool
