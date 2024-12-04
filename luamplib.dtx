@@ -3321,6 +3321,12 @@ local transparancy_modes = { [0] = "Normal",
   "Darken",       "Lighten",      "Difference",   "Exclusion",
   "Hue",          "Saturation",   "Color",        "Luminosity",
   "Compatible",
+  normal     = "Normal",     multiply   = "Multiply",   screen    = "Screen",
+  overlay    = "Overlay",    softlight  = "SoftLight",  hardlight = "HardLight",
+  colordodge = "ColorDodge", colorburn  = "ColorBurn",  darken    = "Darken",
+  lighten    = "Lighten",    difference = "Difference", exclusion = "Exclusion",
+  hue        = "Hue",        saturation = "Saturation", color     = "Color",
+  luminosity = "Luminosity", compatible = "Compatible",
 }
 local function add_extgs_resources (on, new)
   local key = format("MPlibTr%s", on)
@@ -3357,7 +3363,10 @@ local function do_preobj_TR(object,prescript)
   if opaq then
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode)] or mode:gsub("^%l",string.upper)
+    mode = transparancy_modes[tonumber(mode) or mode]
+    if not mode then
+      warn("unsupported blend mode: '%s'", prescript.tr_alternative)
+    end
     opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
