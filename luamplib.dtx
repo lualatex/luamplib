@@ -251,6 +251,16 @@ See source file '\inFileName' for licencing and contact information.
 %   just by appending |withprescript| |"tr_transparency=|\hskip0pt\relax|<number>"| to the sentence.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
 %
+%   From v2.36, |withtransparency(<number>|\textbar|<string>,<number>)|
+%   is provided for \emph{plain} format. The first argument accepts numbers or names of
+%   alternative transparency methods (metafun manual Figure~8.1).
+%   The second argument accepts numbers denoting opacity.
+%\begin{verbatim}
+%     fill fullcircle scaled 10 withcolor red
+%         withtransparency (1, 0.5)           % same as ("normal", 0.5)
+%         ;
+%\end{verbatim}
+%
 % \item[shading]
 %   (|texdoc metafun| \S\,8.3) One thing worth mentioning about shading is:
 %   when a color expression is given in string type,
@@ -258,6 +268,26 @@ See source file '\inFileName' for licencing and contact information.
 %   a color expression of \TeX\ side.
 %   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
+%
+%   From v2.36, shading is available in \emph{plain} as well.
+%   The syntax is exactly the same as \emph{metafun}'s new method (\S\,8.3.3), except that
+%   the \textcolor{red}{|shade|} contained in each and every macro name has changed to
+%   \textcolor{red}{|shading|} in luamplib: for instance, while |withshademethod| is
+%   a macro name which only works with \emph{metafun} format,
+%   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
+%   Other differences to the \emph{metafun}'s are:
+%   \begin{itemize}
+%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |infont|, etc)
+%   as well as paths can have shading effect.
+%\begin{verbatim}
+%     draw btex \bfseries\TeX etex scaled 10
+%         withshadingmethod "linear"
+%         withshadingcolors (red,blue) ;
+%\end{verbatim}
+%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{below} \S\,1.2),
+%   you shall not give shading effect to textual pictures (paths are OK).
+%   Anyway, that is the current phase of the development.
+%   \end{itemize}
 %
 % \item[transparency group]
 %   \hypertarget{metafunformat}{}\relax
@@ -1880,13 +1910,14 @@ luamplib.shadecolor = function (str)
 %    \end{macrocode}
 %   An example of spot color shading:
 %\begin{verbatim}
+%     \DocumentMetadata{ }
 %     \documentclass{article}
 %     \usepackage{luamplib}
-%     \mplibsetformat{metafun}
 %     \ExplSyntaxOn
 %     \color_model_new:nnn { pantone3005 }
 %       { Separation }
-%       { name = PANTONE~3005~U ,
+%       {
+%         name = PANTONE~3005~U ,
 %         alternative-model = cmyk ,
 %         alternative-values = {1, 0.56, 0, 0}
 %       }
@@ -1894,14 +1925,16 @@ luamplib.shadecolor = function (str)
 %       \color_set:nnn{spotB}{pantone3005}{0.6}
 %     \color_model_new:nnn { pantone1215 }
 %       { Separation }
-%       { name = PANTONE~1215~U ,
+%       {
+%         name = PANTONE~1215~U ,
 %         alternative-model = cmyk ,
 %         alternative-values = {0, 0.15, 0.51, 0}
 %       }
 %       \color_set:nnn{spotC}{pantone1215}{1}
 %     \color_model_new:nnn { pantone2040 }
 %       { Separation }
-%       { name = PANTONE~2040~U ,
+%       {
+%         name = PANTONE~2040~U ,
 %         alternative-model = cmyk ,
 %         alternative-values = {0, 0.28, 0.21, 0.04}
 %       }
@@ -1910,16 +1943,16 @@ luamplib.shadecolor = function (str)
 %     \begin{document}
 %     \begin{mplibcode}
 %     beginfig(1)
-%       fill unitsquare xyscaled (\mpdim\textwidth,1cm)
-%            withshademethod "linear"
-%            withshadevector (0,1)
-%            withshadestep (
-%                withshadefraction .5
-%                withshadecolors ("spotB","spotC")
+%       fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
+%            withshadingmethod "linear"
+%            withshadingvector (0,1)
+%            withshadingstep (
+%                withshadingfraction .5
+%                withshadingcolors ("spotB","spotC")
 %            )
-%            withshadestep (
-%                withshadefraction 1
-%                withshadecolors ("spotC","spotD")
+%            withshadingstep (
+%                withshadingfraction 1
+%                withshadingcolors ("spotC","spotD")
 %            )
 %       ;
 %     endfig;
@@ -1931,27 +1964,25 @@ luamplib.shadecolor = function (str)
 %    \DocumentMetadata{ }
 %    \documentclass{article}
 %    \usepackage{luamplib}
-%    \mplibsetformat{metafun}
 %    \ExplSyntaxOn
 %    \color_model_new:nnn { pantone1215 }
 %      { Separation }
-%      { name = PANTONE~1215~U ,
+%      {
+%        name = PANTONE~1215~U ,
 %        alternative-model = cmyk ,
 %        alternative-values = {0, 0.15, 0.51, 0}
 %      }
 %    \color_model_new:nnn { pantone+black }
 %      { DeviceN }
-%      {
-%        names = {pantone1215,black}
-%      }
+%      { names = {pantone1215,black} }
 %    \color_set:nnn{purepantone}{pantone+black}{1,0}
-%    \color_set:nnn{pureblack} {pantone+black}{0,1}
+%    \color_set:nnn{pureblack}  {pantone+black}{0,1}
 %    \ExplSyntaxOff
 %    \begin{document}
 %    \mpfig
 %    fill unitsquare xscaled \mpdim{\textwidth} yscaled 30
-%        withshademethod "linear"
-%        withshadecolors ("purepantone","pureblack")
+%        withshadingmethod "linear"
+%        withshadingcolors ("purepantone","pureblack")
 %        ;
 %    \endmpfig
 %    \end{document}
@@ -2571,6 +2602,10 @@ else:
   def message expr t =
     if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
   enddef;
+  def withtransparency (expr a, t) =
+    withprescript "tr_alternative=" & if numeric a: decimal fi a
+    withprescript "tr_transparency=" & decimal t
+  enddef;
 fi
 def resolvedcolor(expr s) =
   runscript("return luamplib.shadecolor('"& s &"')")
@@ -2817,6 +2852,144 @@ enddef;
 def usemplibgroup primary s =
   draw maketext("\csname luamplib.group." & s & "\endcsname")
     shifted runscript("return luamplib.trgroupshifts['" & s & "']")
+enddef;
+path    mplib_shade_path ;
+numeric mplib_shade_step ; mplib_shade_step := 0 ;
+numeric mplib_shade_fx, mplib_shade_fy ;
+numeric mplib_shade_lx, mplib_shade_ly ;
+numeric mplib_shade_nx, mplib_shade_ny ;
+numeric mplib_shade_dx, mplib_shade_dy ;
+numeric mplib_shade_tx, mplib_shade_ty ;
+primarydef p withshadingmethod m =
+  p
+  if picture p :
+    withprescript "sh_operand_type=picture"
+    mplib_with_shade_method (boundingbox p, m)
+  else :
+    mplib_with_shade_method (p, m)
+  fi
+enddef;
+def mplib_with_shade_method (expr p, m) =
+  hide(mplib_with_shade_method_analyze(p))
+  withprescript "sh_domain=0 1"
+  withprescript "sh_transform=yes"
+  withprescript "sh_color=into"
+  withprescript "sh_color_a=" & colordecimals white
+  withprescript "sh_color_b=" & colordecimals black
+  withprescript "sh_first=" & ddecimal point 0 of p
+  withprescript "sh_set_x=" & ddecimal (mplib_shade_nx,mplib_shade_lx)
+  withprescript "sh_set_y=" & ddecimal (mplib_shade_ny,mplib_shade_ly)
+  if m = "linear" :
+    withprescript "sh_type=linear"
+    withprescript "sh_factor=1"
+    withprescript "sh_center_a=" & ddecimal llcorner p
+    withprescript "sh_center_b=" & ddecimal urcorner p
+  else :
+    withprescript "sh_type=circular"
+    withprescript "sh_factor=1.2"
+    withprescript "sh_center_a=" & ddecimal center p
+    withprescript "sh_center_b=" & ddecimal center p
+    withprescript "sh_radius_a=" & decimal 0
+    withprescript "sh_radius_b=" & decimal mplib_max_radius(p)
+  fi
+enddef;
+def mplib_with_shade_method_analyze(expr p) =
+  mplib_shade_path := p ;
+  mplib_shade_step := 1 ;
+  mplib_shade_fx   := xpart point 0 of p ;
+  mplib_shade_fy   := ypart point 0 of p ;
+  mplib_shade_lx   := mplib_shade_fx ;
+  mplib_shade_ly   := mplib_shade_fy ;
+  mplib_shade_nx   := 0 ;
+  mplib_shade_ny   := 0 ;
+  mplib_shade_dx   := abs(mplib_shade_fx - mplib_shade_lx) ;
+  mplib_shade_dy   := abs(mplib_shade_fy - mplib_shade_ly) ;
+  for i=1 upto length(p) :
+    mplib_shade_tx := abs(mplib_shade_fx - xpart point i of p) ;
+    mplib_shade_ty := abs(mplib_shade_fy - ypart point i of p) ;
+    if mplib_shade_tx > mplib_shade_dx :
+      mplib_shade_nx := i + 1 ;
+      mplib_shade_lx := xpart point i of p ;
+      mplib_shade_dx := mplib_shade_tx ;
+    fi ;
+    if mplib_shade_ty > mplib_shade_dy :
+      mplib_shade_ny := i + 1 ;
+      mplib_shade_ly := ypart point i of p ;
+      mplib_shade_dy := mplib_shade_ty ;
+    fi ;
+  endfor ;
+enddef;
+vardef mplib_max_radius(expr p) =
+  max (
+    (xpart center   p - xpart llcorner p) ++ (ypart center   p - ypart llcorner p),
+    (xpart center   p - xpart ulcorner p) ++ (ypart ulcorner p - ypart center   p),
+    (xpart lrcorner p - xpart center   p) ++ (ypart center   p - ypart lrcorner p),
+    (xpart urcorner p - xpart center   p) ++ (ypart urcorner p - ypart center   p)
+  )
+enddef;
+def withshadingstep (text t) =
+  hide(mplib_shade_step := mplib_shade_step + 1 ;)
+  withprescript "sh_step=" & decimal mplib_shade_step
+  t
+enddef;
+def withshadingradius expr a =
+  withprescript "sh_radius_a=" & decimal (xpart a)
+  withprescript "sh_radius_b=" & decimal (ypart a)
+enddef;
+def withshadingorigin expr a =
+  withprescript "sh_center_a=" & ddecimal a
+  withprescript "sh_center_b=" & ddecimal a
+enddef;
+def withshadingvector expr a =
+  withprescript "sh_center_a=" & ddecimal (point xpart a of mplib_shade_path)
+  withprescript "sh_center_b=" & ddecimal (point ypart a of mplib_shade_path)
+enddef;
+def withshadingdirection expr a =
+  withprescript "sh_center_a=" & ddecimal (point xpart a of boundingbox(mplib_shade_path))
+  withprescript "sh_center_b=" & ddecimal (point ypart a of boundingbox(mplib_shade_path))
+enddef;
+def withshadingtransform expr a =
+  withprescript "sh_transform=" & a
+enddef;
+def withshadingcenter expr a =
+  withprescript "sh_center_a=" & ddecimal (
+    center mplib_shade_path shifted (
+      xpart a * xpart (lrcorner mplib_shade_path - llcorner mplib_shade_path)/2,
+      ypart a * ypart (urcorner mplib_shade_path - lrcorner mplib_shade_path)/2
+    )
+  )
+enddef;
+def withshadingdomain expr d =
+  withprescript "sh_domain=" & ddecimal d
+enddef;
+def withshadingfactor expr f =
+  withprescript "sh_factor=" & decimal f
+enddef;
+def withshadingfraction expr a =
+  if mplib_shade_step > 0 :
+    withprescript "sh_fraction_" & decimal mplib_shade_step & "=" & decimal a
+  fi
+enddef;
+def withshadingcolors (expr a, b) =
+  if mplib_shade_step > 0 :
+    withprescript "sh_color=into"
+    withprescript "sh_color_a_" & decimal mplib_shade_step & "=" & colordecimals a
+    withprescript "sh_color_b_" & decimal mplib_shade_step & "=" & colordecimals b
+  else :
+    withprescript "sh_color=into"
+    withprescript "sh_color_a=" & colordecimals a
+    withprescript "sh_color_b=" & colordecimals b
+  fi
+enddef;
+vardef ddecimal primary p =
+  decimal xpart p & " " & decimal ypart p
+enddef;
+vardef boundingbox primary p =
+  if (path p) or (picture p) :
+    llcorner p -- lrcorner p -- urcorner p -- ulcorner p
+  else :
+    origin
+  fi -- cycle
 enddef;
 ]],
   legacyverbatimtex = [[
@@ -3184,7 +3357,7 @@ local function do_preobj_TR(object,prescript)
   if opaq then
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode)] or mode
+    mode = transparancy_modes[tonumber(mode)] or mode:gsub("^%l",string.upper)
     opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
       os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
@@ -3396,7 +3569,82 @@ end
 
 %    \end{macrocode}
 %
-%    Patterns
+% Shading Patterns: much similar to the metafun's shade,
+% but we can apply shading to textual pictures as well as paths.
+%    \begin{macrocode}
+local function add_pattern_resources (key, val)
+  if pdfmanagement then
+    texsprint {
+      "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Pattern}{", key, "}{", val, "}"
+    }
+  else
+    local res = format("/%s %s", key, val)
+    if is_defined(pdfetcs.pgfpattern) then
+      texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
+    else
+      pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
+    end
+  end
+end
+function luamplib.dolatelua (on, os)
+  local h, v = pdf.getpos()
+  h, v = h/factor, v/factor
+  if pdfmode then
+    pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %f %f]>>", os, h, v))
+    pdf.refobj(on)
+  else
+    local shift = os:explode()
+    h, v = format("%.3f", h), format("%.3f",v)
+    if tonumber(h) ~= tonumber(shift[1]) or tonumber(v) ~= tonumber(shift[2]) then
+      warn([[Please add 'withprescript "sh_matrixshift=%s %s"' to the picture shading]],h,v)
+    end
+  end
+end
+local function do_preobj_shading (object, prescript)
+  if not prescript or not prescript.sh_operand_type then return end
+  if object.type == "fill" then
+    warn "Not a textual picture shading"
+    return
+  end
+
+  local on = do_preobj_SH(object, prescript)
+  os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
+  if pdfmode then
+    on = pdf.reserveobj()
+    put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
+  else
+%    \end{macrocode}
+% Why |@xpos| |@ypos| do not work properly?
+%    \begin{macrocode}
+    on = pdfetcs.cnt
+    pdfetcs.cnt = on + 1
+    if is_defined"RecordProperties" then
+      put2output(tableconcat{
+        "\\savepos \\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
+        \\special{pdf:obj @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 \z
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
+        ]>>}"
+      })
+    else
+      local shift = prescript.sh_matrixshift or "0 0"
+      texsprint{ "\\special{pdf:obj @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 ",shift,"]>>}" }
+      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",shift,"]]) }" })
+    end
+  end
+
+  local key, val = format("MPlibPt%s", on), format(pdfetcs.resfmt, on)
+  add_pattern_resources(key,val)
+  pdf_literalcode("/Pattern cs/%s scn", key)
+%    \end{macrocode}
+% To avoid possible double execution, once by Pattern gs, once by Sh operator.
+%    \begin{macrocode}
+  prescript.sh_type = nil
+end
+
+%    \end{macrocode}
+%
+%    Tiling Patterns
 %    \begin{macrocode}
 pdfetcs.patterns = { }
 local function gather_resources (optres)
@@ -3575,18 +3823,7 @@ local function do_preobj_PAT(object, prescript)
   end
   if not patt.done then
     local val = pdfmode and format("%s 0 R",index) or patterns[index]
-    if pdfmanagement then
-      texsprint {
-        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Pattern}{", key, "}{", val, "}"
-      }
-    else
-      local res = format("/%s %s", key, val)
-      if is_defined(pdfetcs.pgfpattern) then
-        texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
-      else
-        pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
-      end
-    end
+    add_pattern_resources(key,val)
   end
   patt.done = true
 end
@@ -3952,7 +4189,8 @@ function luamplib.flush (result,flusher)
               local tr_opaq = do_preobj_TR(object,prescript) -- opacity
               local fading_ = do_preobj_FADE(object,prescript) -- fading
               local trgroup = do_preobj_GRP(object,prescript) -- transparency group
-              local pattern_ = do_preobj_PAT(object,prescript) -- pattern
+              local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
+              local shading_ = do_preobj_shading(object,prescript) -- shading pattern
               if prescript and prescript.mplibtexboxid then
                 put_tex_boxes(object,prescript)
               elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip

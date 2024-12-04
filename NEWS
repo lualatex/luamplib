@@ -1,5 +1,15 @@
                        History of the luamplib package
 
+2024/12/xx 2.36.0
+   * <path>|<textual picture> withshadingmethod "linear"|"circular"
+   gives shading (gradient colors) effect with plain format as well
+   as metafun. See the documentation.
+
+   * withtransparency(<number>|<string>,<number>)  gives transparency
+   (actually opacity) effect with plain format. See the documentation.
+
+   * add 'dir TLT' to usemplibgroup boxes
+
 2024/11/28 2.35.2
    * fix height/depth of boxes made by \mplibgroup command
    * enhanced tagging of \usemplibgroup
