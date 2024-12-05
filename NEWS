@@ -2,13 +2,15 @@
 
 2024/12/xx 2.36.0
    * <path>|<textual picture> withshadingmethod "linear"|"circular"
-   gives shading (gradient colors) effect with plain format as well
-   as metafun. See the documentation.
+   gives shading effect with plain format as well as metafun.
+   See the documentation.
 
-   * withtransparency(<number>|<string>,<number>)  gives transparency
-   (actually opacity) effect with plain format. See the documentation.
+   * withtransparency (<number>|<string>, <number>)
+   gives transparency effect with plain format as well. See the documentation.
 
-   * add 'dir TLT' to usemplibgroup boxes
+   * added 'dir TLT' to usemplibgroup boxes
+
+   * removed 'tag=artifact' option. Use 'artifact' instead.
 
 2024/11/28 2.35.2
    * fix height/depth of boxes made by \mplibgroup command

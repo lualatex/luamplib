@@ -257,7 +257,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The second argument accepts numbers denoting opacity.
 %\begin{verbatim}
 %     fill fullcircle scaled 10 withcolor red
-%         withtransparency (1, 0.5)           % same as ("normal", 0.5)
+%         withtransparency (1, 0.5)           % or ("normal", 0.5)
 %         ;
 %\end{verbatim}
 %
@@ -278,15 +278,18 @@ See source file '\inFileName' for licencing and contact information.
 %   Other differences to the \emph{metafun}'s are:
 %   \begin{itemize}
 %   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |infont|, etc)
-%   as well as paths can have shading effect.
+%     as well as paths can have shading effect.
 %\begin{verbatim}
 %     draw btex \bfseries\TeX etex scaled 10
 %         withshadingmethod "linear"
 %         withshadingcolors (red,blue) ;
 %\end{verbatim}
+%   \item When you give shading effect to a picture made by |infont| operator,
+%     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
+%     as luamplib considers only the bounding box of the picture.
 %   \item Inside tiling pattern cells (see \hyperlink{mppattern}{below} \S\,1.2),
-%   you shall not give shading effect to textual pictures (paths are OK).
-%   Anyway, that is the current phase of the development.
+%     you shall not give shading effect to pictures (paths are OK).
+%     Anyway, that is the current phase of development.
 %   \end{itemize}
 %
 % \item[transparency group]
@@ -977,7 +980,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \mpfig
 %     usemplibgroup "mygroup" rotated 15
-%       withprescript "tr_transparency=0.5";
+%       withtransparency (1, 0.5) ;
 %     draw (left--right) scaled 10;
 %     draw (up--down) scaled 10;
 %   \endmpfig
@@ -1010,7 +1013,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \mpfig
 %     usemplibgroup "mygrx" scaled 1.5
-%       withprescript "tr_transparency=0.5" ;
+%       withtransparency (1, 0.5) ;
 %   \endmpfig
 %\end{verbatim}
 %
@@ -2606,6 +2609,16 @@ else:
     withprescript "tr_alternative=" & if numeric a: decimal fi a
     withprescript "tr_transparency=" & decimal t
   enddef;
+  vardef ddecimal primary p =
+    decimal xpart p & " " & decimal ypart p
+  enddef;
+  vardef boundingbox primary p =
+    if (path p) or (picture p) :
+      llcorner p -- lrcorner p -- urcorner p -- ulcorner p
+    else :
+      origin
+    fi -- cycle
+  enddef;
 fi
 def resolvedcolor(expr s) =
   runscript("return luamplib.shadecolor('"& s &"')")
@@ -2864,15 +2877,21 @@ primarydef p withshadingmethod m =
   p
   if picture p :
     withprescript "sh_operand_type=picture"
-    mplib_with_shade_method (boundingbox p, m)
+    if textual p:
+      withprescript "sh_transform=no"
+      mplib_with_shade_method (boundingbox p, m)
+    else:
+      withprescript "sh_transform=yes"
+      mplib_with_shade_method (pathpart p, m)
+    fi
   else :
+    withprescript "sh_transform=yes"
     mplib_with_shade_method (p, m)
   fi
 enddef;
 def mplib_with_shade_method (expr p, m) =
   hide(mplib_with_shade_method_analyze(p))
   withprescript "sh_domain=0 1"
-  withprescript "sh_transform=yes"
   withprescript "sh_color=into"
   withprescript "sh_color_a=" & colordecimals white
   withprescript "sh_color_b=" & colordecimals black
@@ -2980,16 +2999,6 @@ def withshadingcolors (expr a, b) =
     withprescript "sh_color_a=" & colordecimals a
     withprescript "sh_color_b=" & colordecimals b
   fi
-enddef;
-vardef ddecimal primary p =
-  decimal xpart p & " " & decimal ypart p
-enddef;
-vardef boundingbox primary p =
-  if (path p) or (picture p) :
-    llcorner p -- lrcorner p -- urcorner p -- ulcorner p
-  else :
-    origin
-  fi -- cycle
 enddef;
 ]],
   legacyverbatimtex = [[
@@ -3237,26 +3246,32 @@ pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
 local function update_pdfobjs (os, stream)
   local key = os
   if stream then key = key..stream end
-  local on = pdfobjs[key]
+  local on = key and pdfobjs[key]
   if on then
     return on,false
   end
   if pdfmode then
     if stream then
       on = pdf.immediateobj("stream",stream,os)
-    else
+    elseif os then
       on = pdf.immediateobj(os)
+    else
+      on = pdf.reserveobj()
     end
   else
     on = pdfetcs.cnt or 1
     if stream then
       texsprint(format("\\special{pdf:stream @mplibpdfobj%s (%s) <<%s>>}",on,stream,os))
-    else
+    elseif os then
       texsprint(format("\\special{pdf:obj @mplibpdfobj%s %s}",on,os))
+    else
+      texsprint(format("\\special{pdf:obj @mplibpdfobj%s <<>>}",on))
     end
     pdfetcs.cnt = on + 1
   end
-  pdfobjs[key] = on
+  if key then
+    pdfobjs[key] = on
+  end
   return on,true
 end
 pdfetcs.resfmt = pdfmode and "%s 0 R" or "@mplibpdfobj%s"
@@ -3597,51 +3612,46 @@ local function add_pattern_resources (key, val)
 end
 function luamplib.dolatelua (on, os)
   local h, v = pdf.getpos()
-  h, v = h/factor, v/factor
+  h = format("%f", h/factor) :gsub(decimals,rmzeros)
+  v = format("%f", v/factor) :gsub(decimals,rmzeros)
   if pdfmode then
-    pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %f %f]>>", os, h, v))
+    pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %s %s]>>", os, h, v))
     pdf.refobj(on)
   else
     local shift = os:explode()
-    h, v = format("%.3f", h), format("%.3f",v)
     if tonumber(h) ~= tonumber(shift[1]) or tonumber(v) ~= tonumber(shift[2]) then
-      warn([[Please add 'withprescript "sh_matrixshift=%s %s"' to the picture shading]],h,v)
+      warn([[Add 'withprescript "sh_matrixshift=%s %s"' to the picture shading]], h, v)
     end
   end
 end
 local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
-  if object.type == "fill" then
-    warn "Not a textual picture shading"
-    return
-  end
-
   local on = do_preobj_SH(object, prescript)
   os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
+  on = update_pdfobjs()
   if pdfmode then
-    on = pdf.reserveobj()
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
   else
 %    \end{macrocode}
-% Why |@xpos| |@ypos| do not work properly?
+% Why |@xpos| |@ypos| do not work properly???
 %    \begin{macrocode}
-    on = pdfetcs.cnt
-    pdfetcs.cnt = on + 1
     if is_defined"RecordProperties" then
       put2output(tableconcat{
         "\\savepos \\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
-        \\special{pdf:obj @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 \z
+        \\special{pdf:put @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 \z
         \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
+%    \end{macrocode}
+% What is this mysterious number |-50|???
+%    \begin{macrocode}
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp-50bp}\z
         ]>>}"
       })
     else
       local shift = prescript.sh_matrixshift or "0 0"
-      texsprint{ "\\special{pdf:obj @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 ",shift,"]>>}" }
+      texsprint{ "\\special{pdf:put @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 ",shift,"]>>}" }
       put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",shift,"]]) }" })
     end
   end
-
   local key, val = format("MPlibPt%s", on), format(pdfetcs.resfmt, on)
   add_pattern_resources(key,val)
   pdf_literalcode("/Pattern cs/%s scn", key)
@@ -4189,7 +4199,7 @@ function luamplib.flush (result,flusher)
               local object        = objects[o]
               local objecttype    = object.type
 %    \end{macrocode}
-%    The following 9 lines are part of |btex...etex| patch.
+%    The following 10 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
               local prescript     = object.prescript
