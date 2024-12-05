@@ -3634,16 +3634,20 @@ local function do_preobj_shading (object, prescript)
   else
 %    \end{macrocode}
 % Why |@xpos| |@ypos| do not work properly???
+%
+% Anyway, this seems to be needed for proper functioning:
+%\begin{verbatim}
+%     \pagewidth=\paperwidth
+%     \pageheight=\paperheight
+%     \special{papersize=\the\paperwidth,\the\paperheight}
+%\end{verbatim}
 %    \begin{macrocode}
     if is_defined"RecordProperties" then
       put2output(tableconcat{
         "\\savepos \\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
         \\special{pdf:put @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 \z
         \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
-%    \end{macrocode}
-% What is this mysterious number |-50|???
-%    \begin{macrocode}
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp-50bp}\z
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
         ]>>}"
       })
     else
