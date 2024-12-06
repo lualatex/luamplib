@@ -3379,9 +3379,10 @@ local function do_preobj_TR(object,prescript)
   if opaq then
     local key, on, os, new
     local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode) or mode]
+    mode = transparancy_modes[tonumber(mode) or mode:lower()]
     if not mode then
-      warn("unsupported blend mode: '%s'", prescript.tr_alternative)
+      mode = prescript.tr_alternative
+      warn("unsupported blend mode: '%s'", mode)
     end
     opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
     for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
