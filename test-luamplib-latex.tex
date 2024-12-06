@@ -344,6 +344,13 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7;
   draw test withpattern "mypatt" ;
 \endmpfig
+\mpfig
+  draw maketext "\bfseries\TeX" rotated 30 scaled 3
+    withshadingmethod "linear"
+    withshadingvector (3,0)
+    withshadingcolors (red,blue)
+    ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

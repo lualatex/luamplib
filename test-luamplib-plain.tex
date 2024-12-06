@@ -319,6 +319,13 @@ usemplibgroup "testTRgroup"
   fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7;
   draw test withpattern "pattuncolored" ;
 \endmpfig
+\mpfig
+  draw btex \bf\TeX etex rotated 30 scaled 3
+    withshadingmethod "linear"
+    withshadingcolors (red,blue)
+    withshadingvector (0,1)
+    ;
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip

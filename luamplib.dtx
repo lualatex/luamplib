@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/11/28 v2.35.2 Interface for using the mplib library]%
+  [2024/12/07 v2.36.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/11/28 v2.35.2}
+% \date{2024/12/07 v2.36.0}
 %
 % \maketitle
 %
@@ -234,7 +234,7 @@ See source file '\inFileName' for licencing and contact information.
 %   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
-%   \cs{mplibsetformat\{<format name>\}}.
+%   \cs{mplibsetformat}\marg{format name}.
 %
 %   \textsc{n.b.} As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
@@ -252,11 +252,12 @@ See source file '\inFileName' for licencing and contact information.
 %   ($0 \le \hbox{\emph{<number>}} \le 1$)
 %
 %   From v2.36, |withtransparency(<number>|\textbar|<string>,<number>)|
-%   is provided for \emph{plain} format. The first argument accepts numbers or names of
+%   is provided for \emph{plain} format. The first argument accepts a number or a name of
 %   alternative transparency methods (metafun manual Figure~8.1).
-%   The second argument accepts numbers denoting opacity.
+%   The second argument accepts a number denoting opacity.
 %\begin{verbatim}
-%     fill fullcircle scaled 10 withcolor red
+%     fill fullcircle scaled 10
+%         withcolor red
 %         withtransparency (1, 0.5)           % or ("normal", 0.5)
 %         ;
 %\end{verbatim}
@@ -271,20 +272,20 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   From v2.36, shading is available in \emph{plain} as well.
 %   The syntax is exactly the same as \emph{metafun}'s new method (\S\,8.3.3), except that
-%   the \textcolor{red}{|shade|} contained in each and every macro name has changed to
-%   \textcolor{red}{|shading|} in luamplib: for instance, while |withshademethod| is
+%   the `\textcolor{red}{|shade|}' contained in each and every macro name has changed to
+%   `\textcolor{red}{|shading|}' in luamplib: for instance, while |withshademethod| is
 %   a macro name which only works with \emph{metafun} format,
 %   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
 %   Other differences to the \emph{metafun}'s are:
 %   \begin{itemize}
-%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |infont|, etc)
+%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|, |maketext|, |infont|, etc)
 %     as well as paths can have shading effect.
 %\begin{verbatim}
 %     draw btex \bfseries\TeX etex scaled 10
 %         withshadingmethod "linear"
 %         withshadingcolors (red,blue) ;
 %\end{verbatim}
-%   \item When you give shading effect to a picture made by |infont| operator,
+%   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as luamplib considers only the bounding box of the picture.
 %   \item Inside tiling pattern cells (see \hyperlink{mppattern}{below} \S\,1.2),
@@ -556,7 +557,7 @@ See source file '\inFileName' for licencing and contact information.
 %   command-line option.
 %
 %   Users can change this behavior by the command
-%   \cs{mplibcachedir\{<directory path>\}}, where tilde (|~|) is interpreted
+%   \cs{mplibcachedir}\marg{directory path}, where tilde (|~|) is interpreted
 %   as the user's home directory (on a windows machine as well).
 %   As backslashes (\cs{}) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
@@ -1134,8 +1135,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.35.2",
-  date          = "2024/11/28",
+  version       = "2.36.0",
+  date          = "2024/12/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3633,8 +3634,7 @@ local function do_preobj_shading (object, prescript)
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
   else
 %    \end{macrocode}
-% Why |@xpos| |@ypos| do not work properly???
-%
+% Why |@xpos| |@ypos| do not work properly???\\
 % Anyway, this seems to be needed for proper functioning:
 %\begin{verbatim}
 %     \pagewidth=\paperwidth
@@ -3644,7 +3644,7 @@ local function do_preobj_shading (object, prescript)
 %    \begin{macrocode}
     if is_defined"RecordProperties" then
       put2output(tableconcat{
-        "\\savepos \\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
+        "\\csname tex_savepos:D\\endcsname\\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
         \\special{pdf:put @mplibpdfobj",on," <<",os,"/Matrix[1 0 0 1 \z
         \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
         \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
@@ -4469,7 +4469,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/11/28 v2.35.2 mplib package for LuaTeX]
+    [2024/12/07 v2.36.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

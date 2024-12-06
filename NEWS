@@ -1,6 +1,6 @@
                        History of the luamplib package
 
-2024/12/xx 2.36.0
+2024/12/07 2.36.0
    * <path>|<textual picture> withshadingmethod "linear"|"circular"
    gives shading effect with plain format as well as metafun.
    See the documentation.
