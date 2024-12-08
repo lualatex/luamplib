@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/07 v2.36.0 Interface for using the mplib library]%
+  [2024/12/08 v2.36.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/07 v2.36.0}
+% \date{2024/12/08 v2.36.0}
 %
 % \maketitle
 %
@@ -253,7 +253,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   From v2.36, |withtransparency(<number>|\textbar|<string>,<number>)|
 %   is provided for \emph{plain} format. The first argument accepts a number or a name of
-%   alternative transparency methods (metafun manual Figure~8.1).
+%   alternative transparency methods (see metafun manual Figure~8.1).
 %   The second argument accepts a number denoting opacity.
 %\begin{verbatim}
 %     fill fullcircle scaled 10
@@ -270,13 +270,13 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
-%   From v2.36, shading is available in \emph{plain} as well.
+%   From v2.36, shading is available with \emph{plain} format as well.
 %   The syntax is exactly the same as \emph{metafun}'s new method (\S\,8.3.3), except that
 %   the `\textcolor{red}{|shade|}' contained in each and every macro name has changed to
 %   `\textcolor{red}{|shading|}' in luamplib: for instance, while |withshademethod| is
 %   a macro name which only works with \emph{metafun} format,
 %   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
-%   Other differences to the \emph{metafun}'s are:
+%   Other differences to the \emph{metafun}'s and some cautions are:
 %   \begin{itemize}
 %   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|, |maketext|, |infont|, etc)
 %     as well as paths can have shading effect.
@@ -587,8 +587,6 @@ See source file '\inFileName' for licencing and contact information.
 %   BBox info will be added automatically to the PDF
 %   unless the value is |text| or |false|.
 %   When the value is |false|, tagging is deactivated.
-%
-%   \textsc{n.b.} |tag=artifact| option is removed. Use |artifact| option instead.
 % \item[|debug|] draws bounding box of the figure for checking, which you can correct
 %   by |correct-BBox| key with space-separated four dimen values.
 % \item[|alt=...|] sets an alternative text of the figure as given.
@@ -1136,7 +1134,7 @@ See source file '\inFileName' for licencing and contact information.
 luatexbase.provides_module {
   name          = "luamplib",
   version       = "2.36.0",
-  date          = "2024/12/07",
+  date          = "2024/12/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4470,7 +4468,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/07 v2.36.0 mplib package for LuaTeX]
+    [2024/12/08 v2.36.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
