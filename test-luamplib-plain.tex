@@ -178,25 +178,26 @@ draw p scaled 3 shifted (40,0);
 endfig;
 \endmplibcode
 \par
-\mplibsetformat{metafun}%
+%\mplibsetformat{metafun}%
 \mplibcode
 beginfig(1)
-fill unitsquare xyscaled (\mpdim\hsize, 1cm)
-    withshademethod "linear"
-    withshadevector (0,1)
-    withshadestep (
-       withshadefraction .5
-       withshadecolors (red,blue)
+fill unitsquare xscaled \mpdim\hsize yscaled 1cm
+    withshadingmethod "linear"
+    withshadingvector (0,1)
+    withshadingstep (
+       withshadingfraction .5
+       withshadingcolors (red,blue)
     )
-    withshadestep (
-       withshadefraction 1
-       withshadecolors (blue,green)
+    withshadingstep (
+       withshadingfraction 1
+       withshadingcolors (blue,green)
     )
     ;
 endfig;
 \endmplibcode
 \leavevmode
 \mpfig
+color yellow; yellow = (1,1,0);
 picture Q, u, e;
 Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
 u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
@@ -210,9 +211,9 @@ for pic=Q, u, e:
     if i < totallen: withpostscript "collect"; fi
   endfor
 endfor
-  withshademethod "linear"
-  withshadedirection (0.5,2.5)
-  withshadecolors (.7red,.7yellow)
+  withshadingmethod "linear"
+  withshadingdirection (0.5,2.5)
+  withshadingcolors (.7red,.7yellow)
   ;
 \endmpfig
 \everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor"orange"); }%
@@ -231,9 +232,9 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
     ("Question")
     ( withpen pencircle scaled .3 )
     (
-      withshademethod "linear"
-      withshadedirection (2.5, 0.5)
-      withshadecolors(red, blue)
+      withshadingmethod "linear"
+      withshadingdirection (2.5, 0.5)
+      withshadingcolors(red, blue)
     )
     scaled 4;
 \endmpfig
@@ -296,7 +297,7 @@ draw image(
   )
   asgroup ""
   withgroupname "testTRgroup"
-  withprescript "tr_transparency=.3"
+  withtransparency (1, .3)
   ;
 \endmpfig
 \mpfig
@@ -317,6 +318,13 @@ usemplibgroup "testTRgroup"
   picture test; test = mplibgraphictext "\bf MPLIB"
   fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7;
   draw test withpattern "pattuncolored" ;
+\endmpfig
+\mpfig
+  draw btex \bf\TeX etex rotated 30 scaled 3
+    withshadingmethod "linear"
+    withshadingcolors (red,blue)
+    withshadingvector (0,1)
+    ;
 \endmpfig
 \tracingcommands0
 

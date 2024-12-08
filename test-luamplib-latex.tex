@@ -185,25 +185,26 @@ draw p scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
 \par
-\mplibsetformat{metafun}%
+%\mplibsetformat{metafun}%
 \begin{mplibcode}
 beginfig(1)
-fill unitsquare xyscaled (\mpdim\textwidth,1cm)
-    withshademethod "linear"
-    withshadevector (0,1)
-    withshadestep (
-       withshadefraction .5
-       withshadecolors (red,"blue!50")
+fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
+    withshadingmethod "linear"
+    withshadingvector (0,1)
+    withshadingstep (
+       withshadingfraction .5
+       withshadingcolors (red,"blue!50")
     )
-    withshadestep (
-       withshadefraction 1
-       withshadecolors ("blue!50",green)
+    withshadingstep (
+       withshadingfraction 1
+       withshadingcolors ("blue!50",green)
     )
     ;
 endfig;
 \end{mplibcode}%
 \leavevmode
 \mpfig
+color yellow; yellow = (1,1,0);
 picture Q, u, e;
 Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
 u := mplibglyph "u" of "texgyrepagella-bolditalic.otf" scaled .1 shifted lrcorner Q;
@@ -217,9 +218,9 @@ for pic=Q, u, e:
     if i < totallen: withpostscript "collect"; fi
   endfor
 endfor
-  withshademethod "linear"
-  withshadedirection (0.5,2.5)
-  withshadecolors (.7red,.7yellow)
+  withshadingmethod "linear"
+  withshadingdirection (0.5,2.5)
+  withshadingcolors (.7red,.7yellow)
   ;
 \endmpfig
 \everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor "olive"); }%
@@ -238,9 +239,9 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     ("Question")
     ( withpen pencircle scaled .3 )
     (
-      withshademethod "linear"
-      withshadedirection (2.5, 0.5)
-      withshadecolors(red, blue)
+      withshadingmethod "linear"
+      withshadingdirection (2.5, 0.5)
+      withshadingcolors(red, blue)
     )
     scaled 4;
 \endmpfig
@@ -305,8 +306,8 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
 \def\test#1{%
   \mpfig
   fill unitsquare shifted -center unitsquare scaled 200
-    withshademethod "linear"
-    withshadecolors (.3[red,white], .3[blue,white])
+    withshadingmethod "linear"
+    withshadingcolors (.3[red,white], .3[blue,white])
     ;
   label( btex MetaPost etex scaled 3, origin) ;
   draw image(
@@ -342,6 +343,15 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
   picture test; test = mplibgraphictext "\textbf{MPLIB}"
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7;
   draw test withpattern "mypatt" ;
+\endmpfig
+\mpfig
+  picture tex;
+  tex = mplibgraphictext "\bfseries\TeX" rotated 30 scaled 4;
+  draw tex
+    withshadingmethod "linear"
+    withshadingvector (3,0)
+    withshadingcolors (red,blue)
+    ;
 \endmpfig
 \tracingcommands0
 
