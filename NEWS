@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2024/12/09 2.36.1
+   * fix a bug of previous release: missing 'local' in front of 'os'
+
 2024/12/08 2.36.0
    * <path>|<textual picture> withshadingmethod <string>,
    where <string> shall be "linear" or "circular", gives shading effect to
