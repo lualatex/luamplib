@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/08 v2.36.0 Interface for using the mplib library]%
+  [2024/12/09 v2.36.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/08 v2.36.0}
+% \date{2024/12/09 v2.36.1}
 %
 % \maketitle
 %
@@ -1133,8 +1133,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.36.0",
-  date          = "2024/12/08",
+  version       = "2.36.1",
+  date          = "2024/12/09",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3627,7 +3627,7 @@ end
 local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
   local on = do_preobj_SH(object, prescript)
-  os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
+  local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
   on = update_pdfobjs()
   if pdfmode then
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
@@ -4468,7 +4468,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/08 v2.36.0 mplib package for LuaTeX]
+    [2024/12/09 v2.36.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
