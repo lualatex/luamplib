@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2024/12/11 2.36.2
+   * fix a bug regarding expansion of options
+   (https://tug.org/pipermail/metapost/2024-December/003574.html)
+
 2024/12/09 2.36.1
    * fix a bug of previous release: missing 'local' in front of 'os'
 

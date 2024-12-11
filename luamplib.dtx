@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/09 v2.36.1 Interface for using the mplib library]%
+  [2024/12/11 v2.36.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/09 v2.36.1}
+% \date{2024/12/11 v2.36.2}
 %
 % \maketitle
 %
@@ -249,7 +249,7 @@ See source file '\inFileName' for licencing and contact information.
 %   (|texdoc metafun| \S\,8.2) Transparency is so simple that you can apply it to an object,
 %   with \emph{plain} format as well as \emph{metafun},
 %   just by appending |withprescript| |"tr_transparency=|\meta{number}|"| to the sentence.
-%   ($0 \le$ \meta{number} $\le 1$)
+%   ($0 \le \meta{number} \le 1$)
 %
 %   From v2.36, transparency is available with \emph{plain} as well.
 %   See \hyperlink{luamplibtransparency}{below} \S\,1.2.
@@ -1025,7 +1025,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
 %   is provided for \emph{plain} format as well.
 %   The first argument accepts a number or a name of
-%   alternative transparency methods (see |texdoc metafun| \S\,8.2 Figure~8.1).
+%   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
 %   The second argument accepts a number denoting opacity.
 %\begin{verbatim}
 %     fill fullcircle scaled 10
@@ -1053,7 +1053,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as luamplib considers only the bounding box of the picture.
-%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{below} \S\,1.2),
+%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}),
 %     you shall not give shading effect to pictures (paths are OK).
 %     Anyway, that is the current phase of development.
 %   \end{itemize}
@@ -1064,36 +1064,36 @@ See source file '\inFileName' for licencing and contact information.
 %     where \meta{string} shall be |"linear"| or |"circular"|.
 %     This is the only `must' item to get shading effect; all the macros below are optional.
 %   \item[\texttt{withshadingvector} \meta{pair}]
-%     specifies starting and ending points (as time value) on the path.
+%     Starting and ending points (as time value) on the path.
 %   \item[\texttt{withshadingdirection} \meta{pair}]
-%     specifies starting and ending points (as time value) on the bounding box.
+%     Starting and ending points (as time value) on the bounding box.
 %     Default value: |(0,2)|
 %   \item[\texttt{withshadingorigin} \meta{pair}]
-%     specifies the center of starting and ending circles.
+%     The center of starting and ending circles.
 %     Default value: |center p|
 %   \item[\texttt{withshadingradius} \meta{pair}]
-%     specifies radii of starting and ending circles. This is no-op in linear mode.
+%     Radii of starting and ending circles. This is no-op in linear mode.
 %     Default value: |(0, abs(center p - urcorner p))|
 %   \item[\texttt{withshadingfactor} \meta{number}]
-%     specifies multiplier of the radii. This is no-op in linear mode.
+%     Multiplier of the radii. This is no-op in linear mode.
 %     Default value: |1.2|
 %   \item[\texttt{withshadingcenter} \meta{pair}]
-%     specifies values for shifting starting center or point.
-%     |(0,0)| means no shifting;
+%     Values for shifting starting center.
 %     |(1,1)| means shifting half the width and half the height of the bounding box.
 %   \item[\texttt{withshadingtransform} \meta{string}]
-%     where \meta{string} shall be |"yes"| or |"no"|. Normally you don't need to set this option.
-%     Default value: "no" for the picture made by |infont| operator; "yes" for all other cases.
+%     where \meta{string} shall be |"yes"| or |"no"|.
+%     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
 %   \item[\texttt{withshadingdomain} \meta{pair}]
-%     specifies the limiting values of parametric variable
+%     Limiting values of parametric variable
 %     that varies on the axis of color gradient.
 %     Default value: |(0,1)|
 %   \item[\texttt{withshadingstep (...)}]
 %     for color variation of more than two colors.
 %   \item[\texttt{withshadingfraction} \meta{number}]
+%     where $0 \le \meta{number} \le 1$.
 %     Only meaningful in the argument of |withshadingstep|.
 %   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
-%     specifies starting and ending colors.
+%     Starting and ending colors.
 %     Default value: |(white,black)|
 % \end{description}
 %
@@ -1182,8 +1182,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.36.1",
-  date          = "2024/12/09",
+  version       = "2.36.2",
+  date          = "2024/12/11",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4517,7 +4517,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/09 v2.36.1 mplib package for LuaTeX]
+    [2024/12/11 v2.36.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -4747,7 +4747,7 @@ end
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \unless\ifcsname ver@luamplib.sty\endcsname
-  \def\mplibcodegetinstancename[#1]{\gdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \def\mplibcodegetinstancename[#1]{\xdef\currentmpinstancename{#1}\mplibcodeindeed}
   \protected\def\mplibcode{%
     \begingroup
     \futurelet\nexttok\mplibcodebranch
@@ -4777,7 +4777,7 @@ end
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
   \newenvironment{mplibcode}[1][]{%
-    \global\def\currentmpinstancename{#1}%
+    \xdef\currentmpinstancename{#1}%
     \mplibtmptoks{}\ltxdomplibcode
   }{}
   \def\ltxdomplibcode{%
@@ -5056,7 +5056,7 @@ end
   \RenewDocumentCommand\mplibcode{O{}}
     {
       \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-      \keys_set:nn{luamplib/notag}{#1}
+      \keys_set:ne{luamplib/notag}{#1}
       \mplibtmptoks{}\ltxdomplibcode
     }
   \ExplSyntaxOff
@@ -5483,7 +5483,7 @@ end
       Using~the~default~value~'##1'~instead.
     }
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-    \keys_set:nn{luamplib/tag}{#1}
+    \keys_set:ne{luamplib/tag}{#1}
     \tl_if_empty:NF \currentmpinstancename
       { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
@@ -5499,7 +5499,7 @@ end
         Alternative~text~for~mpfig~is~missing.\\
         Using~the~default~value~'##1'~instead.
       }
-      \keys_set:nn{luamplib/tag}{#2}
+      \keys_set:ne{luamplib/tag}{#2}
       \tl_if_empty:NF \mpfiginstancename
         { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
@@ -5513,7 +5513,7 @@ end
       Alternative~text~for~usemplibgroup~is~missing.\\
       Using~the~default~value~'##1'~instead.
     }
-    \keys_set:nn{luamplib/tag}{#1}
+    \keys_set:ne{luamplib/tag}{#1}
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
     \mplibstarttousemplibgroup
     \csname luamplib.group.#2\endcsname
