@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/09 v2.36.1 Interface for using the mplib library]%
+  [2024/12/11 v2.36.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/09 v2.36.1}
+% \date{2024/12/11 v2.36.2}
 %
 % \maketitle
 %
@@ -209,14 +209,14 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\TeX}
 %
-% \paragraph{\cs{mplibforcehmode}}
+% \subsubsection{\cs{mplibforcehmode}}
 %   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting. (Actually these commands redefine \cs{prependtomplibbox}; you
 %   can redefine this command with anything suitable before a box.)
 %
-% \paragraph{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
+% \subsubsection{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
 %   the lua table containing \metapost code
 %   which will
@@ -230,7 +230,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibsetformat\{plain\textbar metafun\}}}
+% \subsubsection{\cs{mplibsetformat\{plain\textbar metafun\}}}
 %   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
@@ -248,19 +248,11 @@ See source file '\inFileName' for licencing and contact information.
 % \item[transparency]
 %   (|texdoc metafun| \S\,8.2) Transparency is so simple that you can apply it to an object,
 %   with \emph{plain} format as well as \emph{metafun},
-%   just by appending |withprescript| |"tr_transparency=|\hskip0pt\relax|<number>"| to the sentence.
-%   ($0 \le \hbox{\emph{<number>}} \le 1$)
+%   just by appending |withprescript| |"tr_transparency=|\meta{number}|"| to the sentence.
+%   ($0 \le \meta{number} \le 1$)
 %
-%   From v2.36, |withtransparency(<number>|\textbar|<string>,<number>)|
-%   is provided for \emph{plain} format. The first argument accepts a number or a name of
-%   alternative transparency methods (see metafun manual Figure~8.1).
-%   The second argument accepts a number denoting opacity.
-%\begin{verbatim}
-%     fill fullcircle scaled 10
-%         withcolor red
-%         withtransparency (1, 0.5)           % or ("normal", 0.5)
-%         ;
-%\end{verbatim}
+%   From v2.36, transparency is available with \emph{plain} as well.
+%   See \hyperlink{luamplibtransparency}{below} \S\,1.2.
 %
 % \item[shading]
 %   (|texdoc metafun| \S\,8.3) One thing worth mentioning about shading is:
@@ -270,28 +262,8 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, when |withshadecolors("orange", 2/3red)| is given, the first color |"orange"| will be
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
-%   From v2.36, shading is available with \emph{plain} format as well.
-%   The syntax is exactly the same as \emph{metafun}'s new method (\S\,8.3.3), except that
-%   the `\textcolor{red}{|shade|}' contained in each and every macro name has changed to
-%   `\textcolor{red}{|shading|}' in luamplib: for instance, while |withshademethod| is
-%   a macro name which only works with \emph{metafun} format,
-%   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
-%   Other differences to the \emph{metafun}'s and some cautions are:
-%   \begin{itemize}
-%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|, |maketext|, |infont|, etc)
-%     as well as paths can have shading effect.
-%\begin{verbatim}
-%     draw btex \bfseries\TeX etex scaled 10
-%         withshadingmethod "linear"
-%         withshadingcolors (red,blue) ;
-%\end{verbatim}
-%   \item When you give shading effect to a picture made by `|infont|' operator,
-%     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
-%     as luamplib considers only the bounding box of the picture.
-%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{below} \S\,1.2),
-%     you shall not give shading effect to pictures (paths are OK).
-%     Anyway, that is the current phase of development.
-%   \end{itemize}
+%   From v2.36, shading is available with \emph{plain} format as well with extended functionality.
+%   See \hyperlink{luamplibshading}{below} \S\,1.2.
 %
 % \item[transparency group]
 %   \hypertarget{metafunformat}{}\relax
@@ -301,20 +273,21 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %     draw <picture>|<path> asgroup <string>
 %\end{verbatim}
-%   where \emph{<string>} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
+%   where \meta{string} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
 %   Beware that currently many of the PDF rendering applications, except Adobe Acrobat Reader,
 %   cannot properly render the isolated or knockout effect.
+%
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
-%   See \hyperlink{transparencygroup}{below \S\,1.2}.
+%   See \hyperlink{transparencygroup}{below} \S\,1.2.
 % \end{description}
 %
-% \paragraph{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
+% \subsubsection{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
 %   Users can choose |numbersystem| option.
 %   The default value is |scaled|, which can be changed
 %   by declaring \cs{mplibnumbersystem\{double\}} or
 %   \cs{mplibnumbersystem\{decimal\}}.
 %
-% \paragraph{\cs{mplibshowlog\{enable\textbar disable\}}}
+% \subsubsection{\cs{mplibshowlog\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   When \cs{mplibshowlog\{enable\}}\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
@@ -322,7 +295,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the \metapost process will be printed to the |.log| file.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
-% \paragraph{\cs{mpliblegacybehavior\{enable\textbar disable\}}}
+% \subsubsection{\cs{mpliblegacybehavior\{enable\textbar disable\}}}
 %   \hypertarget{mpliblegacybehavior}{}\relax
 %   By default, \cs{mpliblegacybehavior\{enable\}}
 %   is already declared for backward compatibility,
@@ -376,7 +349,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibtextextlabel\{enable\textbar disable\}}}
+% \subsubsection{\cs{mplibtextextlabel\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
@@ -398,7 +371,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Despite the revision, please take care of |char| operator in the text argument,
 %   as this might bring unpermitted characters into \TeX.
 %
-% \paragraph{\cs{mplibcodeinherit\{enable\textbar disable\}}}
+% \subsubsection{\cs{mplibcodeinherit\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   \cs{mplibcodeinherit\{enable\}} enables the inheritance
 %   of variables, constants, and macros defined by previous \metapost code chunks.
@@ -406,7 +379,7 @@ See source file '\inFileName' for licencing and contact information.
 %   each code chunk being treated as an independent instance, never
 %   affected by previous code chunks.
 %
-% \paragraph{Separate \metapost instances}
+% \subsubsection{Separate \metapost instances}
 %   luamplib v2.22 has added the support for several named \metapost instances
 %   in \LaTeX{} |mplibcode| environment.
 %   Plain \TeX\ users also can use this functionality.
@@ -440,7 +413,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \everyendmplib[instanceName]{...}
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibglobaltextext\{enable\textbar disable\}}}
+% \subsubsection{\cs{mplibglobaltextext\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   Formerly, to inherit |btex| |...| |etex| boxes as well as other \metapost macros, variables and constants,
 %   it was necessary to declare \cs{mplibglobaltextext\{enable\}} in advance.
@@ -461,7 +434,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmplibcode
 %\end{verbatim}
 %
-% \paragraph{\cs{mplibverbatim\{enable\textbar disable\}}}
+% \subsubsection{\cs{mplibverbatim\{enable\textbar disable\}}}
 %   Default: |disable|.
 %   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
@@ -470,7 +443,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
 %   literally to the \mplib library.
 %
-% \paragraph{\cs{mpdim\{...\}}}
+% \subsubsection{\cs{mpdim\{...\}}}
 %   \hypertarget{mpdim}{}\relax
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
 %   in the mplibcode environment. This feature is inpired by \pkg{gmp} package authored by
@@ -484,7 +457,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\cs{mpcolor[...]\{...\}}}
+% \subsubsection{\cs{mpcolor[...]\{...\}}}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
 %   environment (after |withcolor| operator).
@@ -495,7 +468,7 @@ See source file '\inFileName' for licencing and contact information.
 %   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
 %
-% \paragraph{\cs{mpfig} \ldots\ \cs{endmpfig}}
+% \subsubsection{\cs{mpfig} \ldots\ \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
 %   \cs{mplibcode ...} \cs{endmplibcode} (for Plain),
 %   we also provide unexpandable \TeX\ macros \cs{mpfig} |...| \cs{endmpfig} and its starred version
@@ -532,7 +505,7 @@ See source file '\inFileName' for licencing and contact information.
 %   code inheritance too will begin anew.  \cs{let}\cs{mpfiginstancename}\cs{empty} will
 %   prevent code inheritance if \cs{mplibcodeinherit\{true\}} is not declared.
 %
-% \paragraph{About cache files}
+% \subsubsection{About cache files}
 %   To support |btex ... etex| in external |.mp| files, luamplib
 %   inspects the content of each and every |.mp| file and makes caches
 %   if nececcsary, before returning their paths to \LuaTeX's \mplib library.
@@ -541,10 +514,10 @@ See source file '\inFileName' for licencing and contact information.
 %   macros as follows, so that users can give instructions about files
 %   that do not require this functionality.
 %   \begin{itemize}
-%   \item \cs{mplibmakenocache\{<filename>[,<filename>,...]\}}
-%   \item \cs{mplibcancelnocache\{<filename>[,<filename>,...]\}}
+%   \item \cs{mplibmakenocache}|{|\meta{filename}|[,|\meta{filename}|,...]}|
+%   \item \cs{mplibcancelnocache}|{|\meta{filename}|[,|\meta{filename}|,...]}|
 %   \end{itemize}
-%   where |<filename>| is a filename excluding |.mp| extension.
+%   where \meta{filename} is a filename excluding |.mp| extension.
 %   Note that |.mp| files under |$TEXMFMAIN/metapost/base| and
 %   |$TEXMFMAIN/metapost/context/base| are already registered by default.
 %
@@ -562,20 +535,20 @@ See source file '\inFileName' for licencing and contact information.
 %   As backslashes (\cs{}) should be escaped by users, it would be easier to use
 %   slashes (|/|) instead.
 %
-% \paragraph{About figure box metric}
+% \subsubsection{About figure box metric}
 %   Notice that, after each figure is processed, the macro \cs{MPwidth} stores
 %   the width value of the latest figure; \cs{MPheight}, the height value.
 %   Incidentally, also note that \cs{MPllx}, \cs{MPlly}, \cs{MPurx}, and
 %   \cs{MPury} store the bounding box information of the latest figure
 %   without the unit |bp|.
 %
-% \paragraph{luamplib.cfg}
+% \subsubsection{luamplib.cfg}
 %   At the end of package loading, luamplib searches
 %   |luamplib.cfg| and, if found, reads the file in automatically.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \paragraph{Tagged PDF}
+% \subsubsection{Tagged PDF}
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Like the \LaTeX's |picture| environment,
@@ -633,7 +606,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\textsc{MetaPost}}
 %
-% \paragraph{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
+% \subsubsection{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
 %   These are \metapost interfaces for the \TeX\ commands
 %   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above}). For example,
 %   |mplibdimen("\linewidth")| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
@@ -641,7 +614,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
-% \paragraph{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
+% \subsubsection{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
 %   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| operator.
@@ -655,9 +628,9 @@ See source file '\inFileName' for licencing and contact information.
 %   cmyk model, so this operator is not recommended for spot colors.)
 %   Therefore the example shown above would raise a \metapost error:
 %   |cmykcolor col;| should have been declared.
-%   By contrast, |mplibrgbtexcolor| \emph{<string>} always returns rgb model expressions.
+%   By contrast, |mplibrgbtexcolor| \meta{string} always returns rgb model expressions.
 %
-% \paragraph{\texttt{mplibgraphictext ...}}
+% \subsubsection{\texttt{mplibgraphictext ...}}
 %   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
 %   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
 %   (see \hyperlink{mpliboutlinetext}{below}).
@@ -687,7 +660,7 @@ See source file '\inFileName' for licencing and contact information.
 %   in DVI mode, \pkg{unicode-math} package is needed for math formula,
 %   as we cannot embolden type1 fonts in DVI mode.
 %
-%   \paragraph{\texttt{mplibglyph ... of ...}}
+%   \subsubsection{\texttt{mplibglyph ... of ...}}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
 %   containing outline paths of a glyph in opentype, truetype or type1 fonts.
 %   When a type1 font is specified, \metapost primitive |glyph| will be called.
@@ -707,10 +680,10 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   \paragraph{\texttt{mplibdrawglyph ...}}
+%   \subsubsection{\texttt{mplibdrawglyph ...}}
 %   The picture returned by |mplibglyph| will be quite similar to the result of |glyph| primitive in its structure.
 %   So, \metapost's |draw| command will fill the inner path of the picture with the background color.
-%   In contrast, |mplibdrawglyph| \emph{<picture>} command fills the paths according to the nonzero winding
+%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths according to the nonzero winding
 %   number rule. As a result, for instance, the area surrounded by inner path of ``O''
 %   will remain transparent.
 %
@@ -721,7 +694,7 @@ See source file '\inFileName' for licencing and contact information.
 %   If you want the even-odd rule instead, you can, with \emph{plain} format as well,
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
-% \paragraph{\texttt{mpliboutlinetext (...)}}
+% \subsubsection{\texttt{mpliboutlinetext (...)}}
 %   \hypertarget{mpliboutlinetext}{}\relax
 %   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
 %   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
@@ -740,15 +713,15 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \paragraph{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...}}
+% \subsubsection{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...}}
 %   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
-%   \cs{mppattern\{<name>\}} |...| \cs{endmppattern} define a tiling pattern
-%   associated with the |<name>|.
+%   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
+%   associated with the \meta{name}.
 %   \metapost operator |withpattern|, the syntax being
-%   \emph{<path>}\,\textbar\,\emph{<textual picture>} |withpattern| \emph{<string>},
+%   \meta{path}\,\textbar\,\meta{textual picture} |withpattern| \meta{string},
 %   will return a \metapost picture which fills
-%   the given path or text with a tiling pattern of the |<name>|
+%   the given path or text with a tiling pattern of the \meta{name}
 %   by replicating it horizontally and vertically.
 %   The \emph{textual picture} here means any text typeset by \TeX, mostly the result
 %   of the |btex| command (though technically this is not a true textual picture)
@@ -868,9 +841,9 @@ See source file '\inFileName' for licencing and contact information.
 %      \end{mplibcode}
 %\end{verbatim}
 %
-% \paragraph{\texttt{... withfademethod ...}}
+% \subsubsection{\texttt{... withfademethod ...}}
 %   This is a \metapost operator which makes the color of an object gradiently transparent.
-%   The syntax is \emph{<path>}\texttt{\textbar}\emph{<picture>} |withfademethod| \emph{<string>},
+%   The syntax is \meta{path}\,\textbar\,\meta{picture} |withfademethod| \meta{string},
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| from \emph{metafun},
 %   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
@@ -914,13 +887,13 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %
-% \paragraph{\texttt{... asgroup ...}}
+% \subsubsection{\texttt{... asgroup ...}}
 % \hypertarget{transparencygroup}{}\relax
 % As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
-% \emph{<picture>} \textbar\ \emph{<path>} |asgroup|
-% |""| \textbar\ |"isolated"| \textbar\ |"knockout"| \textbar\ |"isolated,knockout"|,
+% \meta{picture}\,\textbar\,\meta{path} |asgroup|
+% |""|\,\textbar\,|"isolated"|\,\textbar\,|"knockout"|\,\textbar\ |"isolated,knockout"|,
 % which will return a \metapost picture.
 % It is called \emph{Transparency Group} because the objects contained in the group are composited
 % to produce a single object, so that outer transparency effect, if any,
@@ -933,18 +906,18 @@ See source file '\inFileName' for licencing and contact information.
 % For this functionality we provide \TeX{} and \metapost macros as follows:
 % \begin{description}
 %   \let\bfseries\relax
-% \item[|withgroupname| \emph{<string>}] associates a transparency group with the given name.
+% \item[|withgroupname| \meta{string}] associates a transparency group with the given name.
 %   When this is not appended to the sentence with |asgroup| operator,
 %   the default group name `|lastmplibgroup|' will be used.
 %
-% \item[\cs{usemplibgroup\{...\}}]
+% \item[\cs{usemplibgroup}\marg{name}]
 %   \hypertarget{usemplibgroup}{}\relax
 %   is a \TeX\ command to reuse a transparency group of the name
 %   once used.
 %   Note that the position of the group will be origin-based:
 %   in other words, lower-left corner of the group will be shifted to the origin.
 %
-% \item[|usemplibgroup| \emph{<string>}] is a \metapost command which will add
+% \item[|usemplibgroup| \meta{string}] is a \metapost command which will add
 %   a transparency group of the name to the |currentpicture|.
 %   Contrary to the \TeX\ command just mentioned,
 %   the position of the group is the same as the original transparency group.
@@ -989,7 +962,7 @@ See source file '\inFileName' for licencing and contact information.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
 %
-% \paragraph{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
+% \subsubsection{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 % These \TeX\ macros are described here in this subsection, as they are
 % deeply related to the |asgroup| operator.
 % Users can define a transparency group or a normal \emph{form XObject}
@@ -1047,11 +1020,87 @@ See source file '\inFileName' for licencing and contact information.
 % The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
 % excepting that mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
+% \subsubsection{\texttt{... withtransparency ...}}
+%   \hypertarget{luamplibtransparency}{}\relax
+%   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
+%   is provided for \emph{plain} format as well.
+%   The first argument accepts a number or a name of
+%   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
+%   The second argument accepts a number denoting opacity.
+%\begin{verbatim}
+%     fill fullcircle scaled 10
+%         withcolor red
+%         withtransparency (1, 0.5)           % or ("normal", 0.5)
+%         ;
+%\end{verbatim}
+%
+% \subsubsection{\texttt{... withshadingmethod ...}}
+%   \hypertarget{luamplibshading}{}\relax
+%   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
+%   the `\textcolor{red}{|shade|}' contained in each and every macro name has changed to
+%   `\textcolor{red}{|shading|}' in luamplib: for instance, while |withshademethod| is
+%   a macro name which only works with \emph{metafun} format,
+%   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
+%   Other differences to the \emph{metafun}'s and some cautions are:
+%   \begin{itemize}
+%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|, |maketext|, |infont|, etc)
+%     as well as paths can have shading effect.
+%\begin{verbatim}
+%     draw btex \bfseries\TeX etex scaled 10
+%         withshadingmethod "linear"
+%         withshadingcolors (red,blue) ;
+%\end{verbatim}
+%   \item When you give shading effect to a picture made by `|infont|' operator,
+%     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
+%     as luamplib considers only the bounding box of the picture.
+%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}),
+%     you shall not give shading effect to pictures (paths are OK).
+%     Anyway, that is the current phase of development.
+%   \end{itemize}
+% Macros provided by luamplib are:
+% \begin{description}
+%   \let\bfseries\relax
+%   \item[\meta{path}\,\textbar\,\meta{textual picture} \texttt{withshadingmethod} \meta{string}]
+%     where \meta{string} shall be |"linear"| or |"circular"|.
+%     This is the only `must' item to get shading effect; all the macros below are optional.
+%   \item[\texttt{withshadingvector} \meta{pair}]
+%     Starting and ending points (as time value) on the path.
+%   \item[\texttt{withshadingdirection} \meta{pair}]
+%     Starting and ending points (as time value) on the bounding box.
+%     Default value: |(0,2)|
+%   \item[\texttt{withshadingorigin} \meta{pair}]
+%     The center of starting and ending circles.
+%     Default value: |center p|
+%   \item[\texttt{withshadingradius} \meta{pair}]
+%     Radii of starting and ending circles. This is no-op in linear mode.
+%     Default value: |(0, abs(center p - urcorner p))|
+%   \item[\texttt{withshadingfactor} \meta{number}]
+%     Multiplier of the radii. This is no-op in linear mode.
+%     Default value: |1.2|
+%   \item[\texttt{withshadingcenter} \meta{pair}]
+%     Values for shifting starting center.
+%     |(1,1)| means shifting half the width and half the height of the bounding box.
+%   \item[\texttt{withshadingtransform} \meta{string}]
+%     where \meta{string} shall be |"yes"| or |"no"|.
+%     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
+%   \item[\texttt{withshadingdomain} \meta{pair}]
+%     Limiting values of parametric variable
+%     that varies on the axis of color gradient.
+%     Default value: |(0,1)|
+%   \item[\texttt{withshadingstep (...)}]
+%     for color variation of more than two colors.
+%   \item[\texttt{withshadingfraction} \meta{number}]
+%     where $0 \le \meta{number} \le 1$.
+%     Only meaningful in the argument of |withshadingstep|.
+%   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
+%     Starting and ending colors.
+%     Default value: |(white,black)|
+% \end{description}
 %
 % \subsection{Lua}
 %
-% \paragraph{\texttt{runscript ...}}
-%   Using the primitive |runscript| \emph{<string>}, you can run a Lua code chunk from \metapost side
+% \subsubsection{\texttt{runscript ...}}
+%   Using the primitive |runscript| \meta{string}, you can run a Lua code chunk from \metapost side
 %   and get some \metapost code returned by Lua if you want.
 %   As the functionality is provided by the \mplib library itself,
 %   luamplib does not have much to say about it.
@@ -1064,7 +1113,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, |runscript "return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
 %   automatically.
 %
-% \paragraph{Lua table \texttt{luamplib.instances}}
+% \subsubsection{Lua table \texttt{luamplib.instances}}
 %   Users can access the Lua table containing \mplib instances, |luamplib.instances|,
 %   through which \metapost variables are also easily accessible from Lua side,
 %   as documented in Lua\TeX{} manual \S\,11.2.8.4 (|texdoc luatex|).
@@ -1090,7 +1139,7 @@ See source file '\inFileName' for licencing and contact information.
 %   }
 %\end{verbatim}
 %
-% \paragraph{Lua function \texttt{luamplib.process\_mplibcode}}
+% \subsubsection{Lua function \texttt{luamplib.process\_mplibcode}}
 %   Users can execute a \metapost code chunk from Lua side by using this function:
 %\begin{verbatim}
 %     luamplib.process_mplibcode (<string> metapost code, <string> instance name)
@@ -1108,12 +1157,12 @@ See source file '\inFileName' for licencing and contact information.
 %     |codeinherit|	& \emph{boolean} & \cs{mplibcodeinherit}\\
 %     |everyendmplib|	& \emph{table} & \cs{everyendmplib}\\
 %     |everymplib| & \emph{table} & \cs{everymplib}\\
-%     |getcachedir|	& \emph{function} (\emph{<string>}) & \cs{mplibcachedir}\\
+%     |getcachedir|	& \emph{function} (\meta{string}) & \cs{mplibcachedir}\\
 %     |globaltextext|	& \emph{boolean} & \cs{mplibglobaltextext}\\
 %     |legacyverbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior}\\
 %     |noneedtoreplace|	& \emph{table} & \cs{mplibmakenocache}\\
 %     |numbersystem|	& \emph{string} & \cs{mplibnumbersystem}\\
-%     |setformat|	& \emph{function} (\emph{<string>}) & \cs{mplibsetformat}\\
+%     |setformat|	& \emph{function} (\meta{string}) & \cs{mplibsetformat}\\
 %     |showlog|	& \emph{boolean} & \cs{mplibshowlog}\\
 %     |textextlabel| & \emph{boolean} & \cs{mplibtextextlabel}\\
 %     |verbatiminput| & \emph{boolean} & \cs{mplibverbatim}\\\hline
@@ -1133,8 +1182,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.36.1",
-  date          = "2024/12/09",
+  version       = "2.36.2",
+  date          = "2024/12/11",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4468,7 +4517,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/09 v2.36.1 mplib package for LuaTeX]
+    [2024/12/11 v2.36.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -4698,7 +4747,7 @@ end
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \unless\ifcsname ver@luamplib.sty\endcsname
-  \def\mplibcodegetinstancename[#1]{\gdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \def\mplibcodegetinstancename[#1]{\xdef\currentmpinstancename{#1}\mplibcodeindeed}
   \protected\def\mplibcode{%
     \begingroup
     \futurelet\nexttok\mplibcodebranch
@@ -4728,7 +4777,7 @@ end
 %    The \LaTeX-specific part: a new environment.
 %    \begin{macrocode}
   \newenvironment{mplibcode}[1][]{%
-    \global\def\currentmpinstancename{#1}%
+    \xdef\currentmpinstancename{#1}%
     \mplibtmptoks{}\ltxdomplibcode
   }{}
   \def\ltxdomplibcode{%
@@ -5007,7 +5056,7 @@ end
   \RenewDocumentCommand\mplibcode{O{}}
     {
       \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-      \keys_set:nn{luamplib/notag}{#1}
+      \keys_set:ne{luamplib/notag}{#1}
       \mplibtmptoks{}\ltxdomplibcode
     }
   \ExplSyntaxOff
@@ -5434,7 +5483,7 @@ end
       Using~the~default~value~'##1'~instead.
     }
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-    \keys_set:nn{luamplib/tag}{#1}
+    \keys_set:ne{luamplib/tag}{#1}
     \tl_if_empty:NF \currentmpinstancename
       { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
@@ -5450,7 +5499,7 @@ end
         Alternative~text~for~mpfig~is~missing.\\
         Using~the~default~value~'##1'~instead.
       }
-      \keys_set:nn{luamplib/tag}{#2}
+      \keys_set:ne{luamplib/tag}{#2}
       \tl_if_empty:NF \mpfiginstancename
         { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
@@ -5464,7 +5513,7 @@ end
       Alternative~text~for~usemplibgroup~is~missing.\\
       Using~the~default~value~'##1'~instead.
     }
-    \keys_set:nn{luamplib/tag}{#1}
+    \keys_set:ne{luamplib/tag}{#1}
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
     \mplibstarttousemplibgroup
     \csname luamplib.group.#2\endcsname
