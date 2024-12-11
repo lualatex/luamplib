@@ -1079,19 +1079,21 @@ See source file '\inFileName' for licencing and contact information.
 %     Default value: |1.2|
 %   \item[\texttt{withshadingcenter} \meta{pair}]
 %     Values for shifting starting center.
-%     |(1,1)| means shifting half the width and half the height of the bounding box.
+%     For instance,
+%     |(0,0)| means that center of starting circle is |center p|;
+%     |(1,1)| means |urcorner p|.
 %   \item[\texttt{withshadingtransform} \meta{string}]
-%     where \meta{string} shall be |"yes"| or |"no"|.
+%     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
 %     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
 %   \item[\texttt{withshadingdomain} \meta{pair}]
 %     Limiting values of parametric variable
 %     that varies on the axis of color gradient.
 %     Default value: |(0,1)|
 %   \item[\texttt{withshadingstep (...)}]
-%     for color variation of more than two colors.
+%     for combined shading of more than two colors.
 %   \item[\texttt{withshadingfraction} \meta{number}]
-%     where $0 \le \meta{number} \le 1$.
-%     Only meaningful in the argument of |withshadingstep|.
+%     Fractional number of each shading step.
+%     Only meaningful with |withshadingstep|.
 %   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
 %     Starting and ending colors.
 %     Default value: |(white,black)|
