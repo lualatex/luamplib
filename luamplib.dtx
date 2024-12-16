@@ -2425,10 +2425,10 @@ function outline_vert (res, box, curr, xshift, yshift)
               local ady = abs(ody - dy)
               local ndy = math.ceil(ady / hd) * hd
               local diff = ndy - ady
-              n = (vwidth-diff) // hd
+              n = math.floor((vwidth-diff) / hd)
               dy = dy + (b2u and diff or -diff)
             else
-              n = vwidth // hd
+              n = math.floor(vwidth / hd)
               if kind == 101 then
                 local side = vwidth % hd / 2
                 dy = dy + (b2u and side or -side)
@@ -2577,10 +2577,10 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
               local adx = abs(dx-dirs[1].dx)
               local ndx = math.ceil(adx / wd) * wd
               local diff = ndx - adx
-              n = (width-diff) // wd
+              n = math.floor((width-diff) / wd)
               dx = dx + (r2l and -diff-wd or diff)
             else
-              n = width // wd
+              n = math.floor(width / wd)
               if kind == 101 then
                 local side = width % wd /2
                 dx = dx + (r2l and -side-wd or side)
