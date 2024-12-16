@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2024/12/16 2.36.3
+   * change '//' to 'math.floor' for compatibility with luajittex (#158)
+
+   * fix documentation on mplibgraphictext considering the introduction of
+   'withshadingmethod'
+
 2024/12/11 2.36.2
    * fix a bug regarding expansion of options
    (https://tug.org/pipermail/metapost/2024-December/003574.html)
