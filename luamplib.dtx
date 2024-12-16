@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/11 v2.36.2 Interface for using the mplib library]%
+  [2024/12/16 v2.36.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/11 v2.36.2}
+% \date{2024/12/16 v2.36.3}
 %
 % \maketitle
 %
@@ -656,7 +656,10 @@ See source file '\inFileName' for licencing and contact information.
 %   such as the vertical writing in Chinese or Japanese.
 %   However, because the implementation is quite different from others,
 %   there are some limitations such that you can't
-%   apply shading (gradient colors) to the text. Again,
+%   apply shading (gradient colors) to the text with |withshademethod| from \emph{metafun}.
+%   (But this limitation is now lifted by the introduction of |withshadingmethod|.
+%   See \hyperlink{luamplibshading}{below}.)
+%   Again,
 %   in DVI mode, \pkg{unicode-math} package is needed for math formula,
 %   as we cannot embolden type1 fonts in DVI mode.
 %
@@ -1043,7 +1046,8 @@ See source file '\inFileName' for licencing and contact information.
 %   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
 %   Other differences to the \emph{metafun}'s and some cautions are:
 %   \begin{itemize}
-%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|, |maketext|, |infont|, etc)
+%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|,
+%     |maketext|, |mplibgraphictext|, |TEX|, |infont|, etc)
 %     as well as paths can have shading effect.
 %\begin{verbatim}
 %     draw btex \bfseries\TeX etex scaled 10
@@ -1184,8 +1188,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.36.2",
-  date          = "2024/12/11",
+  version       = "2.36.3",
+  date          = "2024/12/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4519,7 +4523,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/11 v2.36.2 mplib package for LuaTeX]
+    [2024/12/16 v2.36.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
