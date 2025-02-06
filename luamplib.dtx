@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2024 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2025 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by Kim Dohyun.
 % Support: <https://github.com/lualatex/luamplib>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2024/12/16 v2.36.3 Interface for using the mplib library]%
+  [2025/02/06 v2.37.0 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2024/12/16 v2.36.3}
+% \date{2025/02/06 v2.37.0}
 %
 % \maketitle
 %
@@ -251,7 +251,7 @@ See source file '\inFileName' for licencing and contact information.
 %   just by appending |withprescript| |"tr_transparency=|\meta{number}|"| to the sentence.
 %   ($0 \le \meta{number} \le 1$)
 %
-%   From v2.36, transparency is available with \emph{plain} as well.
+%   From v2.36, |withtransparency| is available with \emph{plain} as well.
 %   See \hyperlink{luamplibtransparency}{below} \S\,1.2.
 %
 % \item[shading]
@@ -1103,6 +1103,18 @@ See source file '\inFileName' for licencing and contact information.
 %     Default value: |(white,black)|
 % \end{description}
 %
+% \subsubsection{\texttt{mpliblength ...}}
+%   |mpliblength| \meta{string} returns the number of unicode characters in the string.
+%   This is a unicode-aware version equivalent to the \metapost primitive |length|, but
+%   accepts only a string-type argument.
+%   For instance, |mpliblength| |"abçdéf"| returns |6|, not |8|.
+%
+% \subsubsection{\texttt{mplibsubstring ... of ...}}
+%   |mplibsubstring| \meta{pair} |of| \meta{string} is a unicode-aware version equivalent to the
+%   \metapost's |substring ... of ...| primitive. The syntax is the same as the latter.
+%   For instance, |mplibsubstring| |(2,5)| |of| |"abçdéf"| returns |"çdé"|,
+%   and |mplibsubstring| |(5,2)| |of| |"abçdéf"| returns |"édç"|.
+%
 % \subsection{Lua}
 %
 % \subsubsection{\texttt{runscript ...}}
@@ -1188,8 +1200,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.36.3",
-  date          = "2024/12/16",
+  version       = "2.37.0",
+  date          = "2025/02/06",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2632,6 +2644,27 @@ end
 
 %    \end{macrocode}
 %
+%    lua function for |mplibsubstring ... of ...|
+%    \begin{macrocode}
+function luamplib.utf8substring (s,b,e)
+  local t, tt, step = { }, { }
+  for _, c in utf8.codes(s) do
+    table.insert(t, utf8.char(c))
+  end
+  if b <= e then
+    b, step = b+1, 1
+  else
+    e, step = e+1, -1
+  end
+  for i = b, e, step do
+    table.insert(tt, t[i])
+  end
+  s = table.concat(tt):gsub('"','"&ditto&"')
+  return string.format('"%s"', s)
+end
+
+%    \end{macrocode}
+%
 %    Our \metapost preambles
 %    \begin{macrocode}
 luamplib.preambles = {
@@ -3054,6 +3087,14 @@ def withshadingcolors (expr a, b) =
     withprescript "sh_color_b=" & colordecimals b
   fi
 enddef;
+def mpliblength primary t =
+  runscript("return utf8.len[===[" & t & "]===]")
+enddef;
+def mplibsubstring expr p of t =
+  runscript("return luamplib.utf8substring([===[" & t & "]===],"
+    & decimal xpart p & ","
+    & decimal ypart p & ")")
+enddef;
 ]],
   legacyverbatimtex = [[
 def specialVerbatimTeX (text t) = runscript("luamplibprefig{"&t&"}") enddef;
@@ -3218,7 +3259,7 @@ end
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
 local function pdf_literalcode (...)
-  put2output{ -2, format(...) :gsub(decimals,rmzeros) }
+  put2output{ -2, (format(...) :gsub(decimals,rmzeros)) }
 end
 local start_pdf_code = pdfmode
   and function() pdf_literalcode"q" end
@@ -4523,7 +4564,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2024/12/16 v2.36.3 mplib package for LuaTeX]
+    [2025/02/06 v2.37.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
