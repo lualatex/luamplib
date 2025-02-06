@@ -1,5 +1,12 @@
                        History of the luamplib package
 
+2025/02/06 2.37.0
+   * introduce a new operator 'mpliblength <string>', a unicode-aware version of
+   the 'length' primitive
+
+   * introduce a new operator 'mplibsubstring <pair> of <string>', a unicode-aware
+   version of the 'substring ... of ...' primitive
+
 2024/12/16 2.36.3
    * change '//' to 'math.floor' for compatibility with luajittex (#158)
 

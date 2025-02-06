@@ -353,6 +353,12 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
     withshadingcolors (red,blue)
     ;
 \endmpfig
+\mpfig
+  string Test; Test="abçdéf";
+  for k=0 upto mpliblength(Test)-1:
+    draw TEX(mplibsubstring (k,k+1) of Test) scaled 2 shifted (20k,0);
+  endfor
+\endmpfig
 \tracingcommands0
 
 \vskip 2\baselineskip
