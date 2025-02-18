@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2025/02/18 2.37.1
+   * A new operator 'mplibuclength <string>' returns the number of unicode
+   grapheme clusters in the string.
+
+   * A new operator 'mplibucsubstring <pair> of <string>' returns the part of
+   the string indexed by unicode grapheme clusters.
+
+   * These two operators require lua-uni-algos package.
+
 2025/02/06 2.37.0
    * introduce a new operator 'mpliblength <string>', a unicode-aware version of
    the 'length' primitive

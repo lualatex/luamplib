@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/02/06 v2.37.0 Interface for using the mplib library]%
+  [2025/02/18 v2.37.1 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/02/06 v2.37.0}
+% \date{2025/02/18 v2.37.1}
 %
 % \maketitle
 %
@@ -1084,7 +1084,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item[\texttt{withshadingcenter} \meta{pair}]
 %     Values for shifting starting center.
 %     For instance,
-%     |(0,0)| means that center of starting circle is |center p|;
+%     |(0,0)| means that the center of starting circle is |center p|;
 %     |(1,1)| means |urcorner p|.
 %   \item[\texttt{withshadingtransform} \meta{string}]
 %     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
@@ -1103,17 +1103,33 @@ See source file '\inFileName' for licencing and contact information.
 %     Default value: |(white,black)|
 % \end{description}
 %
-% \subsubsection{\texttt{mpliblength ...}}
+% \subsubsection{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
 %   |mpliblength| \meta{string} returns the number of unicode characters in the string.
 %   This is a unicode-aware version equivalent to the \metapost primitive |length|, but
 %   accepts only a string-type argument.
 %   For instance, |mpliblength| |"abçdéf"| returns |6|, not |8|.
 %
-% \subsubsection{\texttt{mplibsubstring ... of ...}}
+%   On the other hand,
+%   |mplibuclength| \meta{string} returns the number of unicode grapheme clusters in the string.
+%   For instance, |mplibuclength| |"Äpfel"|,
+%   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
+%   returns |5|, not |6| or |7|.
+%   This operator requires \pkg{lua-uni-algos} package.
+%
+% \subsubsection{\texttt{mplibsubstring ... of ...}, \texttt{mplibucsubstring ... of ...}}
 %   |mplibsubstring| \meta{pair} |of| \meta{string} is a unicode-aware version equivalent to the
-%   \metapost's |substring ... of ...| primitive. The syntax is the same as the latter.
+%   \metapost's |substring ... of ...| primitive. The syntax is the same as the latter,
+%   but the string is indexed by unicode characters.
 %   For instance, |mplibsubstring| |(2,5)| |of| |"abçdéf"| returns |"çdé"|,
 %   and |mplibsubstring| |(5,2)| |of| |"abçdéf"| returns |"édç"|.
+%
+%   On the other hand,
+%   |mplibucsubstring| \meta{pair} |of| \meta{string} returns the part of the string indexed
+%   by unicode grapheme clusters.
+%   For instance, |mplibucsubstring| |(0,1)| |of| |"Äpfel"|,
+%   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
+%   returns |"Ä"|, not |"A"|.
+%   This operator requires \pkg{lua-uni-algos} package.
 %
 % \subsection{Lua}
 %
@@ -1200,8 +1216,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.0",
-  date          = "2025/02/06",
+  version       = "2.37.1",
+  date          = "2025/02/18",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2644,12 +2660,25 @@ end
 
 %    \end{macrocode}
 %
-%    lua function for |mplibsubstring ... of ...|
+%    lua functions for |mplib(uc)substring ... of ...|
 %    \begin{macrocode}
-function luamplib.utf8substring (s,b,e)
-  local t, tt, step = { }, { }
-  for _, c in utf8.codes(s) do
-    table.insert(t, utf8.char(c))
+function luamplib.getunicodegraphemes (s)
+  local t = { }
+  local graphemes = require'lua-uni-graphemes'
+  for _, _, c in graphemes.graphemes(s) do
+    table.insert(t, c)
+  end
+  return t
+end
+function luamplib.unicodesubstring (s,b,e,grph)
+  local tt, t, step = { }
+  if grph then
+    t = luamplib.getunicodegraphemes(s)
+  else
+    t = { }
+    for _, c in utf8.codes(s) do
+      table.insert(t, utf8.char(c))
+    end
   end
   if b <= e then
     b, step = b+1, 1
@@ -3091,9 +3120,17 @@ def mpliblength primary t =
   runscript("return utf8.len[===[" & t & "]===]")
 enddef;
 def mplibsubstring expr p of t =
-  runscript("return luamplib.utf8substring([===[" & t & "]===],"
+  runscript("return luamplib.unicodesubstring([===[" & t & "]===],"
     & decimal xpart p & ","
     & decimal ypart p & ")")
+enddef;
+def mplibuclength primary t =
+  runscript("return #luamplib.getunicodegraphemes[===[" & t & "]===]")
+enddef;
+def mplibucsubstring expr p of t =
+  runscript("return luamplib.unicodesubstring([===[" & t & "]===],"
+    & decimal xpart p & ","
+    & decimal ypart p & ",true)")
 enddef;
 ]],
   legacyverbatimtex = [[
@@ -4564,7 +4601,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/02/06 v2.37.0 mplib package for LuaTeX]
+    [2025/02/18 v2.37.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
