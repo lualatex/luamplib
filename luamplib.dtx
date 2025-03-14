@@ -3811,8 +3811,7 @@ local function gather_resources (optres)
   if pdfmode then
     if pdfmanagement then
       for _,v in ipairs(names) do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
+        if ltx.__pdf.Page.Resources[v] then
           t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
@@ -3832,13 +3831,13 @@ local function gather_resources (optres)
   else
     if pdfmanagement then
       for _,v in ipairs(names) do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
-          run_tex_code {
-            "\\mplibtmptoks\\expanded{{",
-            format("/%s \\csname pdf_object_ref:n\\endcsname{__pdf/Page/Resources/%s}",v,v),
-            "}}",
-          }
+        run_tex_code (format(
+          [[\mplibtmptoks\expanded{{\pdfdict_if_empty:nTF{g__pdf_Core/Page/Resources/%s}{0}{1}}}]],
+          v),ccexplat)
+        if texgettoks'mplibtmptoks' == '1' then
+          run_tex_code (format(
+            [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],
+            v,v),ccexplat)
           t[#t+1] = texgettoks'mplibtmptoks'
         end
       end
