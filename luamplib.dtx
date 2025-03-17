@@ -1057,7 +1057,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as luamplib considers only the bounding box of the picture.
-%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}),
+%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}) under DVI mode,
 %     you shall not give shading effect to pictures (paths are OK).
 %     Anyway, that is the current phase of development.
 %   \end{itemize}
@@ -3815,6 +3815,20 @@ local function gather_resources (optres)
           t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
+%    \end{macrocode}
+% for inclusion of picture patterns
+%    \begin{macrocode}
+      if not do_pattern then
+        run_tex_code ({
+          "\\mplibtmptoks\\expanded{{",
+          "\\prop_if_empty:cF{\\__pdfdict_name:n{g__pdf_Core/Page/Resources/Pattern}}",
+          "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
+        },ccexplat)
+        local mytoks = texgettoks"mplibtmptoks"
+        if mytoks and mytoks ~= "" then
+          t[#t+1] = format("/Pattern<<%s>>",mytoks)
+        end
+      end
     else
       local res = pdfetcs.getpageres() or ""
       run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
@@ -3825,6 +3839,20 @@ local function gather_resources (optres)
         v = v:match"^%s*(.-)%s*$"
         if not v:find"Pattern" and not optres:find(v) then
           t[#t+1] = "/" .. v
+        end
+      end
+%    \end{macrocode}
+% for inclusion of picture patterns
+%    \begin{macrocode}
+      if is_defined(pdfetcs.pgfextgs) then
+        local mytoks = get_macro"pgf@sys@pgf@resource@list@patterns"
+        if mytoks and mytoks ~= "" then
+          t[#t+1] = format("/Pattern<<%s>>",mytoks)
+        end
+      else
+        local pattres = pdfetcs.Pattern_res
+        if pattres and #pattres > 0 then
+          t[#t+1] = format("/Pattern<<%s>>",tableconcat(pattres))
         end
       end
     end
