@@ -3821,7 +3821,7 @@ local function gather_resources (optres)
       if not do_pattern then
         run_tex_code ({
           "\\mplibtmptoks\\expanded{{",
-          "\\prop_if_empty:cF{\\__pdfdict_name:n{g__pdf_Core/Page/Resources/Pattern}}",
+          "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/Pattern}",
           "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
         },ccexplat)
         local mytoks = texgettoks"mplibtmptoks"
@@ -3859,14 +3859,14 @@ local function gather_resources (optres)
   else
     if pdfmanagement then
       for _,v in ipairs(names) do
-        run_tex_code (format(
-          [[\mplibtmptoks\expanded{{\pdfdict_if_empty:nTF{g__pdf_Core/Page/Resources/%s}{0}{1}}}]],
-          v),ccexplat)
-        if texgettoks'mplibtmptoks' == '1' then
-          run_tex_code (format(
-            [[\mplibtmptoks\expanded{{/%s \pdf_object_ref:n{__pdf/Page/Resources/%s}}}]],
-            v,v),ccexplat)
-          t[#t+1] = texgettoks'mplibtmptoks'
+        run_tex_code ({
+          "\\mplibtmptoks\\expanded{{",
+          "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/", v, "}",
+          "{/", v, " \\pdf_object_ref:n{__pdf/Page/Resources/", v, "}}}}",
+        },ccexplat)
+        local mytoks = texgettoks"mplibtmptoks"
+        if mytoks and mytoks ~= "" then
+          t[#t+1] = mytoks
         end
       end
     elseif is_defined(pdfetcs.pgfextgs) then
