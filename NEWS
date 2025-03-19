@@ -1,8 +1,7 @@
                        History of the luamplib package
 
 2025/XX/XX 2.37.2
-   * The limitation of picture shading in tiling pattern cells is now lifted
-   for PDF mode. In DVI mode, the limitation is still there.
+   * The limitation of picture shading in tiling pattern cells is now lifted.
 
 2025/02/18 2.37.1
    * A new operator 'mplibuclength <string>' returns the number of unicode

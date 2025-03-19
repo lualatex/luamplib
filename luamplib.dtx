@@ -1057,9 +1057,6 @@ See source file '\inFileName' for licencing and contact information.
 %   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as luamplib considers only the bounding box of the picture.
-%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}) under DVI mode,
-%     you shall not give shading effect to pictures (paths are OK).
-%     Anyway, that is the current phase of development.
 %   \end{itemize}
 % Macros provided by luamplib are:
 % \begin{description}
@@ -3729,6 +3726,9 @@ end
 % Shading Patterns: much similar to the metafun's shade,
 % but we can apply shading to textual pictures as well as paths.
 %    \begin{macrocode}
+if not pdfmode then
+  pdfetcs.patternresources = {}
+end
 local function add_pattern_resources (key, val)
   if pdfmanagement then
     texsprint {
@@ -3740,6 +3740,9 @@ local function add_pattern_resources (key, val)
       texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
     else
       pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
+      if not pdfmode then
+        tableinsert(pdfetcs.patternresources, res) -- for gather_resources()
+      end
     end
   end
 end
@@ -3815,20 +3818,6 @@ local function gather_resources (optres)
           t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
-%    \end{macrocode}
-% for inclusion of picture patterns
-%    \begin{macrocode}
-      if not do_pattern then
-        run_tex_code ({
-          "\\mplibtmptoks\\expanded{{",
-          "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/Pattern}",
-          "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
-        },ccexplat)
-        local mytoks = texgettoks"mplibtmptoks"
-        if mytoks and mytoks ~= "" then
-          t[#t+1] = format("/Pattern<<%s>>",mytoks)
-        end
-      end
     else
       local res = pdfetcs.getpageres() or ""
       run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
@@ -3841,20 +3830,6 @@ local function gather_resources (optres)
           t[#t+1] = "/" .. v
         end
       end
-%    \end{macrocode}
-% for inclusion of picture patterns
-%    \begin{macrocode}
-      if is_defined(pdfetcs.pgfextgs) then
-        local mytoks = get_macro"pgf@sys@pgf@resource@list@patterns"
-        if mytoks and mytoks ~= "" then
-          t[#t+1] = format("/Pattern<<%s>>",mytoks)
-        end
-      else
-        local pattres = pdfetcs.Pattern_res
-        if pattres and #pattres > 0 then
-          t[#t+1] = format("/Pattern<<%s>>",tableconcat(pattres))
-        end
-      end
     end
   else
     if pdfmanagement then
@@ -3864,10 +3839,7 @@ local function gather_resources (optres)
           "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/", v, "}",
           "{/", v, " \\pdf_object_ref:n{__pdf/Page/Resources/", v, "}}}}",
         },ccexplat)
-        local mytoks = texgettoks"mplibtmptoks"
-        if mytoks and mytoks ~= "" then
-          t[#t+1] = mytoks
-        end
+        t[#t+1] = texgettoks'mplibtmptoks'
       end
     elseif is_defined(pdfetcs.pgfextgs) then
       run_tex_code ({
@@ -3878,6 +3850,9 @@ local function gather_resources (optres)
         "}}",
       }, catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
+      if pdfetcs.resadded.Shading then
+        t[#t+1] = format("/Shading %s", pdfetcs.resadded.Shading)
+      end
     else
       for _,v in ipairs(names) do
         local vv = pdfetcs.resadded[v]
@@ -3886,6 +3861,36 @@ local function gather_resources (optres)
         end
       end
     end
+  end
+  if do_pattern then return tableconcat(t) end
+  -- get pattern resources
+  local mytoks
+  if pdfmanagement then
+    run_tex_code ({
+      "\\mplibtmptoks\\expanded{{",
+      "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/Pattern}",
+      "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
+    },ccexplat)
+    mytoks = texgettoks"mplibtmptoks"
+    if not pdfmode then
+      mytoks = mytoks:gsub("\\str_convert_pdfname:n%s*{(.-)}","%1") -- why not expanded?
+    end
+  elseif is_defined(pdfetcs.pgfextgs) then
+    if pdfmode then
+      mytoks = get_macro"pgf@sys@pgf@resource@list@patterns"
+    else
+      local tt, abc = {}, get_macro"pgfutil@abc" or ""
+      for v in abc:gmatch"@pgfpatterns%s*<<(.-)>>" do
+        tt[#tt+1] = v
+      end
+      mytoks = tableconcat(tt)
+    end
+  else
+    local tt = pdfmode and pdfetcs.Pattern_res or pdfetcs.patternresources
+    mytoks = tt and tableconcat(tt)
+  end
+  if mytoks and mytoks ~= "" then
+    t[#t+1] = format("/Pattern<<%s>>",mytoks)
   end
   return tableconcat(t)
 end
