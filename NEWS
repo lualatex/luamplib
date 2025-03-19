@@ -1,7 +1,14 @@
                        History of the luamplib package
 
-2025/XX/XX 2.37.2
-   * The limitation of picture shading in tiling pattern cells is now lifted.
+2025/03/20 2.37.2
+   * Formerly, it was not possible to give shading effect to a textual picture
+   inside a tiling pattern. This limitation is now lifted.
+   As a side effect, a tiling pattern inside a tiling pattern is also allowed.
+
+   * 'withmppattern <string>' is a newly introduced command virtually the same
+   as 'withpattern <string>', but the former does not force the result of MP
+   picture. So users can use any drawing command suitable, such as 'fill' or
+   'filldraw' as well as 'draw'.
 
 2025/02/18 2.37.1
    * A new operator 'mplibuclength <string>' returns the number of unicode

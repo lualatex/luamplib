@@ -259,7 +259,7 @@ draw (up--right) scaled 5 withcolor 1/3[red,white] ;
 \endmppattern
 \mpfig
 draw unitsquare shifted -center unitsquare scaled 45 withpostscript "collect" ;
-draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
+filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   withcolor \mpcolor{red!50!blue!50} withpostscript "evenodd" ;
 \endmpfig
 \begin{mppattern}{pattuncolored}
@@ -277,11 +277,11 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
     j:=0;
     for item within mpliboutlinepic[i]:
       j:=j+1;
-      draw pathpart item scaled 10
+      filldraw pathpart item scaled 10
       if j < length mpliboutlinepic[i]:
           withpostscript "collect"
       else:
-          withpattern "pattuncolored"
+          withmppattern "pattuncolored"
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;
@@ -343,7 +343,7 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
 \mpfig
   picture test; test = mplibgraphictext "\textbf{MPLIB}"
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7;
-  draw test withpattern "mypatt" ;
+  draw test withmppattern "mypatt" ;
 \endmpfig
 \mpfig
   picture tex;
@@ -369,6 +369,33 @@ draw fullcircle scaled 100 withpattern "mypatt" withpen pencircle scaled 1
   for k=0 upto mplibuclength(Test)-1:
     draw TEX(mplibucsubstring (k,k+1) of Test) scaled 1.5 shifted (20k,0);
   endfor
+\endmpfig
+\par
+\mppattern{p1}
+  \mpfig
+    fill fullcircle scaled 3
+    withcolor .7red
+    ;
+  \endmpfig
+\endmppattern
+\mppattern{p2}
+  \mpfig
+    fill fullcircle scaled 9
+    withmppattern "p1"
+    ;
+  \endmpfig
+\endmppattern
+\mppattern{p3}
+  \mpfig
+    fill fullcircle scaled 27
+    withmppattern "p2"
+    ;
+  \endmpfig
+\endmppattern
+\mpfig
+  fill fullcircle scaled 108
+  withmppattern "p3"
+  ;
 \endmpfig
 \mpliblegacybehavior{true}%
 \tracingcommands0

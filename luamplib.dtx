@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/02/18 v2.37.1 Interface for using the mplib library]%
+  [2025/03/20 v2.37.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/02/18 v2.37.1}
+% \date{2025/03/20 v2.37.2}
 %
 % \maketitle
 %
@@ -716,7 +716,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \subsubsection{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...}}
+% \subsubsection{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...},
+%     \texttt{withmppattern ...}}
 %   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
 %   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
@@ -729,6 +730,10 @@ See source file '\inFileName' for licencing and contact information.
 %   The \emph{textual picture} here means any text typeset by \TeX, mostly the result
 %   of the |btex| command (though technically this is not a true textual picture)
 %   or the |infont| operator.
+%
+%   |withmppattern| \meta{string} is a command virtually the same as |withpattern|,
+%   but the former does not force the result of \metapost picture. So users can
+%   use any drawing command suitable, such as |fill| or |filldraw| as well as |draw|.
 %
 %   An example:
 %\begin{verbatim}
@@ -754,8 +759,8 @@ See source file '\inFileName' for licencing and contact information.
 %      draw fullcircle scaled 90
 %        withpostscript "collect"
 %        ;
-%      draw fullcircle scaled 200
-%        withpattern "mypatt"
+%      filldraw fullcircle scaled 200
+%        withmppattern "mypatt"
 %        withpen pencircle scaled 1
 %        withcolor \mpcolor{red!50!blue!50}
 %        withpostscript "evenodd"
@@ -814,11 +819,11 @@ See source file '\inFileName' for licencing and contact information.
 %          j:=0;
 %          for item within mpliboutlinepic[i]:
 %            j:=j+1;
-%            draw pathpart item scaled 10
+%            filldraw pathpart item scaled 10
 %            if j < length mpliboutlinepic[i]:
 %                withpostscript "collect"
 %            else:
-%                withpattern "pattnocolor"
+%                withmppattern "pattnocolor"
 %                withpen pencircle scaled 1/2
 %                withcolor (i/4)[red,blue]          % paints the pattern
 %            fi;
@@ -829,7 +834,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 % A much simpler and efficient way to obtain a similar result
 % (without colorful characters in this example)
-% is to give a \emph{textual picture} as the operand of |withpattern|:
+% is to give a \emph{textual picture} as the operand of |withpattern| or |withmppattern|:
 %\begin{verbatim}
 %      \begin{mplibcode}
 %        beginfig(2)
@@ -839,7 +844,7 @@ See source file '\inFileName' for licencing and contact information.
 %                fillcolor 1/3[red,blue]            % paints the pattern
 %                drawcolor 2/3[red,blue]
 %                scaled 10 ;
-%        draw pic withpattern "pattnocolor" ;
+%        draw pic withmppattern "pattnocolor" ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
@@ -1213,8 +1218,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.1",
-  date          = "2025/02/18",
+  version       = "2.37.2",
+  date          = "2025/03/20",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2889,6 +2894,9 @@ vardef mpliboutlinetext@# (expr t) text rest =
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;
+def withmppattern primary p =
+  withprescript "mplibpattern=" & if numeric p: decimal fi p
+enddef;
 primarydef t withpattern p =
   image(
     if cycle t:
@@ -4633,7 +4641,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/02/18 v2.37.1 mplib package for LuaTeX]
+    [2025/03/20 v2.37.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
