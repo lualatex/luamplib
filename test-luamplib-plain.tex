@@ -34,7 +34,7 @@ draw btex\tracingcommands0 multi
     tex code
     100 \% color
   etex shifted (20,0);
-draw textext("\tracingcommands0 textext 50\% color") shifted (10,-10) withcolor .5white;
+draw textext "\tracingcommands0 textext 50\% color" shifted (10,-10) withcolor .5white;
 draw bbox currentpicture;
 endfig;
 
@@ -161,7 +161,7 @@ diameter:\Dia bp.%
   enddef;
 
   beginfig(1);
-    rotatedlabel.top(textext("Rotated!"), origin, 45);
+    rotatedlabel.top(textext "Rotated!", origin, 45);
   endfig;
 \endmplibcode
 \par
@@ -249,8 +249,8 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
 \endmppattern
 \mpfig
   fill fullcircle scaled 100 withpostscript "collect";
-  draw unitsquare shifted - center unitsquare scaled 45
-    withpattern "mypatt"
+  fill unitsquare shifted - center unitsquare scaled 45
+    withmppattern "mypatt"
     withpostscript "evenodd"
     ;
 \endmpfig
@@ -269,11 +269,11 @@ draw mpliboutlinetext.b ("$\overbrace{x+\cdots+x}^k$")
     j:=0;
     for item within mpliboutlinepic[i]:
       j:=j+1;
-      draw pathpart item scaled 10
+      filldraw pathpart item scaled 10
       if j < length mpliboutlinepic[i]:
           withpostscript "collect"
       else:
-          withpattern "pattuncolored"
+          withmppattern "pattuncolored"
           withpen pencircle scaled 1/2
           withcolor (i/4)[red,blue]
       fi;
@@ -317,14 +317,34 @@ usemplibgroup "testTRgroup"
 \mpfig
   picture test; test = mplibgraphictext "\bf MPLIB"
   fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7;
-  draw test withpattern "pattuncolored" ;
+  draw test withmppattern "pattuncolored" ;
 \endmpfig
+\leavevmode
 \mpfig
   draw btex \bf\TeX etex rotated 30 scaled 3
     withshadingmethod "linear"
     withshadingcolors (red,blue)
     withshadingvector (0,1)
     ;
+\endmpfig
+\mppattern{p1}
+  \mpfig
+    fill fullcircle scaled 3
+    withcolor .7red
+    ;
+  \endmpfig
+\endmppattern
+\mppattern{p2}
+  \mpfig
+    fill fullcircle scaled 12
+    withmppattern "p1"
+    ;
+  \endmpfig
+\endmppattern
+\mpfig
+  fill fullcircle scaled 48
+  withmppattern "p2"
+  ;
 \endmpfig
 \tracingcommands0
 

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/02/18 v2.37.1 Interface for using the mplib library]%
+  [2025/03/20 v2.37.2 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/02/18 v2.37.1}
+% \date{2025/03/20 v2.37.2}
 %
 % \maketitle
 %
@@ -185,8 +185,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
-%   |textext()| is a more versatile macro equivalent to |TEX()| from \pkg{TEX.mp}.
-%   |TEX()| is also allowed and is a synonym of |textext()|.
+%   |textext|\,\meta{string} is a more versatile macro equivalent to |TEX|\,\meta{string} from \pkg{TEX.mp}.
+%   |TEX| is also allowed and is a synonym of |textext|.
 %   The argument of
 %   \mplib's primitive |maketext| will also be processed by the same routine.
 %
@@ -320,7 +320,7 @@ See source file '\inFileName' for licencing and contact information.
 %   On the other hand, \TeX\ code in |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
 %   after flushing out the \metapost figure.
-%   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
+%   As shown in the example below, |VerbatimTeX| \meta{string} is a synonym of |verbatimtex| |...| |etex|.
 %\begin{verbatim}
 %     \mplibcode
 %       D := sqrt(2)**7;
@@ -354,7 +354,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
 %   So, |label("my text",origin)| thereafter is exactly the same as
-%   |label(textext("my text"),origin)|.
+%   |label(textext "my text", origin)|.
 %
 %   \textsc{n.b.} In the background,
 %   luamplib redefines |infont| operator so that the right side
@@ -565,13 +565,13 @@ See source file '\inFileName' for licencing and contact information.
 % \item[|alt=...|] sets an alternative text of the figure as given.
 %   This key is needed for ordinary \metapost figures.
 %   You can give alternative text within \metapost code as well:
-%   |VerbatimTeX| |("\mplibalttext{...}");|
+%   |VerbatimTeX| |"\mplibalttext{...}";|
 % \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
 %   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can give actual text within \metapost code as well:
-%   |VerbatimTeX| |("\mplibactualtext{...}");|
+%   |VerbatimTeX| |"\mplibactualtext{...}";|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic quality.
@@ -606,11 +606,11 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\textsc{MetaPost}}
 %
-% \subsubsection{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
+% \subsubsection{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
 %   These are \metapost interfaces for the \TeX\ commands
 %   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above}). For example,
-%   |mplibdimen("\linewidth")| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
-%   |mplibcolor("red!50")| is basically the same as \cs{mpcolor\{red!50\}}.
+%   |mplibdimen "\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
+%   |mplibcolor "red!50"| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
@@ -716,7 +716,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \subsubsection{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...}}
+% \subsubsection{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withpattern ...},
+%     \texttt{withmppattern ...}}
 %   \hypertarget{mppattern}{}\relax
 %   \TeX\ macros
 %   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
@@ -729,6 +730,10 @@ See source file '\inFileName' for licencing and contact information.
 %   The \emph{textual picture} here means any text typeset by \TeX, mostly the result
 %   of the |btex| command (though technically this is not a true textual picture)
 %   or the |infont| operator.
+%
+%   |withmppattern| \meta{string} is a command virtually the same as |withpattern|,
+%   but the former does not force the result of \metapost picture. So users can
+%   use any drawing command suitable, such as |fill| or |filldraw| as well as |draw|.
 %
 %   An example:
 %\begin{verbatim}
@@ -754,8 +759,8 @@ See source file '\inFileName' for licencing and contact information.
 %      draw fullcircle scaled 90
 %        withpostscript "collect"
 %        ;
-%      draw fullcircle scaled 200
-%        withpattern "mypatt"
+%      filldraw fullcircle scaled 200
+%        withmppattern "mypatt"
 %        withpen pencircle scaled 1
 %        withcolor \mpcolor{red!50!blue!50}
 %        withpostscript "evenodd"
@@ -814,11 +819,11 @@ See source file '\inFileName' for licencing and contact information.
 %          j:=0;
 %          for item within mpliboutlinepic[i]:
 %            j:=j+1;
-%            draw pathpart item scaled 10
+%            filldraw pathpart item scaled 10
 %            if j < length mpliboutlinepic[i]:
 %                withpostscript "collect"
 %            else:
-%                withpattern "pattnocolor"
+%                withmppattern "pattnocolor"
 %                withpen pencircle scaled 1/2
 %                withcolor (i/4)[red,blue]          % paints the pattern
 %            fi;
@@ -829,7 +834,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 % A much simpler and efficient way to obtain a similar result
 % (without colorful characters in this example)
-% is to give a \emph{textual picture} as the operand of |withpattern|:
+% is to give a \emph{textual picture} as the operand of |withpattern| or |withmppattern|:
 %\begin{verbatim}
 %      \begin{mplibcode}
 %        beginfig(2)
@@ -839,7 +844,7 @@ See source file '\inFileName' for licencing and contact information.
 %                fillcolor 1/3[red,blue]            % paints the pattern
 %                drawcolor 2/3[red,blue]
 %                scaled 10 ;
-%        draw pic withpattern "pattnocolor" ;
+%        draw pic withmppattern "pattnocolor" ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
@@ -1057,9 +1062,6 @@ See source file '\inFileName' for licencing and contact information.
 %   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as luamplib considers only the bounding box of the picture.
-%   \item Inside tiling pattern cells (see \hyperlink{mppattern}{above}),
-%     you shall not give shading effect to pictures (paths are OK).
-%     Anyway, that is the current phase of development.
 %   \end{itemize}
 % Macros provided by luamplib are:
 % \begin{description}
@@ -1216,8 +1218,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.1",
-  date          = "2025/02/18",
+  version       = "2.37.2",
+  date          = "2025/03/20",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2699,10 +2701,10 @@ end
 luamplib.preambles = {
   mplibcode = [[
 texscriptmode := 2;
-def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
-def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
-def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
-def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
+def rawtextext primary t = runscript("luamplibtext{"&t&"}") enddef;
+def mplibcolor primary t = runscript("luamplibcolor{"&t&"}") enddef;
+def mplibdimen primary t = runscript("luamplibdimen{"&t&"}") enddef;
+def VerbatimTeX primary t = runscript("luamplibverbtex{"&t&"}") enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -2717,7 +2719,7 @@ if known context_mlib:
     fi
   enddef;
 else:
-  vardef textext@# (text t) = rawtextext (t) enddef;
+  vardef textext@# primary t = rawtextext (t) enddef;
   def message expr t =
     if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
   enddef;
@@ -2892,6 +2894,9 @@ vardef mpliboutlinetext@# (expr t) text rest =
     fi;
   ) mplib_do_outline_options_r; )
 enddef ;
+def withmppattern primary p =
+  withprescript "mplibpattern=" & if numeric p: decimal fi p
+enddef;
 primarydef t withpattern p =
   image(
     if cycle t:
@@ -3729,6 +3734,9 @@ end
 % Shading Patterns: much similar to the metafun's shade,
 % but we can apply shading to textual pictures as well as paths.
 %    \begin{macrocode}
+if not pdfmode then
+  pdfetcs.patternresources = {}
+end
 local function add_pattern_resources (key, val)
   if pdfmanagement then
     texsprint {
@@ -3740,6 +3748,9 @@ local function add_pattern_resources (key, val)
       texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
     else
       pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
+      if not pdfmode then
+        tableinsert(pdfetcs.patternresources, res) -- for gather_resources()
+      end
     end
   end
 end
@@ -3811,8 +3822,7 @@ local function gather_resources (optres)
   if pdfmode then
     if pdfmanagement then
       for _,v in ipairs(names) do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
+        if ltx.__pdf.Page.Resources[v] then
           t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
         end
       end
@@ -3832,15 +3842,12 @@ local function gather_resources (optres)
   else
     if pdfmanagement then
       for _,v in ipairs(names) do
-        local pp = get_macro(format("g__pdfdict_/g__pdf_Core/Page/Resources/%s_prop",v))
-        if pp and pp:find"__prop_pair" then
-          run_tex_code {
-            "\\mplibtmptoks\\expanded{{",
-            format("/%s \\csname pdf_object_ref:n\\endcsname{__pdf/Page/Resources/%s}",v,v),
-            "}}",
-          }
-          t[#t+1] = texgettoks'mplibtmptoks'
-        end
+        run_tex_code ({
+          "\\mplibtmptoks\\expanded{{",
+          "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/", v, "}",
+          "{/", v, " \\pdf_object_ref:n{__pdf/Page/Resources/", v, "}}}}",
+        },ccexplat)
+        t[#t+1] = texgettoks'mplibtmptoks'
       end
     elseif is_defined(pdfetcs.pgfextgs) then
       run_tex_code ({
@@ -3851,6 +3858,9 @@ local function gather_resources (optres)
         "}}",
       }, catat11)
       t[#t+1] = texgettoks'mplibtmptoks'
+      if pdfetcs.resadded.Shading then
+        t[#t+1] = format("/Shading %s", pdfetcs.resadded.Shading)
+      end
     else
       for _,v in ipairs(names) do
         local vv = pdfetcs.resadded[v]
@@ -3859,6 +3869,36 @@ local function gather_resources (optres)
         end
       end
     end
+  end
+  if do_pattern then return tableconcat(t) end
+  -- get pattern resources
+  local mytoks
+  if pdfmanagement then
+    run_tex_code ({
+      "\\mplibtmptoks\\expanded{{",
+      "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/Pattern}",
+      "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
+    },ccexplat)
+    mytoks = texgettoks"mplibtmptoks"
+    if not pdfmode then
+      mytoks = mytoks:gsub("\\str_convert_pdfname:n%s*{(.-)}","%1") -- why not expanded?
+    end
+  elseif is_defined(pdfetcs.pgfextgs) then
+    if pdfmode then
+      mytoks = get_macro"pgf@sys@pgf@resource@list@patterns"
+    else
+      local tt, abc = {}, get_macro"pgfutil@abc" or ""
+      for v in abc:gmatch"@pgfpatterns%s*<<(.-)>>" do
+        tt[#tt+1] = v
+      end
+      mytoks = tableconcat(tt)
+    end
+  else
+    local tt = pdfmode and pdfetcs.Pattern_res or pdfetcs.patternresources
+    mytoks = tt and tableconcat(tt)
+  end
+  if mytoks and mytoks ~= "" then
+    t[#t+1] = format("/Pattern<<%s>>",mytoks)
   end
   return tableconcat(t)
 end
@@ -4601,7 +4641,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/02/18 v2.37.1 mplib package for LuaTeX]
+    [2025/03/20 v2.37.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
