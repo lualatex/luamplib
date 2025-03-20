@@ -10,6 +10,10 @@
    picture. So users can use any drawing command suitable, such as 'fill' or
    'filldraw' as well as 'draw'.
 
+   * 'textext', 'TEX', 'mplibcolor', 'mplibdimen', or 'VerbatimTeX' can accept
+   a string argument without parentheses. For instance, 'textext "\TeX"' is now
+   allowed as well as 'textext("\TeX")'.
+
 2025/02/18 2.37.1
    * A new operator 'mplibuclength <string>' returns the number of unicode
    grapheme clusters in the string.

@@ -34,7 +34,7 @@ draw btex\tracingcommands0 multi
     tex code
     100 \% color
   etex shifted (20,0);
-draw textext("\tracingcommands0 textext 50\% color") shifted (10,-10) withcolor .5white;
+draw textext "\tracingcommands0 textext 50\% color" shifted (10,-10) withcolor .5white;
 draw bbox currentpicture;
 endfig;
 
@@ -161,7 +161,7 @@ diameter:\Dia bp.%
   enddef;
 
   beginfig(1);
-    rotatedlabel.top(textext("Rotated!"), origin, 45);
+    rotatedlabel.top(textext "Rotated!", origin, 45);
   endfig;
 \endmplibcode
 \par

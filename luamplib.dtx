@@ -185,8 +185,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item possibility to use |btex ... etex| to typeset \TeX\ code.
-%   |textext()| is a more versatile macro equivalent to |TEX()| from \pkg{TEX.mp}.
-%   |TEX()| is also allowed and is a synonym of |textext()|.
+%   |textext|\,\meta{string} is a more versatile macro equivalent to |TEX|\,\meta{string} from \pkg{TEX.mp}.
+%   |TEX| is also allowed and is a synonym of |textext|.
 %   The argument of
 %   \mplib's primitive |maketext| will also be processed by the same routine.
 %
@@ -320,7 +320,7 @@ See source file '\inFileName' for licencing and contact information.
 %   On the other hand, \TeX\ code in |verbatimtex ... etex|
 %   between |beginfig()| and |endfig| will be inserted
 %   after flushing out the \metapost figure.
-%   As shown in the example below, |VerbatimTeX()| is a synonym of |verbatimtex| |...| |etex|.
+%   As shown in the example below, |VerbatimTeX| \meta{string} is a synonym of |verbatimtex| |...| |etex|.
 %\begin{verbatim}
 %     \mplibcode
 %       D := sqrt(2)**7;
@@ -354,7 +354,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
 %   So, |label("my text",origin)| thereafter is exactly the same as
-%   |label(textext("my text"),origin)|.
+%   |label(textext "my text", origin)|.
 %
 %   \textsc{n.b.} In the background,
 %   luamplib redefines |infont| operator so that the right side
@@ -565,13 +565,13 @@ See source file '\inFileName' for licencing and contact information.
 % \item[|alt=...|] sets an alternative text of the figure as given.
 %   This key is needed for ordinary \metapost figures.
 %   You can give alternative text within \metapost code as well:
-%   |VerbatimTeX| |("\mplibalttext{...}");|
+%   |VerbatimTeX| |"\mplibalttext{...}";|
 % \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
 %   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can give actual text within \metapost code as well:
-%   |VerbatimTeX| |("\mplibactualtext{...}");|
+%   |VerbatimTeX| |"\mplibactualtext{...}";|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic quality.
@@ -606,11 +606,11 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\textsc{MetaPost}}
 %
-% \subsubsection{\texttt{mplibdimen(...)}, \texttt{mplibcolor(...)}}
+% \subsubsection{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
 %   These are \metapost interfaces for the \TeX\ commands
 %   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above}). For example,
-%   |mplibdimen("\linewidth")| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
-%   |mplibcolor("red!50")| is basically the same as \cs{mpcolor\{red!50\}}.
+%   |mplibdimen "\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
+%   |mplibcolor "red!50"| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
@@ -2701,10 +2701,10 @@ end
 luamplib.preambles = {
   mplibcode = [[
 texscriptmode := 2;
-def rawtextext (expr t) = runscript("luamplibtext{"&t&"}") enddef;
-def mplibcolor (expr t) = runscript("luamplibcolor{"&t&"}") enddef;
-def mplibdimen (expr t) = runscript("luamplibdimen{"&t&"}") enddef;
-def VerbatimTeX (expr t) = runscript("luamplibverbtex{"&t&"}") enddef;
+def rawtextext primary t = runscript("luamplibtext{"&t&"}") enddef;
+def mplibcolor primary t = runscript("luamplibcolor{"&t&"}") enddef;
+def mplibdimen primary t = runscript("luamplibdimen{"&t&"}") enddef;
+def VerbatimTeX primary t = runscript("luamplibverbtex{"&t&"}") enddef;
 if known context_mlib:
   defaultfont := "cmtt10";
   let infont = normalinfont;
@@ -2719,7 +2719,7 @@ if known context_mlib:
     fi
   enddef;
 else:
-  vardef textext@# (text t) = rawtextext (t) enddef;
+  vardef textext@# primary t = rawtextext (t) enddef;
   def message expr t =
     if string t: runscript("mp.report[=["&t&"]=]") else: errmessage "Not a string" fi
   enddef;
