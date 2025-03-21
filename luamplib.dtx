@@ -838,13 +838,12 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %      \begin{mplibcode}
 %        beginfig(2)
-%        picture pic;
-%        pic = mplibgraphictext "\bfseries\TeX"
-%                fakebold 1/2
-%                fillcolor 1/3[red,blue]            % paints the pattern
-%                drawcolor 2/3[red,blue]
-%                scaled 10 ;
-%        draw pic withmppattern "pattnocolor" ;
+%        draw mplibgraphictext "\bfseries\TeX"
+%               fakebold 1
+%               fillcolor 1/3[red,blue]            % paints the pattern
+%               drawcolor 2/3[red,blue]
+%               scaled 10
+%               withmppattern "pattnocolor" ;
 %        endfig;
 %      \end{mplibcode}
 %\end{verbatim}
@@ -1022,7 +1021,7 @@ See source file '\inFileName' for licencing and contact information.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command.
 %
-% As shown in the example, you can reuse the mplibgroup once defined
+% As shown in the example, you can reuse the mplibgroup
 % using the \TeX\ command \cs{usemplibgroup} or
 % the \metapost command |usemplibgroup|.
 % The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
@@ -2769,7 +2768,7 @@ def mplibgraphictext primary t =
 enddef;
 def mplibgraphictext_ (expr t) text rest =
   save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
-    fb, fc, dc, graphictextpic;
+    fb, fc, dc, graphictextpic, alsoordoublepath;
   picture graphictextpic; graphictextpic := nullpicture;
   numeric fb; string fc, dc; fb:=2; fc:="white"; dc:="black";
   let scale = scaled;
@@ -2777,10 +2776,8 @@ def mplibgraphictext_ (expr t) text rest =
   def fillcolor primary c = hide(fc:=colordecimals c;) enddef;
   def drawcolor primary c = hide(dc:=colordecimals c;) enddef;
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
-  addto graphictextpic doublepath origin rest; graphictextpic:=nullpicture;
-  def fakebold  primary c = enddef;
-  let fillcolor = fakebold; let drawcolor = fakebold;
-  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
+  def alsoordoublepath expr p = if picture p: also else: doublepath fi p enddef;
+  addto graphictextpic alsoordoublepath (origin--cycle) rest; graphictextpic:=nullpicture;
   image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
     & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
@@ -3005,7 +3002,7 @@ primarydef p withshadingmethod m =
       withprescript "sh_transform=yes"
       mplib_with_shade_method (pathpart p, m)
     fi
-  else :
+  elseif path p:
     withprescript "sh_transform=yes"
     mplib_with_shade_method (p, m)
   fi
