@@ -2778,6 +2778,9 @@ def mplibgraphictext_ (expr t) text rest =
   let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
   def alsoordoublepath expr p = if picture p: also else: doublepath fi p enddef;
   addto graphictextpic alsoordoublepath (origin--cycle) rest; graphictextpic:=nullpicture;
+  def fakebold  primary c = enddef;
+  let fillcolor = fakebold; let drawcolor = fakebold;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
   image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
     & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
