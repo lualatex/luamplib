@@ -1,5 +1,5 @@
-%\DocumentMetadata{ uncompress }
 \ifnum\outputmode > 0
+  \DocumentMetadata{ lang=en-US, pdfversion=2.0, pdfstandard=ua-2, tagging=on }
   \documentclass{article}
 \else
   \documentclass[dvipdfmx]{article}
@@ -8,14 +8,14 @@
 \setmainfont{latin modern roman}
 \newfontfamily\hangulfont{NotoSansCJKKR}[Script=Hangul,Language=Korean]
 \usepackage{luamplib}
-\usepackage{graphicx,xcolor}
+\usepackage{unicode-math,graphicx,xcolor}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
 \begin{document}
 \tracingcommands1
 A%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 %% test all printable ascii chars in comments
 %%    (  2  <  F  P  Z  d   n   x
 %%    )  3  =  G  Q  [  e   o   y
@@ -32,7 +32,7 @@ A%
 B\par
 \everymplib{}\everyendmplib{}% reset toks
 A%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor \mpcolor{teal};
@@ -60,7 +60,7 @@ endfig;
 \end{mplibcode}%
 B\par
 A%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 beginfig(2);
 numeric u; u=1cm;
 z1=-z2=(-u,0);
@@ -71,16 +71,18 @@ for i = 1 upto 3:
 endfor;
 endfig;
 \end{mplibcode}%
-B\par\mplibforcehmode
+B%
+
+\mplibforcehmode
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
  label(btex $\sqrt{2}$ etex, origin);
  draw fullcircle scaled 20;
  picture pic; pic := currentpicture;
 \end{mplibcode}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
  currentpicture := pic scaled 2;
 \end{mplibcode}%
 \mplibnoforcehmode
@@ -88,7 +90,7 @@ B\par\mplibforcehmode
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
 \mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 message "Hello World!";
 verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
@@ -110,9 +112,8 @@ draw p withcolor white;
 endfig;
 \end{mplibcode}%
 
-\newbox\mympbox
-\def\prependtomplibbox{\global\setbox\mympbox}%
-\begin{mplibcode}
+\begin{mplibgroup}{mympbox}%
+\begin{mplibcode}[tag=false]
 %verbatimtex \global\setbox\mympbox etex
 beginfig(0);
 breadth=.667\mpdim\linewidth;
@@ -123,21 +124,22 @@ y1=y4=height/2; y2=y3=height; y5=y6=0;
 fill z1--z2--z3--z4--z5--z6--cycle;
 endfig;
 \end{mplibcode}%
-\copy\mympbox
-\copy\mympbox
-\copy\mympbox
-\copy\mympbox
+\end{mplibgroup}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
 
 \mplibnoforcehmode
 \mplibnumbersystem{double}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 beginfig(0);
 u := 10**5*(10**-4);
 draw unitsquare scaled u;
 endfig;
 \end{mplibcode}%
 \mplibsetformat{plain}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
   input graph;
   beginfig(0);
   draw begingraph(100,100);
@@ -150,13 +152,15 @@ endfig;
   endfig;
 \end{mplibcode}%
 \mplibtextextlabel{enable}%
-\begin{mplibcode}
+\begin{mplibcode}[tag=Formula,alt=sqrt 2]
 beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
+% the last textext with math formula seems to be problemaric in text-keyed figures.
+% draw btex \relax etex;
 endfig;
 \end{mplibcode}%
 \leavevmode
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
    D := sqrt(2)**7;
    beginfig(0);
    draw fullcircle scaled D;
@@ -164,17 +168,20 @@ endfig;
    endfig;
 \end{mplibcode}%
 diameter:\Dia bp.%
-\begin{mplibcode}
+\begin{mplibcode}[actualtext=Rotated!]
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
   enddef;
 
   beginfig(1);
-    rotatedlabel.top(textext "Rotated!", origin, 45);
+    rotatedlabel.top(textext "Rotated!", origin, 40);
   endfig;
 \end{mplibcode}%
-\par
-\begin{mplibcode}
+
+% what is the "mc on page 1"?
+% the issue must be related to page changing. Force horiz mode.
+\noindent
+\begin{mplibcode}[actualtext=Funny square root 2 xyz]
 beginfig(1)
   draw mplibgraphictext "\bfseries Funny$\sqrt{2}$"
   fakebold 2 % fontspec option
@@ -183,9 +190,9 @@ beginfig(1)
 draw mplibgraphictext "\bfseries\itshape xyz" scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
-\par
+
 %\mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 beginfig(1)
 fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
     withshadingmethod "linear"
@@ -202,7 +209,7 @@ fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
 endfig;
 \end{mplibcode}%
 \leavevmode
-\mpfig
+\mpfig[actualtext=Que]
 color yellow; yellow = (1,1,0);
 picture Q, u, e;
 Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
@@ -224,16 +231,16 @@ endfor
 \endmpfig
 \everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor "olive"); }%
 \mpfig* input boxes \endmpfig
-\mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\mpfig[alt=testing] circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \def\mpfiginstancename{mympfig}%
-\mpfig
+\mpfig[actualtext=1/(1-x^2)]
 draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     (withcolor .6[red,white])
     (withpen pencircle scaled .2 withcolor red)
     scaled 4 ;
 \endmpfig
-\par
-\mpfig
+
+\mpfig[actualtext=Question]
   draw mpliboutlinetext.r
     ("Question")
     ( withpen pencircle scaled .3 )
@@ -244,18 +251,19 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     )
     scaled 4;
 \endmpfig
-\par\leavevmode
+
+\leavevmode
 \mppattern{mypatt}
 [
   xstep = 5, ystep = 6,
   matrix = "rotated 90 scaled .75",
 ]
-\mpfig
+\mpfig[tag=false]
 draw (origin--right+up) scaled 5 withcolor 1/3[blue,white] ;
 draw (up--right) scaled 5 withcolor 1/3[red,white] ;
 \endmpfig
 \endmppattern
-\mpfig
+\mpfig[alt=testing]
 draw unitsquare shifted -center unitsquare scaled 45 withpostscript "collect" ;
 filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   withcolor \mpcolor{red!50!blue!50} withpostscript "evenodd" ;
@@ -267,7 +275,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   ]
   \tiny\TeX
 \end{mppattern}\relax
-\mpfig
+\mpfig[actualtext=TeX]
   picture tex;
   tex = mpliboutlinetext.p ("\bfseries \TeX");
   for i=1 upto mpliboutlinenum:
@@ -289,8 +297,9 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
   endfor
 \endmpfig
-\par\leavevmode
-\mpfig
+
+\leavevmode
+\mpfig[alt=testing]
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;
@@ -301,9 +310,9 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     withfadeopacity (1, 0)
     ;
 \endmpfig
-\par
+
 \def\test#1{%
-  \mpfig
+  \mpfig[alt=testing]
   fill unitsquare shifted -center unitsquare scaled 200
     withshadingmethod "linear"
     withshadingcolors (.3[red,white], .3[blue,white])
@@ -330,20 +339,20 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \hbox{\test{knockout}\,\test{}}%
 \hbox to\MPwidth{\hss knockout\hss}%
 \leavevmode
-\mpfig usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
-\usemplibgroup{test:isolated,knockout}%
+\mpfig[alt=testing] usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
+\usemplibgroup[alt=testing]{test:isolated,knockout}%
 \begin{mplibgroup}{mytex}[matrix="rotated 15"] \TeX \end{mplibgroup}%
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
-\usemplibgroup{mytex}%
-\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
-\par
-\mpfig
+\usemplibgroup[actualtext=TeX]{mytex}%
+\mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+
+\mpfig[actualtext=MPLIB]
   draw mplibgraphictext "\textbf{MPLIB}"
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7
     withmppattern "mypatt" ;
 \endmpfig
-\mpfig
+\mpfig[actualtext=TeX]
   draw mplibgraphictext "\bfseries\TeX" rotated 30 scaled 4
     withshadingmethod "linear"
     withshadingvector (3,0)
@@ -351,7 +360,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
 \endmpfig
 \leavevmode
-\mpfig
+\mpfig[alt=testing]
   string Test; Test="abçdéf";
   for k=0 upto mpliblength(Test)-1:
     draw TEX(mplibsubstring (k,k+1) of Test) scaled 2 shifted (20k,0);
@@ -359,36 +368,36 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 \qquad
 \mpliblegacybehavior{false}%
-\mpfig
+\mpfig[actualtext=나랏말씀이]
   verbatimtex \hangulfont etex;
   string Test; Test="나랏말ᄊᆞ미";
   for k=0 upto mplibuclength(Test)-1:
     draw TEX(mplibucsubstring (k,k+1) of Test) scaled 1.5 shifted (20k,0);
   endfor
 \endmpfig
-\par
+
 \mppattern{p1}
-  \mpfig
+  \mpfig[tag=false]
     fill fullcircle scaled 3
     withcolor .7red
     ;
   \endmpfig
 \endmppattern
 \mppattern{p2}
-  \mpfig
+  \mpfig[tag=false]
     fill fullcircle scaled 9
     withmppattern "p1"
     ;
   \endmpfig
 \endmppattern
 \mppattern{p3}
-  \mpfig
+  \mpfig[tag=false]
     fill fullcircle scaled 27
     withmppattern "p2"
     ;
   \endmpfig
 \endmppattern
-\mpfig
+\mpfig[alt=testing]
   fill fullcircle scaled 108
   withmppattern "p3"
   ;
@@ -402,7 +411,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \everymplib[instanceOne]{beginfig(1);}
 \everyendmplib[instanceOne]{endfig;}
 
-\begin{mplibcode}[instanceOne]
+\begin{mplibcode}[instanceOne,alt=testing]
   picture TeX;
   TeX := btex \TeX etex;
 a := 1cm;
@@ -412,7 +421,7 @@ draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceTwo]
+\begin{mplibcode}[instanceTwo,alt=testing]
 beginfig(1);
 if not known a:
   draw btex code is not inherited from an instance with a different name etex;
@@ -423,7 +432,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 beginfig(1);
 if not known a:
   draw btex code is not inherited if instance name is not listed etex;
@@ -435,7 +444,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing]
 beginfig(1);
 if not known a:
   draw btex code is not inherited if mplibcodeinherit is disabled and instance name is not explicitly set etex;
@@ -446,7 +455,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceOne]
+\begin{mplibcode}[instanceOne,alt=testing]
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
   draw TeX;

@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2025/xx/xx 2.37.3
+   * Tagging key 'off' is newly introduced.
+     Given this key, luamplib does nothing about tagging.
+
+   * Tagging keys 'actualtext' and 'text' force horizontal mode
+     according to the definition of \prependtomplibbox.
+
+   * more robust 'mplibgraphictext' macro
+
 2025/03/20 2.37.2
    * Formerly, it was not possible to give shading effect to a textual picture
    inside a tiling pattern. This limitation is now lifted.

@@ -196,7 +196,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When these \TeX\ commands are found in |verbatimtex ... etex|, the entire code will be
 %   ignored.
 %   The treatment of |verbatimtex| command has changed a lot since v2.20:
-%   see \hyperlink{mpliblegacybehavior}{below \S\,1.1}.
+%   see \hyperlink{mpliblegacybehavior}{below} \S\,1.1.
 %
 % \item in the past,
 %   the package required PDF mode in order to have some output.
@@ -210,11 +210,13 @@ See source file '\inFileName' for licencing and contact information.
 % \subsection{\TeX}
 %
 % \subsubsection{\cs{mplibforcehmode}}
+%   \hypertarget{mplibforcehmode}{}\relax
 %   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
-%   setting. (Actually these commands redefine \cs{prependtomplibbox}; you
-%   can redefine this command with anything suitable before a box.)
+%   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
+%     can redefine this command with anything suitable before a box.
+%     But see \hyperlink{taggedPDF}{below} on Tagged PDF. }
 %
 % \subsubsection{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
@@ -241,7 +243,7 @@ See source file '\inFileName' for licencing and contact information.
 %   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
-%   (see \hyperlink{mpliboutlinetext}{below \S\,1.2}).
+%   (see \hyperlink{mpliboutlinetext}{below} \S\,1.2).
 %   You can try other effects as well, though we did not fully tested their proper functioning.
 %
 % \begin{description}
@@ -305,7 +307,10 @@ See source file '\inFileName' for licencing and contact information.
 %   following \metapost figure box.  In this way,
 %   each figure box can be freely moved horizontally or vertically.
 %   Also, a box number can be assigned to a figure box, allowing it to be
-%   reused later.
+%   reused later.\footnote{But
+%     the recommended way to reuse a figure is using \cs{mplibgroup} command.
+%     See \hyperlink{mplibgroupendmplibgroup}{below} \S\,1.2.
+%   }
 %\begin{verbatim}
 %     \mplibcode
 %     verbatimtex \moveright 3cm etex; beginfig(0); ... endfig;
@@ -549,39 +554,53 @@ See source file '\inFileName' for licencing and contact information.
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
 % \subsubsection{Tagged PDF}
+%   \hypertarget{taggedPDF}{}\relax
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Like the \LaTeX's |picture| environment,
-% available optional keys are |tag|, |alt|, |actualtext|, |artifact|, |debug| and |correct-BBox|
+% available optional keys are |tag|, |alt|, |actualtext|, |artifact|, |text|, |off|, |debug| and |correct-BBox|
 % (|texdoc| |latex-lab-graphic|).
-% Additionally, luamplib provides its own |text| key.
 % \begin{description}
 % \item[|tag=...|] You can choose a tag name, default value being |Figure|.
 %   BBox info will be added automatically to the PDF
-%   unless the value is |text| or |false|.
+%   unless the value is |artifact|, |text|, |off| or |false|.
 %   When the value is |false|, tagging is deactivated.
-% \item[|debug|] draws bounding box of the figure for checking, which you can correct
-%   by |correct-BBox| key with space-separated four dimen values.
 % \item[|alt=...|] sets an alternative text of the figure as given.
 %   This key is needed for ordinary \metapost figures.
-%   You can give alternative text within \metapost code as well:
+%   You can change alternative text within \metapost code as well:
 %   |VerbatimTeX| |"\mplibalttext{...}";|
-% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actual text as given.
-%   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
+% \item[|actualtext=...|] starts a |Span| tag implicitly and sets an actualtext as given.
+%   BBox info will not be added.
+%   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
+%   according to the definition of \cs{prependtomplibbox}.\footnote{%
+%     It is not recommended to personally redefine \cs{prependtomplibbox}.
+%     Apart from using \cs{mplibforcehmode} or \cs{mplibnoforcehmode},
+%     the redefinition might be incompatible with |actualtext| key.
+%     See \hyperlink{mplibforcehmode}{above} on these commands. }
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
-%   You can give actual text within \metapost code as well:
+%   You can change actualtext within \metapost code as well:
 %   |VerbatimTeX| |"\mplibactualtext{...}";|
 % \item[|artifact|] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic quality.
 % \item[|text|] starts an |artifact| MC and enables tagging on textext
 %   (the same as |btex| |...| |etex|) boxes.
-%   Horizontal mode is forced by \cs{noindent} command. BBox info will not be added.
+%   BBox info will not be added.
+%   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
+%   according to the definition of \cs{prependtomplibbox}.\footnote{%
+%     |text| key also shares the limitation mentioned in the previous footnote.}
 %   This key is intended for figures made mostly of textext boxes.
 %   Inside text-keyed figures, reusing textext boxes is strongly discouraged.
+% \item[|off|] luamplib does nothing about tagging.
+%   |mplibcode| remains transprent to the surrounding tagging commands.
+% \item[|debug|] draws the bounding box of the figure for checking.
+% \item[|correct-BBox=...|] You can correct the bounding box of the figure
+%   with space-separated four dimen values.
+% \item[|tagging-setup=...|]
+%   This key accepts as its value the list of key-value options mentioned so far.
 % \end{description}
-% These keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below}) commands.
+% The above keys are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below} \S\,1.2) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[myInstanceName, alt=figure drawing a circle]
 %     ...
@@ -608,7 +627,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
 %   These are \metapost interfaces for the \TeX\ commands
-%   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above}). For example,
+%   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above} \S\,1.1). For example,
 %   |mplibdimen "\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
 %   |mplibcolor "red!50"| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
@@ -656,9 +675,10 @@ See source file '\inFileName' for licencing and contact information.
 %   such as the vertical writing in Chinese or Japanese.
 %   However, because the implementation is quite different from others,
 %   there are some limitations such that you can't
-%   apply shading (gradient colors) to the text with |withshademethod| from \emph{metafun}.
-%   (But this limitation is now lifted by the introduction of |withshadingmethod|.
-%   See \hyperlink{luamplibshading}{below}.)
+%   apply shading (gradient colors) to the text with |withshademethod| from
+%   \emph{metafun}.\footnote{But
+%   this limitation is now lifted by the introduction of |withshadingmethod|.
+%   See \hyperlink{luamplibshading}{below}.}
 %   Again,
 %   in DVI mode, \pkg{unicode-math} package is needed for math formula,
 %   as we cannot embolden type1 fonts in DVI mode.
@@ -970,6 +990,7 @@ See source file '\inFileName' for licencing and contact information.
 % colors will have effects on the uncolored objects in the group.
 %
 % \subsubsection{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
+%   \hypertarget{mplibgroupendmplibgroup}{}\relax
 % These \TeX\ macros are described here in this subsection, as they are
 % deeply related to the |asgroup| operator.
 % Users can define a transparency group or a normal \emph{form XObject}
@@ -1044,8 +1065,8 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection{\texttt{... withshadingmethod ...}}
 %   \hypertarget{luamplibshading}{}\relax
 %   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
-%   the `\textcolor{red}{|shade|}' contained in each and every macro name has changed to
-%   `\textcolor{red}{|shading|}' in luamplib: for instance, while |withshademethod| is
+%   the `|shade|' contained in each and every macro name has changed to
+%   `|shading|' in luamplib: for instance, while |withshademethod| is
 %   a macro name which only works with \emph{metafun} format,
 %   the equivalent provided by luamplib, |withshadingmethod|, works with \emph{plain} as well.
 %   Other differences to the \emph{metafun}'s and some cautions are:
@@ -3005,7 +3026,7 @@ primarydef p withshadingmethod m =
       withprescript "sh_transform=yes"
       mplib_with_shade_method (pathpart p, m)
     fi
-  elseif path p:
+  else :
     withprescript "sh_transform=yes"
     mplib_with_shade_method (p, m)
   fi
@@ -4727,12 +4748,10 @@ end
 %    \begin{macrocode}
 \protected\def\usemplibgroup#1#{\usemplibgroupmain}
 \def\usemplibgroupmain#1{%
-  \mplibstarttousemplibgroup
+  \prependtomplibbox\hbox dir TLT\bgroup
   \csname luamplib.group.#1\endcsname
-  \mplibstoptousemplibgroup
+  \egroup
 }
-\def\mplibstarttousemplibgroup{\prependtomplibbox\hbox dir TLT\bgroup}
-\def\mplibstoptousemplibgroup{\egroup}
 \protected\def\mplibgroup#1{%
   \begingroup
   \def\MPllx{0}\def\MPlly{0}%
@@ -5187,12 +5206,9 @@ end
   \let\mplibalttext \luamplibtagtextbegin
   \let\mplibactualtext \mplibalttext
   \endinput\fi
-\let\mplibstarttoPDForiginal\mplibstarttoPDF
-\let\mplibstoptoPDForiginal\mplibstoptoPDF
-\let\mplibputtextboxoriginal\mplibputtextbox
-\let\mplibstarttousemplibgrouporiginal\mplibstarttousemplibgroup
-\let\mplibstoptousemplibgrouporiginal\mplibstoptousemplibgroup
 \ExplSyntaxOn
+\tl_new:N \l__luamplib_tag_envname_tl
+\tl_set:Nn\l__luamplib_tag_envname_tl {mplibcode}
 \tl_new:N \l__luamplib_tag_alt_tl
 \tl_new:N \l__luamplib_tag_alt_dflt_tl
 \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure}
@@ -5201,7 +5217,6 @@ end
 \tl_set:Nn\l__luamplib_tag_struct_tl {Figure}
 \bool_new:N \l__luamplib_tag_usetext_bool
 \bool_new:N \l__luamplib_tag_BBox_bool
-\bool_set_true:N \l__luamplib_tag_BBox_bool
 \seq_new:N\l__luamplib_tag_bboxcorr_seq
 \bool_new:N\l__luamplib_tag_bboxcorr_bool
 \bool_new:N \l__luamplib_tag_debug_bool
@@ -5210,16 +5225,50 @@ end
 \tl_new:N \l__luamplib_BBox_lly_tl
 \tl_new:N \l__luamplib_BBox_urx_tl
 \tl_new:N \l__luamplib_BBox_ury_tl
-\cs_set_nopar:Npn \luamplibtagtextbegin #1
+\msg_new:nnn {luamplib}{figure-text-reuse}
 {
-  \bool_if:NTF \l__luamplib_tag_usetext_bool
-  {
+  textext~box~#1~probably~is~incorrectly~tagged.\\
+  Reusing~a~box~in~text-keyed~figures~is~strongly~discouraged.
+}
+\msg_new:nnn{luamplib}{alt-text-missing}
+{
+  Alternative~text~for~#1~is~missing.\\
+  Using~the~default~value~'#2'~instead.
+}
+%    \end{macrocode}
+% Sockets for textext
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/textext/begin}{1}
+\NewSocket{tagsupport/luamplib/textext/end}{0}
+\NewSocketPlug{tagsupport/luamplib/textext/begin}{default}
+{
     \tag_mc_end_push:
     \tag_mc_begin:n{}
     \tag_struct_begin:n{tag=NonStruct,stash}
     \def\myboxnum{#1}
     \edef\mystructnum{\tag_get:n{struct_num}}
     \edef\statebeforebox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
+}
+\NewSocketPlug{tagsupport/luamplib/textext/end}{default}
+{
+    \edef\stateafterbox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
+    \int_compare:nNnTF
+      {\stateafterbox}
+      =
+      {\statebeforebox}
+      { \cs_gset_nopar:cpe {luamplib.notagbox.\myboxnum} {\mystructnum} }
+      { \cs_gset_nopar:cpe {luamplib.tagbox.\myboxnum} {\mystructnum} }
+    \tag_struct_end:
+    \tag_mc_end:
+    \tag_mc_begin_pop:n{}
+}
+\AssignSocketPlug{tagsupport/luamplib/textext/begin}{default}
+\AssignSocketPlug{tagsupport/luamplib/textext/end}{default}
+\cs_set_nopar:Npn \luamplibtagtextbegin #1
+{
+  \bool_if:NTF \l__luamplib_tag_usetext_bool
+  {
+    \UseTaggingSocket{luamplib/textext/begin}{#1}
   }
   {
     \tag_if_active:TF
@@ -5232,28 +5281,12 @@ end
 {
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
-    \edef\stateafterbox{\inteval{\tag_get:n{struct_counter}+\tag_get:n{mc_counter}}}
-    \tag_if_active:T {
-      \int_compare:nNnTF
-      {\stateafterbox}
-      =
-      {\statebeforebox}
-      { \cs_gset_nopar:cpe {luamplib.notagbox.\myboxnum} {\mystructnum} }
-      { \cs_gset_nopar:cpe {luamplib.tagbox.\myboxnum} {\mystructnum} }
-    }
-    \tag_struct_end:
-    \tag_mc_end:
-    \tag_mc_begin_pop:n{}
+    \UseTaggingSocket{luamplib/textext/end}
   }
   {
     \bool_if:NT \l_tmpa_bool
       { \ResumeTagging{luamplib.textext} }
   }
-}
-\msg_new:nnn {luamplib}{figure-text-reuse}
-{
-  textext~box~#1~probably~is~incorrectly~tagged.\\
-  Reusing~a~box~in~text-keyed~figures~is~strongly~discouraged.
 }
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
@@ -5287,14 +5320,18 @@ end
     }
   \hss}}
 }
-\cs_new_nopar:Npn \__luamplib_tagging_begin_figure:
+%    \end{macrocode}
+% Sockets for environment options
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/begin}{0}
+\NewSocket{tagsupport/luamplib/end}{0}
+\NewSocketPlug{tagsupport/luamplib/begin}{figure}
 {
-  \tag_if_active:T
-  {
     \tag_mc_end_push:
     \tl_if_empty:NT\l__luamplib_tag_alt_tl
     {
-      \msg_warning:nne{luamplib}{alt-text-missing}{\l__luamplib_tag_alt_dflt_tl}
+      \msg_warning:nnee{luamplib}{alt-text-missing}
+                       {\l__luamplib_tag_envname_tl}{\l__luamplib_tag_alt_dflt_tl}
       \tl_set:Ne\l__luamplib_tag_alt_tl {\l__luamplib_tag_alt_dflt_tl}
     }
     \tag_struct_begin:n
@@ -5303,21 +5340,15 @@ end
       alt=\l__luamplib_tag_alt_tl,
     }
     \tag_mc_begin:n{}
-  }
 }
-\cs_new_nopar:Npn \__luamplib_tagging_end_figure:
+\NewSocketPlug{tagsupport/luamplib/end}{figure}
 {
-  \tag_if_active:T
-  {
     \tag_mc_end:
     \tag_struct_end:
     \tag_mc_begin_pop:n{}
-  }
 }
-\cs_new_nopar:Npn \__luamplib_tagging_begin_actualtext:
+\NewSocketPlug{tagsupport/luamplib/begin}{actualtext}
 {
-  \tag_if_active:T
-  {
     \tag_mc_end_push:
     \tag_struct_begin:n
     {
@@ -5325,94 +5356,169 @@ end
       actualtext=\l__luamplib_tag_actual_tl,
     }
     \tag_mc_begin:n{}
-  }
 }
-\cs_set_eq:NN \__luamplib_tagging_end_actualtext: \__luamplib_tagging_end_figure:
-\cs_new_nopar:Npn \__luamplib_tagging_begin_artifact:
+\NewSocketPlug{tagsupport/luamplib/end}{actualtext}
 {
-  \tag_if_active:T
-  {
+    \tag_mc_end:
+    \tag_struct_end:
+    \tag_mc_begin_pop:n{}
+}
+\NewSocketPlug{tagsupport/luamplib/begin}{artifact}
+{
     \tag_mc_end_push:
     \tag_mc_begin:n{artifact}
-  }
 }
-\cs_new_nopar:Npn \__luamplib_tagging_end_artifact:
+\NewSocketPlug{tagsupport/luamplib/end}{artifact}
 {
-  \tag_if_active:T
-  {
     \tag_mc_end:
     \tag_mc_begin_pop:n{}
+}
+\NewSocketPlug{tagsupport/luamplib/begin}{transparent}
+{
+}
+\NewSocketPlug{tagsupport/luamplib/end}{transparent}
+{
+}
+\AssignSocketPlug{tagsupport/luamplib/begin}{figure}
+\AssignSocketPlug{tagsupport/luamplib/end}{figure}
+%    \end{macrocode}
+% A sockets to force horizontal mode upon keys |text| and |actualtext|
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/hmode/force}{0}
+\NewSocketPlug{tagsupport/luamplib/hmode/force}{default}
+{
+  \mode_if_vertical:T
+  {
+    \cs_if_eq:NNTF \prependtomplibbox \relax
+    {
+      \noindent
+      \aftergroup \par
+    }
+    {
+      \bool_lazy_any:nTF
+      {
+        { \cs_if_eq_p:NN \prependtomplibbox \leavevmode }
+        { \cs_if_eq_p:NN \prependtomplibbox \noindent }
+        { \cs_if_eq_p:NN \prependtomplibbox \mode_leave_vertical: }
+      }
+      { \prependtomplibbox }
+      {
+        \str_set:Ne \l_tmpa_str {\cs_meaning:N \prependtomplibbox}
+        \clist_set:Nn \l_tmpa_clist
+          {\unhbox \voidb@x,\noindent,\mode_leave_vertical:,\tex_indent:D,\indent}
+        \bool_set_false:N \l_tmpa_bool
+        \clist_map_inline:Nn \l_tmpa_clist
+          {
+            \str_if_in:NnT \l_tmpa_str {##1}
+            {
+              ##1
+              \bool_set_true:N \l_tmpa_bool
+              \clist_map_break:
+             }
+          }
+        \bool_if:NF \l_tmpa_bool
+        {
+          \noindent         % prone to an error!
+          \aftergroup \par
+        }
+      }
+    }
   }
 }
-\cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_figure:
-\cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_figure:
-\keys_define:nn{luamplib/tag}
+\AssignSocketPlug{tagsupport/luamplib/hmode/force}{default}
+%    \end{macrocode}
+% A sockets for text-keyed figures
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/text/init}{0}
+\NewSocketPlug{tagsupport/luamplib/text/init}{default}
+{
+  \bool_set_true:N \l__luamplib_tag_usetext_bool
+}
+\AssignSocketPlug{tagsupport/luamplib/text/init}{default}
+%    \end{macrocode}
+% Key-value options
+%    \begin{macrocode}
+\keys_define:nn{tag/luamplib}
   {
     ,alt .code:n =
       {
+        \bool_set_true:N \l__luamplib_tag_BBox_bool
         \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
       }
+    ,alt .groups:n = {tagging}
     ,actualtext .code:n =
       {
-        \bool_set_false:N \l__luamplib_tag_BBox_bool
         \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
-        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_actualtext:
-        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_actualtext:
-        \tag_if_active:T {\noindent}
+        \AssignSocketPlug{tagsupport/luamplib/begin}{actualtext}
+        \AssignSocketPlug{tagsupport/luamplib/end}{actualtext}
+        \UseTaggingSocket{luamplib/hmode/force}
       }
+    ,actualtext .groups:n = {tagging}
     ,artifact .code:n =
       {
-        \bool_set_false:N \l__luamplib_tag_BBox_bool
-        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
-        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
+        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
       }
+    ,artifact .groups:n = {tagging}
     ,text .code:n =
       {
-        \bool_set_false:N \l__luamplib_tag_BBox_bool
-        \bool_set_true:N  \l__luamplib_tag_usetext_bool
-        \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
-        \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
-        \tag_if_active:T {\noindent}
+        \UseTaggingSocket{luamplib/text/init}
+        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
+        \UseTaggingSocket{luamplib/hmode/force}
       }
+    ,text .groups:n = {tagging}
+    ,off .code:n =
+      {
+        \AssignSocketPlug{tagsupport/luamplib/begin}{transparent}
+        \AssignSocketPlug{tagsupport/luamplib/end}{transparent}
+      }
+    ,off .groups:n = {tagging}
     ,tag .code:n =
       {
         \str_case:nnF {#1}
           {
+            {artifact}
+            { \keys_set_known:nn {tag/luamplib} {artifact} }
             {text}
-            {
-              \bool_set_false:N \l__luamplib_tag_BBox_bool
-              \bool_set_true:N  \l__luamplib_tag_usetext_bool
-              \cs_set_eq:NN \luamplibtaggingbegin \__luamplib_tagging_begin_artifact:
-              \cs_set_eq:NN \luamplibtaggingend \__luamplib_tagging_end_artifact:
-              \tag_if_active:T {\noindent}
-            }
+            { \keys_set_known:nn {tag/luamplib} {text} }
+            {off}
+            { \keys_set_known:nn {tag/luamplib} {off} }
             {false}
-            {
-              \SuspendTagging{luamplib.tagfalse}
-            }
+            { \SuspendTagging{luamplib.tagfalse} }
           }
           {
+            \bool_set_true:N \l__luamplib_tag_BBox_bool
             \tl_set:Nn\l__luamplib_tag_struct_tl{#1}
           }
       }
+    ,tag .groups:n = {tagging}
     ,correct-BBox .code:n =
       {
         \bool_set_true:N \l__luamplib_tag_bboxcorr_bool
         \seq_set_split:Nnn \l__luamplib_tag_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
       }
+    ,correct-BBox .groups:n = {tagging}
     ,debug .code:n =
       { \bool_set_true:N \l__luamplib_tag_debug_bool }
+    ,debug .groups:n = {tagging}
+    ,tagging-setup .code:n =
+      {
+        \keys_set_groups:nnn {tag/luamplib} {tagging} {#1}
+      }
     ,instance .code:n =
       { \tl_gset:Nn \currentmpinstancename {#1} }
     ,instancename .meta:n = { instance = {#1} }
     ,unknown .code:n =
       { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
   }
-\cs_new_nopar:Npn \luamplibtaggingBBox
+%    \end{macrocode}
+% A socket for BBox attribute
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/bbox}{0}
+\NewSocketPlug{tagsupport/luamplib/bbox}{default}
 {
-  \bool_lazy_and:nnT
-  {\tag_if_active_p:}
-  {\l__luamplib_tag_BBox_bool}
+  \bool_if:NT \l__luamplib_tag_BBox_bool
   {
     \tl_set:Ne \l__luamplib_BBox_label_tl {luamplib.BBox.\tag_get:n{struct_num}}
     \tex_savepos:D
@@ -5476,22 +5582,20 @@ end
             }
           }
       }
-    \prop_gput:cne
-      { g__tag_struct_\tag_get:n{struct_num}_prop }
-      {A}
+    \tag_struct_gput:ene {\tag_get:n{struct_num}} {attribute}
       {
-        << /O /Layout /BBox [
+        /O /Layout /BBox [
           \l__luamplib_BBox_llx_tl\c_space_tl
           \l__luamplib_BBox_lly_tl\c_space_tl
           \l__luamplib_BBox_urx_tl\c_space_tl
           \l__luamplib_BBox_ury_tl
-        ] >>
+        ]
       }
     \bool_if:NT \l__luamplib_tag_debug_bool
       {
         \iow_log:e
           {
-            luamplib/tag/debug:~BBox~of~structure~\tag_get:n{struct_num}~is~
+            tag/luamplib~debug:~BBox~of~structure~\tag_get:n{struct_num}~is~
             \l__luamplib_BBox_llx_tl\c_space_tl
             \l__luamplib_BBox_lly_tl\c_space_tl
             \l__luamplib_BBox_urx_tl\c_space_tl
@@ -5520,51 +5624,38 @@ end
       }
   }
 }
-\cs_set_nopar:Npn \luamplibtagasgroupbegin
+\AssignSocketPlug{tagsupport/luamplib/bbox}{default}
+%    \end{macrocode}
+% Sockets for mplibgroup
+%    \begin{macrocode}
+\NewSocket{tagsupport/luamplib/mplibgroup/begin}{0}
+\NewSocket{tagsupport/luamplib/mplibgroup/end}{0}
+\NewSocketPlug{tagsupport/luamplib/mplibgroup/begin}{default}
 {
-  \bool_if:NT \l__luamplib_tag_usetext_bool
-  {
-    \ResumeTagging{luamplib.asgroup}
-    \tag_mc_begin:n{}
-  }
+    \bool_if:NT \l__luamplib_tag_usetext_bool
+    {
+      \tag_mc_end:
+      \tag_mc_begin:n{}
+    }
 }
-\cs_set_nopar:Npn \luamplibtagasgroupend
+\NewSocketPlug{tagsupport/luamplib/mplibgroup/end}{default}
 {
-  \bool_if:NT \l__luamplib_tag_usetext_bool
-  {
-    \tag_mc_end:
-    \SuspendTagging{luamplib.asgroup}
-  }
+    \bool_if:NT \l__luamplib_tag_usetext_bool
+    {
+      \tag_mc_end:
+      \tag_mc_begin:n{artifact}
+    }
 }
-\cs_set_nopar:Npn \mplibstarttousemplibgroup
-{
-  \prependtomplibbox\hbox dir TLT\bgroup
-  \luamplibtaggingbegin
-  \setbox\mplibscratchbox\hbox\bgroup
-  \bool_if:NT \l__luamplib_tag_usetext_bool
-  {
-    \tag_mc_end:
-    \tag_mc_begin:n{}
-  }
-}
-\cs_set_nopar:Npn \mplibstoptousemplibgroup
-{
-  \bool_if:NT \l__luamplib_tag_usetext_bool
-  {
-    \tag_mc_end:
-    \tag_mc_begin:n{artifact}
-  }
-  \egroup
-  \luamplibtaggingBBox
-  \unhbox\mplibscratchbox
-  \luamplibtaggingend
-  \egroup
-}
+\AssignSocketPlug{tagsupport/luamplib/mplibgroup/begin}{default}
+\AssignSocketPlug{tagsupport/luamplib/mplibgroup/end}{default}
+%    \end{macrocode}
+% Redefine our macros
+%    \begin{macrocode}
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
   {
     \prependtomplibbox
     \hbox dir TLT\bgroup
-    \luamplibtaggingbegin % begin tagging
+    \UseTaggingSocket{luamplib/begin}
     \xdef\MPllx{#1}\xdef\MPlly{#2}%
     \xdef\MPurx{#3}\xdef\MPury{#4}%
     \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
@@ -5594,20 +5685,16 @@ end
        \box\mplibscratchbox}%
     \wd\mplibscratchbox\MPwidth
     \ht\mplibscratchbox\MPheight
-    \luamplibtaggingBBox % BBox
+    \UseTaggingSocket{luamplib/bbox}
     \box\mplibscratchbox
-    \luamplibtaggingend % end tagging
+    \UseTaggingSocket{luamplib/end}
     \egroup
   }
 \RenewDocumentCommand\mplibcode{O{}}
   {
-    \msg_set:nnn {luamplib}{alt-text-missing}
-    {
-      Alternative~text~for~mplibcode~is~missing.\\
-      Using~the~default~value~'##1'~instead.
-    }
+    \tl_set:Nn \l__luamplib_tag_envname_tl {mplibcode}
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-    \keys_set:ne{luamplib/tag}{#1}
+    \keys_set:ne{tag/luamplib}{#1}
     \tl_if_empty:NF \currentmpinstancename
       { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
     \mplibtmptoks{}\ltxdomplibcode
@@ -5618,12 +5705,8 @@ end
     \IfBooleanTF{#1}
     {\mplibprempfig *}
     {
-      \msg_set:nnn {luamplib}{alt-text-missing}
-      {
-        Alternative~text~for~mpfig~is~missing.\\
-        Using~the~default~value~'##1'~instead.
-      }
-      \keys_set:ne{luamplib/tag}{#2}
+      \tl_set:Nn \l__luamplib_tag_envname_tl {mpfig}
+      \keys_set:ne{tag/luamplib}{#2}
       \tl_if_empty:NF \mpfiginstancename
         { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
       \mplibmainmpfig
@@ -5632,18 +5715,25 @@ end
 \RenewDocumentCommand\usemplibgroup{O{} m}
   {
     \begingroup
-    \msg_set:nnn {luamplib}{alt-text-missing}
-    {
-      Alternative~text~for~usemplibgroup~is~missing.\\
-      Using~the~default~value~'##1'~instead.
-    }
-    \keys_set:ne{luamplib/tag}{#1}
+    \tl_set:Nn \l__luamplib_tag_envname_tl {usemplibgroup}
+    \keys_set:ne{tag/luamplib}{#1}
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
-    \mplibstarttousemplibgroup
+    \prependtomplibbox\hbox dir TLT\bgroup
+    \UseTaggingSocket{luamplib/begin}
+    \setbox\mplibscratchbox\hbox\bgroup
+    \UseTaggingSocket{luamplib/mplibgroup/begin}
     \csname luamplib.group.#2\endcsname
-    \mplibstoptousemplibgroup
+    \UseTaggingSocket{luamplib/mplibgroup/end}
+    \egroup
+    \UseTaggingSocket{luamplib/bbox}
+    \unhbox\mplibscratchbox
+    \UseTaggingSocket{luamplib/end}
+    \egroup
     \endgroup
   }
+%    \end{macrocode}
+% Allow setting alt/actual text within \metapost code
+%    \begin{macrocode}
 \cs_new_nopar:Npn \mplibalttext #1
 {
   \tl_set:Ne \l__luamplib_tag_alt_tl {\text_purify:n{#1}}
