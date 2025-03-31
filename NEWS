@@ -10,6 +10,9 @@
    * Tagging key 'tagging-setup' is newly introduced.
      The value of this key is a key-value list of other tagging options.
 
+   * Tagging Key 'debug' is removed.
+     Declare '\DocumentMetadata{debug=BBox}' instead.
+
    * more robust 'mplibgraphictext' macro
 
 2025/03/20 2.37.2
