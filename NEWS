@@ -2,10 +2,13 @@
 
 2025/xx/xx 2.37.3
    * Tagging key 'off' is newly introduced.
-     Given this key, luamplib does nothing about tagging.
+     This key, being a synonym of 'tag=false', deactivates tagging.
 
-   * Tagging keys 'actualtext' and 'text' force horizontal mode
+   * Tagging keys 'actualtext', 'text', and 'off' force horizontal mode
      according to the definition of \prependtomplibbox.
+
+   * Tagging key 'tagging-setup' is newly introduced.
+     The value of this key is a key-value list of other tagging options.
 
    * more robust 'mplibgraphictext' macro
 
