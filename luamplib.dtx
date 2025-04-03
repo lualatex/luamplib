@@ -112,7 +112,7 @@ See source file '\inFileName' for licencing and contact information.
   ItalicFont  = {Linux Libertine O Italic},
   SlantedFont = {Linux Libertine O Italic},
 ]{Linux Libertine O}
-\setmonofont[Scale=MatchLowercase,ItalicFont=*]{InconsolataN}
+\setmonofont[Scale=MatchLowercase]{InconsolataN}
 %setsansfont[Ligatures=TeX]{Linux Biolinum O}
 \setsansfont[UprightFont=*Medium,BoldFont=*Heavy,Ligatures=TeX,Scale=MatchLowercase]{Iwona}
 %setmathfont{XITS Math}
@@ -569,7 +569,7 @@ See source file '\inFileName' for licencing and contact information.
 %   BBox info will be added automatically to the PDF\@.
 %   This key is needed for ordinary \metapost figures.
 %   You can change alternative text within \metapost code as well:
-%   |VerbatimTeX| |"\mplibalttext{...}";|
+%   |VerbatimTeX| |"\mplibalttext|\marg{text}|";|
 % \item[\texttt{actualtext=}\meta{text}] starts a |Span| tag implicitly and sets an actualtext from the \meta{text}.
 %   BBox info will not be added.
 %   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
@@ -581,7 +581,7 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
 %   You can change actualtext within \metapost code as well:
-%   |VerbatimTeX| |"\mplibactualtext{...}";|
+%   |VerbatimTeX| |"\mplibactualtext|\marg{text}|";|
 % \item[\texttt{artifact}] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic meaning.
@@ -602,27 +602,30 @@ See source file '\inFileName' for licencing and contact information.
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.
 %   BBox info will be added automatically to the PDF
 %   unless the value is |artifact|, |text| or |false|.
-%   |tag=false| is a synonym of the |off| option just mentioned.
-% \item[\texttt{correct-BBox=}\meta{dimens}] You can correct the bounding box of the figure
+%   Among these the last one, |tag=false|, is a synonym of the |off| option just mentioned.
+%   For instance, you can set `|tag=Formula,| |alt=|\meta{text}' to get |Formula| structure
+%   with the alternative text.
+% \item[\texttt{correct-BBox=}\meta{dimens}] You can correct the BBox attribute of the figure
 %   with space-separated four dimensional values, which will be added to the
 %   automatically-calculated BBox values.
+%   To draw the bounding box of a figure for checking, you can declare
+%   |\DocumentMetadata|\allowbreak|{debug=BBox}|
+%   after |\DocumentMetadata{tagging=|\allowbreak|on}| setup is completed.
 % \item[\texttt{tagging-setup=}\meta{key-val list}]
 %   This key accepts as its value the list of key-value options mentioned so far.
 % \end{description}
-% To draw the boundingbox of a figure for checking, you can declare |\DocumentMetadata|\allowbreak|{debug=BBox}|
-% after |\DocumentMetadata{tagging=on}| setup is completed.
 %
 % The above options are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below} \S\,1.2) commands.
 %\begin{verbatim}
-%     \begin{mplibcode}[myInstanceName, alt=figure drawing a circle]
+%     \begin{mplibcode}[myInstanceName, alt=drawing of a circle]
 %     ...
 %     \end{mplibcode}
 %
-%     \mpfig[alt=figure drawing a square box]
+%     \mpfig[alt=drawing of a square box]
 %     ...
 %     \endmpfig
 %
-%     \usemplibgroup[alt=figure drawing a triangle]{...}
+%     \usemplibgroup[alt=drawing of a triangle]{...}
 %
 %     \mppattern{...}           % see below
 %       \mpfig[off]             % do not tag this figure
@@ -5229,6 +5232,7 @@ end
 \tl_new:N \l__luamplib_tag_struct_tl
 \tl_set:Nn\l__luamplib_tag_struct_tl {Figure}
 \bool_new:N \l__luamplib_tag_usetext_bool
+\bool_new:N \g__luamplib_tag_asgroup_bool
 \bool_new:N \l__luamplib_tag_BBox_bool
 \seq_new:N\l__luamplib_tag_bboxcorr_seq
 \bool_new:N\l__luamplib_tag_bboxcorr_bool
@@ -5239,8 +5243,8 @@ end
 \tl_new:N \l__luamplib_BBox_ury_tl
 \msg_new:nnn {luamplib}{figure-text-reuse}
 {
-  textext~box~#1~probably~is~incorrectly~tagged.\\
-  Reusing~a~box~in~text-keyed~figures~is~strongly~discouraged.
+  tex-text~box~#1~probably~is~incorrectly~tagged.\\
+  Reusing~a~box~in~text-mode~figures~is~strongly~discouraged.
 }
 \msg_new:nnn{luamplib}{alt-text-missing}
 {
@@ -5252,6 +5256,7 @@ end
 %    \begin{macrocode}
 \NewSocket{tagsupport/luamplib/textext/begin}{1}
 \NewSocket{tagsupport/luamplib/textext/end}{0}
+\NewSocket{tagsupport/luamplib/textext/put}{2}
 \NewSocketPlug{tagsupport/luamplib/textext/begin}{default}
 {
     \tag_mc_end_push:
@@ -5274,8 +5279,47 @@ end
     \tag_mc_end:
     \tag_mc_begin_pop:n{}
 }
+\NewSocketPlug{tagsupport/luamplib/textext/put}{default}
+{
+    \bool_if:NTF \l__luamplib_tag_usetext_bool
+    {
+      \ResumeTagging{\mplibputtextbox}
+      \tag_mc_end:
+      \cs_if_exist:cTF {luamplib.tagbox.#1}
+      {
+        \bool_gset_false:N \g__luamplib_tag_asgroup_bool
+%    \end{macrocode}
+% TODO: To avoid nested |P|. Not sure this is a bug of tagpdf.
+%    \begin{macrocode}
+\tag_struct_begin:n{tag=NonStruct}
+        \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
+        #2
+\tag_struct_end:
+      }
+      {
+        \bool_gset_true:N \g__luamplib_tag_asgroup_bool
+        \cs_if_exist:cF {luamplib.notagbox.#1}
+        {
+          \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
+        }
+        \tag_mc_begin:n{}
+        \int_set:Nn \l_tmpa_int {#1}
+        \tag_mc_reset_box:N \l_tmpa_int
+        #2
+        \tag_mc_end:
+      }
+      \tag_mc_begin:n{artifact}
+    }
+    {
+      \bool_gset_false:N \g__luamplib_tag_asgroup_bool
+      \int_set:Nn \l_tmpa_int {#1}
+      \tag_mc_reset_box:N \l_tmpa_int
+      #2
+    }
+}
 \AssignSocketPlug{tagsupport/luamplib/textext/begin}{default}
 \AssignSocketPlug{tagsupport/luamplib/textext/end}{default}
+\AssignSocketPlug{tagsupport/luamplib/textext/put}{default}
 \cs_set_nopar:Npn \luamplibtagtextbegin #1
 {
   \bool_if:NTF \l__luamplib_tag_usetext_bool
@@ -5286,7 +5330,7 @@ end
     \tag_if_active:TF
       { \bool_set_true:N \l_tmpa_bool }
       { \bool_set_false:N \l_tmpa_bool }
-    \SuspendTagging{luamplib.textext}
+    \SuspendTagging{\luamplibtagtextbegin}
   }
 }
 \cs_set_nopar:Npn \luamplibtagtextend
@@ -5297,40 +5341,42 @@ end
   }
   {
     \bool_if:NT \l_tmpa_bool
-      { \ResumeTagging{luamplib.textext} }
+      { \ResumeTagging{\luamplibtagtextend} }
   }
 }
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{%
-    \bool_if:NTF \l__luamplib_tag_usetext_bool
-    {
-      \ResumeTagging{luamplib.puttextbox}
-      \tag_mc_end:
-      \cs_if_exist:cTF {luamplib.tagbox.#1}
-      {
-        \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
-        \raise\dp#1\copy#1
-      }
-      {
-        \cs_if_exist:cF {luamplib.notagbox.#1}
-        {
-          \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
-        }
-        \tag_mc_begin:n{}
-        \int_set:Nn \l_tmpa_int {#1}
-        \tag_mc_reset_box:N \l_tmpa_int
-        \raise\dp#1\copy#1
-        \tag_mc_end:
-      }
-      \tag_mc_begin:n{artifact}
-    }
-    {
-      \int_set:Nn \l_tmpa_int {#1}
-      \tag_mc_reset_box:N \l_tmpa_int
-      \raise\dp#1\copy#1
-    }
+%    \end{macrocode}
+% This socket should be always active.
+%    \begin{macrocode}
+    \UseSocket{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
   \hss}}
+}
+%    \end{macrocode}
+% TODO: Not sure whether asgroup will be tagged correctly.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \luamplibtagasgroupbegin
+{
+  \bool_lazy_and:nnT
+  {\g__luamplib_tag_asgroup_bool}
+  {\l__luamplib_tag_usetext_bool}
+  {
+    \ResumeTagging{\luamplibtagasgroupbegin}
+    \tag_mc_end:
+    \tag_mc_begin:n{}
+  }
+}
+\cs_set_nopar:Npn \luamplibtagasgroupend
+{
+  \bool_lazy_and:nnT
+  {\g__luamplib_tag_asgroup_bool}
+  {\l__luamplib_tag_usetext_bool}
+  {
+    \tag_mc_end:
+    \tag_mc_begin:n{artifact}
+    \SuspendTagging{\luamplibtagasgroupend}
+  }
 }
 %    \end{macrocode}
 % Sockets for environment options
@@ -5388,7 +5434,7 @@ end
 \AssignSocketPlug{tagsupport/luamplib/begin}{figure}
 \AssignSocketPlug{tagsupport/luamplib/end}{figure}
 %    \end{macrocode}
-% A sockets to force horizontal mode upon keys |text| and |actualtext|
+% A sockets to force horizontal mode upon |text|, |actualtext|, and |off|
 %    \begin{macrocode}
 \NewSocket{tagsupport/luamplib/hmode/force}{0}
 \NewSocketPlug{tagsupport/luamplib/hmode/force}{default}
@@ -5433,15 +5479,6 @@ end
 }
 \AssignSocketPlug{tagsupport/luamplib/hmode/force}{default}
 %    \end{macrocode}
-% A sockets for text-keyed figures
-%    \begin{macrocode}
-\NewSocket{tagsupport/luamplib/text/init}{0}
-\NewSocketPlug{tagsupport/luamplib/text/init}{default}
-{
-  \bool_set_true:N \l__luamplib_tag_usetext_bool
-}
-\AssignSocketPlug{tagsupport/luamplib/text/init}{default}
-%    \end{macrocode}
 % Key-value options
 %    \begin{macrocode}
 \keys_define:nn{luamplib/tag}
@@ -5468,7 +5505,7 @@ end
     ,artifact .groups:n = {tagging}
     ,text .code:n =
       {
-        \UseTaggingSocket{luamplib/text/init}
+        \tag_if_active:T { \bool_set_true:N \l__luamplib_tag_usetext_bool }
         \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
         \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
         \UseTaggingSocket{luamplib/hmode/force}
@@ -5477,7 +5514,7 @@ end
     ,off .code:n =
       {
         \UseTaggingSocket{luamplib/hmode/force}
-        \SuspendTagging{luamplib.tagoff}
+        \SuspendTagging{luamplib/tag/off}
       }
     ,off .groups:n = {tagging}
     ,tag .code:n =
@@ -5511,7 +5548,7 @@ end
 %    \end{macrocode}
 % A socket for BBox attribute
 %    \begin{macrocode}
-\NewSocket{tagsupport/luamplib/bbox}{0}
+\NewSocket{tagsupport/luamplib/bbox}{1}
 \NewSocketPlug{tagsupport/luamplib/bbox}{default}
 {
   \bool_if:NT \l__luamplib_tag_BBox_bool
@@ -5527,17 +5564,17 @@ end
     \tl_set:Ne \l__luamplib_BBox_lly_tl
       {
         \dim_to_decimal_in_bp:n
-        { \property_ref:een {\l__luamplib_BBox_label_tl}{ypos}{0}sp - \dp\mplibscratchbox }
+        { \property_ref:een {\l__luamplib_BBox_label_tl}{ypos}{0}sp - \dp#1 }
       }
     \tl_set:Ne \l__luamplib_BBox_urx_tl
       {
         \dim_to_decimal_in_bp:n
-        { \l__luamplib_BBox_llx_tl bp + \wd\mplibscratchbox }
+        { \l__luamplib_BBox_llx_tl bp + \wd#1 }
       }
     \tl_set:Ne \l__luamplib_BBox_ury_tl
       {
         \dim_to_decimal_in_bp:n
-        { \l__luamplib_BBox_lly_tl bp + \ht\mplibscratchbox + \dp\mplibscratchbox }
+        { \l__luamplib_BBox_lly_tl bp + \ht#1 + \dp#1 }
       }
     \bool_if:NT \l__luamplib_tag_bboxcorr_bool
       {
@@ -5599,7 +5636,7 @@ end
           }
         \use:e
         {
-          \exp_not:N\AddToHookNext{shipout/foreground}
+          \AddToHookNext{shipout/foreground}
           {
             \exp_not:N\int_compare:nNnT
             {\exp_not:N\g_shipout_readonly_int}
@@ -5609,7 +5646,7 @@ end
               \exp_not:N\put
               (\l__luamplib_BBox_llx_tl bp, \dim_eval:n{\l__luamplib_BBox_lly_tl bp -\paperheight})
               {
-                \exp_not:N\opacity_select:n{0.5} \exp_not:N\color_select:n{red}
+                \opacity_select:n{0.5} \color_select:n{red}
                 \exp_not:N\rule
                   {\dim_eval:n {\l__luamplib_BBox_urx_tl bp - \l__luamplib_BBox_llx_tl bp}}
                   {\dim_eval:n {\l__luamplib_BBox_ury_tl bp - \l__luamplib_BBox_lly_tl bp}}
@@ -5661,7 +5698,7 @@ end
     \parindent0pt
     \everypar{}%
     \setbox\mplibscratchbox\vbox\bgroup
-    \SuspendTagging{luamplib.mplibtopdf}% stop tag inside figure
+    \SuspendTagging{\mplibstarttoPDF}
     \noindent
   }
 \cs_set_nopar:Npn \mplibstoptoPDF
@@ -5681,7 +5718,7 @@ end
        \box\mplibscratchbox}%
     \wd\mplibscratchbox\MPwidth
     \ht\mplibscratchbox\MPheight
-    \UseTaggingSocket{luamplib/bbox}
+    \UseTaggingSocket{luamplib/bbox}\mplibscratchbox
     \box\mplibscratchbox
     \UseTaggingSocket{luamplib/end}
     \egroup
@@ -5721,7 +5758,7 @@ end
     \csname luamplib.group.#2\endcsname
     \UseTaggingSocket{luamplib/mplibgroup/end}
     \egroup
-    \UseTaggingSocket{luamplib/bbox}
+    \UseTaggingSocket{luamplib/bbox}\mplibscratchbox
     \unhbox\mplibscratchbox
     \UseTaggingSocket{luamplib/end}
     \egroup

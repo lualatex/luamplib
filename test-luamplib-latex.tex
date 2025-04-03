@@ -1,5 +1,6 @@
 \ifnum\outputmode > 0
   \DocumentMetadata{ lang=en-US, pdfversion=2.0, pdfstandard=ua-2, tagging=on }
+%  \DocumentMetadata{ debug=BBox }
   \documentclass{article}
 \else
   \documentclass[dvipdfmx]{article}
@@ -152,11 +153,9 @@ endfig;
   endfig;
 \end{mplibcode}%
 \mplibtextextlabel{enable}%
-\begin{mplibcode}[tag=Formula,alt=sqrt 2]
+\begin{mplibcode}[tag=Formula,alt=$sqrt 2$]
 beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
-% the last textext with math formula seems to be problemaric in text-keyed figures.
-% draw btex \relax etex;
 endfig;
 \end{mplibcode}%
 \leavevmode
@@ -168,7 +167,7 @@ endfig;
    endfig;
 \end{mplibcode}%
 diameter:\Dia bp.%
-\begin{mplibcode}[actualtext=Rotated!]
+\begin{mplibcode}[text]
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
   enddef;
@@ -178,10 +177,7 @@ diameter:\Dia bp.%
   endfig;
 \end{mplibcode}%
 
-% what is the "mc on page 1"?
-% the issue must be related to page changing. Force horiz mode.
-\noindent
-\begin{mplibcode}[actualtext=Funny square root 2 xyz]
+\begin{mplibcode}[actualtext=Funny $sqrt{2}$ xyz]
 beginfig(1)
   draw mplibgraphictext "\bfseries Funny$\sqrt{2}$"
   fakebold 2 % fontspec option
@@ -233,7 +229,7 @@ endfor
 \mpfig* input boxes \endmpfig
 \mpfig[alt=testing] circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \def\mpfiginstancename{mympfig}%
-\mpfig[actualtext=1/(1-x^2)]
+\mpfig[actualtext=$1/(1-x^2)$]
 draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     (withcolor .6[red,white])
     (withpen pencircle scaled .2 withcolor red)
