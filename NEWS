@@ -4,14 +4,14 @@
    * Tagging key 'off' is newly introduced.
      This key, being a synonym of 'tag=false', deactivates tagging.
 
-   * Tagging keys 'actualtext', 'text', and 'off' force horizontal mode
-     according to the definition of \prependtomplibbox.
-
    * Tagging key 'tagging-setup' is newly introduced.
      The value of this key is a key-value list of other tagging options.
 
    * Tagging Key 'debug' is removed.
      Declare '\DocumentMetadata{debug=BBox}' instead.
+
+   * Tagging keys 'actualtext', 'text', and 'off' force horizontal mode
+     according to the definition of \prependtomplibbox.
 
    * more robust 'mplibgraphictext' macro
 

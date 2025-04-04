@@ -343,12 +343,12 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \usemplibgroup[actualtext=TeX]{mytex}%
 \mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 
-\mpfig[actualtext=MPLIB]
+\mpfig[text]
   draw mplibgraphictext "\textbf{MPLIB}"
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7
     withmppattern "mypatt" ;
 \endmpfig
-\mpfig[actualtext=TeX]
+\mpfig[text]
   draw mplibgraphictext "\bfseries\TeX" rotated 30 scaled 4
     withshadingmethod "linear"
     withshadingvector (3,0)
@@ -356,7 +356,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
 \endmpfig
 \leavevmode
-\mpfig[alt=testing]
+\mpfig[text]
   string Test; Test="abçdéf";
   for k=0 upto mpliblength(Test)-1:
     draw TEX(mplibsubstring (k,k+1) of Test) scaled 2 shifted (20k,0);

@@ -565,10 +565,10 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[\texttt{alt=}\meta{text}] starts a |Figure| tag by default
 %   (that is, if no |tag| option mentioned below is given) and
-%   sets an alternative text of the figure from the \meta{text}.
+%   sets an alternate text of the figure from the \meta{text}.
 %   BBox info will be added automatically to the PDF\@.
 %   This key is needed for ordinary \metapost figures.
-%   You can change alternative text within \metapost code as well:
+%   You can change alternate text within \metapost code as well:
 %   |VerbatimTeX| |"\mplibalttext|\marg{text}|";|
 % \item[\texttt{actualtext=}\meta{text}] starts a |Span| tag implicitly and sets an actualtext from the \meta{text}.
 %   BBox info will not be added.
@@ -604,11 +604,11 @@ See source file '\inFileName' for licencing and contact information.
 %   unless the value is |artifact|, |text| or |false|.
 %   Among these the last one, |tag=false|, is a synonym of the |off| option just mentioned.
 %   For instance, you can set `|tag=Formula,| |alt=|\meta{text}' to get |Formula| structure
-%   with the alternative text.
+%   with the alternate text.
 % \item[\texttt{correct-BBox=}\meta{dimens}] You can correct the BBox attribute of the figure
 %   with space-separated four dimensional values, which will be added to the
 %   automatically-calculated BBox values.
-%   To draw the bounding box of a figure for checking, you can declare
+%   To draw the bounding box for checking, you can declare
 %   |\DocumentMetadata|\allowbreak|{debug=BBox}|
 %   after |\DocumentMetadata{tagging=|\allowbreak|on}| setup is completed.
 % \item[\texttt{tagging-setup=}\meta{key-val list}]
@@ -5223,6 +5223,7 @@ end
   \let\mplibactualtext \mplibalttext
   \endinput\fi
 \ExplSyntaxOn
+\tl_new:N \l__luamplib_notag_keyval_tl
 \tl_new:N \l__luamplib_tag_envname_tl
 \tl_set:Nn\l__luamplib_tag_envname_tl {mplibcode}
 \tl_new:N \l__luamplib_tag_alt_tl
@@ -5234,8 +5235,8 @@ end
 \bool_new:N \l__luamplib_tag_usetext_bool
 \bool_new:N \g__luamplib_tag_asgroup_bool
 \bool_new:N \l__luamplib_tag_BBox_bool
-\seq_new:N\l__luamplib_tag_bboxcorr_seq
 \bool_new:N\l__luamplib_tag_bboxcorr_bool
+\seq_new:N\l__luamplib_tag_bboxcorr_seq
 \tl_new:N \l__luamplib_BBox_label_tl
 \tl_new:N \l__luamplib_BBox_llx_tl
 \tl_new:N \l__luamplib_BBox_lly_tl
@@ -5248,7 +5249,7 @@ end
 }
 \msg_new:nnn{luamplib}{alt-text-missing}
 {
-  Alternative~text~for~#1~is~missing.\\
+  Alternate~text~for~#1~is~missing.\\
   Using~the~default~value~'#2'~instead.
 }
 %    \end{macrocode}
@@ -5383,7 +5384,7 @@ end
 %    \begin{macrocode}
 \NewSocket{tagsupport/luamplib/begin}{0}
 \NewSocket{tagsupport/luamplib/end}{0}
-\NewSocketPlug{tagsupport/luamplib/begin}{figure}
+\NewSocketPlug{tagsupport/luamplib/begin}{alt}
 {
     \tag_mc_end_push:
     \tl_if_empty:NT\l__luamplib_tag_alt_tl
@@ -5399,7 +5400,7 @@ end
     }
     \tag_mc_begin:n{}
 }
-\NewSocketPlug{tagsupport/luamplib/end}{figure}
+\NewSocketPlug{tagsupport/luamplib/end}{alt}
 {
     \tag_mc_end:
     \tag_struct_end:
@@ -5431,120 +5432,8 @@ end
     \tag_mc_end:
     \tag_mc_begin_pop:n{}
 }
-\AssignSocketPlug{tagsupport/luamplib/begin}{figure}
-\AssignSocketPlug{tagsupport/luamplib/end}{figure}
-%    \end{macrocode}
-% A sockets to force horizontal mode upon |text|, |actualtext|, and |off|
-%    \begin{macrocode}
-\NewSocket{tagsupport/luamplib/hmode/force}{0}
-\NewSocketPlug{tagsupport/luamplib/hmode/force}{default}
-{
-  \mode_if_vertical:T
-  {
-    \cs_if_eq:NNTF \prependtomplibbox \relax
-    {
-      \noindent
-      \aftergroup \par
-    }
-    {
-      \bool_lazy_any:nTF
-      {
-        { \cs_if_eq_p:NN \prependtomplibbox \leavevmode }
-        { \cs_if_eq_p:NN \prependtomplibbox \noindent }
-        { \cs_if_eq_p:NN \prependtomplibbox \mode_leave_vertical: }
-      }
-      { \prependtomplibbox }
-      {
-        \str_set:Ne \l_tmpa_str {\cs_meaning:N \prependtomplibbox}
-        \clist_set:Nn \l_tmpa_clist
-          {\unhbox \voidb@x,\noindent,\mode_leave_vertical:,\tex_indent:D,\indent}
-        \bool_set_false:N \l_tmpa_bool
-        \clist_map_inline:Nn \l_tmpa_clist
-          {
-            \str_if_in:NnT \l_tmpa_str {##1}
-            {
-              ##1
-              \bool_set_true:N \l_tmpa_bool
-              \clist_map_break:
-             }
-          }
-        \bool_if:NF \l_tmpa_bool
-        {
-          \noindent         % prone to error!
-          \aftergroup \par
-        }
-      }
-    }
-  }
-}
-\AssignSocketPlug{tagsupport/luamplib/hmode/force}{default}
-%    \end{macrocode}
-% Key-value options
-%    \begin{macrocode}
-\keys_define:nn{luamplib/tag}
-  {
-    ,alt .code:n =
-      {
-        \bool_set_true:N \l__luamplib_tag_BBox_bool
-        \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
-      }
-    ,alt .groups:n = {tagging}
-    ,actualtext .code:n =
-      {
-        \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
-        \AssignSocketPlug{tagsupport/luamplib/begin}{actualtext}
-        \AssignSocketPlug{tagsupport/luamplib/end}{actualtext}
-        \UseTaggingSocket{luamplib/hmode/force}
-      }
-    ,actualtext .groups:n = {tagging}
-    ,artifact .code:n =
-      {
-        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
-        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
-      }
-    ,artifact .groups:n = {tagging}
-    ,text .code:n =
-      {
-        \tag_if_active:T { \bool_set_true:N \l__luamplib_tag_usetext_bool }
-        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
-        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
-        \UseTaggingSocket{luamplib/hmode/force}
-      }
-    ,text .groups:n = {tagging}
-    ,off .code:n =
-      {
-        \UseTaggingSocket{luamplib/hmode/force}
-        \SuspendTagging{luamplib/tag/off}
-      }
-    ,off .groups:n = {tagging}
-    ,tag .code:n =
-      {
-        \str_case:nnF {#1}
-          {
-            {false}    { \keys_set:nn {luamplib/tag} {off} }
-            {text}     { \keys_set:nn {luamplib/tag} {text} }
-            {artifact} { \keys_set:nn {luamplib/tag} {artifact} }
-          }
-          {
-            \bool_set_true:N \l__luamplib_tag_BBox_bool
-            \tl_set:Nn\l__luamplib_tag_struct_tl{#1}
-          }
-      }
-    ,tag .groups:n = {tagging}
-    ,correct-BBox .code:n =
-      {
-        \bool_set_true:N \l__luamplib_tag_bboxcorr_bool
-        \seq_set_split:Nnn \l__luamplib_tag_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
-      }
-    ,correct-BBox .groups:n = {tagging}
-    ,tagging-setup .code:n =
-      {
-        \keys_set_groups:nnn {luamplib/tag} {tagging} {#1}
-      }
-    ,instance .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
-    ,instancename .meta:n = { instance = {#1} }
-    ,unknown .code:n = { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
-  }
+\AssignSocketPlug{tagsupport/luamplib/begin}{alt}
+\AssignSocketPlug{tagsupport/luamplib/end}{alt}
 %    \end{macrocode}
 % A socket for BBox attribute
 %    \begin{macrocode}
@@ -5659,6 +5548,66 @@ end
 }
 \AssignSocketPlug{tagsupport/luamplib/bbox}{default}
 %    \end{macrocode}
+% A sockets to force horizontal mode upon |text|, |actualtext|, and |off|
+%    \begin{macrocode}
+\cs_set_nopar:Npn \__luamplib_tag_hmode_force:
+{
+  \mode_if_vertical:T
+  {
+    \cs_if_eq:NNTF \prependtomplibbox \relax
+    {
+      \noindent
+      \aftergroup \par
+    }
+    {
+      \bool_lazy_any:nTF
+      {
+        { \cs_if_eq_p:NN \prependtomplibbox \leavevmode }
+        { \cs_if_eq_p:NN \prependtomplibbox \noindent }
+        { \cs_if_eq_p:NN \prependtomplibbox \mode_leave_vertical: }
+      }
+      { \prependtomplibbox }
+      {
+        \str_set:Ne \l_tmpa_str {\cs_meaning:N \prependtomplibbox}
+        \clist_set:Nn \l_tmpa_clist
+          {\unhbox \voidb@x,\noindent,\mode_leave_vertical:,\tex_indent:D,\indent}
+        \bool_set_false:N \l_tmpa_bool
+        \clist_map_inline:Nn \l_tmpa_clist
+          {
+            \str_if_in:NnT \l_tmpa_str {##1}
+            {
+              ##1
+              \bool_set_true:N \l_tmpa_bool
+              \clist_map_break:
+             }
+          }
+        \bool_if:NF \l_tmpa_bool
+        {
+          \noindent         % prone to error!
+          \aftergroup \par
+        }
+      }
+    }
+  }
+}
+\NewSocket{tagsupport/luamplib/starting}{0}
+\NewSocketPlug{tagsupport/luamplib/starting}{default}{}
+\NewSocketPlug{tagsupport/luamplib/starting}{actualtext}
+{
+  \__luamplib_tag_hmode_force:
+}
+\NewSocketPlug{tagsupport/luamplib/starting}{text}
+{
+  \bool_set_true:N \l__luamplib_tag_usetext_bool
+  \__luamplib_tag_hmode_force:
+}
+\NewSocketPlug{tagsupport/luamplib/starting}{off}
+{
+  \__luamplib_tag_hmode_force:
+  \SuspendTagging{luamplib/tag/off}
+}
+\AssignSocketPlug{tagsupport/luamplib/starting}{default}
+%    \end{macrocode}
 % Sockets for mplibgroup
 %    \begin{macrocode}
 \NewSocket{tagsupport/luamplib/mplibgroup/begin}{0}
@@ -5681,6 +5630,71 @@ end
 }
 \AssignSocketPlug{tagsupport/luamplib/mplibgroup/begin}{default}
 \AssignSocketPlug{tagsupport/luamplib/mplibgroup/end}{default}
+%    \end{macrocode}
+% Key-value options
+%    \begin{macrocode}
+\keys_define:nn{luamplib/tag}
+  {
+    ,alt .code:n =
+      {
+        \bool_set_true:N \l__luamplib_tag_BBox_bool
+        \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
+        \AssignSocketPlug{tagsupport/luamplib/begin}{alt}
+        \AssignSocketPlug{tagsupport/luamplib/end}{alt}
+        \AssignSocketPlug{tagsupport/luamplib/starting}{default}
+      }
+    ,actualtext .code:n =
+      {
+        \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
+        \AssignSocketPlug{tagsupport/luamplib/begin}{actualtext}
+        \AssignSocketPlug{tagsupport/luamplib/end}{actualtext}
+        \AssignSocketPlug{tagsupport/luamplib/starting}{actualtext}
+      }
+    ,artifact .code:n =
+      {
+        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/starting}{default}
+      }
+    ,text .code:n =
+      {
+        \AssignSocketPlug{tagsupport/luamplib/begin}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/end}{artifact}
+        \AssignSocketPlug{tagsupport/luamplib/starting}{text}
+      }
+    ,off .code:n =
+      {
+        \AssignSocketPlug{tagsupport/luamplib/starting}{off}
+      }
+    ,tag .code:n =
+      {
+        \str_case:nnF {#1}
+          {
+            {false}    { \keys_set:nn {luamplib/tag} {off} }
+            {text}     { \keys_set:nn {luamplib/tag} {text} }
+            {artifact} { \keys_set:nn {luamplib/tag} {artifact} }
+          }
+          {
+            \bool_set_true:N \l__luamplib_tag_BBox_bool
+            \tl_set:Nn\l__luamplib_tag_struct_tl{#1}
+          }
+      }
+    ,correct-BBox .code:n =
+      {
+        \bool_set_true:N \l__luamplib_tag_bboxcorr_bool
+        \seq_set_split:Nnn \l__luamplib_tag_bboxcorr_seq{~}{#1~0pt~0pt~0pt~0pt}
+      }
+    ,tagging-setup .code:n =
+      {
+        \keys_set_known:nn {luamplib/tag} {#1}
+      }
+  }
+\keys_define:nn {luamplib/notag}
+  {
+    ,instance .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
+    ,instancename .meta:n = { instance = {#1} }
+    ,unknown .code:n = { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
+  }
 %    \end{macrocode}
 % Redefine our macros
 %    \begin{macrocode}
@@ -5727,9 +5741,11 @@ end
   {
     \tl_set:Nn \l__luamplib_tag_envname_tl {mplibcode}
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
-    \keys_set:ne{luamplib/tag}{#1}
+    \keys_set_known:neN {luamplib/tag} {#1} \l__luamplib_notag_keyval_tl
+    \keys_set:nV {luamplib/notag} \l__luamplib_notag_keyval_tl
     \tl_if_empty:NF \currentmpinstancename
       { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
+    \UseTaggingSocket{luamplib/starting}
     \mplibtmptoks{}\ltxdomplibcode
   }
 \RenewDocumentCommand\mpfig{s O{}}
@@ -5739,9 +5755,11 @@ end
     {\mplibprempfig *}
     {
       \tl_set:Nn \l__luamplib_tag_envname_tl {mpfig}
-      \keys_set:ne{luamplib/tag}{#2}
+      \keys_set_known:neN {luamplib/tag} {#2} \l__luamplib_notag_keyval_tl
+      \keys_set:nV {luamplib/notag} \l__luamplib_notag_keyval_tl
       \tl_if_empty:NF \mpfiginstancename
         { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
+      \UseTaggingSocket{luamplib/starting}
       \mplibmainmpfig
     }
   }
@@ -5749,8 +5767,10 @@ end
   {
     \begingroup
     \tl_set:Nn \l__luamplib_tag_envname_tl {usemplibgroup}
-    \keys_set:ne{luamplib/tag}{#1}
+    \keys_set_known:neN {luamplib/tag} {#1} \l__luamplib_notag_keyval_tl
+    \keys_set:nV {luamplib/notag} \l__luamplib_notag_keyval_tl
     \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
+    \UseTaggingSocket{luamplib/starting}
     \prependtomplibbox\hbox dir TLT\bgroup
     \UseTaggingSocket{luamplib/begin}
     \setbox\mplibscratchbox\hbox\bgroup
