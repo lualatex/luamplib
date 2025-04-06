@@ -563,24 +563,27 @@ See source file '\inFileName' for licencing and contact information.
 % (|texdoc| |latex-lab-graphic|).
 % In addition, we also provide the |tag| key.
 % \begin{description}
-% \item[\texttt{alt=}\meta{text}] starts a |Figure| tag by default
-%   (that is, if no |tag| option mentioned below is given) and
+% \item[\texttt{alt=}\meta{text}] starts a |Figure| tag by default and
 %   sets an alternate text of the figure from the \meta{text}.
 %   BBox info will be added automatically to the PDF\@.
-%   This key is needed for ordinary \metapost figures.
+%   This key is needed for ordinary \metapost figures, for which,
+%   if no |alt| text is given, a default text will be used with a warning issued.
 %   You can change alternate text within \metapost code as well:
 %   |VerbatimTeX| |"\mplibalttext|\marg{text}|";|
-% \item[\texttt{actualtext=}\meta{text}] starts a |Span| tag implicitly and sets an actualtext from the \meta{text}.
+% \item[\texttt{actualtext=}\meta{text}] starts a |Span| tag implicitly and sets an actual text
+%   (that is replacement text) from the \meta{text}.
 %   BBox info will not be added.
 %   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
 %   according to the definition of \cs{prependtomplibbox}.\footnote{%
-%     It is not recommended to personally redefine \cs{prependtomplibbox}.
+%     But the vertical mode will be restored after the mplibcode environment,
+%     if it is started in a vertical mode.
+%     Anyway, it is not recommended to personally redefine \cs{prependtomplibbox}.
 %     Apart from using \cs{mplibforcehmode} or \cs{mplibnoforcehmode},
 %     the redefinition might be incompatible with |actualtext| key.
 %     See \hyperlink{mplibforcehmode}{above} on these commands. }
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
-%   You can change actualtext within \metapost code as well:
+%   You can change actual text within \metapost code as well:
 %   |VerbatimTeX| |"\mplibactualtext|\marg{text}|";|
 % \item[\texttt{artifact}] starts an |artifact| MC (marked content).
 %   BBox info will not be added.
@@ -600,11 +603,9 @@ See source file '\inFileName' for licencing and contact information.
 %   according to the definition of \cs{prependtomplibbox}.\footnote{%
 %     |off| key also shares the limitation mentioned in the previous footnote.}
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.
-%   BBox info will be added automatically to the PDF
-%   unless the value is |artifact|, |text| or |false|.
-%   Among these the last one, |tag=false|, is a synonym of the |off| option just mentioned.
-%   For instance, you can set `|tag=Formula,| |alt=|\meta{text}' to get |Formula| structure
-%   with the alternate text.
+%   For instance, you can set `|tag=Formula,| |alt=|\meta{text} to get
+%   a |Formula| structure with its alternate text.
+%   But when the value is |false|, it is a synonym of the |off| option just mentioned.
 % \item[\texttt{correct-BBox=}\meta{dimens}] You can correct the BBox attribute of the figure
 %   with space-separated four dimensional values, which will be added to the
 %   automatically-calculated BBox values.
@@ -5233,7 +5234,6 @@ end
 \tl_set:Nn\l__luamplib_tag_struct_tl {Figure}
 \bool_new:N \l__luamplib_tag_usetext_bool
 \bool_new:N \g__luamplib_tag_asgroup_bool
-\bool_new:N \l__luamplib_tag_BBox_bool
 \bool_new:N\l__luamplib_tag_bboxcorr_bool
 \seq_new:N\l__luamplib_tag_bboxcorr_seq
 \tl_new:N \l__luamplib_BBox_label_tl
@@ -5350,7 +5350,7 @@ end
 %    \end{macrocode}
 % This socket should be always active.
 %    \begin{macrocode}
-    \UseSocket{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
+    \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
   \hss}}
 }
 %    \end{macrocode}
@@ -5437,10 +5437,8 @@ end
 % A socket for BBox attribute
 %    \begin{macrocode}
 \socket_new:nn{tagsupport/luamplib/bbox}{1}
-\socket_new_plug:nnn{tagsupport/luamplib/bbox}{default}
+\socket_new_plug:nnn{tagsupport/luamplib/bbox}{attr}
 {
-  \bool_if:NT \l__luamplib_tag_BBox_bool
-  {
     \tl_set:Ne \l__luamplib_BBox_label_tl {luamplib.BBox.\tag_get:n{struct_num}}
     \tex_savepos:D
     \property_record:ee{\l__luamplib_BBox_label_tl}{xpos,ypos,abspage}
@@ -5543,9 +5541,8 @@ end
           }
         }
       }
-  }
 }
-\socket_assign_plug:nn{tagsupport/luamplib/bbox}{default}
+\socket_assign_plug:nn{tagsupport/luamplib/bbox}{attr}
 %    \end{macrocode}
 % A sockets to force horizontal mode upon |text|, |actualtext|, and |off|
 %    \begin{macrocode}
@@ -5590,7 +5587,6 @@ end
   }
 }
 \socket_new:nn{tagsupport/luamplib/starting}{0}
-\socket_new_plug:nnn{tagsupport/luamplib/starting}{default}{}
 \socket_new_plug:nnn{tagsupport/luamplib/starting}{actualtext}
 {
   \__luamplib_tag_hmode_force:
@@ -5605,7 +5601,7 @@ end
   \__luamplib_tag_hmode_force:
   \tag_suspend:n{luamplib/tag/off}
 }
-\socket_assign_plug:nn{tagsupport/luamplib/starting}{default}
+\socket_assign_plug:nn{tagsupport/luamplib/starting}{noop}
 %    \end{macrocode}
 % Sockets for mplibgroup
 %    \begin{macrocode}
@@ -5636,29 +5632,32 @@ end
   {
     ,alt .code:n =
       {
-        \bool_set_true:N \l__luamplib_tag_BBox_bool
         \tl_set:Ne\l__luamplib_tag_alt_tl{\text_purify:n{#1}}
         \socket_assign_plug:nn{tagsupport/luamplib/begin}{alt}
         \socket_assign_plug:nn{tagsupport/luamplib/end}{alt}
-        \socket_assign_plug:nn{tagsupport/luamplib/starting}{default}
+        \socket_assign_plug:nn{tagsupport/luamplib/bbox}{attr}
+        \socket_assign_plug:nn{tagsupport/luamplib/starting}{noop}
       }
     ,actualtext .code:n =
       {
         \tl_set:Ne\l__luamplib_tag_actual_tl{\text_purify:n{#1}}
         \socket_assign_plug:nn{tagsupport/luamplib/begin}{actualtext}
         \socket_assign_plug:nn{tagsupport/luamplib/end}{actualtext}
+        \socket_assign_plug:nn{tagsupport/luamplib/bbox}{noop}
         \socket_assign_plug:nn{tagsupport/luamplib/starting}{actualtext}
       }
     ,artifact .code:n =
       {
         \socket_assign_plug:nn{tagsupport/luamplib/begin}{artifact}
         \socket_assign_plug:nn{tagsupport/luamplib/end}{artifact}
-        \socket_assign_plug:nn{tagsupport/luamplib/starting}{default}
+        \socket_assign_plug:nn{tagsupport/luamplib/bbox}{noop}
+        \socket_assign_plug:nn{tagsupport/luamplib/starting}{noop}
       }
     ,text .code:n =
       {
         \socket_assign_plug:nn{tagsupport/luamplib/begin}{artifact}
         \socket_assign_plug:nn{tagsupport/luamplib/end}{artifact}
+        \socket_assign_plug:nn{tagsupport/luamplib/bbox}{noop}
         \socket_assign_plug:nn{tagsupport/luamplib/starting}{text}
       }
     ,off .code:n =
@@ -5674,7 +5673,6 @@ end
             {artifact} { \keys_set:nn {luamplib/tag} {artifact} }
           }
           {
-            \bool_set_true:N \l__luamplib_tag_BBox_bool
             \tl_set:Nn\l__luamplib_tag_struct_tl{#1}
           }
       }

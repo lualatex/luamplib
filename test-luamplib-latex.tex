@@ -14,9 +14,12 @@
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
 \begin{document}
+\ExplSyntaxOn
+\keys_set:nn{luamplib/tag}{alt=testing}
+\ExplSyntaxOff
 \tracingcommands1
 A%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 %% test all printable ascii chars in comments
 %%    (  2  <  F  P  Z  d   n   x
 %%    )  3  =  G  Q  [  e   o   y
@@ -33,7 +36,7 @@ A%
 B\par
 \everymplib{}\everyendmplib{}% reset toks
 A%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor \mpcolor{teal};
@@ -61,7 +64,7 @@ endfig;
 \end{mplibcode}%
 B\par
 A%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 beginfig(2);
 numeric u; u=1cm;
 z1=-z2=(-u,0);
@@ -78,12 +81,12 @@ B%
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
  label(btex $\sqrt{2}$ etex, origin);
  draw fullcircle scaled 20;
  picture pic; pic := currentpicture;
 \end{mplibcode}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
  currentpicture := pic scaled 2;
 \end{mplibcode}%
 \mplibnoforcehmode
@@ -91,7 +94,7 @@ B%
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
 \mplibsetformat{metafun}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 message "Hello World!";
 verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
@@ -100,13 +103,13 @@ fill p withcolor transparent("normal", 0.5, red);
 fill p rotated 120 withcolor transparent("normal", 0.5, green);
 fill p rotated 240 withcolor transparent("normal", 0.5, blue);
 endfig;
-verbatimtex \leavevmode etex
+verbatimtex \mplibalttext{MetaPost}\leavevmode etex
 picture p; p := btex MetaPost etex scaled 2;
 beginfig(1);
 linear_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
-verbatimtex \kern10pt etex
+verbatimtex \mplibalttext{MetaPost}\kern10pt etex
 beginfig(2);
 circular_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
@@ -133,14 +136,14 @@ endfig;
 
 \mplibnoforcehmode
 \mplibnumbersystem{double}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 beginfig(0);
 u := 10**5*(10**-4);
 draw unitsquare scaled u;
 endfig;
 \end{mplibcode}%
 \mplibsetformat{plain}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
   input graph;
   beginfig(0);
   draw begingraph(100,100);
@@ -159,7 +162,7 @@ dotlabel.rt("$\sqrt2$",origin);
 endfig;
 \end{mplibcode}%
 \leavevmode
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
    D := sqrt(2)**7;
    beginfig(0);
    draw fullcircle scaled D;
@@ -188,7 +191,7 @@ endfig;
 \end{mplibcode}%
 
 %\mplibsetformat{metafun}%
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 beginfig(1)
 fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
     withshadingmethod "linear"
@@ -205,7 +208,7 @@ fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
 endfig;
 \end{mplibcode}%
 \leavevmode
-\mpfig[actualtext=Que]
+\mpfig[alt=Que]
 color yellow; yellow = (1,1,0);
 picture Q, u, e;
 Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
@@ -227,7 +230,7 @@ endfor
 \endmpfig
 \everymplib[@mpfig]{ drawoptions(withcolor mplibrgbtexcolor "olive"); }%
 \mpfig* input boxes \endmpfig
-\mpfig[alt=testing] circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
+\mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \def\mpfiginstancename{mympfig}%
 \mpfig[actualtext=$1/(1-x^2)$]
 draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
@@ -236,7 +239,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     scaled 4 ;
 \endmpfig
 
-\mpfig[actualtext=Question]
+\mpfig[alt=Question]
   draw mpliboutlinetext.r
     ("Question")
     ( withpen pencircle scaled .3 )
@@ -259,7 +262,7 @@ draw (origin--right+up) scaled 5 withcolor 1/3[blue,white] ;
 draw (up--right) scaled 5 withcolor 1/3[red,white] ;
 \endmpfig
 \endmppattern
-\mpfig[alt=testing]
+\mpfig
 draw unitsquare shifted -center unitsquare scaled 45 withpostscript "collect" ;
 filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   withcolor \mpcolor{red!50!blue!50} withpostscript "evenodd" ;
@@ -269,9 +272,10 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     colored = false,
     matrix = "slanted .3 rotated 30",
   ]
+  \SuspendTagging{}%
   \tiny\TeX
 \end{mppattern}\relax
-\mpfig[actualtext=TeX]
+\mpfig[alt=TeX]
   picture tex;
   tex = mpliboutlinetext.p ("\bfseries \TeX");
   for i=1 upto mpliboutlinenum:
@@ -295,7 +299,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \leavevmode
-\mpfig[alt=testing]
+\mpfig
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;
@@ -308,7 +312,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \def\test#1{%
-  \mpfig[alt=testing]
+  \mpfig
   fill unitsquare shifted -center unitsquare scaled 200
     withshadingmethod "linear"
     withshadingcolors (.3[red,white], .3[blue,white])
@@ -335,11 +339,13 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \hbox{\test{knockout}\,\test{}}%
 \hbox to\MPwidth{\hss knockout\hss}%
 \leavevmode
-\mpfig[alt=testing] usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
-\usemplibgroup[alt=testing]{test:isolated,knockout}%
-\begin{mplibgroup}{mytex}[matrix="rotated 15"] \TeX \end{mplibgroup}%
+\mpfig usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
+\usemplibgroup{test:isolated,knockout}%
+\begin{mplibgroup}{mytex}[matrix="rotated 15"] \SuspendTagging{}\TeX \end{mplibgroup}%
+\tagmcbegin{artifact}%
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
+\tagmcend
 \usemplibgroup[actualtext=TeX]{mytex}%
 \mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 
@@ -393,7 +399,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
   \endmpfig
 \endmppattern
-\mpfig[alt=testing]
+\mpfig[alt=testing nested pattern]
   fill fullcircle scaled 108
   withmppattern "p3"
   ;
@@ -428,7 +434,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 beginfig(1);
 if not known a:
   draw btex code is not inherited if instance name is not listed etex;
@@ -440,7 +446,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\begin{mplibcode}[alt=testing]
+\begin{mplibcode}
 beginfig(1);
 if not known a:
   draw btex code is not inherited if mplibcodeinherit is disabled and instance name is not explicitly set etex;
