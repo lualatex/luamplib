@@ -558,10 +558,9 @@ See source file '\inFileName' for licencing and contact information.
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Similar to the \LaTeX's |picture| environment,
-% available optional keys are |alt|, |actualtext|, |artifact|, |text|, |off|, |correct-BBox|,
+% available optional keys are |alt|, |actualtext|, |artifact|, |text|, |off|, |tag|, |correct-BBox|,
 % and |tagging-setup|.
 % (|texdoc| |latex-lab-graphic|).
-% In addition, we also provide the |tag| key.
 % \begin{description}
 % \item[\texttt{alt=}\meta{text}] starts a |Figure| tag by default and
 %   sets an alternate text of the figure from the \meta{text}.
@@ -574,7 +573,7 @@ See source file '\inFileName' for licencing and contact information.
 %   (that is replacement text) from the \meta{text}.
 %   BBox info will not be added.
 %   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
-%   according to the definition of \cs{prependtomplibbox}.\footnote{%
+%   according to the definition of \cs{prependtomplibbox}.\footnote{\relax
 %     But the vertical mode will be restored after the mplibcode environment,
 %     if it is started in a vertical mode.
 %     Anyway, it is not recommended to personally redefine \cs{prependtomplibbox}.
@@ -592,7 +591,7 @@ See source file '\inFileName' for licencing and contact information.
 %   (such as |btex| |...| |etex|, excluding pictures made by |infont| operator).
 %   BBox info will not be added.
 %   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
-%   according to the definition of \cs{prependtomplibbox}.\footnote{%
+%   according to the definition of \cs{prependtomplibbox}.\footnote{\relax
 %     |text| key also shares the limitation mentioned in the previous footnote.}
 %   This key is intended for figures whose meaning is the sequence of texts in the
 %   tex-text boxes in the order they are drawn in the figure.
@@ -600,18 +599,20 @@ See source file '\inFileName' for licencing and contact information.
 % \item[\texttt{off}] Unlike the same key of |picture| environment, tagging is deactivated by this option.
 %   It is another but simpler way to declare the option |tag=false|.
 %   Horizontal mode is forced by \cs{noindent} or \cs{leavevmode} command
-%   according to the definition of \cs{prependtomplibbox}.\footnote{%
+%   according to the definition of \cs{prependtomplibbox}.\footnote{\relax
 %     |off| key also shares the limitation mentioned in the previous footnote.}
+%   It is up to you to embrace the \metapost figure by proper tagging commands.
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.
-%   For instance, you can set `|tag=Formula,| |alt=|\meta{text} to get
-%   a |Formula| structure with its alternate text.
-%   But when the value is |false|, it is a synonym of the |off| option just mentioned.
+%   For instance, you can set `|tag=Formula,| |alt=|\meta{text}' to get
+%   a |Formula| structure with its alternate text.\footnote{But now the |text| key
+%     with \pkg{unicode-math} package loaded seems to be better than |tag=Formula| option.}
+%   However, when the value is |false|, it is a synonym of the |off| option just mentioned.
 % \item[\texttt{correct-BBox=}\meta{dimens}] You can correct the BBox attribute of the figure
-%   with space-separated four dimensional values, which will be added to the
+%   by space-separated four dimensional values, which will be added to the
 %   automatically-calculated BBox values.
-%   To draw the bounding box for checking, you can declare
-%   |\DocumentMetadata|\allowbreak|{debug=BBox}|
-%   after |\DocumentMetadata{tagging=|\allowbreak|on}| setup is completed.
+%   To draw the bounding box for checking with half-transparent red color, you can declare
+%   |\DocumentMetadata|\allowbreak|{debug=|\allowbreak|BBox}| after the setup
+%   |\DocumentMetadata|\allowbreak|{tagging=|\allowbreak|on}| is completed.
 % \item[\texttt{tagging-setup=}\meta{key-val list}]
 %   This key accepts as its value the list of key-value options mentioned so far.
 % \end{description}
@@ -5236,6 +5237,7 @@ end
 \bool_new:N \g__luamplib_tag_asgroup_bool
 \bool_new:N\l__luamplib_tag_bboxcorr_bool
 \seq_new:N\l__luamplib_tag_bboxcorr_seq
+\tl_new:N \l__luamplib_tag_bbox_draw_tl
 \tl_new:N \l__luamplib_BBox_label_tl
 \tl_new:N \l__luamplib_BBox_llx_tl
 \tl_new:N \l__luamplib_BBox_lly_tl
@@ -5401,6 +5403,7 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/end}{alt}
 {
+    \tl_use:N \l__luamplib_tag_bbox_draw_tl
     \tag_mc_end:
     \tag_struct_end:
     \tag_mc_begin_pop:n{}
@@ -5520,25 +5523,21 @@ end
             \l__luamplib_BBox_urx_tl\c_space_tl
             \l__luamplib_BBox_ury_tl
           }
-        \use:e
+        \tl_set:Ne \l__luamplib_tag_bbox_draw_tl
         {
-          \AddToHookNext{shipout/foreground}
+          \pdfextension save\relax
+          \color_group_begin:
+          \opacity_select:n{0.5} \color_select:n{red}
+          \pdfextension literal~text
           {
-            \exp_not:N\int_compare:nNnT
-            {\exp_not:N\g_shipout_readonly_int}
-            =
-            {\property_ref:een{\l__luamplib_BBox_label_tl}{abspage}{0}}
-            {
-              \exp_not:N\put
-              (\l__luamplib_BBox_llx_tl bp, \dim_eval:n{\l__luamplib_BBox_lly_tl bp -\paperheight})
-              {
-                \opacity_select:n{0.5} \color_select:n{red}
-                \exp_not:N\rule
-                  {\dim_eval:n {\l__luamplib_BBox_urx_tl bp - \l__luamplib_BBox_llx_tl bp}}
-                  {\dim_eval:n {\l__luamplib_BBox_ury_tl bp - \l__luamplib_BBox_lly_tl bp}}
-              }
-            }
+            \l__luamplib_BBox_llx_tl\c_space_tl
+            \l__luamplib_BBox_lly_tl\c_space_tl
+            \fp_eval:n { \l__luamplib_BBox_urx_tl - \l__luamplib_BBox_llx_tl }~
+            \fp_eval:n { \l__luamplib_BBox_ury_tl - \l__luamplib_BBox_lly_tl }~
+            re~f
           }
+          \color_group_end:
+          \pdfextension restore\relax
         }
       }
 }
