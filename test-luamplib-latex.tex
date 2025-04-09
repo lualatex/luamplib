@@ -93,6 +93,7 @@ B%
 \everymplib{}\everyendmplib{}%
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
+\SuspendTagging{}%
 \mplibsetformat{metafun}%
 \begin{mplibcode}
 message "Hello World!";
@@ -116,6 +117,7 @@ draw p withcolor white;
 endfig;
 \end{mplibcode}%
 
+\ResumeTagging{}%
 \begin{mplibgroup}{mympbox}%
 \begin{mplibcode}[tag=false]
 %verbatimtex \global\setbox\mympbox etex
@@ -180,7 +182,7 @@ diameter:\Dia bp.%
   endfig;
 \end{mplibcode}%
 
-\begin{mplibcode}[actualtext=Funny $sqrt{2}$ xyz]
+\begin{mplibcode}[alt=Funny $sqrt{2}$ xyz]
 beginfig(1)
   draw mplibgraphictext "\bfseries Funny$\sqrt{2}$"
   fakebold 2 % fontspec option
@@ -191,7 +193,7 @@ endfig;
 \end{mplibcode}%
 
 %\mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing shading]
 beginfig(1)
 fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
     withshadingmethod "linear"
