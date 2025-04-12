@@ -1,17 +1,16 @@
                        History of the luamplib package
 
 2025/xx/xx 2.37.3
-   * Tagging key 'off' is newly introduced.
-     This key, being a synonym of 'tag=false', deactivates tagging.
-
-   * Tagging key 'tagging-setup' is newly introduced.
-     The value of this key is a key-value list of other tagging options.
-
-   * Tagging Key 'debug' is removed.
+   * Tagging option 'debug' is removed.
      Declare '\DocumentMetadata{debug=BBox}' instead.
 
-   * Tagging keys 'actualtext', 'text', and 'off' force horizontal mode
-     according to the definition of \prependtomplibbox.
+   * Tagging option 'off' is newly introduced.
+     Given this key, luamplib does nothing about tagging.
+
+   * Tagging option 'tagging-setup' is newly introduced.
+     The value of this key is a key-value list of other tagging options.
+
+   * Tagging options 'actualtext' and 'text' do not force horizontal mode.
 
    * more robust 'mplibgraphictext' macro
 

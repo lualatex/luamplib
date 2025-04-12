@@ -62,7 +62,8 @@ label.bot(btex $x$ etex, (2u,0));
 label.lft(btex $y$ etex, (0,u));
 endfig;
 \end{mplibcode}%
-B\par
+B%
+
 A%
 \begin{mplibcode}
 beginfig(2);
@@ -81,7 +82,7 @@ B%
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
-\begin{mplibcode}
+\begin{mplibcode}[text]
  label(btex $\sqrt{2}$ etex, origin);
  draw fullcircle scaled 20;
  picture pic; pic := currentpicture;
@@ -93,9 +94,8 @@ B%
 \everymplib{}\everyendmplib{}%
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
-\SuspendTagging{}%
 \mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=alt inside mp code]
 message "Hello World!";
 verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
@@ -110,16 +110,15 @@ beginfig(1);
 linear_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
-verbatimtex \mplibalttext{MetaPost}\kern10pt etex
+verbatimtex \mplibalttext{MetaPost again}\kern10pt etex
 beginfig(2);
 circular_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
 \end{mplibcode}%
 
-\ResumeTagging{}%
 \begin{mplibgroup}{mympbox}%
-\begin{mplibcode}[tag=false]
+\begin{mplibcode}[off]
 %verbatimtex \global\setbox\mympbox etex
 beginfig(0);
 breadth=.667\mpdim\linewidth;
@@ -138,7 +137,7 @@ endfig;
 
 \mplibnoforcehmode
 \mplibnumbersystem{double}%
-\begin{mplibcode}
+\begin{mplibcode}[off]
 beginfig(0);
 u := 10**5*(10**-4);
 draw unitsquare scaled u;
@@ -158,13 +157,13 @@ endfig;
   endfig;
 \end{mplibcode}%
 \mplibtextextlabel{enable}%
-\begin{mplibcode}[tag=Formula,alt=$sqrt 2$]
+\begin{mplibcode}[text] %[tag=Formula,alt=$sqrt 2$]
 beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
 endfig;
 \end{mplibcode}%
 \leavevmode
-\begin{mplibcode}
+\begin{mplibcode}[artifact]
    D := sqrt(2)**7;
    beginfig(0);
    draw fullcircle scaled D;
@@ -172,7 +171,7 @@ endfig;
    endfig;
 \end{mplibcode}%
 diameter:\Dia bp.%
-\begin{mplibcode}[text]
+\begin{mplibcode}[off]
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
   enddef;
@@ -277,7 +276,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   \SuspendTagging{}%
   \tiny\TeX
 \end{mppattern}\relax
-\mpfig[alt=TeX]
+\mpfig[actualtext=TeX]
   picture tex;
   tex = mpliboutlinetext.p ("\bfseries \TeX");
   for i=1 upto mpliboutlinenum:
@@ -301,7 +300,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \leavevmode
-\mpfig
+\mpfig[test fading]
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;
@@ -364,7 +363,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
 \endmpfig
 \leavevmode
-\mpfig[text]
+\mpfig[off]
   string Test; Test="abçdéf";
   for k=0 upto mpliblength(Test)-1:
     draw TEX(mplibsubstring (k,k+1) of Test) scaled 2 shifted (20k,0);
@@ -381,21 +380,21 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \mppattern{p1}
-  \mpfig[tag=false]
+  \mpfig[off]
     fill fullcircle scaled 3
     withcolor .7red
     ;
   \endmpfig
 \endmppattern
 \mppattern{p2}
-  \mpfig[tag=false]
+  \mpfig[off]
     fill fullcircle scaled 9
     withmppattern "p1"
     ;
   \endmpfig
 \endmppattern
 \mppattern{p3}
-  \mpfig[tag=false]
+  \mpfig[off]
     fill fullcircle scaled 27
     withmppattern "p2"
     ;
