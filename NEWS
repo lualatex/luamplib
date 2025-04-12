@@ -5,7 +5,7 @@
      Declare '\DocumentMetadata{debug=BBox}' instead.
 
    * Tagging option 'off' is newly introduced.
-     Given this key, luamplib does nothing about tagging.
+     Given this key, nothing will be tagged by luamplib.
 
    * Tagging option 'tagging-setup' is newly introduced.
      The value of this key is a key-value list of other tagging options.
