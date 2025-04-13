@@ -15,7 +15,7 @@
 \mpliblegacybehavior{true}%
 \begin{document}
 \ExplSyntaxOn
-\keys_set:nn{luamplib/tag}{alt=testing}
+\keys_set:nn{luamplib/tagging}{alt=testing}
 \ExplSyntaxOff
 \tracingcommands1
 A%
@@ -157,7 +157,7 @@ endfig;
   endfig;
 \end{mplibcode}%
 \mplibtextextlabel{enable}%
-\begin{mplibcode}[text] %[tag=Formula,alt=$sqrt 2$]
+\begin{mplibcode}[text]
 beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
 endfig;
@@ -233,7 +233,7 @@ endfor
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \def\mpfiginstancename{mympfig}%
-\mpfig[actualtext=$1/(1-x^2)$]
+\mpfig[tag=Formula,alt=$1/(1-x^2)$]
 draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     (withcolor .6[red,white])
     (withpen pencircle scaled .2 withcolor red)
