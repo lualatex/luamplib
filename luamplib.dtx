@@ -5224,7 +5224,6 @@ end
 \bool_new:N \l__luamplib_tag_bboxcorr_bool
 \seq_new:N  \l__luamplib_tag_bboxcorr_seq
 \tl_new:N \l__luamplib_tag_bbox_draw_tl
-\tl_new:N \l__luamplib_BBox_label_tl
 \tl_new:N \l__luamplib_BBox_llx_tl
 \tl_new:N \l__luamplib_BBox_lly_tl
 \tl_new:N \l__luamplib_BBox_urx_tl
@@ -5439,28 +5438,24 @@ end
 \socket_new:nn{tagsupport/luamplib/figure/bbox}{1}
 \socket_new_plug:nnn{tagsupport/luamplib/figure/bbox}{alt}
 {
-    \tl_set:Ne \l__luamplib_BBox_label_tl {luamplib.BBox.\tag_get:n{struct_num}}
+    \tl_set:Ne \l_tmpa_tl {luamplib.BBox.\tag_get:n{struct_num}}
     \tex_savepos:D
-    \property_record:ee{\l__luamplib_BBox_label_tl}{xpos,ypos}
+    \property_record:ee{\l_tmpa_tl}{xpos,ypos}
     \tl_set:Ne \l__luamplib_BBox_llx_tl
       {
-        \dim_to_decimal_in_bp:n
-        { \property_ref:een {\l__luamplib_BBox_label_tl}{xpos}{0}sp }
+        \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{xpos}{0}sp }
       }
     \tl_set:Ne \l__luamplib_BBox_lly_tl
       {
-        \dim_to_decimal_in_bp:n
-        { \property_ref:een {\l__luamplib_BBox_label_tl}{ypos}{0}sp - \dp#1 }
+        \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{ypos}{0}sp - \dp#1 }
       }
     \tl_set:Ne \l__luamplib_BBox_urx_tl
       {
-        \dim_to_decimal_in_bp:n
-        { \l__luamplib_BBox_llx_tl bp + \wd#1 }
+        \dim_to_decimal_in_bp:n { \l__luamplib_BBox_llx_tl bp + \wd#1 }
       }
     \tl_set:Ne \l__luamplib_BBox_ury_tl
       {
-        \dim_to_decimal_in_bp:n
-        { \l__luamplib_BBox_lly_tl bp + \ht#1 + \dp#1 }
+        \dim_to_decimal_in_bp:n { \l__luamplib_BBox_lly_tl bp + \ht#1 + \dp#1 }
       }
     \bool_if:NT \l__luamplib_tag_bboxcorr_bool
       {
