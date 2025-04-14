@@ -15,7 +15,7 @@
 \mpliblegacybehavior{true}%
 \begin{document}
 \ExplSyntaxOn
-\keys_set:nn{luamplib/tagging}{alt=testing}
+\tag_if_active:T { \keys_set:nn{luamplib/tagging}{alt=testing} }
 \ExplSyntaxOff
 \tracingcommands1
 A%
@@ -300,7 +300,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \leavevmode
-\mpfig[test fading]
+\mpfig[alt=test fading]
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;
@@ -343,10 +343,14 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \mpfig usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
 \usemplibgroup{test:isolated,knockout}%
 \begin{mplibgroup}{mytex}[matrix="rotated 15"] \SuspendTagging{}\TeX \end{mplibgroup}%
-\tagmcbegin{artifact}%
+\ExplSyntaxOn
+\tag_if_active:T { \tag_mc_begin:n{artifact} }
+\ExplSyntaxOff
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
-\tagmcend
+\ExplSyntaxOn
+\tag_if_active:T { \tag_mc_end: }
+\ExplSyntaxOff
 \usemplibgroup[actualtext=TeX]{mytex}%
 \mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 
@@ -414,7 +418,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \everymplib[instanceOne]{beginfig(1);}
 \everyendmplib[instanceOne]{endfig;}
 
-\begin{mplibcode}[instanceOne,alt=testing]
+\begin{mplibcode}[instanceOne]
   picture TeX;
   TeX := btex \TeX etex;
 a := 1cm;
@@ -424,7 +428,7 @@ draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceTwo,alt=testing]
+\begin{mplibcode}[instanceTwo]
 beginfig(1);
 if not known a:
   draw btex code is not inherited from an instance with a different name etex;
@@ -458,7 +462,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceOne,alt=testing]
+\begin{mplibcode}[instanceOne]
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
   draw TeX;

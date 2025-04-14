@@ -5199,7 +5199,7 @@ end
       ,tagging-setup .code:n = { }
       ,instance     .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
       ,instancename .meta:n = { instance = {#1} }
-      ,unknown      .code:n = { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
+      ,unknown      .code:n = { \tl_gset:NV \currentmpinstancename \l_keys_key_str }
     }
   \RenewDocumentCommand\mplibcode{O{}}
     {
@@ -5213,10 +5213,8 @@ end
   \endinput\fi
 \ExplSyntaxOn
 \tl_new:N \l__luamplib_tag_envname_tl
-\tl_set:Nn\l__luamplib_tag_envname_tl {mplibcode}
 \tl_new:N \l__luamplib_tag_alt_tl
 \tl_new:N \l__luamplib_tag_alt_dflt_tl
-\tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure}
 \tl_new:N \l__luamplib_tag_actual_tl
 \tl_new:N \l__luamplib_tag_struct_tl
 \tl_set:Nn\l__luamplib_tag_struct_tl {Figure}
@@ -5381,16 +5379,18 @@ end
 %    \end{macrocode}
 % Sockets for main process
 %    \begin{macrocode}
-\socket_new:nn{tagsupport/luamplib/figure/begin}{0}
+\socket_new:nn{tagsupport/luamplib/figure/begin}{1}
 \socket_new:nn{tagsupport/luamplib/figure/end}{0}
 \socket_new_plug:nnn{tagsupport/luamplib/figure/begin}{alt}
 {
     \tag_mc_end_push:
     \tl_if_empty:NT\l__luamplib_tag_alt_tl
     {
-      \msg_warning:nnee{luamplib}{alt-text-missing}
-                       {\l__luamplib_tag_envname_tl}{\l__luamplib_tag_alt_dflt_tl}
-      \tl_set:Ne\l__luamplib_tag_alt_tl {\l__luamplib_tag_alt_dflt_tl}
+      \tl_if_empty:eTF{#1}
+        { \tl_set:Nn \l__luamplib_tag_alt_tl {metapost~figure} }
+        { \tl_set:Ne \l__luamplib_tag_alt_tl {metapost~figure~\text_purify:n{#1}} }
+      \msg_warning:nnVV{luamplib}{alt-text-missing}
+                       \l__luamplib_tag_envname_tl \l__luamplib_tag_alt_tl
     }
     \tag_struct_begin:n
     {
@@ -5438,100 +5438,76 @@ end
 \socket_new:nn{tagsupport/luamplib/figure/bbox}{1}
 \socket_new_plug:nnn{tagsupport/luamplib/figure/bbox}{alt}
 {
-    \tl_set:Ne \l_tmpa_tl {luamplib.BBox.\tag_get:n{struct_num}}
-    \tex_savepos:D
-    \property_record:ee{\l_tmpa_tl}{xpos,ypos}
-    \tl_set:Ne \l__luamplib_BBox_llx_tl
-      {
-        \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{xpos}{0}sp }
-      }
-    \tl_set:Ne \l__luamplib_BBox_lly_tl
-      {
-        \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{ypos}{0}sp - \dp#1 }
-      }
-    \tl_set:Ne \l__luamplib_BBox_urx_tl
-      {
-        \dim_to_decimal_in_bp:n { \l__luamplib_BBox_llx_tl bp + \wd#1 }
-      }
-    \tl_set:Ne \l__luamplib_BBox_ury_tl
-      {
-        \dim_to_decimal_in_bp:n { \l__luamplib_BBox_lly_tl bp + \ht#1 + \dp#1 }
-      }
-    \bool_if:NT \l__luamplib_tag_bboxcorr_bool
-      {
-        \tl_set:Ne \l__luamplib_BBox_llx_tl
-          {
-            \fp_eval:n
+  \tl_set:Ne \l_tmpa_tl {luamplib.BBox.\tag_get:n{struct_num}}
+  \tex_savepos:D
+  \property_record:ee{\l_tmpa_tl}{xpos,ypos}
+  \tl_set:Ne \l__luamplib_BBox_llx_tl
+    { \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{xpos}{0}sp } }
+  \tl_set:Ne \l__luamplib_BBox_lly_tl
+    { \dim_to_decimal_in_bp:n { \property_ref:een {\l_tmpa_tl}{ypos}{0}sp - \dp#1 } }
+  \tl_set:Ne \l__luamplib_BBox_urx_tl
+    { \dim_to_decimal_in_bp:n { \l__luamplib_BBox_llx_tl bp + \wd#1 } }
+  \tl_set:Ne \l__luamplib_BBox_ury_tl
+    { \dim_to_decimal_in_bp:n { \l__luamplib_BBox_lly_tl bp + \ht#1 + \dp#1 } }
+  \bool_if:NT \l__luamplib_tag_bboxcorr_bool
+    {
+      \int_set_eq:NN \l_tmpa_int \c_zero_int
+      \tl_map_inline:nn
+        {
+          \l__luamplib_BBox_llx_tl
+          \l__luamplib_BBox_lly_tl
+          \l__luamplib_BBox_urx_tl
+          \l__luamplib_BBox_ury_tl
+        }
+        {
+          \int_incr:N \l_tmpa_int
+          \tl_set:Ne ##1
             {
-              \l__luamplib_BBox_llx_tl
-              +
-              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {1} }
+              \fp_eval:n
+                {
+                  ##1
+                  +
+                  \dim_to_decimal_in_bp:n { \seq_item:NV \l__luamplib_tag_bboxcorr_seq \l_tmpa_int }
+                }
             }
-          }
-        \tl_set:Ne \l__luamplib_BBox_lly_tl
-          {
-            \fp_eval:n
-            {
-              \l__luamplib_BBox_lly_tl
-              +
-              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {2} }
-            }
-          }
-        \tl_set:Ne \l__luamplib_BBox_urx_tl
-          {
-            \fp_eval:n
-            {
-              \l__luamplib_BBox_urx_tl
-              +
-              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {3} }
-            }
-          }
-        \tl_set:Ne \l__luamplib_BBox_ury_tl
-          {
-            \fp_eval:n
-            {
-              \l__luamplib_BBox_ury_tl
-              +
-              \dim_to_decimal_in_bp:n {\seq_item:Nn \l__luamplib_tag_bboxcorr_seq {4} }
-            }
-          }
-      }
-    \tag_struct_gput:ene {\tag_get:n{struct_num}} {attribute}
-      {
-        /O /Layout /BBox [
+        }
+    }
+  \tag_struct_gput:ene {\tag_get:n{struct_num}} {attribute}
+    {
+      /O /Layout /BBox [
+        \l__luamplib_BBox_llx_tl\c_space_tl
+        \l__luamplib_BBox_lly_tl\c_space_tl
+        \l__luamplib_BBox_urx_tl\c_space_tl
+        \l__luamplib_BBox_ury_tl
+      ]
+    }
+  \bool_if:NT \l__tag_graphic_debug_bool
+    {
+      \iow_log:e
+        {
+          luamplib/tagging~debug:~BBox~of~structure~\tag_get:n{struct_num}~is~
           \l__luamplib_BBox_llx_tl\c_space_tl
           \l__luamplib_BBox_lly_tl\c_space_tl
           \l__luamplib_BBox_urx_tl\c_space_tl
           \l__luamplib_BBox_ury_tl
-        ]
-      }
-    \bool_if:NT \l__tag_graphic_debug_bool
-      {
-        \iow_log:e
-          {
-            luamplib/tagging~debug:~BBox~of~structure~\tag_get:n{struct_num}~is~
-            \l__luamplib_BBox_llx_tl\c_space_tl
-            \l__luamplib_BBox_lly_tl\c_space_tl
-            \l__luamplib_BBox_urx_tl\c_space_tl
-            \l__luamplib_BBox_ury_tl
-          }
-        \tl_set:Ne \l__luamplib_tag_bbox_draw_tl
+        }
+      \tl_set:Ne \l__luamplib_tag_bbox_draw_tl
         {
           \pdfextension save\relax
           \color_group_begin:
           \opacity_select:n{0.5} \color_select:n{red}
           \pdfextension literal~text
-          {
-            \l__luamplib_BBox_llx_tl\c_space_tl
-            \l__luamplib_BBox_lly_tl\c_space_tl
-            \fp_eval:n { \l__luamplib_BBox_urx_tl - \l__luamplib_BBox_llx_tl }~
-            \fp_eval:n { \l__luamplib_BBox_ury_tl - \l__luamplib_BBox_lly_tl }~
-            re~f
-          }
+            {
+              \l__luamplib_BBox_llx_tl\c_space_tl
+              \l__luamplib_BBox_lly_tl\c_space_tl
+              \fp_eval:n { \l__luamplib_BBox_urx_tl - \l__luamplib_BBox_llx_tl }~
+              \fp_eval:n { \l__luamplib_BBox_ury_tl - \l__luamplib_BBox_lly_tl }~
+              re~f
+            }
           \color_group_end:
           \pdfextension restore\relax
         }
-      }
+    }
 }
 %    \end{macrocode}
 % horizontal mode upon |text| and |actualtext|
@@ -5631,7 +5607,7 @@ end
   {
     ,instance     .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
     ,instancename .meta:n = { instance = {#1} }
-    ,unknown      .code:n = { \tl_gset:Ne \currentmpinstancename {\l_keys_key_str} }
+    ,unknown      .code:n = { \tl_gset:NV \currentmpinstancename \l_keys_key_str }
   }
 %    \end{macrocode}
 % Redefine our macros
@@ -5640,7 +5616,7 @@ end
   {
     \prependtomplibbox
     \hbox dir~TLT\bgroup
-    \tag_socket_use:n{luamplib/figure/begin}
+    \tag_socket_use:nn{luamplib/figure/begin}\l__luamplib_tag_alt_dflt_tl
     \xdef\MPllx{#1}\xdef\MPlly{#2}%
     \xdef\MPurx{#3}\xdef\MPury{#4}%
     \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
@@ -5681,8 +5657,7 @@ end
     \tl_gset_eq:NN \currentmpinstancename \c_empty_tl
     \keys_set_known:neN {luamplib/tagging} {#1} \l_tmpa_tl
     \keys_set:nV {luamplib/instance} \l_tmpa_tl
-    \tl_if_empty:NF \currentmpinstancename
-      { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\currentmpinstancename} }
+    \tl_set_eq:NN \l__luamplib_tag_alt_dflt_tl \currentmpinstancename
     \tag_socket_use:n{luamplib/figure/init}
     \mplibtmptoks{}\ltxdomplibcode
   }
@@ -5690,10 +5665,8 @@ end
   {
     \begingroup
     \tl_set:Nn \l__luamplib_tag_envname_tl {mpfig}
-    \keys_set_known:neN {luamplib/tagging} {#2} \l_tmpa_tl
-    \keys_set:nV {luamplib/instance} \l_tmpa_tl
-    \tl_if_empty:NF \mpfiginstancename
-      { \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~\mpfiginstancename} }
+    \keys_set_known:ne {luamplib/tagging} {#2}
+    \tl_set_eq:NN \l__luamplib_tag_alt_dflt_tl \mpfiginstancename
     \tag_socket_use:n{luamplib/figure/init}
     \IfBooleanTF{#1}
       { \mplibprempfig * }
@@ -5703,12 +5676,11 @@ end
   {
     \begingroup
     \tl_set:Nn \l__luamplib_tag_envname_tl {usemplibgroup}
-    \keys_set_known:neN {luamplib/tagging} {#1} \l_tmpa_tl
-    \keys_set:nV {luamplib/instance} \l_tmpa_tl
-    \tl_set:Nn\l__luamplib_tag_alt_dflt_tl {metapost~figure~#2}
+    \keys_set_known:ne {luamplib/tagging} {#1}
+    \tl_set:Nn \l__luamplib_tag_alt_dflt_tl {#2}
     \tag_socket_use:n{luamplib/figure/init}
     \prependtomplibbox\hbox dir~TLT\bgroup
-    \tag_socket_use:n{luamplib/figure/begin}
+    \tag_socket_use:nn{luamplib/figure/begin}\l__luamplib_tag_alt_dflt_tl
     \setbox\mplibscratchbox\hbox\bgroup
     \tag_socket_use:n{luamplib/mplibgroup/begin}
     \csname luamplib.group.#2\endcsname
