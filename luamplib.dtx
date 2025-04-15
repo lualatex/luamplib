@@ -585,7 +585,7 @@ See source file '\inFileName' for licencing and contact information.
 %   (such as |btex| |...| |etex|, excluding pictures made by |infont| operator).\footnote{\relax
 %     The key |text| also shares the limitation mentioned in the previous footnote.}
 %   BBox info will not be added.
-%   This key is intended for figures whose meaning is the sequence of texts in the
+%   This key is intended for figures the meaning of which is the sequence of texts in the
 %   tex-text boxes in the order they are drawn in the figure.
 %   Inside |text|-mode figures, reusing tex-text boxes is strongly discouraged.
 % \item[\texttt{off}] Given this key, nothing will be tagged by \pkg{luamplib}.
@@ -5266,13 +5266,8 @@ end
     \tag_mc_end:
     \cs_if_exist:cTF {luamplib.tagbox.#1}
     {
-%    \end{macrocode}
-% TODO: To avoid nested |P|. Not sure this is a bug of tagpdf.
-%    \begin{macrocode}
-      \tag_struct_begin:n{tag=NonStruct}
       \tag_struct_use_num:n {\csname luamplib.tagbox.#1\endcsname}
       #2
-      \tag_struct_end:
     }
     {
       \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}
@@ -5558,6 +5553,10 @@ end
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{artifact}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/bbox}{noop}
   \__luamplib_tag_pseudo_para_begin:
+%    \end{macrocode}
+% TODO: To avoid nested |P|. Not sure this is a bug of tagpdf.
+%    \begin{macrocode}
+  \cs_set_nopar:Npn \prependtomplibbox {\tag_struct_begin:n{tag=NonStruct,stash} \tag_struct_end:}
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{off}
 {
