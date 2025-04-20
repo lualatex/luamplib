@@ -5229,8 +5229,8 @@ end
 \msg_new:nnn {luamplib}{figure-text-reuse}
 {
   tex-text~box~#1~probably~is~incorrectly~tagged.\\
-  Check~the~resulting~PDF.~
-  Reusing~a~box~in~text-mode~figures~is~strongly~discouraged.
+  Reusing~a~box~from~non-text~mode~is~strongly~discouraged.~
+  Check~the~resulting~PDF.
 }
 \msg_new:nnn{luamplib}{alt-text-missing}
 {
@@ -5251,7 +5251,7 @@ end
 %    \end{macrocode}
 % TODO: We force a structure. If not, |a| and |b| in |btex a $x$ b etex| are not tagged.
 %    \begin{macrocode}
-    \tag_mc_begin:n{tag=text}
+    \tag_mc_begin:n{}
 }
 \socket_new_plug:nnn{tagsupport/luamplib/textext/end}{default}
 {
@@ -5286,6 +5286,10 @@ end
 }
 \cs_set_nopar:Npn \luamplibtagtextbegin #1
 {
+%    \end{macrocode}
+% TODO: we test |text| mode here.
+% If the socket is used for all modes, we can get a lot of structure-has-no-parent warning.
+%    \begin{macrocode}
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_socket_use:nn{luamplib/textext/begin}{#1}
