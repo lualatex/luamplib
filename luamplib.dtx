@@ -5267,8 +5267,6 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/textext/put}{default}
 {
-  \bool_if:NTF \l__luamplib_tag_usetext_bool
-  {
     \tag_mc_end:
     \cs_if_exist:cTF {luamplib.taggedbox.#1}
     {
@@ -5284,12 +5282,6 @@ end
       \tag_mc_end:
     }
     \tag_mc_begin:n{artifact}
-  }
-  {
-    \int_set:Nn \l_tmpa_int {#1}
-    \tag_mc_reset_box:N \l_tmpa_int
-    #2
-  }
 }
 \socket_assign_plug:nn{tagsupport/luamplib/textext/begin}{default}
 \socket_assign_plug:nn{tagsupport/luamplib/textext/end}{default}
@@ -5323,8 +5315,16 @@ end
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{
-    \tag_resume:n{\mplibputtextbox}
-    \tag_socket_use:nnn{luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
+    \bool_if:NTF \l__luamplib_tag_usetext_bool
+    {
+      \tag_resume:n{\mplibputtextbox}
+      \tag_socket_use:nnn{luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
+    }
+    {
+      \int_set:Nn \l_tmpa_int {#1}
+      \tag_mc_reset_box:N \l_tmpa_int
+      \raise\dp#1\copy#1
+    }
   \hss}}
 }
 %    \end{macrocode}
@@ -5384,7 +5384,7 @@ end
 %    \end{macrocode}
 % A macro for BBox attribute
 %    \begin{macrocode}
-\cs_set_nopar:Npn \luamplib_tag_bbox_attribute:n #1
+\cs_set_nopar:Npn \__luamplib_tag_bbox_attribute:n #1
 {
   \tl_set:Ne \l_tmpa_tl {luamplib.BBox.\tag_get:n{struct_num}}
   \tex_savepos:D
@@ -5531,7 +5531,7 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/end}{alt}
 {
-    \luamplib_tag_bbox_attribute:n {#1}
+    \__luamplib_tag_bbox_attribute:n {#1}
     #2
     \tl_use:N \l__luamplib_tag_bbox_draw_tl
     \tag_mc_end:
