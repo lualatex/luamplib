@@ -1736,7 +1736,8 @@ local function process_tex_text (str, maketext)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}", tex_box_id, global, tex_box_id, str))
+    run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
+                        tex_box_id, global, tex_box_id, str))
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -5242,19 +5243,23 @@ end
   Using~the~default~value~'#2'~instead.
 }
 %    \end{macrocode}
-% Sockets for textext.\\
-% TODO: we check |text| mode here.
-% If we tag text boxes for all modes, we will get a lot of structure-has-no-parent warning;
-% no good-looking, though it seems to be no harm.
+% Sockets for textext.
 %    \begin{macrocode}
 \socket_new:nn{tagsupport/luamplib/textext/set}{2}
 \socket_new:nn{tagsupport/luamplib/textext/put}{2}
 \socket_new_plug:nnn{tagsupport/luamplib/textext/set}{default}
 {
+%    \end{macrocode}
+% TODO: we check |text| mode here.
+% If we tag text boxes for all modes, we will get a lot of structure-has-no-parent warning;
+% no good-looking, though it seems to be no harm.
+%    \begin{macrocode}
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text}
+    \keys_if_exist:nnTF {__tag/struct} {parent-tag}
+      { \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text} }
+      { \tag_struct_begin:n{tag=NonStruct, stash} }
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
 %    \end{macrocode}
 % TODO: We force an MC. Otherwize |a| and |b| in |btex a $x$ b etex| are not tagged.
@@ -5273,6 +5278,9 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/textext/put}{default}
 {
+  \bool_if:NTF \l__luamplib_tag_usetext_bool
+  {
+    \tag_resume:n{\mplibputtextbox}
     \tag_mc_end:
     \cs_if_exist:cTF {luamplib.taggedbox.#1}
     {
@@ -5288,6 +5296,12 @@ end
       \tag_mc_end:
     }
     \tag_mc_begin:n{artifact}
+  }
+  {
+    \int_set:Nn \l_tmpa_int {#1}
+    \tag_mc_reset_box:N \l_tmpa_int
+    #2
+  }
 }
 \socket_assign_plug:nn{tagsupport/luamplib/textext/set}{default}
 \socket_assign_plug:nn{tagsupport/luamplib/textext/put}{default}
@@ -5298,16 +5312,7 @@ end
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{
-    \bool_if:NTF \l__luamplib_tag_usetext_bool
-    {
-      \tag_resume:n{\mplibputtextbox}
-      \tag_socket_use:nnn{luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
-    }
-    {
-      \int_set:Nn \l_tmpa_int {#1}
-      \tag_mc_reset_box:N \l_tmpa_int
-      \raise\dp#1\copy#1
-    }
+    \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
   \hss}}
 }
 %    \end{macrocode}
