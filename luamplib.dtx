@@ -3009,7 +3009,7 @@ def withgroupname expr s =
   withprescript "mplibgroupname=" & s
 enddef;
 def usemplibgroup primary s =
-  draw maketext("\csname luamplib.group." & s & "\endcsname")
+  draw maketext("\luamplibtagasgroupput{"& s &"}{\csname luamplib.group."& s &"\endcsname}")
     shifted runscript("return luamplib.trgroupshifts['" & s & "']")
 enddef;
 path    mplib_shade_path ;
@@ -5233,8 +5233,8 @@ end
 }
 \msg_new:nnn {luamplib}{mplibgroup-text-mode}
 {
-  mplibgroup/asgroup~'#1'~probably~is~incorrectly~tagged.~
-  Using~mplibgroup/asgroup~with~text~mode~is~not~recommended.~
+  mplibgroup~'#1'~probably~is~incorrectly~tagged.~
+  Using~mplibgroup~with~text~mode~is~not~recommended.~
   Check~the~resulting~PDF.
 }
 \msg_new:nnn{luamplib}{alt-text-missing}
@@ -5340,7 +5340,7 @@ end
     \cs_gset_nopar:cpn {luamplib.mplibgroup.text.#1} {#1}
   }
   \tag_mc_end:
-  \tag_mc_begin:n{}
+  \tag_mc_begin:n{tag=text}
   #2
   \tag_mc_end:
   \tag_mc_begin:n{artifact}
