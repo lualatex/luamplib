@@ -5228,7 +5228,7 @@ end
 \msg_new:nnn {luamplib}{figure-text-reuse}
 {
   tex-text~box~#1~probably~is~incorrectly~tagged.~
-  Reusing~a~box~from~non-text~mode~is~not~recommended.~
+  Reusing~a~box~in~text~mode~is~strongly~discouraged.~
   Check~the~resulting~PDF.
 }
 \msg_new:nnn {luamplib}{mplibgroup-text-mode}
@@ -5286,6 +5286,7 @@ end
     {
       \exp_args:Nc \tag_struct_use_num:n {luamplib.taggedbox.#1}
       #2
+      \cs_undefine:c {luamplib.taggedbox.#1}
     }
     {
       \msg_warning:nnn{luamplib}{figure-text-reuse}{#1}

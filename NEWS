@@ -7,6 +7,8 @@
    * Tagging option 'off' is newly introduced.
      Given this key, nothing will be tagged by luamplib.
 
+   * Tagging option 'correct-BBox' is renamed to 'adjust-BBox'.
+
    * Tagging option 'tagging-setup' is newly introduced.
      The value of this key is a key-value list of other tagging options.
 
