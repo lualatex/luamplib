@@ -513,7 +513,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection{About cache files}
 %   To support |btex ... etex| in external |.mp| files, \pkg{luamplib}
 %   inspects the content of each and every |.mp| file and makes caches
-%   if nececcsary, before returning their paths to \LuaTeX's \mplib library.
+%   if nececcsary before returning their paths to the \mplib library.
 %   This could waste the compilation time, as most |.mp| files
 %   do not contain |btex ... etex| commands.  So \pkg{luamplib} provides
 %   macros as follows, so that users can give instructions about files
@@ -588,6 +588,19 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is intended for figures the meaning of which is the sequence of texts in the
 %   tex-text boxes in the order they are drawn in the figure.
 %   Inside |text|-mode figures, reusing tex-text boxes is strongly discouraged.
+%
+%   Note that the text in a tex-text box which starts with |[taggingoff]| will not be tagged
+%   at all, and
+%   of course |[taggingoff]| and its trailing spaces will be gobbled by \pkg{luamplib}.
+%   For example, the first and the third boxes in the following figure will not be tagged,
+%   and still remain in the |Artifact| MC-chunks.
+%\begin{verbatim}
+%   \mpfig[text]
+%   draw btex [taggingoff] $\sqrt 2$ etex ;
+%   draw textext "$\sqrt 2$" shifted 10down ;
+%   draw TEX "[taggingoff] $\sqrt 2$" shifted 20down ;
+%   \endmpfig
+%\end{verbatim}
 % \item[\texttt{off}] Given this key, nothing will be tagged by \pkg{luamplib}.
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.\relax
 %   \footnote{The option |tag=false|, however, is a synonym of the |off| key.}
@@ -1736,8 +1749,14 @@ local function process_tex_text (str, maketext)
       run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
       tex_box_id = tex.getcount'allocationnumber'
     end
-    run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
-                        tex_box_id, global, tex_box_id, str))
+    if str:find"^%[taggingoff%]" then
+      str = str:gsub("^%[taggingoff%]%s*","")
+      run_tex_code(format("\\luamplibnotagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
+                          tex_box_id, global, tex_box_id, str))
+    else
+      run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
+                          tex_box_id, global, tex_box_id, str))
+    end
     local box = texgetbox(tex_box_id)
     local wd  = box.width  / factor
     local ht  = box.height / factor
@@ -5181,6 +5200,7 @@ end
 %    Code for \pkg{tagpdf}
 %    \begin{macrocode}
 \def\luamplibtagtextboxset#1#2{#2}
+\let\luamplibnotagtextboxset\luamplibtagtextboxset
 \let\luamplibtagasgroupset\relax
 \let\luamplibtagasgroupput\luamplibtagtextboxset
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
@@ -5243,7 +5263,7 @@ end
   Using~the~default~value~'#2'~instead.
 }
 %    \end{macrocode}
-% Sockets for textext.
+% Sockets for tex-text boxes.
 %    \begin{macrocode}
 \socket_new:nn{tagsupport/luamplib/textext/set}{2}
 \socket_new:nn{tagsupport/luamplib/textext/put}{2}
@@ -5310,9 +5330,22 @@ end
 {
   \tag_socket_use:nnn{luamplib/textext/set}
 }
+%    \end{macrocode}
+% For tex-text boxes starting with |[taggingoff]|, which we will not tag at all.
+% They will be just in the artifact MC-chunks.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \luamplibnotagtextboxset #1 #2
+{
+  \bool_set_eq:NN \l_tmpa_bool \l__luamplib_tag_usetext_bool
+  \bool_set_false:N \l__luamplib_tag_usetext_bool
+  \tag_socket_use:nnn{luamplib/textext/set}{#1}{#2}
+  \cs_gset_nopar:cpn {luamplib.notaggedbox.#1}{#1}
+  \bool_set_eq:NN \l__luamplib_tag_usetext_bool \l_tmpa_bool
+}
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{
+    \cs_if_exist:cT {luamplib.notaggedbox.#1}{ \bool_set_false:N \l__luamplib_tag_usetext_bool }
     \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
   \hss}}
 }
