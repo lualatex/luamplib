@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/03/20 v2.37.2 Interface for using the mplib library]%
+  [2025/05/15 v2.37.3 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/03/20 v2.37.2}
+% \date{2025/05/15 v2.37.3}
 %
 % \maketitle
 %
@@ -559,6 +559,7 @@ See source file '\inFileName' for licencing and contact information.
 % The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Available optional keys are similar to those of the \LaTeX's |picture| environment
 % (|texdoc| |latex-lab-graphic|).
+% The default tagging mode is the |alt| key with |Figure| structure.
 % \begin{description}
 % \item[\texttt{alt=}\meta{text}] starts a |Figure| tag by default and
 %   sets an alternate text of the figure from the \meta{text}.
@@ -616,7 +617,12 @@ See source file '\inFileName' for licencing and contact information.
 %   This key accepts as its value the list of key-value options mentioned so far.
 % \end{description}
 %
-% The above options are provided also for \cs{mpfig} and \cs{usemplibgroup} (see \hyperlink{usemplibgroup}{below} \S\,1.2) commands.
+% You can set these tagging options anywhere in the document by declaring
+% \cs{SetKeys}\allowbreak |[luamplib/tagging]|\allowbreak \marg{key-val list},
+% which will affect \pkg{luamplib} figures thereafter in the scope.
+%
+% And these options are provided also for \cs{mpfig} and \cs{usemplibgroup}
+% (see \hyperlink{usemplibgroup}{below} \S\,1.2) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[myInstanceName, alt=drawing of a circle]
 %     ...
@@ -1254,8 +1260,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.2",
-  date          = "2025/03/20",
+  version       = "2.37.3",
+  date          = "2025/05/15",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4685,7 +4691,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/03/20 v2.37.2 mplib package for LuaTeX]
+    [2025/05/15 v2.37.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5298,7 +5304,9 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/textext/put}{default}
 {
-  \bool_if:NTF \l__luamplib_tag_usetext_bool
+  \bool_lazy_and:nnTF
+  { \l__luamplib_tag_usetext_bool }
+  { \cs_if_free_p:c {luamplib.notaggedbox.#1} }
   {
     \tag_resume:n{\mplibputtextbox}
     \tag_mc_end:
@@ -5345,7 +5353,6 @@ end
 \cs_set_nopar:Npn \mplibputtextbox #1
 {
   \vbox to 0pt{\vss\hbox to 0pt{
-    \cs_if_exist:cT {luamplib.notaggedbox.#1}{ \bool_set_false:N \l__luamplib_tag_usetext_bool }
     \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
   \hss}}
 }
@@ -5564,7 +5571,7 @@ end
 }
 %    \end{macrocode}
 % A socket for tagging init, so that we can declare
-% |\keys_set:nn{luamplib/tagging}{...}| anywhere in the document.
+% |\SetKeys[luamplib/tagging]{...}| anywhere in the document.
 %    \begin{macrocode}
 \socket_new:nn{tagsupport/luamplib/figure/init}{0}
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{alt}
