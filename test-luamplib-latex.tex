@@ -1,5 +1,6 @@
-%\DocumentMetadata{ uncompress }
 \ifnum\outputmode > 0
+  \DocumentMetadata{ lang=en-US, pdfversion=2.0, pdfstandard=ua-2, tagging=on }
+%  \DocumentMetadata{ debug=BBox }
   \documentclass{article}
 \else
   \documentclass[dvipdfmx]{article}
@@ -8,11 +9,13 @@
 \setmainfont{latin modern roman}
 \newfontfamily\hangulfont{NotoSansCJKKR}[Script=Hangul,Language=Korean]
 \usepackage{luamplib}
-\usepackage{graphicx,xcolor}
+\usepackage{unicode-math,graphicx,xcolor}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
 \begin{document}
+\title{testing LuaMPlib}
+\mplibalttext{testing}
 \tracingcommands1
 A%
 \begin{mplibcode}
@@ -58,7 +61,8 @@ label.bot(btex $x$ etex, (2u,0));
 label.lft(btex $y$ etex, (0,u));
 endfig;
 \end{mplibcode}%
-B\par
+B%
+
 A%
 \begin{mplibcode}
 beginfig(2);
@@ -71,11 +75,13 @@ for i = 1 upto 3:
 endfor;
 endfig;
 \end{mplibcode}%
-B\par\mplibforcehmode
+B%
+
+\mplibforcehmode
 \mplibcodeinherit{enable}%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
-\begin{mplibcode}
+\begin{mplibcode}[text]
  label(btex $\sqrt{2}$ etex, origin);
  draw fullcircle scaled 20;
  picture pic; pic := currentpicture;
@@ -88,7 +94,7 @@ B\par\mplibforcehmode
 \mplibcodeinherit{disable}%
 \mplibglobaltextext{disable}\par
 \mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=alt inside mp code]
 message "Hello World!";
 verbatimtex \moveright 0.4\hsize etex
 beginfig(0);
@@ -97,22 +103,21 @@ fill p withcolor transparent("normal", 0.5, red);
 fill p rotated 120 withcolor transparent("normal", 0.5, green);
 fill p rotated 240 withcolor transparent("normal", 0.5, blue);
 endfig;
-verbatimtex \leavevmode etex
+verbatimtex \mplibalttext{MetaPost}\leavevmode etex
 picture p; p := btex MetaPost etex scaled 2;
 beginfig(1);
 linear_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
-verbatimtex \kern10pt etex
+verbatimtex \mplibalttext{MetaPost again}\kern10pt etex
 beginfig(2);
 circular_shade(bbox p,0,blue,.7white);
 draw p withcolor white;
 endfig;
 \end{mplibcode}%
 
-\newbox\mympbox
-\def\prependtomplibbox{\global\setbox\mympbox}%
-\begin{mplibcode}
+\begin{mplibgroup}{mympbox}%
+\begin{mplibcode}[off]
 %verbatimtex \global\setbox\mympbox etex
 beginfig(0);
 breadth=.667\mpdim\linewidth;
@@ -123,14 +128,15 @@ y1=y4=height/2; y2=y3=height; y5=y6=0;
 fill z1--z2--z3--z4--z5--z6--cycle;
 endfig;
 \end{mplibcode}%
-\copy\mympbox
-\copy\mympbox
-\copy\mympbox
-\copy\mympbox
+\end{mplibgroup}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
+\usemplibgroup[artifact]{mympbox}%
 
 \mplibnoforcehmode
 \mplibnumbersystem{double}%
-\begin{mplibcode}
+\begin{mplibcode}[off]
 beginfig(0);
 u := 10**5*(10**-4);
 draw unitsquare scaled u;
@@ -150,13 +156,13 @@ endfig;
   endfig;
 \end{mplibcode}%
 \mplibtextextlabel{enable}%
-\begin{mplibcode}
+\begin{mplibcode}[text]
 beginfig(0);
 dotlabel.rt("$\sqrt2$",origin);
 endfig;
 \end{mplibcode}%
 \leavevmode
-\begin{mplibcode}
+\begin{mplibcode}[artifact]
    D := sqrt(2)**7;
    beginfig(0);
    draw fullcircle scaled D;
@@ -164,30 +170,28 @@ endfig;
    endfig;
 \end{mplibcode}%
 diameter:\Dia bp.%
-\begin{mplibcode}
+\begin{mplibcode}[off]
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
   enddef;
 
   beginfig(1);
-    rotatedlabel.top(textext "Rotated!", origin, 45);
+    rotatedlabel.top(textext "Rotated!", origin, 40);
   endfig;
 \end{mplibcode}%
-\par
-\begin{mplibcode}
+
+\begin{mplibcode}[alt=Funny $sqrt{2}$ xyz]
 beginfig(1)
   draw mplibgraphictext "\bfseries Funny$\sqrt{2}$"
   fakebold 2 % fontspec option
   drawcolor blue fillcolor "red!50" % l3color expression
   scaled 3 rotated 30 ;
-picture p;
-p:=mplibgraphictext "\bfseries\itshape xyz";
-draw p scaled 3 shifted (40,0);
+draw mplibgraphictext "\bfseries\itshape xyz" scaled 3 shifted (40,0);
 endfig;
 \end{mplibcode}%
-\par
+
 %\mplibsetformat{metafun}%
-\begin{mplibcode}
+\begin{mplibcode}[alt=testing shading]
 beginfig(1)
 fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
     withshadingmethod "linear"
@@ -204,7 +208,7 @@ fill unitsquare xscaled \mpdim\textwidth yscaled 1cm
 endfig;
 \end{mplibcode}%
 \leavevmode
-\mpfig
+\mpfig[alt=Que]
 color yellow; yellow = (1,1,0);
 picture Q, u, e;
 Q := mplibglyph "Q" of "texgyrepagella-bolditalic.otf" scaled .1;
@@ -228,14 +232,14 @@ endfor
 \mpfig* input boxes \endmpfig
 \mpfig circleit.a(btex\tracingcommands0 Box 1 etex); drawboxed(a); \endmpfig
 \def\mpfiginstancename{mympfig}%
-\mpfig
+\mpfig[tag=Formula,alt=$1/(1-x^2)$]
 draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     (withcolor .6[red,white])
     (withpen pencircle scaled .2 withcolor red)
     scaled 4 ;
 \endmpfig
-\par
-\mpfig
+
+\mpfig[alt=Question]
   draw mpliboutlinetext.r
     ("Question")
     ( withpen pencircle scaled .3 )
@@ -246,13 +250,14 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
     )
     scaled 4;
 \endmpfig
-\par\leavevmode
+
+\leavevmode
 \mppattern{mypatt}
 [
   xstep = 5, ystep = 6,
   matrix = "rotated 90 scaled .75",
 ]
-\mpfig
+\mpfig[off]
 draw (origin--right+up) scaled 5 withcolor 1/3[blue,white] ;
 draw (up--right) scaled 5 withcolor 1/3[red,white] ;
 \endmpfig
@@ -267,9 +272,10 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     colored = false,
     matrix = "slanted .3 rotated 30",
   ]
+  \SuspendTagging{}%
   \tiny\TeX
 \end{mppattern}\relax
-\mpfig
+\mpfig[actualtext=TeX]
   picture tex;
   tex = mpliboutlinetext.p ("\bfseries \TeX");
   for i=1 upto mpliboutlinenum:
@@ -291,8 +297,9 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     ;
   endfor
 \endmpfig
-\par\leavevmode
-\mpfig
+
+\leavevmode
+\mpfig[alt=test fading]
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;
@@ -303,7 +310,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     withfadeopacity (1, 0)
     ;
 \endmpfig
-\par
+
 \def\test#1{%
   \mpfig
   fill unitsquare shifted -center unitsquare scaled 200
@@ -334,28 +341,32 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \leavevmode
 \mpfig usemplibgroup "test:isolated,knockout" scaled 2/3 rotated 15 ; \endmpfig
 \usemplibgroup{test:isolated,knockout}%
-\begin{mplibgroup}{mytex}[matrix="rotated 15"] \TeX \end{mplibgroup}%
+\begin{mplibgroup}{mytex}[matrix="rotated 15"] \SuspendTagging{}\TeX \end{mplibgroup}%
+\ExplSyntaxOn
+\tag_mc_artifact_group_begin:n {}
+\ExplSyntaxOff
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
-\usemplibgroup{mytex}%
-\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
-\par
-\mpfig
-  picture test; test = mplibgraphictext "\textbf{MPLIB}"
-    fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7;
-  draw test withmppattern "mypatt" ;
+\ExplSyntaxOn
+\tag_mc_artifact_group_end:
+\ExplSyntaxOff
+\usemplibgroup[actualtext=TeX]{mytex}%
+\mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+
+\mpfig[text]
+  draw mplibgraphictext "\textbf{MPLIB}"
+    fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7
+    withmppattern "mypatt" ;
 \endmpfig
-\mpfig
-  picture tex;
-  tex = mplibgraphictext "\bfseries\TeX" rotated 30 scaled 4;
-  draw tex
+\mpfig[text]
+  draw mplibgraphictext "\bfseries\TeX" rotated 30 scaled 4
     withshadingmethod "linear"
     withshadingvector (3,0)
     withshadingcolors (red,blue)
     ;
 \endmpfig
 \leavevmode
-\mpfig
+\mpfig[off]
   string Test; Test="abçdéf";
   for k=0 upto mpliblength(Test)-1:
     draw TEX(mplibsubstring (k,k+1) of Test) scaled 2 shifted (20k,0);
@@ -363,36 +374,36 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 \qquad
 \mpliblegacybehavior{false}%
-\mpfig
+\mpfig[actualtext=나랏말씀이]
   verbatimtex \hangulfont etex;
   string Test; Test="나랏말ᄊᆞ미";
   for k=0 upto mplibuclength(Test)-1:
     draw TEX(mplibucsubstring (k,k+1) of Test) scaled 1.5 shifted (20k,0);
   endfor
 \endmpfig
-\par
+
 \mppattern{p1}
-  \mpfig
+  \mpfig[off]
     fill fullcircle scaled 3
     withcolor .7red
     ;
   \endmpfig
 \endmppattern
 \mppattern{p2}
-  \mpfig
+  \mpfig[off]
     fill fullcircle scaled 9
     withmppattern "p1"
     ;
   \endmpfig
 \endmppattern
 \mppattern{p3}
-  \mpfig
+  \mpfig[off]
     fill fullcircle scaled 27
     withmppattern "p2"
     ;
   \endmpfig
 \endmppattern
-\mpfig
+\mpfig[alt=testing nested pattern]
   fill fullcircle scaled 108
   withmppattern "p3"
   ;

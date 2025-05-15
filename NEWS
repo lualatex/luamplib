@@ -1,5 +1,24 @@
                        History of the luamplib package
 
+2025/05/15 2.37.3
+   * Tagging option 'debug' is removed.
+     Declare '\DocumentMetadata{debug=BBox}' instead.
+
+   * Tagging option 'correct-BBox' is renamed to 'adjust-BBox'.
+
+   * Tagging option 'off' is newly introduced.
+     Given this key, nothing will be tagged by luamplib.
+
+   * Tagging option 'tagging-setup' is newly introduced.
+     The value of this key is a key-value list of other tagging options.
+
+   * Tagging options 'actualtext' and 'text' do not force horizontal mode.
+
+   * When the text of a tex-text box starts with '[taggingoff]', it will not
+     be tagged at all even in the text mode.
+
+   * more robust 'mplibgraphictext' macro
+
 2025/03/20 2.37.2
    * Formerly, it was not possible to give shading effect to a textual picture
    inside a tiling pattern. This limitation is now lifted.
