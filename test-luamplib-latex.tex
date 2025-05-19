@@ -374,6 +374,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 \qquad
 \mpliblegacybehavior{false}%
+\begingroup\tagpdfsetup{text/lang=ko-KR}%
 \mpfig[actualtext=나랏말씀이]
   verbatimtex \hangulfont etex;
   string Test; Test="나랏말ᄊᆞ미";
@@ -381,6 +382,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     draw TEX(mplibucsubstring (k,k+1) of Test) scaled 1.5 shifted (20k,0);
   endfor
 \endmpfig
+\endgroup
 
 \mppattern{p1}
   \mpfig[off]

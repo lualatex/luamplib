@@ -2199,6 +2199,17 @@ local function getrulemetric (box, curr, bp)
   end
   return wd, ht, dp
 end
+local tag_mc_cnt  = luatexbase.attributes.g__tag_mc_cnt_attr
+local tag_mc_type = luatexbase.attributes.g__tag_mc_type_attr
+local function tag_update_mc_attr (list, curr)
+  if tag_mc_cnt and tag_mc_type then
+    local mc_cnt_attr  = node.get_attribute(curr,tag_mc_cnt)
+    local mc_type_attr = node.get_attribute(curr,tag_mc_type)
+    if mc_cnt_attr and mc_type_attr then
+      ltx.__tag.func.update_mc_attributes(list, mc_cnt_attr, mc_type_attr)
+    end
+  end
+end
 local function embolden (box, curr, fakebold)
   local head = curr
   while curr do
@@ -2221,6 +2232,7 @@ local function embolden (box, curr, fakebold)
         local pl = getrulewhatsit(line, wd, ht, dp)
         local pack = box.id == node.id"hlist" and node.hpack or node.vpack
         local list = pack(pl, glue, "exactly")
+        tag_update_mc_attr(list,curr)
         head = node.insert_after(head, curr, list)
         head, curr = node.remove(head, curr)
       end
@@ -2237,6 +2249,7 @@ local function embolden (box, curr, fakebold)
       else
         list = node.vpack(pl, ht+dp, "exactly")
       end
+      tag_update_mc_attr(list,curr)
       head = node.insert_after(head, curr, list)
       head, curr = node.remove(head, curr)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
@@ -5212,7 +5225,7 @@ end
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
-  \keys_define:nn{luamplib/notagging}
+  \keys_define:nn{luamplib/tagging}
     {
       ,alt          .code:n = { }
       ,actualtext   .code:n = { }
@@ -5229,7 +5242,7 @@ end
   \RenewDocumentCommand\mplibcode{O{}}
     {
       \tl_gclear:N \currentmpinstancename
-      \keys_set:ne{luamplib/notagging}{#1}
+      \keys_set:ne{luamplib/tagging}{#1}
       \mplibtmptoks{}\ltxdomplibcode
     }
   \cs_set_eq:NN \mplibalttext \use_none:n
