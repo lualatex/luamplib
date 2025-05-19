@@ -5608,7 +5608,8 @@ end
   \bool_set_true:N \l__luamplib_tag_usetext_bool
   \socket_assign_plug:nn{tagsupport/luamplib/figure/begin}{artifact}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{artifact}
-  \__luamplib_tag_pseudo_para_begin:
+  \prependtomplibbox \mplibnoforcehmode
+  \mode_if_vertical:T { \noindent \aftergroup\par }
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{off}
 {
