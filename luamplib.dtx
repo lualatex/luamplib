@@ -584,7 +584,9 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is intended for decorative figures which have no semantic meaning.
 % \item[\texttt{text}] starts an |Artifact| MC but enables tagging on tex-text boxes
 %   (such as |btex| |...| |etex|, excluding pictures made by |infont| operator).\footnote{\relax
-%     The key |text| also shares the limitation mentioned in the previous footnote.}
+%     The key |text| also shares the limitation mentioned in the previous footnote.
+%     Moreover, this key forces a real horizontal mode by \cs{noindent} command,
+%     not just a pseudo-paragraph for tagging.  }
 %   BBox info will not be added.
 %   This key is intended for figures the meaning of which is the sequence of texts in the
 %   tex-text boxes in the order they are drawn in the figure.
@@ -596,11 +598,15 @@ See source file '\inFileName' for licencing and contact information.
 %   For example, the first and the third boxes in the following figure will not be tagged,
 %   and still remain in the |Artifact| MC-chunks.
 %\begin{verbatim}
-%   \mpfig[text]
-%   draw btex [taggingoff] $\sqrt 2$ etex ;
-%   draw textext "$\sqrt 2$" shifted 10down ;
-%   draw TEX "[taggingoff] $\sqrt 2$" shifted 20down ;
-%   \endmpfig
+%   \begin{mplibcode}[text]
+%     beginfig(1)
+%       draw btex [taggingoff] $\sqrt 2$ etex ;
+%       draw textext "$\sqrt 3$" shifted 10down ;
+%       draw TEX "[taggingoff] $\sqrt 5$" shifted 20down ;
+%       draw maketext "$\sqrt 7$" shifted 30down ;
+%       draw mplibgraphictext "$\sqrt x$" shifted 40down ;
+%     endfig;
+%   \end{mplibcode}
 %\end{verbatim}
 % \item[\texttt{off}] Given this key, nothing will be tagged by \pkg{luamplib}.
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.\relax

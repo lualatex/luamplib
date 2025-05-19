@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2025/0x/xx 2.37.4
+   * tagging key 'text' forces a real horizontal mode.
+   * enhanced tagging of mplibgraphictext with text mode
+
 2025/05/15 2.37.3
    * Tagging option 'debug' is removed.
      Declare '\DocumentMetadata{debug=BBox}' instead.
