@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/05/15 v2.37.3 Interface for using the mplib library]%
+  [2025/05/21 v2.37.4 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/05/15 v2.37.3}
+% \date{2025/05/21 v2.37.4}
 %
 % \maketitle
 %
@@ -569,7 +569,8 @@ See source file '\inFileName' for licencing and contact information.
 %   You can change the alternate text within \metapost code as well:
 %   |VerbatimTeX| |"\mplibalttext|\marg{text}|";|
 % \item[\texttt{actualtext=}\meta{text}] starts a |Span| tag implicitly and sets a
-%   replacement text (a.k.a. actual text) from the \meta{text}.\footnote{\relax
+%   replacement text (a.k.a.\ actual text) from the \meta{text}.
+%   If in vertical mode, horizontal mode will be forced by \cs{noindent} command.\footnote{\relax
 %     It is not recommended to personally redefine \cs{prependtomplibbox}.
 %     Apart from using \cs{mplibforcehmode} or \cs{mplibnoforcehmode},
 %     the redefinition might be incompatible with |actualtext| key.
@@ -583,7 +584,8 @@ See source file '\inFileName' for licencing and contact information.
 %   BBox info will not be added.
 %   This key is intended for decorative figures which have no semantic meaning.
 % \item[\texttt{text}] starts an |Artifact| MC but enables tagging on tex-text boxes
-%   (such as |btex| |...| |etex|, excluding pictures made by |infont| operator).\footnote{\relax
+%   (such as |btex| |...| |etex|, excluding pictures made by |infont| operator).
+%   If in vertical mode, horizontal mode will be forced by \cs{noindent} command.\footnote{\relax
 %     The key |text| also shares the limitation mentioned in the previous footnote.}
 %   BBox info will not be added.
 %   This key is intended for figures the meaning of which is the sequence of texts in the
@@ -596,11 +598,15 @@ See source file '\inFileName' for licencing and contact information.
 %   For example, the first and the third boxes in the following figure will not be tagged,
 %   and still remain in the |Artifact| MC-chunks.
 %\begin{verbatim}
-%   \mpfig[text]
-%   draw btex [taggingoff] $\sqrt 2$ etex ;
-%   draw textext "$\sqrt 2$" shifted 10down ;
-%   draw TEX "[taggingoff] $\sqrt 2$" shifted 20down ;
-%   \endmpfig
+%   \begin{mplibcode}[text]
+%     beginfig(1)
+%       draw btex [taggingoff] $\sqrt 2$ etex ;
+%       draw textext "$\sqrt 3$" shifted 10down ;
+%       draw TEX "[taggingoff] $\sqrt 5$" shifted 20down ;
+%       draw maketext "$\sqrt 7$" shifted 30down ;
+%       draw mplibgraphictext "$\sqrt x$" shifted 40down ;
+%     endfig;
+%   \end{mplibcode}
 %\end{verbatim}
 % \item[\texttt{off}] Given this key, nothing will be tagged by \pkg{luamplib}.
 % \item[\texttt{tag=}\meta{name}] You can choose a tag name, default value being |Figure|.\relax
@@ -1260,8 +1266,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.3",
-  date          = "2025/05/15",
+  version       = "2.37.4",
+  date          = "2025/05/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2199,6 +2205,23 @@ local function getrulemetric (box, curr, bp)
   end
   return wd, ht, dp
 end
+%    \end{macrocode}
+% copying attributes of rule/glue node to improve tagging of mplibgraphictext
+%    \begin{macrocode}
+local tag_update_attrs
+if is_defined"ver@tagpdf.sty" then
+  tag_update_attrs = function (n, curr)
+    while n do
+      n.attr = curr.attr
+      if n.head then
+        tag_update_attrs(n.head, curr)
+      end
+      n = node.getnext(n)
+    end
+  end
+else
+  tag_update_attrs = function() end
+end
 local function embolden (box, curr, fakebold)
   local head = curr
   while curr do
@@ -2221,6 +2244,7 @@ local function embolden (box, curr, fakebold)
         local pl = getrulewhatsit(line, wd, ht, dp)
         local pack = box.id == node.id"hlist" and node.hpack or node.vpack
         local list = pack(pl, glue, "exactly")
+        tag_update_attrs(list,curr)
         head = node.insert_after(head, curr, list)
         head, curr = node.remove(head, curr)
       end
@@ -2237,6 +2261,7 @@ local function embolden (box, curr, fakebold)
       else
         list = node.vpack(pl, ht+dp, "exactly")
       end
+      tag_update_attrs(list,curr)
       head = node.insert_after(head, curr, list)
       head, curr = node.remove(head, curr)
     elseif curr.id == node.id"glyph" and curr.font > 0 then
@@ -4691,7 +4716,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/05/15 v2.37.3 mplib package for LuaTeX]
+    [2025/05/21 v2.37.4 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5212,7 +5237,7 @@ end
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
-  \keys_define:nn{luamplib/notagging}
+  \keys_define:nn{luamplib/tagging}
     {
       ,alt          .code:n = { }
       ,actualtext   .code:n = { }
@@ -5229,7 +5254,7 @@ end
   \RenewDocumentCommand\mplibcode{O{}}
     {
       \tl_gclear:N \currentmpinstancename
-      \keys_set:ne{luamplib/notagging}{#1}
+      \keys_set:ne{luamplib/tagging}{#1}
       \mplibtmptoks{}\ltxdomplibcode
     }
   \cs_set_eq:NN \mplibalttext \use_none:n
@@ -5283,9 +5308,7 @@ end
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \keys_if_exist:nnTF {__tag/struct} {parent-tag}
-      { \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text} }
-      { \tag_struct_begin:n{tag=NonStruct, stash} }
+    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text}
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
 %    \end{macrocode}
 % TODO: We force an MC. Otherwise |a| and |b| in |btex a $x$ b etex| are not tagged.
@@ -5490,25 +5513,6 @@ end
   }
 }
 %    \end{macrocode}
-% Macros for para tagging upon |text| and |actualtext|
-%    \begin{macrocode}
-\cs_set_nopar:Npn \__luamplib_tag_pseudo_para_begin:
-{
-  \prependtomplibbox \mplibnoforcehmode
-  \mode_if_vertical:T
-  {
-    \tag_socket_use:n{para/begin}
-    \group_insert_after:N \__luamplib_tag_pseudo_para_end:
-  }
-}
-\cs_set_nopar:Npn \__luamplib_tag_pseudo_para_end:
-{
-  \mode_if_vertical:T
-  {
-    \tag_socket_use:n{para/end}
-  }
-}
-%    \end{macrocode}
 % Sockets for main process
 %    \begin{macrocode}
 \socket_new:nn{tagsupport/luamplib/figure/begin}{1}
@@ -5583,7 +5587,11 @@ end
 {
   \socket_assign_plug:nn{tagsupport/luamplib/figure/begin}{actualtext}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{actualtext}
-  \__luamplib_tag_pseudo_para_begin:
+%    \end{macrocode}
+% In vmode, hmode will be forced by \cs{noindent} upon |actualtext| and |text| modes.
+%    \begin{macrocode}
+  \prependtomplibbox \mplibnoforcehmode
+  \mode_if_vertical:T { \noindent \aftergroup\par }
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{artifact}
 {
@@ -5595,7 +5603,8 @@ end
   \bool_set_true:N \l__luamplib_tag_usetext_bool
   \socket_assign_plug:nn{tagsupport/luamplib/figure/begin}{artifact}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{artifact}
-  \__luamplib_tag_pseudo_para_begin:
+  \prependtomplibbox \mplibnoforcehmode
+  \mode_if_vertical:T { \noindent \aftergroup\par }
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{off}
 {
