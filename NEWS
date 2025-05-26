@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2025/05/26 2.37.5
+   * 'utf8_mode = true' as a field of mplib.new
+     See https://tug.org/pipermail/lualatex-dev/2025-May/001723.html
+
 2025/05/21 2.37.4
    * real horizontal mode upon tagging keys 'actualtext' and 'text'
    * improved tagging of mplibgraphictext by copying node attributes
