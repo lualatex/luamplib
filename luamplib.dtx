@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/05/21 v2.37.4 Interface for using the mplib library]%
+  [2025/05/26 v2.37.5 Interface for using the mplib library]%
 \documentclass{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -155,7 +155,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/05/21 v2.37.4}
+% \date{2025/05/26 v2.37.5}
 %
 % \maketitle
 %
@@ -789,7 +789,7 @@ See source file '\inFileName' for licencing and contact information.
 %      [                              % options: see below
 %        xstep = 10,
 %        ystep = 12,
-%        matrix = {0, 1, -1, 0},      % or "0 1 -1 0"
+%        matrix = {0, 1, -1, 0},      % or "0 1 -1 0" or "rotated 90"
 %      ]
 %      \mpfig                         % or any other TeX code,
 %        draw (origin--(1,1))
@@ -837,7 +837,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For the sake of convenience, the width and height values of tiling patterns will be written down
 %   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
-%   As for |matrix| option, \metapost code such as `|rotated 30 slanted .2|' is allowed as well
+%   As for |matrix| option, \metapost code such as |"rotated 30 slanted .2"| is allowed as well
 %   as string or table of four numbers. You can also set |xshift| and |yshift|
 %   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
 %   given, they have precedence over the effect of `|shifted|' operator.
@@ -1109,7 +1109,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %   \item When you give shading effect to a picture made by `|infont|' operator,
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
-%     as \pkg{luamplib} considers only the bounding box of the picture.
+%     as \pkg{luamplib} considers only the bounding box of the picture in this case.
 %   \end{itemize}
 % Macros provided by \pkg{luamplib} are:
 % \begin{description}
@@ -1207,8 +1207,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \begin{mplibcode}[instance1]
 %     boolean b; b = 1 > 2;
 %     numeric n; n = 3;
-%     string s; s = "MetaPost";
-%     path p; p = unitsquare;
+%     string s;  s = "MetaPost";
+%     path p;    p = unitsquare;
 %   \end{mplibcode}
 %
 %   \directlua{
@@ -1266,8 +1266,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.4",
-  date          = "2025/05/21",
+  version       = "2.37.5",
+  date          = "2025/05/26",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1643,6 +1643,7 @@ local function luamplibload (name)
     math_mode   = luamplib.numbersystem,
     job_name    = tex.jobname,
     random_seed = math.random(4095),
+    utf8_mode   = true,
     extensions  = 1,
   }
 %    \end{macrocode}
@@ -4716,7 +4717,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/05/21 v2.37.4 mplib package for LuaTeX]
+    [2025/05/26 v2.37.5 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5473,7 +5474,6 @@ end
       \tl_set:Ne \l__luamplib_tag_bbox_draw_tl
       {
         \pdfextension save\relax
-        \color_group_begin:
         \opacity_select:n{0.5} \color_select:n{red}
         \pdfextension literal~text
         {
@@ -5483,7 +5483,6 @@ end
           \fp_eval:n { \l__luamplib_BBox_ury_tl - \l__luamplib_BBox_lly_tl }~
           re~f
         }
-        \color_group_end:
         \pdfextension restore\relax
       }
     }
@@ -5491,7 +5490,6 @@ end
       \tl_set:Ne \l__luamplib_tag_bbox_draw_tl
       {
         \special{pdf:bcontent}
-        \color_group_begin:
         \opacity_select:n{0.5} \color_select:n{red}
         \special{pdf:code~
           1~0~0~1~
@@ -5506,7 +5504,6 @@ end
           \fp_eval:n { \l__luamplib_BBox_ury_tl - \l__luamplib_BBox_lly_tl }~
           re~f
         }
-        \color_group_end:
         \special{pdf:econtent}
       }
     }
