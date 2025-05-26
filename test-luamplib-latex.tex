@@ -32,7 +32,8 @@ A%
 %% ´  1  ;  E  O  Y  c  m   w
 	fill fullcircle scaled 20; %% actual <tab> to make sure it works
 \end{mplibcode}%
-B\par
+B%
+
 \everymplib{}\everyendmplib{}% reset toks
 A%
 \begin{mplibcode}
@@ -82,7 +83,7 @@ B%
 \mplibglobaltextext{enable}%
 \everymplib{ beginfig(0);}\everyendmplib{ endfig;}%
 \begin{mplibcode}[text]
- label(btex $\sqrt{2}$ etex, origin);
+ label(btex $\sqrt 2$ etex, origin);
  draw fullcircle scaled 20;
  picture pic; pic := currentpicture;
 \end{mplibcode}%
@@ -92,7 +93,8 @@ B%
 \mplibnoforcehmode
 \everymplib{}\everyendmplib{}%
 \mplibcodeinherit{disable}%
-\mplibglobaltextext{disable}\par
+\mplibglobaltextext{disable}%
+
 \mplibsetformat{metafun}%
 \begin{mplibcode}[alt=alt inside mp code]
 message "Hello World!";
@@ -158,7 +160,7 @@ endfig;
 \mplibtextextlabel{enable}%
 \begin{mplibcode}[text]
 beginfig(0);
-dotlabel.rt("$\sqrt2$",origin);
+dotlabel.rt("$\sqrt 2$",origin);
 endfig;
 \end{mplibcode}%
 \leavevmode
@@ -182,7 +184,7 @@ diameter:\Dia bp.%
 
 \begin{mplibcode}[text]
 beginfig(1)
-  draw mplibgraphictext "\bfseries Funny$\sqrt{2}$"
+  draw mplibgraphictext "\bfseries Funny$\sqrt 2$"
   fakebold 2 % fontspec option
   drawcolor blue fillcolor "red!50" % l3color expression
   scaled 3 rotated 30 ;
