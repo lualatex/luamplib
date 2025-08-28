@@ -129,6 +129,7 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\metapost {\textsc{metapost}\xspace}
 \newcommand*\mplib {\pkg{mplib}\xspace}
 
+\flushbottom
 \begin{document}
   \DocInput{luamplib.dtx}%
 \end{document}
@@ -201,7 +202,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When these \TeX\ commands are found in |verbatimtex| |...| |etex|, the entire code will be
 %   ignored.
 %   The treatment of |verbatimtex| command has changed a lot since v2.20:
-%   see \hyperlink{mpliblegacybehavior}{below} \S\,1.1.
+%   see below \ref{sec:mpliblegacybehavior}.
 %
 % \item in the past,
 %   the package required PDF mode in order to have some output.
@@ -214,14 +215,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\TeX}
 %
-% \subsubsection{\cs{mplibforcehmode}}
-%   \hypertarget{mplibforcehmode}{}\relax
+% \subsubsection{\cs{mplibforcehmode}}\label{sec:mplibforcehmode}
 %   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this command with anything suitable before a box.
-%     But see \hyperlink{taggedPDF}{below} on Tagged PDF. }
+%     But see \ref{sec:taggedPDF} on Tagged PDF. }
 %
 % \subsubsection[\cs{everymplib}, \cs{everyendmplib}]{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
@@ -248,7 +248,7 @@ See source file '\inFileName' for licencing and contact information.
 %   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
-%   (see \hyperlink{mpliboutlinetext}{below} \S\,1.2).
+%   (see below \ref{sec:mpliboutlinetext}).
 %   You can try other effects as well, though we did not fully tested their proper functioning.
 %
 % \begin{description}
@@ -259,7 +259,7 @@ See source file '\inFileName' for licencing and contact information.
 %   ($0 \le \meta{number} \le 1$)
 %
 %   From v2.36, |withtransparency| is available with \emph{plain} as well.
-%   See \hyperlink{luamplibtransparency}{below} \S\,1.2.
+%   See below \ref{sec:luamplibtransparency}.
 %
 % \item[shading]
 %   (|texdoc metafun| \S\,8.3) One thing worth mentioning about shading is:
@@ -270,7 +270,7 @@ See source file '\inFileName' for licencing and contact information.
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
 %   From v2.36, shading is available with \emph{plain} format as well with extended functionality.
-%   See \hyperlink{luamplibshading}{below} \S\,1.2.
+%   See below \ref{sec:luamplibshading}.
 %
 % \item[transparency group]
 %   \hypertarget{metafunformat}{}\relax
@@ -285,7 +285,7 @@ See source file '\inFileName' for licencing and contact information.
 %   cannot properly render the isolated or knockout effect.
 %
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
-%   See \hyperlink{transparencygroup}{below} \S\,1.2.
+%   See below \ref{sec:transparencygroup}.
 % \end{description}
 %
 % \subsubsection[\cs{mplibnumbersystem}]{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
@@ -303,7 +303,7 @@ See source file '\inFileName' for licencing and contact information.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
 % \subsubsection[\cs{mpliblegacybehavior}]{\cs{mpliblegacybehavior\{enable\textbar disable\}}}
-%   \hypertarget{mpliblegacybehavior}{}\relax
+%   \label{sec:mpliblegacybehavior}
 %   By default, \cs{mpliblegacybehavior\{enable\}}
 %   is already declared for backward compatibility,
 %   in which case \TeX\ code in
@@ -314,7 +314,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Also, a box number can be assigned to a figure box, allowing it to be
 %   reused later.\footnote{But
 %     the recommended way to reuse a figure is using \cs{mplibgroup} command.
-%     See \hyperlink{mplibgroupendmplibgroup}{below} \S\,1.2.
+%     See below \ref{sec:mplibgroupendmplibgroup}.
 %   }
 %\begin{verbatim}
 %     \mplibcode
@@ -448,13 +448,12 @@ See source file '\inFileName' for licencing and contact information.
 %   Default: |disable|.
 %   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   except for \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{below}),
+%   except for \cs{mpdim} and \cs{mpcolor} (see \ref{sec:mpdim} and \ref{sec:mpcolor}),
 %   all other \TeX\ commands outside of the
 %   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
 %   literally to the \mplib library.
 %
-% \subsubsection[\cs{mpdim}]{\cs{mpdim\{...\}}}
-%   \hypertarget{mpdim}{}\relax
+% \subsubsection[\cs{mpdim}]{\cs{mpdim\{...\}}}\label{sec:mpdim}
 %   Besides other \TeX\ commands, \cs{mpdim} is specially allowed
 %   in the mplibcode environment. This feature is inpired by \pkg{gmp} package authored by
 %   Enrico Gregorio. Please refer to the manual of \pkg{gmp} package for details.
@@ -467,11 +466,11 @@ See source file '\inFileName' for licencing and contact information.
 %     \end{mplibcode}
 %\end{verbatim}
 %
-% \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}
+% \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}\label{sec:mpcolor}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
 %   environment (after |withcolor| operator).
-%   See the example \hyperlink{mpdim}{above}.
+%   See the example above at \ref{sec:mpdim}.
 %   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
 %   For spot colors, \pkg{l3color} (in PDF/DVI mode),
 %   \pkg{colorspace}, \pkg{spotcolor}
@@ -558,8 +557,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Frequently used settings such as \cs{everymplib}, \cs{mplibforcehmode}
 %   or \cs{mplibcodeinherit} are suitable for going into this file.
 %
-% \subsubsection{Tagged PDF}
-%   \hypertarget{taggedPDF}{}\relax
+% \subsubsection{Tagged PDF}\label{sec:taggedPDF}
 % When \pkg{tagpdf} package is loaded and activated, |mplibcode| environment accepts additional options for tagged PDF\@.
 % The code related to this functionality is currently in experimental stage, not guaranteeing backward compatibility.
 % Available optional keys are similar to those of the \LaTeX's |picture| environment
@@ -579,7 +577,7 @@ See source file '\inFileName' for licencing and contact information.
 %     It is not recommended to personally redefine \cs{prependtomplibbox}.
 %     Apart from using \cs{mplibforcehmode} or \cs{mplibnoforcehmode},
 %     the redefinition might be incompatible with |actualtext| key.
-%     See \hyperlink{mplibforcehmode}{above} on these commands. }
+%     See \ref{sec:mplibforcehmode} on these commands. }
 %   BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
@@ -633,7 +631,7 @@ See source file '\inFileName' for licencing and contact information.
 % which will affect \pkg{luamplib} figures thereafter in the scope.
 %
 % And these options are provided also for \cs{mpfig} and \cs{usemplibgroup}
-% (see \hyperlink{usemplibgroup}{below} \S\,1.2) commands.
+% (see \hyperlink{usemplibgroup}{below}) commands.
 %\begin{verbatim}
 %     \begin{mplibcode}[myInstanceName, alt=drawing of a circle]
 %     ...
@@ -660,7 +658,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection[\texttt{mplibdimen}, \texttt{mplibcolor}]{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
 %   These are \metapost interfaces for the \TeX\ commands
-%   \cs{mpdim} and \cs{mpcolor} (see \hyperlink{mpdim}{above} \S\,1.1). For example,
+%   \cs{mpdim} and \cs{mpcolor} (see above \ref{sec:mpdim} and \ref{sec:mpcolor}). For example,
 %   |mplibdimen| |"\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
 %   |mplibcolor| |"red!50"| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
@@ -685,7 +683,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
 %   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
 %   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
-%   (see \hyperlink{mpliboutlinetext}{below}).
+%   (see below \ref{sec:mpliboutlinetext}).
 %   However the syntax is somewhat different.
 %\begin{verbatim}
 %     draw mplibgraphictext "Funny"
@@ -711,7 +709,7 @@ See source file '\inFileName' for licencing and contact information.
 %   there are some limitations such that you can't
 %   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
 %   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
-%     See \hyperlink{luamplibshading}{below}.}
+%     See below \ref{sec:luamplibshading}.}
 %   Again,
 %   in DVI mode, \pkg{unicode-math} package is needed for math formulae,
 %   as we cannot embolden type1 fonts in DVI mode.
@@ -751,7 +749,7 @@ See source file '\inFileName' for licencing and contact information.
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
 % \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
-%   \hypertarget{mpliboutlinetext}{}\relax
+%   \label{sec:mpliboutlinetext}
 %   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
 %   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
 %   manual \S\,8.7 (|texdoc| |metafun|). A simple example:
@@ -770,7 +768,7 @@ See source file '\inFileName' for licencing and contact information.
 %   a single cluster might be separated apart.
 %
 % \subsubsection[\cs{mppattern}, \cs{endmppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withmppattern ...}}
-%   \hypertarget{mppattern}{}\relax
+%   \label{sec:mppattern}
 %   \TeX\ macros
 %   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
 %   associated with the \meta{name}.
@@ -850,7 +848,7 @@ See source file '\inFileName' for licencing and contact information.
 %   However, as \pkg{luamplib} automatically includes the resources of the current page, this option
 %   is not needed in most cases.
 %
-%   Option |colored=false| (|coloured| is a synonym of |colored|) will generate an uncolored pattern which shall have no color at all.
+%   Option |colored=false| (or |coloured=false|) will generate an uncolored pattern which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\begin{verbatim}
@@ -945,8 +943,7 @@ See source file '\inFileName' for licencing and contact information.
 %     \endmpfig
 %\end{verbatim}
 %
-% \subsubsection[\texttt{asgroup}]{\texttt{... asgroup ...}}
-% \hypertarget{transparencygroup}{}\relax
+% \subsubsection[\texttt{asgroup}]{\texttt{... asgroup ...}}\label{sec:transparencygroup}
 % As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
@@ -1021,12 +1018,12 @@ See source file '\inFileName' for licencing and contact information.
 % colors will have effects on the uncolored objects in the group.
 %
 % \subsubsection[\cs{mplibgroup}, \cs{endmplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
-%   \hypertarget{mplibgroupendmplibgroup}{}\relax
+%   \label{sec:mplibgroupendmplibgroup}
 % These \TeX\ macros are described here in this subsection, as they are
 % deeply related to the |asgroup| operator.
 % Users can define a transparency group or a normal \emph{form XObject}
 % with these macros from \TeX\ side.
-% The syntax is similar to the \cs{mppattern} command (see \hyperlink{mppattern}{above}).
+% The syntax is similar to the \cs{mppattern} command (see above \ref{sec:mppattern}).
 % An example:
 %\begin{verbatim}
 %   \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
@@ -1080,7 +1077,7 @@ See source file '\inFileName' for licencing and contact information.
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
 % \subsubsection[\texttt{withtransparency}]{\texttt{... withtransparency ...}}
-%   \hypertarget{luamplibtransparency}{}\relax
+%   \label{sec:luamplibtransparency}
 %   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
 %   is provided for \emph{plain} format as well.
 %   The first argument accepts a number or a name of
@@ -1094,7 +1091,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \subsubsection[\texttt{withshadingmethod}]{\texttt{... withshadingmethod ...}}
-%   \hypertarget{luamplibshading}{}\relax
+%   \label{sec:luamplibshading}
 %   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
 %   the `|shade|' contained in each and every macro name has changed to
 %   `|shading|' in \pkg{luamplib}: for instance, while |withshademethod| is
