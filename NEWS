@@ -1,7 +1,8 @@
                        History of the luamplib package
 
-2025/xx/xx 2.37.6
-   * documentation redacted: bigger font size, wider text width, tableofcontents
+2025/11/10 2.37.6
+   * documentation readability: bigger fontsize, wider textwidth, tableofcontents
+   * adapt to luatexko's harf-mode vertical writing
 
 2025/05/26 2.37.5
    * 'utf8_mode = true' as a field of mplib.new

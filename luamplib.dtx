@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/05/26 v2.37.5 Interface for using the mplib library]%
+  [2025/11/10 v2.37.6 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -158,7 +158,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/05/26 v2.37.5}
+% \date{2025/11/10 v2.37.6}
 %
 % \maketitle
 %
@@ -1144,7 +1144,7 @@ See source file '\inFileName' for licencing and contact information.
 %     Values for shifting starting center.
 %     For instance,
 %     |(0,0)| means that the center of starting circle is |center p|;
-%     |(1,1)| means |urcorner p|.
+%     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
 %   \item[\texttt{withshadingtransform} \meta{string}]
 %     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
 %     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
@@ -1275,8 +1275,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.5",
-  date          = "2025/05/26",
+  version       = "2.37.6",
+  date          = "2025/11/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2623,16 +2623,27 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
       dx = dx - (r2l and curr.width/factor*expand or 0)
       local xpos = dx + xshift + (curr.xoffset or 0)/factor
       local ypos = yshift + (curr.yoffset or 0)/factor
-      local vertical = ft.shared and ft.shared.features.vertical and "rotated 90" or ""
-      if vertical ~= "" then -- luatexko
-        for _,v in ipairs(ft.characters[curr.char].commands or { }) do
-          if v[1] == "down" then
-            ypos = ypos - v[2] / factor
-          elseif v[1] == "right" then
-            xpos = xpos + v[2] / factor
-          else
-            break
+      local vertical = ""
+      if ft.shared and ft.shared.features.vertical then -- luatexko
+        vertical = "rotated 90"
+        local data = ft.characters[curr.char] or { }
+        if ft.hb then
+          local hoff, voff = (data.luatexko_hoff or 0)/factor, (data.luatexko_voff or 0)/factor
+          local charraise = ft.shared.features.charraise or 0
+          if type(charraise) == "string" then
+            local n, u = charraise:match"(.+)(e[mx])"
+            if n and u then
+              u = u == "em" and ft.parameters.quad or ft.parameters.x_height
+              charraise = (n * u)/factor
+            else
+              charraise = tex.sp(charraise)/factor
+            end
           end
+          xpos, ypos = xpos - voff + hoff - charraise, ypos + hoff + voff + charraise
+        else
+          local cmds = data.commands or { {0,0}, {0,0} }
+          local voff, hoff = -cmds[1][2]/factor, cmds[2][2]/factor
+          xpos, ypos = xpos + hoff, ypos + voff
         end
       end
       local image
@@ -4726,7 +4737,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/05/26 v2.37.5 mplib package for LuaTeX]
+    [2025/11/10 v2.37.6 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
