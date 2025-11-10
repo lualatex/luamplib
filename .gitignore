@@ -4,6 +4,8 @@
 *.out
 *.fdb_latexmk
 *.hd
+*.toc
+*.html
 
 # generated files
 *.pdf
@@ -13,4 +15,3 @@
 *.mp
 *.fls
 *.dvi
-*.html
