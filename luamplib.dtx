@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/11/10 v2.37.6 Interface for using the mplib library]%
+  [2025/12/05 v2.37.7 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -158,7 +158,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/11/10 v2.37.6}
+% \date{2025/12/05 v2.37.7}
 %
 % \maketitle
 %
@@ -1275,8 +1275,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.6",
-  date          = "2025/11/10",
+  version       = "2.37.7",
+  date          = "2025/12/05",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3280,30 +3280,6 @@ enddef;
 %    When \cs{mplibverbatim} is enabled, do not expand |mplibcode| data.
 %    \begin{macrocode}
 luamplib.verbatiminput = false
-%    \end{macrocode}
-%
-%    Do not expand |btex| |...| |etex|, |verbatimtex| |...| |etex|, and
-%    string expressions.
-%    \begin{macrocode}
-local function protect_expansion (str)
-  if str then
-    str = str:gsub("\\","!!!Control!!!")
-             :gsub("%%","!!!Comment!!!")
-             :gsub("#", "!!!HashSign!!!")
-             :gsub("{", "!!!LBrace!!!")
-             :gsub("}", "!!!RBrace!!!")
-    return format("\\unexpanded{%s}",str)
-  end
-end
-local function unprotect_expansion (str)
-  if str then
-    return str:gsub("!!!Control!!!", "\\")
-              :gsub("!!!Comment!!!", "%%")
-              :gsub("!!!HashSign!!!","#")
-              :gsub("!!!LBrace!!!",  "{")
-              :gsub("!!!RBrace!!!",  "}")
-  end
-end
 luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 function luamplib.process_mplibcode (data, instancename)
@@ -3327,19 +3303,27 @@ function luamplib.process_mplibcode (data, instancename)
     :gsub("\\mpdim%s+(\\%a+)","mplibdimen(\"%1\")")
     :gsub(btex_etex, "btex %1 etex ")
     :gsub(verbatimtex_etex, "verbatimtex %1 etex;")
+  else
 %    \end{macrocode}
 %    If not |mplibverbatim|, expand |mplibcode| data,
 %    so that users can use \TeX\ codes in it.
 %    It has turned out that no comment sign is allowed.
+%    However, we do not expand |btex| |...| |etex|, |verbatimtex| |...| |etex|, and
+%    string expressions.
 %    \begin{macrocode}
-  else
+    local t = { } -- to store btex, verbatimtex, string
     data = data:gsub(btex_etex, function(str)
-      return format("btex %s etex ", protect_expansion(str)) -- space
+      t[#t+1] = str
+      return format("btex \\unexpanded{!l!u!a!%s!m!p!l!} etex ",  #t) -- space
     end)
     :gsub(verbatimtex_etex, function(str)
-      return format("verbatimtex %s etex;", protect_expansion(str)) -- semicolon
+      t[#t+1] = str
+      return format("verbatimtex \\unexpanded{!l!u!a!%s!m!p!l!} etex;", #t) -- semicolon
     end)
-    :gsub("\".-\"", protect_expansion)
+    :gsub('"(.-)"', function(str)
+      t[#t+1] = str
+      return format('"\\unexpanded{!l!u!a!%s!m!p!l!}"', #t)
+    end)
     :gsub("\\%%", "\0PerCent\0")
     :gsub("%%.-\n","\n")
     :gsub("%zPerCent%z", "\\%%")
@@ -3349,13 +3333,7 @@ function luamplib.process_mplibcode (data, instancename)
 %    Next line to address issue \#55
 %    \begin{macrocode}
     :gsub("##", "#")
-    :gsub("\".-\"", unprotect_expansion)
-    :gsub(btex_etex, function(str)
-      return format("btex %s etex", unprotect_expansion(str))
-    end)
-    :gsub(verbatimtex_etex, function(str)
-      return format("verbatimtex %s etex", unprotect_expansion(str))
-    end)
+    :gsub("!l!u!a!(%d+)!m!p!l!", function(str) return t[tonumber(str)] or str end)
   end
   process(data, instancename)
 end
@@ -4737,7 +4715,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/11/10 v2.37.6 mplib package for LuaTeX]
+    [2025/12/05 v2.37.7 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5280,6 +5258,17 @@ end
     }
   \cs_set_eq:NN \mplibalttext \use_none:n
   \cs_set_eq:NN \mplibactualtext \use_none:n
+%    \end{macrocode}
+%  2025/12/05:
+%  |\begin{center}\mpfig ...\endmpfig\end{center}| raises an Error!
+%  as we issue |\everypar{}| before flushing literals out.
+%  It is related to \cs{partokencontext=2} recently introduced by \LaTeX.
+%  Why we used |vbox| initially? where |hbox| seems to be sufficient.  Anyway,
+%  among various solutions including |\partokencontext\z@|, |\let\par\@@par|, and \cs{endgraf},
+%  we here attempt to address the issue by adding the following line,
+%  which should have done by \LaTeX's \cs{everypar}.
+%    \begin{macrocode}
+  \tl_put_left:Nn \mplibstoptoPDF \@newlistfalse
   \ExplSyntaxOff
   \endinput\fi
 \ExplSyntaxOn
