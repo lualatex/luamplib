@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2025/12/05 2.37.7
+   * avoid error inside trivlist environment, related to \partokencontext=2
+
 2025/11/10 2.37.6
    * documentation readability: bigger fontsize, wider textwidth, tableofcontents
    * adapt to luatexko's harf-mode vertical writing

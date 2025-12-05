@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/11/10 v2.37.6 Interface for using the mplib library]%
+  [2025/12/05 v2.37.7 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -158,7 +158,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/11/10 v2.37.6}
+% \date{2025/12/05 v2.37.7}
 %
 % \maketitle
 %
@@ -1275,8 +1275,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.6",
-  date          = "2025/11/10",
+  version       = "2.37.7",
+  date          = "2025/12/05",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4715,7 +4715,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/11/10 v2.37.6 mplib package for LuaTeX]
+    [2025/12/05 v2.37.7 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5258,12 +5258,18 @@ end
     }
   \cs_set_eq:NN \mplibalttext \use_none:n
   \cs_set_eq:NN \mplibactualtext \use_none:n
-  \ExplSyntaxOff
 %    \end{macrocode}
-%     \verb+\begin{center}\mpfig ...\endmpfig\end{center}+ : Error!
-%    seems to be related to \cs{partokencontext}
+%  2025/12/05:
+%  |\begin{center}\mpfig ...\endmpfig\end{center}| raises an Error!
+%  as we issue |\everypar{}| before flushing literals out.
+%  It is related to \cs{partokencontext=2} recently introduced by \LaTeX.
+%  Why we used |vbox| initially? where |hbox| seems to be sufficient.  Anyway,
+%  among various solutions including |\partokencontext\z@|, |\let\par\@@par|, and \cs{endgraf},
+%  we here attempt to address the issue by adding the following line,
+%  which should have done by \LaTeX's \cs{everypar}.
 %    \begin{macrocode}
-  \edef\mplibstoptoPDF{\partokencontext\z@\unexpanded\expandafter{\mplibstoptoPDF}}
+  \tl_put_left:Nn \mplibstoptoPDF \@newlistfalse
+  \ExplSyntaxOff
   \endinput\fi
 \ExplSyntaxOn
 \tl_new:N \l__luamplib_tag_envname_tl
