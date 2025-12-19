@@ -679,11 +679,13 @@ See source file '\inFileName' for licencing and contact information.
 %    col := mplibtexcolor "olive!50";
 %\end{verbatim}
 %   But the result may vary in its color model (gray/rgb/cmyk)
-%   according to the given \TeX\ color. (Spot colors are forced to
-%   cmyk model, so this operator is not recommended for spot colors.)
+%   according to the given \TeX\ color.
 %   Therefore the example shown above would raise a \metapost error:
 %   |cmykcolor col;| should have been declared.
-%   By contrast, |mplibrgbtexcolor| \meta{string} always returns rgb model expressions.
+%   By contrast, |mplibrgbtexcolor| \meta{string} always returns rgb-model expressions.
+%
+%   \textsc{n.b.} Spot colors are forced to cmyk or rgb model,
+%   so these operators are not recommended for spot colors.
 %
 % \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
 %   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
@@ -706,11 +708,11 @@ See source file '\inFileName' for licencing and contact information.
 %   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
 %
 %   \textsc{n.b.}
-%   In some cases, |mplibgraphictext| will produce better results than \ConTeXt\
-%   or even than our own |mpliboutlinetext|,
-%   especially when processing complicated \TeX\ code
-%   such as the vertical writing in Chinese or Japanese.
-%   However, because the implementation is quite different from others,
+%   In some cases,
+%   especially when processing complicated \TeX\ code,
+%   |mplibgraphictext| will produce better results than \ConTeXt\
+%   or even than our own |mpliboutlinetext|.
+%   However,
 %   there are some limitations such that you can't
 %   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
 %   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
@@ -718,6 +720,9 @@ See source file '\inFileName' for licencing and contact information.
 %   Again,
 %   in DVI mode, \pkg{unicode-math} package is needed for math formulae,
 %   as we cannot embolden type1 fonts in DVI mode.
+%   But the most critical limitation is that, unlike |mpliboutlinetext|,
+%   you cannot manipulate the shape of outline paths,
+%   because the returned picture is actually a |btex| |...| |etex| picture.
 %
 %   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
@@ -768,7 +773,7 @@ See source file '\inFileName' for licencing and contact information.
 %   After the process, |mpliboutlinepic[]|
 %   and |mpliboutlinenum| will be preserved as global variables;
 %   |mpliboutlinepic[1]| |...| |mpliboutlinepic[mpliboutlinenum]|
-%   will be an array of images each of which containing a glyph or a rule.
+%   will be an array of images, each of which containing outline paths of a glyph or a rule.
 %
 %   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
@@ -798,7 +803,7 @@ See source file '\inFileName' for licencing and contact information.
 %        ystep = 12,
 %        matrix = {0, 1, -1, 0},      % or "0 1 -1 0" or "rotated 90"
 %      ]
-%      \mpfig                         % or any other TeX code,
+%      \mpfig                         % or any other TeX code
 %        draw (origin--(1,1))
 %          scaled 10
 %          withcolor 1/3[blue,white]
@@ -2638,32 +2643,28 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
       local extend  = (ft.extend or 1000)/1000
       local squeeze = (ft.squeeze or 1000)/1000
       local expand  = 1 + (curr.expansion_factor or 0)/1000000
-      local xscale = scale * extend * expand
-      local yscale = scale * squeeze
+      local xscale, yscale = scale * extend * expand, scale * squeeze
       dx = dx - (r2l and curr.width/factor*expand or 0)
-      local xpos = dx + xshift + (curr.xoffset or 0)/factor
-      local ypos = yshift + (curr.yoffset or 0)/factor
+      local xoff, yoff = (curr.xoffset or 0)/factor, (curr.yoffset or 0)/factor
+      local xpos, ypos = dx + xshift + xoff, yshift + yoff
       local vertical = ""
-      if ft.shared and ft.shared.features.vertical then -- luatexko
-        vertical = "rotated 90"
-        local data = ft.characters[curr.char] or { }
-        if ft.hb then
-          local hoff, voff = (data.luatexko_hoff or 0)/factor, (data.luatexko_voff or 0)/factor
-          local charraise = ft.shared.features.charraise or 0
-          if type(charraise) == "string" then
-            local n, u = charraise:match"(.+)(e[mx])"
-            if n and u then
-              u = u == "em" and ft.parameters.quad or ft.parameters.x_height
-              charraise = (n * u)/factor
-            else
-              charraise = tex.sp(charraise)/factor
-            end
+      if ft.shared and (ft.shared.features.vert or ft.shared.features.vrt2) then
+        if ft.shared.features.vertical then -- luatexko
+          vertical = "rotated 90"
+          local data = ft.characters[curr.char] or { }
+          if ft.hb then
+            local hoff, voff = (data.luatexko_hoff or 0)/factor, (data.luatexko_voff or 0)/factor
+            local charraise = (ft.luatexko_charraise or 0)/factor
+            xpos, ypos = xpos - voff + hoff - charraise, ypos + hoff + voff + charraise
+          else
+            local cmds = data.commands or { {0,0}, {0,0} }
+            local voff, hoff = -cmds[1][2]/factor, cmds[2][2]/factor
+            xpos, ypos = xpos + hoff, ypos + voff
           end
-          xpos, ypos = xpos - voff + hoff - charraise, ypos + hoff + voff + charraise
-        else
-          local cmds = data.commands or { {0,0}, {0,0} }
-          local voff, hoff = -cmds[1][2]/factor, cmds[2][2]/factor
-          xpos, ypos = xpos + hoff, ypos + voff
+        elseif curr ~= box.head then -- luatexja
+          vertical = "rotated 90"
+          local en, ex = ft.parameters.quad/factor/2, ft.parameters.x_height/factor
+          xpos, ypos = xpos - xoff - yoff + ex, ypos - yoff + xoff - en -- ??
         end
       end
       local image
