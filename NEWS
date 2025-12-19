@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2025/12/19 2.37.8
+   * support Chinese/Japanese vertical writing in mpliboutlinetext
+   * doc: add an example of accessing an MP variable from TeX side
+
 2025/12/05 2.37.7
    * avoid error inside trivlist environment, related to \partokencontext=2
 

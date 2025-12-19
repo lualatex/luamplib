@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/12/05 v2.37.7 Interface for using the mplib library]%
+  [2025/12/19 v2.37.8 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -158,7 +158,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/12/05 v2.37.7}
+% \date{2025/12/19 v2.37.8}
 %
 % \maketitle
 %
@@ -1300,8 +1300,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.7",
-  date          = "2025/12/05",
+  version       = "2.37.8",
+  date          = "2025/12/19",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2663,8 +2663,8 @@ function outline_horz (res, box, curr, xshift, yshift, discwd)
           end
         elseif curr ~= box.head then -- luatexja
           vertical = "rotated 90"
-          local en, ex = ft.parameters.quad/factor/2, ft.parameters.x_height/factor
-          xpos, ypos = xpos - xoff - yoff + ex, ypos - yoff + xoff - en -- ??
+          local en = ft.parameters.quad/factor/2
+          xpos, ypos = xpos - xoff - yoff + en, ypos - yoff + xoff - en
         end
       end
       local image
@@ -4736,7 +4736,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/12/05 v2.37.7 mplib package for LuaTeX]
+    [2025/12/19 v2.37.8 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
