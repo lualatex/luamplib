@@ -1,5 +1,7 @@
                        History of the luamplib package
 
+   * doc: add explanations about 'withpostscript both' and 'eoboth'
+
 2025/12/19 2.37.8
    * support Chinese/Japanese vertical writing in mpliboutlinetext
    * doc: add an example of accessing an MP variable from TeX side

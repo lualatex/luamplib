@@ -711,9 +711,8 @@ See source file '\inFileName' for licencing and contact information.
 %   In some cases,
 %   especially when processing complicated \TeX\ code,
 %   |mplibgraphictext| will produce better results than \ConTeXt\
-%   or even than our own |mpliboutlinetext|.
-%   However,
-%   there are some limitations such that you can't
+%   or even than our own |mpliboutlinetext|, not to mention the much smaller PDF file size.
+%   There are, however, some limitations such that you can't
 %   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
 %   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
 %     See below \ref{sec:luamplibshading}.}
@@ -722,7 +721,7 @@ See source file '\inFileName' for licencing and contact information.
 %   as we cannot embolden type1 fonts in DVI mode.
 %   But the most critical limitation is that, unlike |mpliboutlinetext|,
 %   you cannot manipulate the shape of outline paths,
-%   because the returned picture is actually a |btex| |...| |etex| picture.
+%   because the returned picture is basically a |btex| |...| |etex| picture.
 %
 %   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
@@ -755,8 +754,15 @@ See source file '\inFileName' for licencing and contact information.
 %   To apply the nonzero winding number rule to a picture containing paths,
 %   \pkg{luamplib} appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
-%   If you want the even-odd rule instead, you can, with \emph{plain} format as well,
+%   If you want the even-odd rule instead, you can
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
+%
+%   \textsc{n.b.} By the way, when you want fill-and-stroke effect,
+%   issueing |filldraw| command to the last path will not always produce what you want:
+%   in such cases, you have to issue the command |draw| \meta{path} |withpostscript| |"both"|
+%   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
+%     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
+%     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
 %
 % \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
 %   \label{sec:mpliboutlinetext}
@@ -1472,7 +1478,7 @@ local noneedtoreplace = {
 luamplib.noneedtoreplace = noneedtoreplace
 
 %    \end{macrocode}
-%    Replace |btex| |...| |etex| and |verbatimtex| |...| |etex| in input files,
+%    Pattern formats to replace |btex| and |verbatimtex| |...| |etex| in input files,
 %    if needed.
 %    \begin{macrocode}
 local name_b = "%f[%a_]"
@@ -1543,9 +1549,7 @@ do
     lfstouch(newfile,currenttime,ofmodify)
     return newfile
   end
-
 %    \end{macrocode}
-%
 %    As the finder function for \mplib, use the |kpse| library and
 %    make it behave like as if \metapost was used. And replace |.mp| files with
 %    cache files if needed.
@@ -1649,7 +1653,6 @@ do
     end
   end
 %    \end{macrocode}
-%
 %     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
 %     we should explicitly seed a unique integer to get random randomseed for each run.
 %    \begin{macrocode}
@@ -1673,7 +1676,7 @@ do
       extensions  = 1,
     }
 %    \end{macrocode}
-%    Append our own \metapost preamble to the preamble above.
+%    Append our own \metapost preamble to the preamble loading plain/metafun format.
 %    \begin{macrocode}
     local preamble = tableconcat{
       format(luamplib.preambles.preamble, replacesuffix(name,"mp")),
@@ -1691,7 +1694,6 @@ do
     return mpx, result, log
   end
 %    \end{macrocode}
-%
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
@@ -1925,15 +1927,6 @@ local function process_verbatimtex_infig (str)
   return ""
 end
 
-local runscript_funcs = {
-  luamplibtext    = process_tex_text,
-  luamplibcolor   = process_color,
-  luamplibdimen   = process_dimen,
-  luamplibprefig  = process_verbatimtex_prefig,
-  luamplibinfig   = process_verbatimtex_infig,
-  luamplibverbtex = process_verbatimtex_text,
-}
-
 %    \end{macrocode}
 %
 %    For \emph{metafun} format. see issue \#79.
@@ -1944,7 +1937,6 @@ mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 mp.report = mp.report or info
 %    \end{macrocode}
-%
 %    \emph{metafun} 2021-03-09 changes crashes luamplib.
 %    \begin{macrocode}
 catcodes = catcodes or {}
@@ -1958,11 +1950,19 @@ catcodes.numbers.vrbcatcodes = catcodes.numbers.vrbcatcodes or catlatex
 catcodes.numbers.prtcatcodes = catcodes.numbers.prtcatcodes or catlatex
 catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or catlatex
 
+do
+  local runscript_funcs = {
+    luamplibtext    = process_tex_text,
+    luamplibcolor   = process_color,
+    luamplibdimen   = process_dimen,
+    luamplibprefig  = process_verbatimtex_prefig,
+    luamplibinfig   = process_verbatimtex_infig,
+    luamplibverbtex = process_verbatimtex_text,
+  }
 %    \end{macrocode}
 %
 %    A function from \ConTeXt\ general.
 %    \begin{macrocode}
-do
   local function mpprint(buffer,...)
     for i=1,select("#",...) do
       local value = select(i,...)
@@ -2008,12 +2008,11 @@ do
   end
 end
 
-%    \end{macrocode}
-%
-%    |make_text| must be one liner, so comment sign is not allowed.
-%    \begin{macrocode}
 luamplib.legacyverbatimtex = true
 do
+%    \end{macrocode}
+%    |make_text| must be one liner, so comment sign is not allowed.
+%    \begin{macrocode}
   local function protecttexcontents (str)
     return str:gsub("\\%%", "\0PerCent\0")
               :gsub("%%.-\n", "")
@@ -3378,21 +3377,6 @@ end
 
 %    \end{macrocode}
 %
-%    For parsing |prescript| materials.
-%    \begin{macrocode}
-local function script2table(s)
-  local t = {}
-  for _,i in ipairs(s:explode("\13+")) do
-    local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
-    if k and v and k ~= "" and not t[k] then
-      t[k] = v
-    end
-  end
-  return t
-end
-
-%    \end{macrocode}
-%
 %     pdfliterals will be stored in |figcontents| table, and written to pdf in one go
 %     at the end of the flushing figure.
 %     Subtable |post| is for the legacy behavior.
@@ -3487,7 +3471,7 @@ end
 
 %    \end{macrocode}
 %
-%    For transparency and shading
+%    For transparency, shading, fading, and pattern
 %    \begin{macrocode}
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
@@ -3712,20 +3696,19 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   return on
 end
 
-pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
-  run_tex_code({
-    [[\color_model_new:nnn]],
-    format("{mplibcolorspace_%s}", names:gsub(",","_")),
-    format("{DeviceN}{names={%s}}", names),
-    [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
-  }, ccexplat)
-  local colorspace = get_macro'mplib_@tempa'
-  t[names] = colorspace
-  return colorspace
-end })
-
 local do_preobj_SH
 do
+  pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
+    run_tex_code({
+      [[\color_model_new:nnn]],
+      format("{mplibcolorspace_%s}", names:gsub(",","_")),
+      format("{DeviceN}{names={%s}}", names),
+      [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
+    }, ccexplat)
+    local colorspace = get_macro'mplib_@tempa'
+    t[names] = colorspace
+    return colorspace
+  end })
   local function color_normalize(ca,cb)
     if #cb == 1 then
       if #ca == 4 then
@@ -4344,139 +4327,146 @@ function luamplib.registergroup (boxid, name, opts)
   info("w/h/d of group '%s': %s", name, whd)
 end
 
-local function stop_special_effects(fade,opaq,over)
-  if fade then -- fading
-    stop_pdf_code()
+do
+  local function stop_special_effects(fade,opaq,over)
+    if fade then -- fading
+      stop_pdf_code()
+    end
+    if opaq then -- opacity
+      pdf_literalcode(opaq)
+    end
+    if over then -- color
+      put2output"\\special{pdf:ec}"
+    end
   end
-  if opaq then -- opacity
-    pdf_literalcode(opaq)
+
+%    \end{macrocode}
+%
+%    For parsing |prescript| materials.
+%    \begin{macrocode}
+  local function script2table(s)
+    local t = {}
+    for _,i in ipairs(s:explode("\13+")) do
+      local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
+      if k and v and k ~= "" and not t[k] then
+        t[k] = v
+      end
+    end
+    return t
   end
-  if over then -- color
-    put2output"\\special{pdf:ec}"
-  end
-end
 
 %    \end{macrocode}
 %
 %    Codes below for inserting PDF lieterals are mostly from ConTeXt general,
 %    with small changes when needed.
 %    \begin{macrocode}
-local function getobjects(result,figure,f)
-  return figure:objects()
-end
-
-function luamplib.convert (result, flusher)
-  luamplib.flush(result, flusher)
-  return true -- done
-end
-
-local function pdf_textfigure(font,size,text,width,height,depth)
-  text = text:gsub(".",function(c)
-    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
-  end)
-  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
-end
-
-local bend_tolerance = 131/65536
-
-local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
-
-local function pen_characteristics(object)
-  local t = mplib.pen_info(object)
-  rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
-  divider = sx*sy - rx*ry
-  return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
-end
-
-local function concat(px, py) -- no tx, ty here
-  return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
-end
-
-local function curved(ith,pth)
-  local d = pth.left_x - ith.right_x
-  if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
-    d = pth.left_y - ith.right_y
-    if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
-      return false
-    end
+  local function pdf_textfigure(font,size,text,width,height,depth)
+    text = text:gsub(".",function(c)
+      return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
+    end)
+    put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
   end
-  return true
-end
 
-local function flushnormalpath(path,open)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
-    elseif curved(ith,pth) then
-      pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
-    else
-      pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
-    end
-    ith = pth
+  local bend_tolerance = 131/65536
+
+  local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
+
+  local function pen_characteristics(object)
+    local t = mplib.pen_info(object)
+    rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
+    divider = sx*sy - rx*ry
+    return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
   end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
-    else
+
+  local function concat(px, py) -- no tx, ty here
+    return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
+  end
+
+  local function curved(ith,pth)
+    local d = pth.left_x - ith.right_x
+    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+      d = pth.left_y - ith.right_y
+      if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+        return false
+      end
+    end
+    return true
+  end
+
+  local function flushnormalpath(path,open)
+    local pth, ith
+    for i=1,#path do
+      pth = path[i]
+      if not ith then
+        pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
+      elseif curved(ith,pth) then
+        pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+      else
+        pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
+      end
+      ith = pth
+    end
+    if not open then
+      local one = path[1]
+      if curved(pth,one) then
+        pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+      else
+        pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+      end
+    elseif #path == 1 then -- special case .. draw point
+      local one = path[1]
       pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
     end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
   end
-end
 
-local function flushconcatpath(path,open)
-  pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
-    elseif curved(ith,pth) then
-      local a, b = concat(ith.right_x,ith.right_y)
-      local c, d = concat(pth.left_x,pth.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
-    else
-      pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+  local function flushconcatpath(path,open)
+    pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
+    local pth, ith
+    for i=1,#path do
+      pth = path[i]
+      if not ith then
+        pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
+      elseif curved(ith,pth) then
+        local a, b = concat(ith.right_x,ith.right_y)
+        local c, d = concat(pth.left_x,pth.left_y)
+        pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
+      else
+        pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+      end
+      ith = pth
     end
-    ith = pth
-  end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      local a, b = concat(pth.right_x,pth.right_y)
-      local c, d = concat(one.left_x,one.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
-    else
+    if not open then
+      local one = path[1]
+      if curved(pth,one) then
+        local a, b = concat(pth.right_x,pth.right_y)
+        local c, d = concat(one.left_x,one.left_y)
+        pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
+      else
+        pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+      end
+    elseif #path == 1 then -- special case .. draw point
+      local one = path[1]
       pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
     end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
   end
-end
 
 %    \end{macrocode}
 %
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
-function luamplib.flush (result,flusher)
-  if result then
-    local figures = result.fig
-    if figures then
-      for f=1, #figures do
-        info("flushing figure %s",f)
-        local figure = figures[f]
-        local objects = getobjects(result,figure,f)
-        local fignum = tonumber(figure:filename():match("([%d]+)$") or figure:charcode() or 0)
-        local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-        local bbox = figure:boundingbox()
-        local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
-        if urx < llx then
+  local function flush (result,flusher)
+    if result then
+      local figures = result.fig
+      if figures then
+        for f=1, #figures do
+          info("flushing figure %s",f)
+          local figure = figures[f]
+          local objects = figure:objects()
+          local fignum = tonumber(figure:filename():match("([%d]+)$") or figure:charcode() or 0)
+          local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+          local bbox = figure:boundingbox()
+          local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
+          if urx < llx then
 %    \end{macrocode}
 %    luamplib silently ignores this invalid figure for those
 %    that do not contain |beginfig ... endfig|. (issue \#70)
@@ -4487,249 +4477,255 @@ function luamplib.flush (result,flusher)
 %    pdf_stopfigure()
 %\end{verbatim}
 %    \begin{macrocode}
-        else
+          else
 %    \end{macrocode}
 %    For legacy behavior, insert `pre-fig' \TeX\ code here.
 %    \begin{macrocode}
-          if tex_code_pre_mplib[f] then
-            put2output(tex_code_pre_mplib[f])
-          end
-          pdf_startfigure(fignum,llx,lly,urx,ury)
-          start_pdf_code()
-          if objects then
-            local savedpath = nil
-            local savedhtap = nil
-            for o=1,#objects do
-              local object        = objects[o]
-              local objecttype    = object.type
+            if tex_code_pre_mplib[f] then
+              put2output(tex_code_pre_mplib[f])
+            end
+            pdf_startfigure(fignum,llx,lly,urx,ury)
+            start_pdf_code()
+            if objects then
+              local savedpath = nil
+              local savedhtap = nil
+              for o=1,#objects do
+                local object        = objects[o]
+                local objecttype    = object.type
 %    \end{macrocode}
 %    The following 10 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
-              local prescript     = object.prescript
-              prescript = prescript and script2table(prescript) -- prescript is now a table
-              local cr_over = do_preobj_CR(object,prescript) -- color
-              local tr_opaq = do_preobj_TR(object,prescript) -- opacity
-              local fading_ = do_preobj_FADE(object,prescript) -- fading
-              local trgroup = do_preobj_GRP(object,prescript) -- transparency group
-              local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
-              local shading_ = do_preobj_shading(object,prescript) -- shading pattern
-              if prescript and prescript.mplibtexboxid then
-                put_tex_boxes(object,prescript)
-              elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
-              elseif objecttype == "start_clip" then
-                local evenodd = not object.istext and object.postscript == "evenodd"
-                start_pdf_code()
-                flushnormalpath(object.path,false)
-                pdf_literalcode(evenodd and "W* n" or "W n")
-              elseif objecttype == "stop_clip" then
-                stop_pdf_code()
-                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-              elseif objecttype == "special" then
+                local prescript     = object.prescript
+                prescript = prescript and script2table(prescript) -- prescript is now a table
+                local cr_over = do_preobj_CR(object,prescript) -- color
+                local tr_opaq = do_preobj_TR(object,prescript) -- opacity
+                local fading_ = do_preobj_FADE(object,prescript) -- fading
+                local trgroup = do_preobj_GRP(object,prescript) -- transparency group
+                local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
+                local shading_ = do_preobj_shading(object,prescript) -- shading pattern
+                if prescript and prescript.mplibtexboxid then
+                  put_tex_boxes(object,prescript)
+                elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
+                elseif objecttype == "start_clip" then
+                  local evenodd = not object.istext and object.postscript == "evenodd"
+                  start_pdf_code()
+                  flushnormalpath(object.path,false)
+                  pdf_literalcode(evenodd and "W* n" or "W n")
+                elseif objecttype == "stop_clip" then
+                  stop_pdf_code()
+                  miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                elseif objecttype == "special" then
 %    \end{macrocode}
 %    Collect \TeX\ codes that will be executed after flushing.
 %    Legacy behavior.
 %    \begin{macrocode}
-                if prescript and prescript.postmplibverbtex then
-                  figcontents.post[#figcontents.post+1] = prescript.postmplibverbtex
-                end
-              elseif objecttype == "text" then
-                local ot = object.transform -- 3,4,5,6,1,2
-                start_pdf_code()
-                pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
-                pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
-                stop_pdf_code()
-              elseif not trgroup and fading_ ~= "stop" then
-                local evenodd, collect, both = false, false, false
-                local postscript = object.postscript
-                if not object.istext then
-                  if postscript == "evenodd" then
-                    evenodd = true
-                  elseif postscript == "collect" then
-                    collect = true
-                  elseif postscript == "both" then
-                    both = true
-                  elseif postscript == "eoboth" then
-                    evenodd = true
-                    both    = true
+                  if prescript and prescript.postmplibverbtex then
+                    figcontents.post[#figcontents.post+1] = prescript.postmplibverbtex
                   end
-                end
-                if collect then
-                  if not savedpath then
-                    savedpath = { object.path or false }
-                    savedhtap = { object.htap or false }
+                elseif objecttype == "text" then
+                  local ot = object.transform -- 3,4,5,6,1,2
+                  start_pdf_code()
+                  pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                  pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
+                  stop_pdf_code()
+                elseif not trgroup and fading_ ~= "stop" then
+                  local evenodd, collect, both = false, false, false
+                  local postscript = object.postscript
+                  if not object.istext then
+                    if postscript == "evenodd" then
+                      evenodd = true
+                    elseif postscript == "collect" then
+                      collect = true
+                    elseif postscript == "both" then
+                      both = true
+                    elseif postscript == "eoboth" then
+                      evenodd = true
+                      both    = true
+                    end
+                  end
+                  if collect then
+                    if not savedpath then
+                      savedpath = { object.path or false }
+                      savedhtap = { object.htap or false }
+                    else
+                      savedpath[#savedpath+1] = object.path or false
+                      savedhtap[#savedhtap+1] = object.htap or false
+                    end
                   else
-                    savedpath[#savedpath+1] = object.path or false
-                    savedhtap[#savedhtap+1] = object.htap or false
-                  end
-                else
 %    \end{macrocode}
 %    Removed from ConTeXt general: color stuff.
 %    \begin{macrocode}
-                  local ml = object.miterlimit
-                  if ml and ml ~= miterlimit then
-                    miterlimit = ml
-                    pdf_literalcode("%f M",ml)
-                  end
-                  local lj = object.linejoin
-                  if lj and lj ~= linejoin then
-                    linejoin = lj
-                    pdf_literalcode("%i j",lj)
-                  end
-                  local lc = object.linecap
-                  if lc and lc ~= linecap then
-                    linecap = lc
-                    pdf_literalcode("%i J",lc)
-                  end
-                  local dl = object.dash
-                  if dl then
-                    local d = format("[%s] %f d",tableconcat(dl.dashes or {}," "),dl.offset)
-                    if d ~= dashed then
-                      dashed = d
-                      pdf_literalcode(dashed)
+                    local ml = object.miterlimit
+                    if ml and ml ~= miterlimit then
+                      miterlimit = ml
+                      pdf_literalcode("%f M",ml)
                     end
-                  elseif dashed then
-                    pdf_literalcode("[] 0 d")
-                    dashed = false
-                  end
-                  local path = object.path
-                  local transformed, penwidth = false, 1
-                  local open = path and path[1].left_type and path[#path].right_type
-                  local pen = object.pen
-                  if pen then
-                    if pen.type == 'elliptical' then
-                      transformed, penwidth = pen_characteristics(object) -- boolean, value
-                      pdf_literalcode("%f w",penwidth)
-                      if objecttype == 'fill' then
-                        objecttype = 'both'
+                    local lj = object.linejoin
+                    if lj and lj ~= linejoin then
+                      linejoin = lj
+                      pdf_literalcode("%i j",lj)
+                    end
+                    local lc = object.linecap
+                    if lc and lc ~= linecap then
+                      linecap = lc
+                      pdf_literalcode("%i J",lc)
+                    end
+                    local dl = object.dash
+                    if dl then
+                      local d = format("[%s] %f d",tableconcat(dl.dashes or {}," "),dl.offset)
+                      if d ~= dashed then
+                        dashed = d
+                        pdf_literalcode(dashed)
                       end
-                    else -- calculated by mplib itself
-                      objecttype = 'fill'
+                    elseif dashed then
+                      pdf_literalcode("[] 0 d")
+                      dashed = false
                     end
-                  end
+                    local path = object.path
+                    local transformed, penwidth = false, 1
+                    local open = path and path[1].left_type and path[#path].right_type
+                    local pen = object.pen
+                    if pen then
+                      if pen.type == 'elliptical' then
+                        transformed, penwidth = pen_characteristics(object) -- boolean, value
+                        pdf_literalcode("%f w",penwidth)
+                        if objecttype == 'fill' then
+                          objecttype = 'both'
+                        end
+                      else -- calculated by mplib itself
+                        objecttype = 'fill'
+                      end
+                    end
 %    \end{macrocode}
 %    Added : shading
 %    \begin{macrocode}
-                  local shade_no = do_preobj_SH(object,prescript) -- shading
-                  if shade_no then
-                    pdf_literalcode"q /Pattern cs"
-                    objecttype = false
-                  end
-                  if transformed then
-                    start_pdf_code()
-                  end
-                  if path then
-                    if savedpath then
-                      for i=1,#savedpath do
-                        local path = savedpath[i]
-                        if transformed then
-                          flushconcatpath(path,open)
-                        else
-                          flushnormalpath(path,open)
-                        end
-                      end
-                      savedpath = nil
+                    local shade_no = do_preobj_SH(object,prescript) -- shading
+                    if shade_no then
+                      pdf_literalcode"q /Pattern cs"
+                      objecttype = false
                     end
-                    if transformed then
-                      flushconcatpath(path,open)
-                    else
-                      flushnormalpath(path,open)
-                    end
-                    if objecttype == "fill" then
-                      pdf_literalcode(evenodd and "h f*" or "h f")
-                    elseif objecttype == "outline" then
-                      if both then
-                        pdf_literalcode(evenodd and "h B*" or "h B")
-                      else
-                        pdf_literalcode(open and "S" or "h S")
-                      end
-                    elseif objecttype == "both" then
-                      pdf_literalcode(evenodd and "h B*" or "h B")
-                    end
-                  end
-                  if transformed then
-                    stop_pdf_code()
-                  end
-                  local path = object.htap
-%    \end{macrocode}
-%    How can we generate an |htap| object? Please let us know if you have succeeded.
-%    \begin{macrocode}
-                  if path then
                     if transformed then
                       start_pdf_code()
                     end
-                    if savedhtap then
-                      for i=1,#savedhtap do
-                        local path = savedhtap[i]
-                        if transformed then
-                          flushconcatpath(path,open)
-                        else
-                          flushnormalpath(path,open)
+                    if path then
+                      if savedpath then
+                        for i=1,#savedpath do
+                          local path = savedpath[i]
+                          if transformed then
+                            flushconcatpath(path,open)
+                          else
+                            flushnormalpath(path,open)
+                          end
                         end
+                        savedpath = nil
                       end
-                      savedhtap = nil
-                      evenodd   = true
-                    end
-                    if transformed then
-                      flushconcatpath(path,open)
-                    else
-                      flushnormalpath(path,open)
-                    end
-                    if objecttype == "fill" then
-                      pdf_literalcode(evenodd and "h f*" or "h f")
-                    elseif objecttype == "outline" then
-                      pdf_literalcode(open and "S" or "h S")
-                    elseif objecttype == "both" then
-                      pdf_literalcode(evenodd and "h B*" or "h B")
+                      if transformed then
+                        flushconcatpath(path,open)
+                      else
+                        flushnormalpath(path,open)
+                      end
+                      if objecttype == "fill" then
+                        pdf_literalcode(evenodd and "h f*" or "h f")
+                      elseif objecttype == "outline" then
+                        if both then
+                          pdf_literalcode(evenodd and "h B*" or "h B")
+                        else
+                          pdf_literalcode(open and "S" or "h S")
+                        end
+                      elseif objecttype == "both" then
+                        pdf_literalcode(evenodd and "h B*" or "h B")
+                      end
                     end
                     if transformed then
                       stop_pdf_code()
                     end
-                  end
+                    local path = object.htap
+%    \end{macrocode}
+%    How can we generate an |htap| object? Please let us know if you have succeeded.
+%    \begin{macrocode}
+                    if path then
+                      if transformed then
+                        start_pdf_code()
+                      end
+                      if savedhtap then
+                        for i=1,#savedhtap do
+                          local path = savedhtap[i]
+                          if transformed then
+                            flushconcatpath(path,open)
+                          else
+                            flushnormalpath(path,open)
+                          end
+                        end
+                        savedhtap = nil
+                        evenodd   = true
+                      end
+                      if transformed then
+                        flushconcatpath(path,open)
+                      else
+                        flushnormalpath(path,open)
+                      end
+                      if objecttype == "fill" then
+                        pdf_literalcode(evenodd and "h f*" or "h f")
+                      elseif objecttype == "outline" then
+                        pdf_literalcode(open and "S" or "h S")
+                      elseif objecttype == "both" then
+                        pdf_literalcode(evenodd and "h B*" or "h B")
+                      end
+                      if transformed then
+                        stop_pdf_code()
+                      end
+                    end
 %    \end{macrocode}
 %    Added to ConTeXt general: post-object colors and shading stuff.
 %    We should beware the |q ... Q| scope.
 %    \begin{macrocode}
-                  if shade_no then -- shading
-                    pdf_literalcode("W%s n /MPlibSh%s sh Q",evenodd and "*" or "",shade_no)
+                    if shade_no then -- shading
+                      pdf_literalcode("W%s n /MPlibSh%s sh Q",evenodd and "*" or "",shade_no)
+                    end
                   end
                 end
-              end
-              if fading_ == "start" then
-                pdfetcs.fading.specialeffects = {fading_, tr_opaq, cr_over}
-              elseif trgroup == "start" then
-                pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
-              elseif fading_ == "stop" then
-                local se = pdfetcs.fading.specialeffects
-                if se then stop_special_effects(se[1], se[2], se[3]) end
-              elseif trgroup == "stop" then
-                local se = pdfetcs.tr_group.specialeffects
-                if se then stop_special_effects(se[1], se[2], se[3]) end
-              else
-                stop_special_effects(fading_, tr_opaq, cr_over)
-              end
-              if fading_ or trgroup then -- extgs resetted
-                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                if fading_ == "start" then
+                  pdfetcs.fading.specialeffects = {fading_, tr_opaq, cr_over}
+                elseif trgroup == "start" then
+                  pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
+                elseif fading_ == "stop" then
+                  local se = pdfetcs.fading.specialeffects
+                  if se then stop_special_effects(se[1], se[2], se[3]) end
+                elseif trgroup == "stop" then
+                  local se = pdfetcs.tr_group.specialeffects
+                  if se then stop_special_effects(se[1], se[2], se[3]) end
+                else
+                  stop_special_effects(fading_, tr_opaq, cr_over)
+                end
+                if fading_ or trgroup then -- extgs resetted
+                  miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                end
               end
             end
-          end
-          stop_pdf_code()
-          pdf_stopfigure()
+            stop_pdf_code()
+            pdf_stopfigure()
 %    \end{macrocode}
 %    output collected materials to PDF, plus legacy |verbatimtex| code.
 %    \begin{macrocode}
-          for _,v in ipairs(figcontents) do
-            if type(v) == "table" then
-              texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
-            else
-              texsprint(v)
+            for _,v in ipairs(figcontents) do
+              if type(v) == "table" then
+                texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
+              else
+                texsprint(v)
+              end
             end
+            if #figcontents.post > 0 then texsprint(figcontents.post) end
+            figcontents = { post = { } }
           end
-          if #figcontents.post > 0 then texsprint(figcontents.post) end
-          figcontents = { post = { } }
         end
       end
     end
+  end
+
+  function luamplib.convert (result, flusher)
+    flush(result, flusher)
+    return true -- done
   end
 end
 
