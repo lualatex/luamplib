@@ -419,6 +419,15 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   withmppattern "p3"
   ;
 \endmpfig
+\mpfig
+picture pic;
+pic = mplibglyph "R" of "texgyrepagella-regular.otf" scaled 1/10;
+mplibfillandstrokeglyph pic
+  slanted 0.25
+  withpen pencircle scaled 1
+  withmplibcolors ("orange", 2/3red)
+  ;
+\endmpfig
 \end{center}
 \mpliblegacybehavior{true}%
 

@@ -474,7 +474,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}\label{sec:mpcolor}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
-%   environment (after |withcolor| operator).
+%   environment (after |withcolor| command).
 %   See the example above at \ref{sec:mpdim}.
 %   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
 %   For spot colors, \pkg{l3color} (in PDF/DVI mode),
@@ -672,7 +672,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}]{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
 %   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
-%   as well as after the |withcolor| operator.
+%   as well as after the |withcolor| command.
 %   For instance:
 %\begin{verbatim}
 %    color col;
@@ -743,26 +743,48 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   \subsubsection[\texttt{mplibdrawglyph}]{\texttt{mplibdrawglyph ...}}
-%   The picture returned by |mplibglyph| will be quite similar to the result of |glyph| primitive in its structure.
-%   So, \metapost's |draw| command will fill the inner path of the picture with the background color.
-%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths according to the nonzero winding
-%   number rule. As a result, for instance, the area surrounded by inner path of ``O''
-%   will remain transparent.
+%   \subsubsection[\texttt{mplibdrawglyph}, \texttt{mplibstrokeglyph},
+%     \texttt{mplibfillandstrokeglyph}]{\texttt{mplibdrawglyph ...}, \texttt{mplibstrokeglyph ...},
+%     \texttt{mplibfillandstrokeglyph ...}}
+%     \label{sec:mplibdrawglyph}
+%   As the picture returned by |mplibglyph| will be quite similar to
+%   the result of |glyph| primitive in its structure,
+%   \metapost's |draw| command will fill the inner path of the picture with the background color.
+%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths
+%   according to the nonzero winding number rule.
+%   As a result, for instance, the area surrounded by inner path of ``O'' will remain transparent.
 %
-%   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
+%   \noindent\llap{\textcolor{red}{☞}}\indent
 %   To apply the nonzero winding number rule to a picture containing paths,
 %   \pkg{luamplib} appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
 %   If you want the even-odd rule instead, you can
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
-%   \textsc{n.b.} By the way, when you want fill-and-stroke effect,
+%   \noindent\llap{\textcolor{red}{☞}}\indent
+%   By the way, when you want fill-and-stroke effect,
 %   issueing |filldraw| command to the last path will not always produce what you want:
-%   in such cases, you have to issue the command |draw| \meta{path} |withpostscript| |"both"|
+%   in such cases, you have to issue the command
+%   |draw| \meta{the last path} |withpostscript| |"both"|
 %   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
 %     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
 %     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
+%
+%   As this could be somewhat annoying to users, \pkg{luamplib} provides these commands as well:
+%   |mplibfillandstrokeglyph| \meta{picture}, |mplibstrokeglyph| \meta{picture},
+%   and |mplibfillglyph| \meta{picture}, the last one being a synonym of |mplibdrawglyph| command.
+%   An example (see below \S\,\ref{sec:withmplibcolors} on the macro |withmplibcolors|):
+%\begin{verbatim}
+%    \mpfig
+%      picture pic;
+%      pic = mplibglyph "R" of \fontid\font scaled 1/5;
+%      mplibfillandstrokeglyph pic
+%        withpen pencircle scaled 1
+%        withmplibcolors ("orange", 2/3red)
+%        ;
+%    \endmpfig
+%\end{verbatim}
+%
 %
 % \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
 %   \label{sec:mpliboutlinetext}
@@ -1181,7 +1203,8 @@ See source file '\inFileName' for licencing and contact information.
 %     Only meaningful with |withshadingstep|.
 %   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
 %     Starting and ending colors.
-%     Default value is |(white,| |black)|
+%     Default value is |(white,| |black)|.
+%     String-type argument is regarded as the color expression of \TeX\ side.
 % \end{description}
 %
 % \subsubsection[\texttt{mpliblength}, \texttt{mplibuclength}]{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
@@ -1211,6 +1234,22 @@ See source file '\inFileName' for licencing and contact information.
 %   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
 %   returns |"Ä"|, not |"A"|.
 %   This operator requires \pkg{lua-uni-algos} package.
+%
+% \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
+%   \label{sec:withmplibcolors}
+%   Unlike the |withcolor| command, users can specify one color for filling
+%   and another color for stroking using the macro |withmplibcolors|.
+%   The syntax is |withmplibcolors| |(|\meta{fill color expr}|,| \meta{stroke color expr}|)|.
+%   When the argument is in string type, it is regarded as the color expression of \TeX\ side.
+%   A simple example (see also the example above at \S\,\ref{sec:mplibdrawglyph}).
+%\begin{verbatim}
+%    \mpfig
+%      filldraw fullcircle scaled 30
+%        withpen pencircle scaled 1
+%        withmplibcolors ("orange!60", 2/3red)
+%        ;
+%    \endmpfig
+%\end{verbatim}
 %
 % \subsection{Lua}
 %
@@ -2185,6 +2224,44 @@ end
 
 %    \end{macrocode}
 %
+% fill and stroke colors
+%    \begin{macrocode}
+do
+  local function graphictextcolor (col, filldraw)
+    if col:find"^[%d%.:]+$" then
+      col = col:explode":"
+      for i=1,#col do
+        col[i] = format("%.3f", col[i])
+      end
+      if pdfmode then
+        local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
+        col[#col+1] = filldraw == "fill" and op or op:upper()
+        return tableconcat(col," ")
+      end
+      return format("[%s]", tableconcat(col," "))
+    end
+    col = process_color(col):match'"mpliboverridecolor=(.+)"'
+    if pdfmode then
+      local t, tt = col:explode(), { }
+      local b = filldraw == "fill" and 1 or #t/2+1
+      local e = b == 1 and #t/2 or #t
+      for i=b,e do
+        tt[#tt+1] = t[i]
+      end
+      return tableconcat(tt," ")
+    end
+    return col:gsub("^.- ","")
+  end
+  function luamplib.fillandstrokecolor (fill, stroke)
+    fill   = graphictextcolor(fill, "fill")
+    stroke = graphictextcolor(stroke, "stroke")
+    local bc = pdfmode and "" or "pdf:bc "
+    return format('withprescript "mpliboverridecolor=%s%s %s"', bc, fill, stroke)
+  end
+end
+
+%    \end{macrocode}
+%
 % Remove trailing zeros for smaller PDF
 %    \begin{macrocode}
 local decimals = "%.%d+"
@@ -2332,41 +2409,14 @@ do
     end
     return head
   end
-  local function graphictextcolor (col, filldraw)
-    if col:find"^[%d%.:]+$" then
-      col = col:explode":"
-      for i=1,#col do
-        col[i] = format("%.3f", col[i])
-      end
-      if pdfmode then
-        local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
-        col[#col+1] = filldraw == "fill" and op or op:upper()
-        return tableconcat(col," ")
-      end
-      return format("[%s]", tableconcat(col," "))
-    end
-    col = process_color(col):match'"mpliboverridecolor=(.+)"'
-    if pdfmode then
-      local t, tt = col:explode(), { }
-      local b = filldraw == "fill" and 1 or #t/2+1
-      local e = b == 1 and #t/2 or #t
-      for i=b,e do
-        tt[#tt+1] = t[i]
-      end
-      return tableconcat(tt," ")
-    end
-    return col:gsub("^.- ","")
-  end
   luamplib.graphictext = function (text, fakebold, fc, dc)
     local fmt = process_tex_text(text):sub(1,-2)
     local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
     emboldenfonts.width = nil
     local box = texgetbox(id)
     box.head = embolden(box, box.head, fakebold)
-    local fill = graphictextcolor(fc,"fill")
-    local draw = graphictextcolor(dc,"draw")
-    local bc = pdfmode and "" or "pdf:bc "
-    return format('%s withprescript "mpliboverridecolor=%s%s %s")', fmt, bc, fill, draw)
+    local colors = luamplib.fillandstrokecolor(fc, dc)
+    return format('%s %s)', fmt, colors)
   end
 end
 
@@ -2927,15 +2977,33 @@ def mplibglyph expr c of f =
     & "')"
   )
 enddef;
+numeric luamplib_tmp_num_; luamplib_tmp_num_ = 0;
 def mplibdrawglyph expr g =
-  draw image(
-    save i; numeric i; i:=0;
-    for item within g:
-      i := i+1;
-      fill pathpart item
-      if i < length g: withpostscript "collect" fi;
-    endfor
-  )
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    fill pathpart item
+    if incr luamplib_tmp_num_ < length g: withpostscript "collect"; fi
+  endfor
+enddef;
+let mplibfillglyph = mplibdrawglyph;
+def mplibstrokeglyph expr g =
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    draw pathpart item
+    if incr luamplib_tmp_num_ < length g: withpostscript "collect"; fi
+  endfor
+enddef;
+def mplibfillandstrokeglyph expr g =
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    draw pathpart item withpostscript
+    if incr luamplib_tmp_num_ < length g: "collect"; else: "both" fi
+  endfor
+enddef;
+def withmplibcolors (expr f, s) =
+  runscript("return luamplib.fillandstrokecolor('" &
+    if not string f: colordecimals fi f & "','" &
+    if not string s: colordecimals fi s & "')")
 enddef;
 def mplib_do_outline_text_set_b (text f) (text d) text r =
   def mplib_do_outline_options_f = f enddef;
@@ -4384,9 +4452,11 @@ do
 
   local function curved(ith,pth)
     local d = pth.left_x - ith.right_x
-    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and
+       abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
       d = pth.left_y - ith.right_y
-      if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+      if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and
+         abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
         return false
       end
     end
@@ -4400,7 +4470,8 @@ do
       if not ith then
         pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
       elseif curved(ith,pth) then
-        pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+        pdf_literalcode("%f %f %f %f %f %f c",
+          ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
       else
         pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
       end
@@ -4409,7 +4480,8 @@ do
     if not open then
       local one = path[1]
       if curved(pth,one) then
-        pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+        pdf_literalcode("%f %f %f %f %f %f c",
+          pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
       else
         pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
       end
