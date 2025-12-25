@@ -1,5 +1,6 @@
                        History of the luamplib package
 
+2025/12/26 2.38.0
    * a new macro to specify fill color and stroke color differently:
         withmplibcolors
    * new macros to draw the picture returned by mplibglyph:
