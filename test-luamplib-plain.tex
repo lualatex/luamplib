@@ -341,8 +341,17 @@ usemplibgroup "testTRgroup"
   \endmpfig
 \endmppattern
 \mpfig
-  fill fullcircle scaled 48
+  fill fullcircle scaled 60
   withmppattern "p2"
+  ;
+\endmpfig
+\mpfig
+picture pic;
+pic = mplibglyph "R" of "texgyrepagella-regular.otf" scaled 1/10;
+mplibfillandstrokeglyph pic
+  slanted 0.25
+  withpen pencircle scaled 1
+  withmplibcolors ("orange", 2/3red)
   ;
 \endmpfig
 \tracingcommands0

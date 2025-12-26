@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2025/12/26 2.38.0
+   * a new macro to specify fill color and stroke color differently:
+        withmplibcolors
+   * new macros to draw the picture returned by mplibglyph:
+        mplibfillglyph, mplibstrokeglyph, mplibfillandstrokeglyph
+   * fix the macro mplibdrawglyph
+   * documentation: add explanations about withpostscript "both"/"eoboth"
+   * documentation: add a caution about \mpcolor command
+
 2025/12/19 2.37.8
    * support Chinese/Japanese vertical writing in mpliboutlinetext
    * doc: add an example of accessing an MP variable from TeX side

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/12/19 v2.37.8 Interface for using the mplib library]%
+  [2025/12/26 v2.38.0 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -129,6 +129,8 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\metapost {\textsc{metapost}\xspace}
 \newcommand*\mplib {\pkg{mplib}\xspace}
 
+\protected\def\secref#1{\S\,\ref{sec:#1}}
+
 \flushbottom
 \begin{document}
   \DocInput{luamplib.dtx}%
@@ -158,7 +160,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/12/19 v2.37.8}
+% \date{2025/12/26 v2.38.0}
 %
 % \maketitle
 %
@@ -202,7 +204,7 @@ See source file '\inFileName' for licencing and contact information.
 %   When these \TeX\ commands are found in |verbatimtex| |...| |etex|, the entire code will be
 %   ignored.
 %   The treatment of |verbatimtex| command has changed a lot since v2.20:
-%   see below \ref{sec:mpliblegacybehavior}.
+%   see below \secref{mpliblegacybehavior}.
 %
 % \item in the past,
 %   the package required PDF mode in order to have some output.
@@ -221,7 +223,7 @@ See source file '\inFileName' for licencing and contact information.
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this command with anything suitable before a box.
-%     But see \ref{sec:taggedPDF} on Tagged PDF. }
+%     But see \secref{taggedPDF} on Tagged PDF. }
 %
 % \subsubsection[\cs{everymplib}, \cs{everyendmplib}]{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
@@ -248,7 +250,7 @@ See source file '\inFileName' for licencing and contact information.
 %   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
-%   (see below \ref{sec:mpliboutlinetext}).
+%   (see below \secref{mpliboutlinetext}).
 %   You can try other effects as well, though we did not fully tested their proper functioning.
 %
 % \begin{description}
@@ -259,7 +261,7 @@ See source file '\inFileName' for licencing and contact information.
 %   ($0 \le \meta{number} \le 1$)
 %
 %   From v2.36, |withtransparency| is available with \emph{plain} as well.
-%   See below \ref{sec:luamplibtransparency}.
+%   See below \secref{luamplibtransparency}.
 %
 % \item[shading]
 %   (|texdoc metafun| \S\,8.3) One thing worth mentioning about shading is:
@@ -270,7 +272,7 @@ See source file '\inFileName' for licencing and contact information.
 %   interpreted as a \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expression.
 %
 %   From v2.36, shading is available with \emph{plain} format as well with extended functionality.
-%   See below \ref{sec:luamplibshading}.
+%   See below \secref{luamplibshading}.
 %
 % \item[transparency group]
 %   \hypertarget{metafunformat}{}\relax
@@ -285,7 +287,7 @@ See source file '\inFileName' for licencing and contact information.
 %   cannot properly render the isolated or knockout effect.
 %
 %   Transparency group is available with \emph{plain} format as well, with extended functionality.
-%   See below \ref{sec:transparencygroup}.
+%   See below \secref{transparencygroup}.
 % \end{description}
 %
 % \subsubsection[\cs{mplibnumbersystem}]{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
@@ -314,7 +316,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Also, a box number can be assigned to a figure box, allowing it to be
 %   reused later.\footnote{But
 %     the recommended way to reuse a figure is using \cs{mplibgroup} command.
-%     See below \ref{sec:mplibgroupendmplibgroup}.
+%     See below \secref{mplibgroupendmplibgroup}.
 %   }
 %\begin{verbatim}
 %    \mplibcode
@@ -333,7 +335,7 @@ See source file '\inFileName' for licencing and contact information.
 %   As shown in the example below, |VerbatimTeX| \meta{string} is a synonym of
 %   |verbatimtex| |...| |etex|.\footnote{But the recommended way to access \metapost variables
 %     from \TeX\ (or Lua) side is to use Lua code via |luamplib.instances|.
-%     For details see below \ref{sec:luamplibinstances}.}
+%     For details see below \secref{luamplibinstances}.}
 %\begin{verbatim}
 %    \mplibcode
 %      D := sqrt(2)**7;
@@ -451,7 +453,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Default: |disable|.
 %   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
-%   except for \cs{mpdim} and \cs{mpcolor} (see \ref{sec:mpdim} and \ref{sec:mpcolor}),
+%   except for \cs{mpdim} and \cs{mpcolor} (see \secref{mpdim} and \secref{mpcolor}),
 %   all other \TeX\ commands outside of the
 %   |btex| or |verbatimtex| |...| |etex| are not expanded and will be fed
 %   literally to the \mplib library.
@@ -461,26 +463,36 @@ See source file '\inFileName' for licencing and contact information.
 %   in the mplibcode environment. This feature is inpired by \pkg{gmp} package authored by
 %   Enrico Gregorio. Please refer to the manual of \pkg{gmp} package for details.
 %\begin{verbatim}
-%    \begin{mplibcode}
-%      beginfig(1)
-%        draw origin--(.6\mpdim{\linewidth},0)
-%          withpen pencircle scaled 4 dashed evenly scaled 4
-%          withcolor \mpcolor{orange}
-%          ;
-%      endfig;
-%    \end{mplibcode}
+%    draw origin--(.6\mpdim{\linewidth},0)
+%      withpen pencircle scaled 4 dashed evenly scaled 4
+%      withcolor \mpcolor{orange}
+%      ;
 %\end{verbatim}
 %
 % \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}\label{sec:mpcolor}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
-%   environment (after |withcolor| operator).
-%   See the example above at \ref{sec:mpdim}.
+%   environment (after |withcolor| command).
+%   See the example above at \secref{mpdim}.
 %   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
 %   For spot colors, \pkg{l3color} (in PDF/DVI mode),
 %   \pkg{colorspace}, \pkg{spotcolor}
 %   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
+%
+%   \textsc{n.b.}
+%   As the \cs{mpcolor} command produces internally a |withprescript| statement,
+%   only the first object will be colored as you intended
+%   among multiple graphical objects in a \metapost image.
+%   In this case,
+%   consider using |mplibtexcolor| operator described below at \secref{mplibtexcolor}.
+%   For instance:
+%\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5) scaled 5
+%      % withcolor \mpcolor{red!50} does not work properly
+%      withcolor mplibtexcolor"red!50"
+%      ;
+%\end{verbatim}
 %
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
@@ -582,7 +594,7 @@ See source file '\inFileName' for licencing and contact information.
 %     It is not recommended to personally redefine \cs{prependtomplibbox}.
 %     Apart from using \cs{mplibforcehmode} or \cs{mplibnoforcehmode},
 %     the redefinition might be incompatible with |actualtext| key.
-%     See \ref{sec:mplibforcehmode} on these commands. }
+%     See \secref{mplibforcehmode} on these commands. }
 %   BBox info will not be added.
 %   This key is intended for figures which can be represented by a character or
 %   a small sequence of characters.
@@ -663,16 +675,17 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection[\texttt{mplibdimen}, \texttt{mplibcolor}]{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
 %   These are \metapost interfaces for the \TeX\ commands
-%   \cs{mpdim} and \cs{mpcolor} (see above \ref{sec:mpdim} and \ref{sec:mpcolor}). For example,
+%   \cs{mpdim} and \cs{mpcolor} (see above \secref{mpdim} and \secref{mpcolor}). For example,
 %   |mplibdimen| |"\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
 %   |mplibcolor| |"red!50"| is basically the same as \cs{mpcolor\{red!50\}}.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
 % \subsubsection[\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}]{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
+%   \label{sec:mplibtexcolor}
 %   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
-%   as well as after the |withcolor| operator.
+%   as well as after the |withcolor| command.
 %   For instance:
 %\begin{verbatim}
 %    color col;
@@ -690,39 +703,41 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
 %   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
 %   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
-%   (see below \ref{sec:mpliboutlinetext}).
+%   (see below \secref{mpliboutlinetext}).
 %   However the syntax is somewhat different.
 %\begin{verbatim}
-%    draw mplibgraphictext "Funny"
-%      fakebold 2.3                           % fontspec option
-%      drawcolor .7blue fillcolor "red!50"    % color expressions
+%    draw mplibgraphictext "\bfseries Funny" scaled 2
+%      fakebold 2.3                               % fontspec option
+%      fillcolor "red!50"                         % color expression
+%      drawcolor 2/3 blue                         % or strokecolor 2/3 blue
 %      ;
 %\end{verbatim}
-%   |fakebold|, |drawcolor| and |fillcolor| are optional;
-%   default values are |2|, |"black"| and |"white"| respectively.
+%   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
+%   default values are |2|, |"white"| and |"black"| respectively.\footnote{Users can
+%     use the |withmplibcolors| macro instead of |fillcolor| and |drawcolor| options.
+%     See \secref{withmplibcolors} on this macro.}
 %   When the color expressions are given in string type, they are regarded as
 %   \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expressions.
 %   All from |mplibgraphictext| to the end of sentence will compose an
-%   anonymous |picture|, which can be drawn or assigned to a variable.
-%   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
-%   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
+%   anonymous picture, which can be drawn or assigned to a variable.
+%   Incidentally, |withfillcolor| and |withdrawcolor| are synonyms of
+%   |fillcolor| and |drawcolor|, hopefully to be compatible with |graphictext|.
 %
 %   \textsc{n.b.}
 %   In some cases,
 %   especially when processing complicated \TeX\ code,
 %   |mplibgraphictext| will produce better results than \ConTeXt\
-%   or even than our own |mpliboutlinetext|.
-%   However,
-%   there are some limitations such that you can't
+%   or even than our own |mpliboutlinetext|, not to mention the much smaller PDF file size.
+%   There are, however, some limitations such that you can't
 %   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
 %   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
-%     See below \ref{sec:luamplibshading}.}
+%     See below \secref{luamplibshading}.}
 %   Again,
 %   in DVI mode, \pkg{unicode-math} package is needed for math formulae,
 %   as we cannot embolden type1 fonts in DVI mode.
 %   But the most critical limitation is that, unlike |mpliboutlinetext|,
 %   you cannot manipulate the shape of outline paths,
-%   because the returned picture is actually a |btex| |...| |etex| picture.
+%   because the returned picture is basically a |btex| |...| |etex| picture.
 %
 %   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
@@ -735,7 +750,7 @@ See source file '\inFileName' for licencing and contact information.
 %    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
 %    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
 %\end{verbatim}
-%   Both arguments before and after of ``|of|'' can be either a number or a string.
+%   Both arguments before and after ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
 %   String argument at the left side is regarded as a glyph name in the font or a unicode character.
 %   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
@@ -744,19 +759,48 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   \subsubsection[\texttt{mplibdrawglyph}]{\texttt{mplibdrawglyph ...}}
-%   The picture returned by |mplibglyph| will be quite similar to the result of |glyph| primitive in its structure.
-%   So, \metapost's |draw| command will fill the inner path of the picture with the background color.
-%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths according to the nonzero winding
-%   number rule. As a result, for instance, the area surrounded by inner path of ``O''
-%   will remain transparent.
+%   \subsubsection[\texttt{mplibdrawglyph}, \texttt{mplibstrokeglyph},
+%     \texttt{mplibfillandstrokeglyph}]{\texttt{mplibdrawglyph ...}, \texttt{mplibstrokeglyph ...},
+%     \texttt{mplibfillandstrokeglyph ...}}
+%     \label{sec:mplibdrawglyph}
+%   As the picture returned by |mplibglyph| will be quite similar to
+%   the result of |glyph| primitive in its structure,
+%   \metapost's |draw| command will fill the inner path of the picture with the background color.
+%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths
+%   according to the nonzero winding number rule.
+%   As a result, for instance, the area surrounded by inner path of ``O'' will remain transparent.
 %
-%   \leavevmode\llap{\textcolor{red}{☞}\kern1.2\parindent}\relax
+%   \noindent\llap{\textcolor{red}{☞}}\indent
 %   To apply the nonzero winding number rule to a picture containing paths,
 %   \pkg{luamplib} appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
-%   If you want the even-odd rule instead, you can, with \emph{plain} format as well,
+%   If you want the even-odd rule instead, you can
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
+%
+%   \noindent\llap{\textcolor{red}{☞}}\indent
+%   By the way, when you want fill-and-stroke effect,
+%   issueing |filldraw| command to the last path will not always produce what you want:
+%   in such cases, you have to issue the command
+%   |draw| \meta{the last path} |withpostscript| |"both"|
+%   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
+%     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
+%     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
+%
+%   As this could be somewhat annoying to users, \pkg{luamplib} provides these commands as well:
+%   |mplibfillandstrokeglyph| \meta{picture}, |mplibstrokeglyph| \meta{picture},
+%   and |mplibfillglyph| \meta{picture}, the last one being a synonym of |mplibdrawglyph| command.
+%   An example (see below \secref{withmplibcolors} on the macro |withmplibcolors|):
+%\begin{verbatim}
+%    \mpfig
+%      picture pic;
+%      pic = mplibglyph "R" of \fontid\font scaled 1/5;
+%      mplibfillandstrokeglyph pic
+%        withpen pencircle scaled 1
+%        withmplibcolors ("orange", 2/3red)
+%        ;
+%    \endmpfig
+%\end{verbatim}
+%
 %
 % \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
 %   \label{sec:mpliboutlinetext}
@@ -1038,7 +1082,7 @@ See source file '\inFileName' for licencing and contact information.
 % deeply related to the |asgroup| operator.
 % Users can define a transparency group or a normal \emph{form XObject}
 % with these macros from \TeX\ side.
-% The syntax is similar to the \cs{mppattern} command (see above \ref{sec:mppattern}).
+% The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
 % An example:
 %\begin{verbatim}
 %    \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
@@ -1175,7 +1219,8 @@ See source file '\inFileName' for licencing and contact information.
 %     Only meaningful with |withshadingstep|.
 %   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
 %     Starting and ending colors.
-%     Default value is |(white,| |black)|
+%     Default value is |(white,| |black)|.
+%     String-type argument is regarded as the color expression of \TeX\ side.
 % \end{description}
 %
 % \subsubsection[\texttt{mpliblength}, \texttt{mplibuclength}]{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
@@ -1205,6 +1250,22 @@ See source file '\inFileName' for licencing and contact information.
 %   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
 %   returns |"Ä"|, not |"A"|.
 %   This operator requires \pkg{lua-uni-algos} package.
+%
+% \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
+%   \label{sec:withmplibcolors}
+%   Unlike the |withcolor| command, users can specify one color for filling
+%   and another color for stroking using the macro |withmplibcolors| at the end of a sentence.
+%   The syntax is |withmplibcolors| |(|\meta{fill color expr}|,| \meta{stroke color expr}|)|.
+%   When the argument is in string type, it is regarded as the color expression of \TeX\ side.
+%   A simple example (see also the example above at \secref{mplibdrawglyph}):
+%\begin{verbatim}
+%    filldraw fullcircle scaled 30
+%      withpen pencircle scaled 1
+%      withmplibcolors ("orange!60", 2/3red)
+%      ;
+%\end{verbatim}
+%   The PDF file size is much smaller than issueing two sentences with different colors,
+%   though the apparent effect is the same.
 %
 % \subsection{Lua}
 %
@@ -1254,7 +1315,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \def\mpnumeric#1{\directlua{
 %      tex.sprint(tostring(luamplib.instances.myinstance:get_numeric"#1"))
 %    }}
-%    \mpnumeric{n}
+%    \mpnumeric{n}\relax
 %\end{verbatim}
 %
 % \subsubsection[\texttt{luamplib.process\_mplibcode}]{Lua function \texttt{luamplib.process\_mplibcode}}
@@ -1300,8 +1361,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.37.8",
-  date          = "2025/12/19",
+  version       = "2.38.0",
+  date          = "2025/12/26",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1357,8 +1418,7 @@ luamplib.showlog  = luamplib.showlog or false
 
 %    \end{macrocode}
 %
-%    This module is a stripped down version of libraries that are used by
-%    \ConTeXt. Provide a few ``shortcuts'' expected by the code.
+%   Provide a few ``shortcuts'' expected by the code.
 %    \begin{macrocode}
 local tableconcat = table.concat
 local tableinsert = table.insert
@@ -1413,9 +1473,9 @@ end
 %    |btex| |...| |etex| in input |.mp| files will be replaced in finder.
 %    Because of the limitation of \mplib regarding |make_text|,
 %    we might have to make cache files modified from input files.
+%
+%     First of all, determine the directory to store cache files.
 %    \begin{macrocode}
-local luamplibtime = lfsattributes(kpse.find_file"luamplib.lua", "modification")
-local currenttime = os.time()
 local outputdir, cachedir
 if lfstouch then
   for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
@@ -1453,7 +1513,6 @@ function luamplib.getcachedir(dir)
   end
 end
 %    \end{macrocode}
-%
 %    Some basic \metapost files not necessary to make cache files.
 %    \begin{macrocode}
 local noneedtoreplace = {
@@ -1473,133 +1532,127 @@ local noneedtoreplace = {
   ["mp-tool.mpiv"] = true, ["mp-cont.mpiv"] = true,
 }
 luamplib.noneedtoreplace = noneedtoreplace
+
 %    \end{macrocode}
-%
-%    |format.mp| is much complicated, so specially treated.
-%    \begin{macrocode}
-local function replaceformatmp(file,newfile,ofmodify)
-  local fh = ioopen(file,"r")
-  if not fh then return file end
-  local data = fh:read("*all"); fh:close()
-  fh = ioopen(newfile,"w")
-  if not fh then return file end
-  fh:write(
-    "let normalinfont = infont;\n",
-    "primarydef str infont name = rawtextext(str) enddef;\n",
-    data,
-    "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
-    "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
-    "let infont = normalinfont;\n"
-  ); fh:close()
-  lfstouch(newfile,currenttime,ofmodify)
-  return newfile
-end
-%    \end{macrocode}
-%
-%    Replace |btex| |...| |etex| and |verbatimtex| |...| |etex| in input files,
+%    Pattern formats to replace |btex| and |verbatimtex| |...| |etex| in input files,
 %    if needed.
 %    \begin{macrocode}
 local name_b = "%f[%a_]"
 local name_e = "%f[^%a_]"
 local btex_etex = name_b.."btex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
 local verbatimtex_etex = name_b.."verbatimtex"..name_e.."%s*(.-)%s*"..name_b.."etex"..name_e
-local function replaceinputmpfile (name,file)
-  local ofmodify = lfsattributes(file,"modification")
-  if not ofmodify then return file end
-  local newfile = name:gsub("%W","_")
-  newfile = format("%s/luamplib_input_%s", cachedir or outputdir, newfile)
-  if newfile and luamplibtime then
-    local nf = lfsattributes(newfile)
-    if nf and nf.mode == "file" and
-      ofmodify == nf.modification and luamplibtime < nf.access then
-      return nf.size == 0 and file or newfile
-    end
+
+%    \end{macrocode}
+%   Function |luamplib.finder|
+%    \begin{macrocode}
+local currenttime = os.time()
+do
+  local luamplibtime = lfsattributes(kpse.find_file"luamplib.lua", "modification")
+%    \end{macrocode}
+%    |format.mp| is much complicated, so specially treated.
+%    \begin{macrocode}
+  local function replaceformatmp(file,newfile,ofmodify)
+    local fh = ioopen(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
+    fh = ioopen(newfile,"w")
+    if not fh then return file end
+    fh:write(
+      "let normalinfont = infont;\n",
+      "primarydef str infont name = rawtextext(str) enddef;\n",
+      data,
+      "vardef Fmant_(expr x) = rawtextext(decimal abs x) enddef;\n",
+      "vardef Fexp_(expr x) = rawtextext(\"$^{\"&decimal x&\"}$\") enddef;\n",
+      "let infont = normalinfont;\n"
+    ); fh:close()
+    lfstouch(newfile,currenttime,ofmodify)
+    return newfile
   end
-  if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
-  local fh = ioopen(file,"r")
-  if not fh then return file end
-  local data = fh:read("*all"); fh:close()
+  local function replaceinputmpfile (name,file)
+    local ofmodify = lfsattributes(file,"modification")
+    if not ofmodify then return file end
+    local newfile = name:gsub("%W","_")
+    newfile = format("%s/luamplib_input_%s", cachedir or outputdir, newfile)
+    if newfile and luamplibtime then
+      local nf = lfsattributes(newfile)
+      if nf and nf.mode == "file" and
+        ofmodify == nf.modification and luamplibtime < nf.access then
+        return nf.size == 0 and file or newfile
+      end
+    end
+    if name == "format.mp" then return replaceformatmp(file,newfile,ofmodify) end
+    local fh = ioopen(file,"r")
+    if not fh then return file end
+    local data = fh:read("*all"); fh:close()
 %    \end{macrocode}
 %    ``|etex|'' must be preceded by a space and followed by a space or semicolon as specified in
 %    \LuaTeX\ manual, which is not the case of standalone \metapost though.
 %    \begin{macrocode}
-  local count,cnt = 0,0
-  data, cnt = data:gsub(btex_etex, "btex %1 etex ") -- space
-  count = count + cnt
-  data, cnt = data:gsub(verbatimtex_etex, "verbatimtex %1 etex;") -- semicolon
-  count = count + cnt
-  if count == 0 then
-    noneedtoreplace[name] = true
-    fh = ioopen(newfile,"w");
-    if fh then
-      fh:close()
-      lfstouch(newfile,currenttime,ofmodify)
+    local count,cnt = 0,0
+    data, cnt = data:gsub(btex_etex, "btex %1 etex ") -- space
+    count = count + cnt
+    data, cnt = data:gsub(verbatimtex_etex, "verbatimtex %1 etex;") -- semicolon
+    count = count + cnt
+    if count == 0 then
+      noneedtoreplace[name] = true
+      fh = ioopen(newfile,"w");
+      if fh then
+        fh:close()
+        lfstouch(newfile,currenttime,ofmodify)
+      end
+      return file
     end
-    return file
+    fh = ioopen(newfile,"w")
+    if not fh then return file end
+    fh:write(data); fh:close()
+    lfstouch(newfile,currenttime,ofmodify)
+    return newfile
   end
-  fh = ioopen(newfile,"w")
-  if not fh then return file end
-  fh:write(data); fh:close()
-  lfstouch(newfile,currenttime,ofmodify)
-  return newfile
-end
-
 %    \end{macrocode}
-%
 %    As the finder function for \mplib, use the |kpse| library and
 %    make it behave like as if \metapost was used. And replace |.mp| files with
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
-local mpkpse
-do
-  local exe = 0
-  while arg[exe-1] do
-    exe = exe-1
+  local mpkpse
+  do
+    local exe = 0
+    while arg[exe-1] do
+      exe = exe-1
+    end
+    mpkpse = kpse.new(arg[exe], "mpost")
   end
-  mpkpse = kpse.new(arg[exe], "mpost")
-end
-local special_ftype = {
-  pfb = "type1 fonts",
-  enc = "enc files",
-}
-function luamplib.finder (name, mode, ftype)
-  if mode == "w" then
-    if name and name ~= "mpout.log" then
-      kpse.record_output_file(name) -- recorder
-    end
-    return name
-  else
-    ftype = special_ftype[ftype] or ftype
-    local file = mpkpse:find_file(name,ftype)
-    if file then
-      if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
-        file = replaceinputmpfile(name,file)
+  local special_ftype = {
+    pfb = "type1 fonts",
+    enc = "enc files",
+  }
+  function luamplib.finder (name, mode, ftype)
+    if mode == "w" then
+      if name and name ~= "mpout.log" then
+        kpse.record_output_file(name) -- recorder
       end
+      return name
     else
-      file = mpkpse:find_file(name, name:match("%a+$"))
+      ftype = special_ftype[ftype] or ftype
+      local file = mpkpse:find_file(name,ftype)
+      if file then
+        if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
+          file = replaceinputmpfile(name,file)
+        end
+      else
+        file = mpkpse:find_file(name, name:match("%a+$"))
+      end
+      if file then
+        kpse.record_input_file(file) -- recorder
+      end
+      return file
     end
-    if file then
-      kpse.record_input_file(file) -- recorder
-    end
-    return file
   end
 end
 
 %    \end{macrocode}
 %
-%    Create and load \mplib instances.
-%    We do not support ancient version of \mplib any more.
-%    (Don't know which version of \mplib started to support
-%    |make_text| and |run_script|; let the users find it.)
-%    \begin{macrocode}
-local preamble = [[
-  boolean mplib ; mplib := true ;
-  let dump = endinput ;
-  let normalfontsize = fontsize;
-  input %s ;
-]]
-%    \end{macrocode}
+%    For the main function: |process|
 %
 %    \emph{plain} or \emph{metafun},
 %    though we cannot support \emph{metafun} format fully.
@@ -1609,137 +1662,136 @@ function luamplib.setformat (name)
   currentformat = name
 end
 %    \end{macrocode}
-%
 %    v2.9 has introduced the concept of ``code inherit''
 %    \begin{macrocode}
 luamplib.codeinherit = false
 local mplibinstances = {}
 luamplib.instances = mplibinstances
 local has_instancename = false
-local function reporterror (result, prevlog)
-  if not result then
-    err("no result object returned")
-  else
-    local t, e, l = result.term, result.error, result.log
+
+local process
+do
+  local function reporterror (result, prevlog)
+    if not result then
+      err("no result object returned")
+    else
+      local t, e, l = result.term, result.error, result.log
 %    \end{macrocode}
 %    log has more information than term, so log first (2021/08/02)
 %    \begin{macrocode}
-    local log = l or t or "no-term"
-    log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
-    if result.status > 0 then
-      local first = log:match"(.-\n! .-)\n! "
-      if first then
-        termorlog("term", first)
-        termorlog("log", log, "Warning")
-      else
-        warn(log)
-      end
-      if result.status > 1 then
-        err(e or "see above messages")
-      end
-    elseif prevlog then
-      log = prevlog..log
+      local log = l or t or "no-term"
+      log = log:gsub("%(Please type a command or say `end'%)",""):gsub("\n+","\n")
+      if result.status > 0 then
+        local first = log:match"(.-\n! .-)\n! "
+        if first then
+          termorlog("term", first)
+          termorlog("log", log, "Warning")
+        else
+          warn(log)
+        end
+        if result.status > 1 then
+          err(e or "see above messages")
+        end
+      elseif prevlog then
+        log = prevlog..log
 %    \end{macrocode}
 %    v2.6.1: now luamplib does not disregard |show| command,
 %    even when |luamplib.showlog| is false.  Incidentally,
 %    it does not raise error nor prints an info,
 %    even if output has no figure.
 %    \begin{macrocode}
-      local show = log:match"\n>>? .+"
-      if show then
-        termorlog("term", show, "Info (more info in the log)")
-        info(log)
-      elseif luamplib.showlog and log:find"%g" then
-        info(log)
+        local show = log:match"\n>>? .+"
+        if show then
+          termorlog("term", show, "Info (more info in the log)")
+          info(log)
+        elseif luamplib.showlog and log:find"%g" then
+          info(log)
+        end
       end
+      return log
     end
-    return log
   end
-end
 %    \end{macrocode}
-%
 %     |lualibs-os.lua| installs a randomseed. When this file is not loaded,
 %     we should explicitly seed a unique integer to get random randomseed for each run.
 %    \begin{macrocode}
-if not math.initialseed then math.randomseed(currenttime) end
-local function luamplibload (name)
-  local mpx = mplib.new {
-    ini_version = true,
-    find_file   = luamplib.finder,
+  if not math.initialseed then math.randomseed(currenttime) end
+  local function luamplibload (name)
+    local mpx = mplib.new {
+      ini_version = true,
+      find_file   = luamplib.finder,
 %    \end{macrocode}
-%    Make use of |make_text| and |run_script|, which will co-operate
-%    with \LuaTeX's |tex.runtoks| or other Lua functions. And we
-%    provide |numbersystem| option since v2.4.
+%    Make use of |make_text| and |run_script|. And we provide |numbersystem| option since v2.4.
 %    See \url{https://github.com/lualatex/luamplib/issues/21}.
 %    \begin{macrocode}
-    make_text   = luamplib.maketext,
-    run_script  = luamplib.runscript,
-    math_mode   = luamplib.numbersystem,
-    job_name    = tex.jobname,
-    random_seed = math.random(4095),
-    utf8_mode   = true,
-    extensions  = 1,
-  }
+      make_text   = luamplib.maketext,
+      run_script  = luamplib.runscript,
+      math_mode   = luamplib.numbersystem,
+      job_name    = tex.jobname,
+      random_seed = math.random(4095),
+      utf8_mode   = true,
+      extensions  = 1,
+    }
 %    \end{macrocode}
-%    Append our own \metapost preamble to the preamble above.
+%    Append our own \metapost preamble to the preamble loading plain/metafun format.
 %    \begin{macrocode}
-  local preamble = tableconcat{
-    format(preamble, replacesuffix(name,"mp")),
-    luamplib.preambles.mplibcode,
-    luamplib.legacyverbatimtex and luamplib.preambles.legacyverbatimtex or "",
-    luamplib.textextlabel and luamplib.preambles.textextlabel or "",
-  }
-  local result, log
-  if not mpx then
-    result = { status = 99, error = "out of memory"}
-  else
-    result = mpx:execute(preamble)
+    local preamble = tableconcat{
+      format(luamplib.preambles.preamble, replacesuffix(name,"mp")),
+      luamplib.preambles.mplibcode,
+      luamplib.legacyverbatimtex and luamplib.preambles.legacyverbatimtex or "",
+      luamplib.textextlabel and luamplib.preambles.textextlabel or "",
+    }
+    local result, log
+    if not mpx then
+      result = { status = 99, error = "out of memory"}
+    else
+      result = mpx:execute(preamble)
+    end
+    log = reporterror(result)
+    return mpx, result, log
   end
-  log = reporterror(result)
-  return mpx, result, log
-end
 %    \end{macrocode}
-%
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
-local function process (data, instancename)
-  local currfmt
-  if instancename and instancename ~= "" then
-    currfmt = instancename
-    has_instancename = true
-  else
-    currfmt = tableconcat{
-      currentformat,
-      luamplib.numbersystem or "scaled",
-      tostring(luamplib.textextlabel),
-      tostring(luamplib.legacyverbatimtex),
-    }
-    has_instancename = false
-  end
-  local mpx = mplibinstances[currfmt]
-  local standalone = not (has_instancename or luamplib.codeinherit)
-  if mpx and standalone then
-    mpx:finish()
-  end
-  local log = ""
-  if standalone or not mpx then
-    mpx, _, log = luamplibload(currentformat)
-    mplibinstances[currfmt] = mpx
-  end
-  local converted, result = false, {}
-  if mpx and data then
-    result = mpx:execute(data)
-    local log = reporterror(result, log)
-    if log then
-      if result.fig then
-        converted = luamplib.convert(result)
-      end
+  function process (data, instancename)
+    local currfmt
+    if instancename and instancename ~= "" then
+      currfmt = instancename
+      has_instancename = true
+    else
+      currfmt = tableconcat{
+        currentformat,
+        luamplib.numbersystem or "scaled",
+        tostring(luamplib.textextlabel),
+        tostring(luamplib.legacyverbatimtex),
+      }
+      has_instancename = false
     end
-  else
-    err"Mem file unloadable. Maybe generated with a different version of mplib?"
+    local mpx = mplibinstances[currfmt]
+    local standalone = not (has_instancename or luamplib.codeinherit)
+    if mpx and standalone then
+      mpx:finish()
+    end
+    local log = ""
+    if standalone or not mpx then
+      mpx, _, log = luamplibload(currentformat)
+      mplibinstances[currfmt] = mpx
+    end
+    local converted, result = false, {}
+    if mpx and data then
+      result = mpx:execute(data)
+      local log = reporterror(result, log)
+      if log then
+        if result.fig then
+          converted = luamplib.convert(result)
+        end
+      end
+    else
+      err"Mem file unloadable. Maybe generated with a different version of mplib?"
+    end
+    return converted, result
   end
-  return converted, result
 end
 
 %    \end{macrocode}
@@ -1755,7 +1807,6 @@ local pdfmode = tex.outputmode > 0
 local catlatex = luatexbase.registernumber("catcodetable@latex")
 local catat11  = luatexbase.registernumber("catcodetable@atletter")
 %    \end{macrocode}
-%
 %    |tex.scantoks| sometimes fail to read catcode properly, especially
 %    |\#|, |\&|, or |\%|. After some experiment, we dropped using it.
 %    Instead, a function containing |tex.sprint| seems to work nicely.
@@ -1763,6 +1814,11 @@ local catat11  = luatexbase.registernumber("catcodetable@atletter")
 local function run_tex_code (str, cat)
   texruntoks(function() texsprint(cat or catlatex, str) end)
 end
+%    \end{macrocode}
+%    For conversion of |sp| to |bp|.
+%    \begin{macrocode}
+local factor = 65536*(7227/7200)
+
 %    \end{macrocode}
 %
 %    Prepare textext box number containers, locals and globals.
@@ -1774,43 +1830,42 @@ end
 %    their tex boxes can be shared among instances of the same name.
 %    \begin{macrocode}
 local texboxes = { globalid = 0, localid = 4096 }
-%    \end{macrocode}
-%    For conversion of |sp| to |bp|.
-%    \begin{macrocode}
-local factor = 65536*(7227/7200)
-local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
-  xscaled %f yscaled %f shifted (0,-%f) \z
-  withprescript "mplibtexboxid=%i:%f:%f")'
-local function process_tex_text (str, maketext)
-  if str then
-    if not maketext then str = str:gsub("\r.-$","") end
-    local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
-                   and "\\global" or ""
-    local tex_box_id
-    if global == "" then
-      tex_box_id = texboxes.localid + 1
-      texboxes.localid = tex_box_id
-    else
-      local boxid = texboxes.globalid + 1
-      texboxes.globalid = boxid
-      run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
-      tex_box_id = tex.getcount'allocationnumber'
+local process_tex_text
+do
+  local textext_fmt = 'image(addto currentpicture doublepath unitsquare \z
+    xscaled %f yscaled %f shifted (0,-%f) \z
+    withprescript "mplibtexboxid=%i:%f:%f")'
+  function process_tex_text (str, maketext)
+    if str then
+      if not maketext then str = str:gsub("\r.-$","") end
+      local global = (has_instancename or luamplib.globaltextext or luamplib.codeinherit)
+                     and "\\global" or ""
+      local tex_box_id
+      if global == "" then
+        tex_box_id = texboxes.localid + 1
+        texboxes.localid = tex_box_id
+      else
+        local boxid = texboxes.globalid + 1
+        texboxes.globalid = boxid
+        run_tex_code(format([[\expandafter\newbox\csname luamplib.box.%s\endcsname]], boxid))
+        tex_box_id = tex.getcount'allocationnumber'
+      end
+      if str:find"^%[taggingoff%]" then
+        str = str:gsub("^%[taggingoff%]%s*","")
+        run_tex_code(format("\\luamplibnotagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
+                            tex_box_id, global, tex_box_id, str))
+      else
+        run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
+                            tex_box_id, global, tex_box_id, str))
+      end
+      local box = texgetbox(tex_box_id)
+      local wd  = box.width  / factor
+      local ht  = box.height / factor
+      local dp  = box.depth  / factor
+      return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
     end
-    if str:find"^%[taggingoff%]" then
-      str = str:gsub("^%[taggingoff%]%s*","")
-      run_tex_code(format("\\luamplibnotagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
-                          tex_box_id, global, tex_box_id, str))
-    else
-      run_tex_code(format("\\luamplibtagtextboxset{%i}{%s\\setbox%i\\hbox{%s}}",
-                          tex_box_id, global, tex_box_id, str))
-    end
-    local box = texgetbox(tex_box_id)
-    local wd  = box.width  / factor
-    local ht  = box.height / factor
-    local dp  = box.depth  / factor
-    return textext_fmt:format(wd, ht+dp, dp, tex_box_id, wd, ht+dp)
+    return ""
   end
-  return ""
 end
 
 %    \end{macrocode}
@@ -1820,21 +1875,7 @@ end
 %    with graphical objects.
 %    Attempt to support l3color as well.
 %    \begin{macrocode}
-local mplibcolorfmt = {
-  xcolor = tableconcat{
-    [[\begingroup\let\XC@mcolor\relax]],
-    [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]],
-    [[\color%s\endgroup]],
-  },
-  l3color = tableconcat{
-    [[\begingroup\def\__color_select:N#1{\expandafter\__color_select:nn#1}]],
-    [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]],
-    [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]],
-    [[\color_select:n%s\endgroup]],
-  },
-}
-local colfmt = is_defined'color_select:n' and "l3color" or "xcolor"
-if colfmt == "l3color" then
+if is_defined'color_select:n' then
   run_tex_code{
     "\\newcatcodetable\\luamplibcctabexplat",
     "\\begingroup",
@@ -1846,35 +1887,53 @@ if colfmt == "l3color" then
   }
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
-local function process_color (str)
-  if str then
-    if not str:find("%b{}") then
-      str = format("{%s}",str)
-    end
-    local myfmt = mplibcolorfmt[colfmt]
-    if colfmt == "l3color" and is_defined"color" then
-      if str:find("%b[]") then
-        myfmt = mplibcolorfmt.xcolor
-      else
-        for _,v in ipairs(str:match"{(.+)}":explode"!") do
-          if not v:find("^%s*%d+%s*$") then
-            local pp = get_macro(format("l__color_named_%s_prop",v))
-            if not pp or pp == "" then
-              myfmt = mplibcolorfmt.xcolor
-              break
+
+local process_color
+do
+  local colfmt = ccexplat and "l3color" or "xcolor"
+  local mplibcolorfmt = {
+    xcolor = tableconcat{
+      [[\begingroup\let\XC@mcolor\relax]],
+      [[\def\set@color{\global\mplibtmptoks\expandafter{\current@color}}]],
+      [[\color%s\endgroup]],
+    },
+    l3color = tableconcat{
+      [[\begingroup\def\__color_select:N#1{\expandafter\__color_select:nn#1}]],
+      [[\def\__color_backend_select:nn#1#2{\global\mplibtmptoks{#1 #2}}]],
+      [[\def\__kernel_backend_literal:e#1{\global\mplibtmptoks\expandafter{\expanded{#1}}}]],
+      [[\color_select:n%s\endgroup]],
+    },
+  }
+  function process_color (str)
+    if str then
+      if not str:find("%b{}") then
+        str = format("{%s}",str)
+      end
+      local myfmt = mplibcolorfmt[colfmt]
+      if colfmt == "l3color" and is_defined"color" then
+        if str:find("%b[]") then
+          myfmt = mplibcolorfmt.xcolor
+        else
+          for _,v in ipairs(str:match"{(.+)}":explode"!") do
+            if not v:find("^%s*%d+%s*$") then
+              local pp = get_macro(format("l__color_named_%s_prop",v))
+              if not pp or pp == "" then
+                myfmt = mplibcolorfmt.xcolor
+                break
+              end
             end
           end
         end
       end
+      run_tex_code(myfmt:format(str), ccexplat or catat11)
+      local t = texgettoks"mplibtmptoks"
+      if not pdfmode and not t:find"^pdf" then
+        t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+      end
+      return format('1 withprescript "mpliboverridecolor=%s"', t)
     end
-    run_tex_code(myfmt:format(str), ccexplat or catat11)
-    local t = texgettoks"mplibtmptoks"
-    if not pdfmode and not t:find"^pdf" then
-      t = t:gsub("%a+ (.+)","pdf:bc [%1]")
-    end
-    return format('1 withprescript "mpliboverridecolor=%s"', t)
+    return ""
   end
-  return ""
 end
 
 %    \end{macrocode}
@@ -1905,8 +1964,8 @@ end
 %    \end{macrocode}
 %
 %    For legacy verbatimtex process.
-%    |verbatimtex| |...| |etex| before |beginfig()| is not ignored,
-%    but the \TeX\ code is inserted just before the \mplib box. And
+%    |verbatimtex| |...| |etex| before |beginfig()|
+%    is inserted just before the \mplib box. And
 %    \TeX\ code inside |beginfig() ... endfig| is inserted after the \mplib box.
 %    \begin{macrocode}
 local tex_code_pre_mplib = {}
@@ -1925,15 +1984,6 @@ local function process_verbatimtex_infig (str)
   return ""
 end
 
-local runscript_funcs = {
-  luamplibtext    = process_tex_text,
-  luamplibcolor   = process_color,
-  luamplibdimen   = process_dimen,
-  luamplibprefig  = process_verbatimtex_prefig,
-  luamplibinfig   = process_verbatimtex_infig,
-  luamplibverbtex = process_verbatimtex_text,
-}
-
 %    \end{macrocode}
 %
 %    For \emph{metafun} format. see issue \#79.
@@ -1944,7 +1994,6 @@ mp.mf_path_reset = mp.mf_path_reset or function() end
 mp.mf_finish_saving_data = mp.mf_finish_saving_data or function() end
 mp.report = mp.report or info
 %    \end{macrocode}
-%
 %    \emph{metafun} 2021-03-09 changes crashes luamplib.
 %    \begin{macrocode}
 catcodes = catcodes or {}
@@ -1960,88 +2009,106 @@ catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or catlatex
 
 %    \end{macrocode}
 %
+%    Now |luamplib.runscript|
+%    \begin{macrocode}
+do
+  local runscript_funcs = {
+    luamplibtext    = process_tex_text,
+    luamplibcolor   = process_color,
+    luamplibdimen   = process_dimen,
+    luamplibprefig  = process_verbatimtex_prefig,
+    luamplibinfig   = process_verbatimtex_infig,
+    luamplibverbtex = process_verbatimtex_text,
+  }
+%    \end{macrocode}
 %    A function from \ConTeXt\ general.
 %    \begin{macrocode}
-local function mpprint(buffer,...)
-  for i=1,select("#",...) do
-    local value = select(i,...)
-    if value ~= nil then
-      local t = type(value)
-      if t == "number" then
-        buffer[#buffer+1] = format("%.16f",value)
-      elseif t == "string" then
-        buffer[#buffer+1] = value
-      elseif t == "table" then
-        buffer[#buffer+1] = "(" .. tableconcat(value,",") .. ")"
-      else -- boolean or whatever
-        buffer[#buffer+1] = tostring(value)
+  local function mpprint(buffer,...)
+    for i=1,select("#",...) do
+      local value = select(i,...)
+      if value ~= nil then
+        local t = type(value)
+        if t == "number" then
+          buffer[#buffer+1] = format("%.16f",value)
+        elseif t == "string" then
+          buffer[#buffer+1] = value
+        elseif t == "table" then
+          buffer[#buffer+1] = "(" .. tableconcat(value,",") .. ")"
+        else -- boolean or whatever
+          buffer[#buffer+1] = tostring(value)
+        end
       end
     end
   end
-end
-function luamplib.runscript (code)
-  local id, str = code:match("(.-){(.*)}")
-  if id and str then
-    local f = runscript_funcs[id]
-    if f then
-      local t = f(str)
-      if t then return t end
+  function luamplib.runscript (code)
+    local id, str = code:match("(.-){(.*)}")
+    if id and str then
+      local f = runscript_funcs[id]
+      if f then
+        local t = f(str)
+        if t then return t end
+      end
     end
+    local f = loadstring(code)
+    if type(f) == "function" then
+      local buffer = {}
+      function mp.print(...)
+        mpprint(buffer,...)
+      end
+      local res = {f()}
+      buffer = tableconcat(buffer)
+      if buffer and buffer ~= "" then
+        return buffer
+      end
+      buffer = {}
+      mpprint(buffer, tableunpack(res))
+      return tableconcat(buffer)
+    end
+    return ""
   end
-  local f = loadstring(code)
-  if type(f) == "function" then
-    local buffer = {}
-    function mp.print(...)
-      mpprint(buffer,...)
-    end
-    local res = {f()}
-    buffer = tableconcat(buffer)
-    if buffer and buffer ~= "" then
-      return buffer
-    end
-    buffer = {}
-    mpprint(buffer, tableunpack(res))
-    return tableconcat(buffer)
-  end
-  return ""
 end
 
 %    \end{macrocode}
 %
+%    |luamplib.maketext|
+%    \begin{macrocode}
+luamplib.legacyverbatimtex = true
+do
+%    \end{macrocode}
 %    |make_text| must be one liner, so comment sign is not allowed.
 %    \begin{macrocode}
-local function protecttexcontents (str)
-  return str:gsub("\\%%", "\0PerCent\0")
-            :gsub("%%.-\n", "")
-            :gsub("%%.-$",  "")
-            :gsub("%zPerCent%z", "\\%%")
-            :gsub("\r.-$",  "")
-            :gsub("%s+", " ")
-end
-luamplib.legacyverbatimtex = true
-function luamplib.maketext (str, what)
-  if str and str ~= "" then
-    str = protecttexcontents(str)
-    if what == 1 then
-      if not str:find("\\documentclass"..name_e) and
-         not str:find("\\begin%s*{document}") and
-         not str:find("\\documentstyle"..name_e) and
-         not str:find("\\usepackage"..name_e) then
-        if luamplib.legacyverbatimtex then
-          if luamplib.in_the_fig then
-            return process_verbatimtex_infig(str)
-          else
-            return process_verbatimtex_prefig(str)
-          end
-        else
-          return process_verbatimtex_text(str)
-        end
-      end
-    else
-      return process_tex_text(str, true) -- bool is for 'char13'
-    end
+  local function protecttexcontents (str)
+    return str:gsub("\\%%", "\0PerCent\0")
+              :gsub("%%.-\n", "")
+              :gsub("%%.-$",  "")
+              :gsub("%zPerCent%z", "\\%%")
+              :gsub("\r.-$",  "")
+              :gsub("%s+", " ")
   end
-  return ""
+  function luamplib.maketext (str, what)
+    if str and str ~= "" then
+      str = protecttexcontents(str)
+      if what == 1 then
+        if not str:find("\\documentclass"..name_e) and
+           not str:find("\\begin%s*{document}") and
+           not str:find("\\documentstyle"..name_e) and
+           not str:find("\\usepackage"..name_e) then
+          if luamplib.legacyverbatimtex then
+            if luamplib.in_the_fig then
+              return process_verbatimtex_infig(str)
+            else
+              return process_verbatimtex_prefig(str)
+            end
+          else
+            return process_verbatimtex_text(str)
+          end
+        end
+      else
+        return process_tex_text(str, true) -- bool is for 'char13'
+      end
+    end
+    return ""
+  end
 end
 
 %    \end{macrocode}
@@ -2181,6 +2248,43 @@ luamplib.shadecolor = function (str)
 end
 
 %    \end{macrocode}
+% |luamplib.fillandstrokecolor|
+%    \begin{macrocode}
+do
+  local function graphictextcolor (col, filldraw)
+    if col:find"^[%d%.:]+$" then
+      col = col:explode":"
+      for i=1,#col do
+        col[i] = format("%.3f", col[i])
+      end
+      if pdfmode then
+        local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
+        col[#col+1] = filldraw == "fill" and op or op:upper()
+        return tableconcat(col," ")
+      end
+      return format("[%s]", tableconcat(col," "))
+    end
+    col = process_color(col):match'"mpliboverridecolor=(.+)"'
+    if pdfmode then
+      local t, tt = col:explode(), { }
+      local b = filldraw == "fill" and 1 or #t/2+1
+      local e = b == 1 and #t/2 or #t
+      for i=b,e do
+        tt[#tt+1] = t[i]
+      end
+      return tableconcat(tt," ")
+    end
+    return col:gsub("^.- ","")
+  end
+  function luamplib.fillandstrokecolor (fill, stroke)
+    fill   = graphictextcolor(fill, "fill")
+    stroke = graphictextcolor(stroke, "stroke")
+    local bc = pdfmode and "" or "pdf:bc "
+    return format('withprescript "mpliboverridecolor=%s%s %s"', bc, fill, stroke)
+  end
+end
+
+%    \end{macrocode}
 %
 % Remove trailing zeros for smaller PDF
 %    \begin{macrocode}
@@ -2189,46 +2293,8 @@ local function rmzeros(str) return str:gsub("%.?0+$","") end
 
 %    \end{macrocode}
 %
-%    luamplib's mplibgraphictext operator
+%    common function for mplibgraphictext and mpliboutlinetext
 %    \begin{macrocode}
-local emboldenfonts = { }
-local function getemboldenwidth (curr, fakebold)
-  local width = emboldenfonts.width
-  if not width then
-    local f
-    local function getglyph(n)
-      while n do
-        if n.head then
-          getglyph(n.head)
-        elseif n.font and n.font > 0 then
-          f = n.font; break
-        end
-        n = node.getnext(n)
-      end
-    end
-    getglyph(curr)
-    width = font.getcopy(f or font.current()).size * fakebold / factor * 10
-    emboldenfonts.width = width
-  end
-  return width
-end
-local function getrulewhatsit (line, wd, ht, dp)
-  line, wd, ht, dp = line/1000, wd/factor, ht/factor, dp/factor
-  local pl
-  local fmt = "%f w %f %f %f %f re %s"
-  if pdfmode then
-    pl = node.new("whatsit","pdf_literal")
-    pl.mode = 0
-  else
-    fmt = "pdf:content "..fmt
-    pl = node.new("whatsit","special")
-  end
-  pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals,rmzeros)
-  local ss = node.new"glue"
-  node.setglue(ss, 0, 65536, 65536, 2, 2)
-  pl.next = ss
-  return pl
-end
 local function getrulemetric (box, curr, bp)
   local running = -1073741824
   local wd,ht,dp = curr.width, curr.height, curr.depth
@@ -2240,540 +2306,562 @@ local function getrulemetric (box, curr, bp)
   end
   return wd, ht, dp
 end
+
+%    \end{macrocode}
+%
+%    luamplib's mplibgraphictext operator
+%    \begin{macrocode}
+do
+  local emboldenfonts = { }
+  local function getemboldenwidth (curr, fakebold)
+    local width = emboldenfonts.width
+    if not width then
+      local f
+      local function getglyph(n)
+        while n do
+          if n.head then
+            getglyph(n.head)
+          elseif n.font and n.font > 0 then
+            f = n.font; break
+          end
+          n = node.getnext(n)
+        end
+      end
+      getglyph(curr)
+      width = font.getcopy(f or font.current()).size * fakebold / factor * 10
+      emboldenfonts.width = width
+    end
+    return width
+  end
+  local function getrulewhatsit (line, wd, ht, dp)
+    line, wd, ht, dp = line/1000, wd/factor, ht/factor, dp/factor
+    local pl
+    local fmt = "%f w %f %f %f %f re %s"
+    if pdfmode then
+      pl = node.new("whatsit","pdf_literal")
+      pl.mode = 0
+    else
+      fmt = "pdf:content "..fmt
+      pl = node.new("whatsit","special")
+    end
+    pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals,rmzeros)
+    local ss = node.new"glue"
+    node.setglue(ss, 0, 65536, 65536, 2, 2)
+    pl.next = ss
+    return pl
+  end
 %    \end{macrocode}
 % copying attributes of rule/glue node to improve tagging of mplibgraphictext
 %    \begin{macrocode}
-local tag_update_attrs
-if is_defined"ver@tagpdf.sty" then
-  tag_update_attrs = function (n, curr)
-    while n do
-      n.attr = curr.attr
-      if n.head then
-        tag_update_attrs(n.head, curr)
+  local tag_update_attrs
+  if is_defined"ver@tagpdf.sty" then
+    tag_update_attrs = function (n, curr)
+      while n do
+        n.attr = curr.attr
+        if n.head then
+          tag_update_attrs(n.head, curr)
+        end
+        n = node.getnext(n)
       end
-      n = node.getnext(n)
     end
+  else
+    tag_update_attrs = function() end
   end
-else
-  tag_update_attrs = function() end
-end
-local function embolden (box, curr, fakebold)
-  local head = curr
-  while curr do
-    if curr.head then
-      curr.head = embolden(curr, curr.head, fakebold)
-    elseif curr.replace then
-      curr.replace = embolden(box, curr.replace, fakebold)
-    elseif curr.leader then
-      if curr.leader.head then
-        curr.leader.head = embolden(curr.leader, curr.leader.head, fakebold)
-      elseif curr.leader.id == node.id"rule" then
-        local glue = node.effective_glue(curr, box)
+  local function embolden (box, curr, fakebold)
+    local head = curr
+    while curr do
+      if curr.head then
+        curr.head = embolden(curr, curr.head, fakebold)
+      elseif curr.replace then
+        curr.replace = embolden(box, curr.replace, fakebold)
+      elseif curr.leader then
+        if curr.leader.head then
+          curr.leader.head = embolden(curr.leader, curr.leader.head, fakebold)
+        elseif curr.leader.id == node.id"rule" then
+          local glue = node.effective_glue(curr, box)
+          local line = getemboldenwidth(curr, fakebold)
+          local wd,ht,dp = getrulemetric(box, curr.leader)
+          if box.id == node.id"hlist" then
+            wd = glue
+          else
+            ht, dp = 0, glue
+          end
+          local pl = getrulewhatsit(line, wd, ht, dp)
+          local pack = box.id == node.id"hlist" and node.hpack or node.vpack
+          local list = pack(pl, glue, "exactly")
+          tag_update_attrs(list,curr)
+          head = node.insert_after(head, curr, list)
+          head, curr = node.remove(head, curr)
+        end
+      elseif curr.id == node.id"rule" and curr.subtype == 0 then
         local line = getemboldenwidth(curr, fakebold)
-        local wd,ht,dp = getrulemetric(box, curr.leader)
-        if box.id == node.id"hlist" then
-          wd = glue
-        else
-          ht, dp = 0, glue
+        local wd,ht,dp = getrulemetric(box, curr)
+        if box.id == node.id"vlist" then
+          ht, dp = 0, ht+dp
         end
         local pl = getrulewhatsit(line, wd, ht, dp)
-        local pack = box.id == node.id"hlist" and node.hpack or node.vpack
-        local list = pack(pl, glue, "exactly")
+        local list
+        if box.id == node.id"hlist" then
+          list = node.hpack(pl, wd, "exactly")
+        else
+          list = node.vpack(pl, ht+dp, "exactly")
+        end
         tag_update_attrs(list,curr)
         head = node.insert_after(head, curr, list)
         head, curr = node.remove(head, curr)
-      end
-    elseif curr.id == node.id"rule" and curr.subtype == 0 then
-      local line = getemboldenwidth(curr, fakebold)
-      local wd,ht,dp = getrulemetric(box, curr)
-      if box.id == node.id"vlist" then
-        ht, dp = 0, ht+dp
-      end
-      local pl = getrulewhatsit(line, wd, ht, dp)
-      local list
-      if box.id == node.id"hlist" then
-        list = node.hpack(pl, wd, "exactly")
-      else
-        list = node.vpack(pl, ht+dp, "exactly")
-      end
-      tag_update_attrs(list,curr)
-      head = node.insert_after(head, curr, list)
-      head, curr = node.remove(head, curr)
-    elseif curr.id == node.id"glyph" and curr.font > 0 then
-      local f = curr.font
-      local key = format("%s:%s",f,fakebold)
-      local i = emboldenfonts[key]
-      if not i then
-        local ft = font.getfont(f) or font.getcopy(f)
-        if pdfmode then
-          width = ft.size * fakebold / factor * 10
-          emboldenfonts.width = width
-          ft.mode, ft.width = 2, width
-          i = font.define(ft)
-        else
-          if ft.format ~= "opentype" and ft.format ~= "truetype" then
-            goto skip_type1
+      elseif curr.id == node.id"glyph" and curr.font > 0 then
+        local f = curr.font
+        local key = format("%s:%s",f,fakebold)
+        local i = emboldenfonts[key]
+        if not i then
+          local ft = font.getfont(f) or font.getcopy(f)
+          if pdfmode then
+            width = ft.size * fakebold / factor * 10
+            emboldenfonts.width = width
+            ft.mode, ft.width = 2, width
+            i = font.define(ft)
+          else
+            if ft.format ~= "opentype" and ft.format ~= "truetype" then
+              goto skip_type1
+            end
+            local name = ft.name:gsub('"',''):gsub(';$','')
+            name = format('%s;embolden=%s;',name,fakebold)
+            _, i = fonts.constructors.readanddefine(name,ft.size)
           end
-          local name = ft.name:gsub('"',''):gsub(';$','')
-          name = format('%s;embolden=%s;',name,fakebold)
-          _, i = fonts.constructors.readanddefine(name,ft.size)
+          emboldenfonts[key] = i
         end
-        emboldenfonts[key] = i
+        curr.font = i
       end
-      curr.font = i
+      ::skip_type1::
+      curr = node.getnext(curr)
     end
-    ::skip_type1::
-    curr = node.getnext(curr)
+    return head
   end
-  return head
-end
-local function graphictextcolor (col, filldraw)
-  if col:find"^[%d%.:]+$" then
-    col = col:explode":"
-    for i=1,#col do
-      col[i] = format("%.3f", col[i])
-    end
-    if pdfmode then
-      local op = #col == 4 and "k" or #col == 3 and "rg" or "g"
-      col[#col+1] = filldraw == "fill" and op or op:upper()
-      return tableconcat(col," ")
-    end
-    return format("[%s]", tableconcat(col," "))
+  luamplib.graphictext = function (text, fakebold, fc, dc)
+    local fmt = process_tex_text(text):sub(1,-2)
+    local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
+    emboldenfonts.width = nil
+    local box = texgetbox(id)
+    box.head = embolden(box, box.head, fakebold)
+    local colors = luamplib.fillandstrokecolor(fc, dc)
+    return format('%s %s)', fmt, colors)
   end
-  col = process_color(col):match'"mpliboverridecolor=(.+)"'
-  if pdfmode then
-    local t, tt = col:explode(), { }
-    local b = filldraw == "fill" and 1 or #t/2+1
-    local e = b == 1 and #t/2 or #t
-    for i=b,e do
-      tt[#tt+1] = t[i]
-    end
-    return tableconcat(tt," ")
-  end
-  return col:gsub("^.- ","")
-end
-luamplib.graphictext = function (text, fakebold, fc, dc)
-  local fmt = process_tex_text(text):sub(1,-2)
-  local id = tonumber(fmt:match"mplibtexboxid=(%d+):")
-  emboldenfonts.width = nil
-  local box = texgetbox(id)
-  box.head = embolden(box, box.head, fakebold)
-  local fill = graphictextcolor(fc,"fill")
-  local draw = graphictextcolor(dc,"draw")
-  local bc = pdfmode and "" or "pdf:bc "
-  return format('%s withprescript "mpliboverridecolor=%s%s %s")', fmt, bc, fill, draw)
 end
 
 %    \end{macrocode}
 %
 %    luamplib's mplibglyph operator
 %    \begin{macrocode}
-local function mperr (str)
-  return format("hide(errmessage %q)", str)
-end
-local function getangle (a,b,c)
-  local r = math.deg(math.atan(c.y-b.y, c.x-b.x) - math.atan(b.y-a.y, b.x-a.x))
-  if r > 180 then
-    r = r - 360
-  elseif r < -180 then
-    r = r + 360
+do
+  local function mperr (str)
+    return format("hide(errmessage %q)", str)
   end
-  return r
-end
-local function turning (t)
-  local r, n = 0, #t
-  for i=1,2 do
-    tableinsert(t, t[i])
+  local function getangle (a,b,c)
+    local r = math.deg(math.atan(c.y-b.y, c.x-b.x) - math.atan(b.y-a.y, b.x-a.x))
+    if r > 180 then
+      r = r - 360
+    elseif r < -180 then
+      r = r + 360
+    end
+    return r
   end
-  for i=1,n do
-    r = r + getangle(t[i], t[i+1], t[i+2])
+  local function turning (t)
+    local r, n = 0, #t
+    for i=1,2 do
+      tableinsert(t, t[i])
+    end
+    for i=1,n do
+      r = r + getangle(t[i], t[i+1], t[i+2])
+    end
+    return r/360
   end
-  return r/360
-end
-local function glyphimage(t, fmt)
-  local q,p,r = {{},{}}
-  for i,v in ipairs(t) do
-    local cmd = v[#v]
-    if cmd == "m" then
-      p = {format('(%s,%s)',v[1],v[2])}
-      r = {{x=v[1],y=v[2]}}
-    else
-      local nt = t[i+1]
-      local last = not nt or nt[#nt] == "m"
-      if cmd == "l" then
-        local pt = t[i-1]
-        local seco = pt[#pt] == "m"
-        if (last or seco) and r[1].x == v[1] and r[1].y == v[2] then
-        else
-          tableinsert(p, format('--(%s,%s)',v[1],v[2]))
-          tableinsert(r, {x=v[1],y=v[2]})
-        end
-        if last then
-          tableinsert(p, '--cycle')
-        end
-      elseif cmd == "c" then
-        tableinsert(p, format('..controls(%s,%s)and(%s,%s)',v[1],v[2],v[3],v[4]))
-        if last and r[1].x == v[5] and r[1].y == v[6] then
-          tableinsert(p, '..cycle')
-        else
-          tableinsert(p, format('..(%s,%s)',v[5],v[6]))
+  local function glyphimage(t, fmt)
+    local q,p,r = {{},{}}
+    for i,v in ipairs(t) do
+      local cmd = v[#v]
+      if cmd == "m" then
+        p = {format('(%s,%s)',v[1],v[2])}
+        r = {{x=v[1],y=v[2]}}
+      else
+        local nt = t[i+1]
+        local last = not nt or nt[#nt] == "m"
+        if cmd == "l" then
+          local pt = t[i-1]
+          local seco = pt[#pt] == "m"
+          if (last or seco) and r[1].x == v[1] and r[1].y == v[2] then
+          else
+            tableinsert(p, format('--(%s,%s)',v[1],v[2]))
+            tableinsert(r, {x=v[1],y=v[2]})
+          end
           if last then
             tableinsert(p, '--cycle')
           end
-          tableinsert(r, {x=v[5],y=v[6]})
+        elseif cmd == "c" then
+          tableinsert(p, format('..controls(%s,%s)and(%s,%s)',v[1],v[2],v[3],v[4]))
+          if last and r[1].x == v[5] and r[1].y == v[6] then
+            tableinsert(p, '..cycle')
+          else
+            tableinsert(p, format('..(%s,%s)',v[5],v[6]))
+            if last then
+              tableinsert(p, '--cycle')
+            end
+            tableinsert(r, {x=v[5],y=v[6]})
+          end
+        else
+          return mperr"unknown operator"
         end
-      else
-        return mperr"unknown operator"
-      end
-      if last then
-        tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
+        if last then
+          tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
+        end
       end
     end
-  end
-  r = { }
-  if fmt == "opentype" then
-    for _,v in ipairs(q[1]) do
-      tableinsert(r, format('addto currentpicture contour %s;',v))
-    end
-    for _,v in ipairs(q[2]) do
-      tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
-    end
-  else
-    for _,v in ipairs(q[2]) do
-      tableinsert(r, format('addto currentpicture contour %s;',v))
-    end
-    for _,v in ipairs(q[1]) do
-      tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
-    end
-  end
-  return format('image(%s)', tableconcat(r))
-end
-if not table.tofile then require"lualibs-lpeg"; require"lualibs-table"; end
-function luamplib.glyph (f, c)
-  local filename, subfont, instance, kind, shapedata
-  local fid = tonumber(f) or font.id(f)
-  if fid > 0 then
-    local fontdata = font.getfont(fid) or font.getcopy(fid)
-    filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
-    instance = fontdata.specification and fontdata.specification.instance
-    filename = filename and filename:gsub("^harfloaded:","")
-  else
-    local name
-    f = f:match"^%s*(.+)%s*$"
-    name, subfont, instance = f:match"(.+)%((%d+)%)%[(.-)%]$"
-    if not name then
-      name, instance = f:match"(.+)%[(.-)%]$" -- SourceHanSansK-VF.otf[Heavy]
-    end
-    if not name then
-      name, subfont = f:match"(.+)%((%d+)%)$" -- Times.ttc(2)
-    end
-    name = name or f
-    subfont = (subfont or 0)+1
-    instance = instance and instance:lower()
-    for _,ftype in ipairs{"opentype", "truetype"} do
-      filename = kpse.find_file(name, ftype.." fonts")
-      if filename then
-        kind = ftype; break
+    r = { }
+    if fmt == "opentype" then
+      for _,v in ipairs(q[1]) do
+        tableinsert(r, format('addto currentpicture contour %s;',v))
       end
-    end
-  end
-  if kind ~= "opentype" and kind ~= "truetype" then
-    f = fid and fid > 0 and tex.fontname(fid) or f
-    if kpse.find_file(f, "tfm") then
-      return format("glyph %s of %q", tonumber(c) or format("%q",c), f)
+      for _,v in ipairs(q[2]) do
+        tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
+      end
     else
-      return mperr"font not found"
-    end
-  end
-  local time = lfsattributes(filename,"modification")
-  local k = format("shapes_%s(%s)[%s]", filename, subfont or "", instance or "")
-  local h = format(string.rep('%02x', 256/8), string.byte(sha2.digest256(k), 1, -1))
-  local newname = format("%s/%s.lua", cachedir or outputdir, h)
-  local newtime = lfsattributes(newname,"modification") or 0
-  if time == newtime then
-    shapedata = require(newname)
-  end
-  if not shapedata then
-    shapedata = fonts and fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
-    if not shapedata then return mperr"loadshapes() failed. luaotfload not loaded?" end
-    table.tofile(newname, shapedata, "return")
-    lfstouch(newname, time, time)
-  end
-  local gid = tonumber(c)
-  if not gid then
-    local uni = utf8.codepoint(c)
-    for i,v in pairs(shapedata.glyphs) do
-      if c == v.name or uni == v.unicode then
-        gid = i; break
+      for _,v in ipairs(q[2]) do
+        tableinsert(r, format('addto currentpicture contour %s;',v))
+      end
+      for _,v in ipairs(q[1]) do
+        tableinsert(r, format('addto currentpicture contour %s withcolor background;',v))
       end
     end
+    return format('image(%s)', tableconcat(r))
   end
-  if not gid then return mperr"cannot get GID (glyph id)" end
-  local fac = 1000 / (shapedata.units or 1000)
-  local t = shapedata.glyphs[gid].segments
-  if not t then return "image()" end
-  for i,v in ipairs(t) do
-    if type(v) == "table" then
-      for ii,vv in ipairs(v) do
-        if type(vv) == "number" then
-          t[i][ii] = format("%.0f", vv * fac)
+  if not table.tofile then require"lualibs-lpeg"; require"lualibs-table"; end
+  function luamplib.glyph (f, c)
+    local filename, subfont, instance, kind, shapedata
+    local fid = tonumber(f) or font.id(f)
+    if fid > 0 then
+      local fontdata = font.getfont(fid) or font.getcopy(fid)
+      filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
+      instance = fontdata.specification and fontdata.specification.instance
+      filename = filename and filename:gsub("^harfloaded:","")
+    else
+      local name
+      f = f:match"^%s*(.+)%s*$"
+      name, subfont, instance = f:match"(.+)%((%d+)%)%[(.-)%]$"
+      if not name then
+        name, instance = f:match"(.+)%[(.-)%]$" -- SourceHanSansK-VF.otf[Heavy]
+      end
+      if not name then
+        name, subfont = f:match"(.+)%((%d+)%)$" -- Times.ttc(2)
+      end
+      name = name or f
+      subfont = (subfont or 0)+1
+      instance = instance and instance:lower()
+      for _,ftype in ipairs{"opentype", "truetype"} do
+        filename = kpse.find_file(name, ftype.." fonts")
+        if filename then
+          kind = ftype; break
         end
       end
     end
+    if kind ~= "opentype" and kind ~= "truetype" then
+      f = fid and fid > 0 and tex.fontname(fid) or f
+      if kpse.find_file(f, "tfm") then
+        return format("glyph %s of %q", tonumber(c) or format("%q",c), f)
+      else
+        return mperr"font not found"
+      end
+    end
+    local time = lfsattributes(filename,"modification")
+    local k = format("shapes_%s(%s)[%s]", filename, subfont or "", instance or "")
+    local h = format(string.rep('%02x', 256/8), string.byte(sha2.digest256(k), 1, -1))
+    local newname = format("%s/%s.lua", cachedir or outputdir, h)
+    local newtime = lfsattributes(newname,"modification") or 0
+    if time == newtime then
+      shapedata = require(newname)
+    end
+    if not shapedata then
+      shapedata = fonts and fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
+      if not shapedata then return mperr"loadshapes() failed. luaotfload not loaded?" end
+      table.tofile(newname, shapedata, "return")
+      lfstouch(newname, time, time)
+    end
+    local gid = tonumber(c)
+    if not gid then
+      local uni = utf8.codepoint(c)
+      for i,v in pairs(shapedata.glyphs) do
+        if c == v.name or uni == v.unicode then
+          gid = i; break
+        end
+      end
+    end
+    if not gid then return mperr"cannot get GID (glyph id)" end
+    local fac = 1000 / (shapedata.units or 1000)
+    local t = shapedata.glyphs[gid].segments
+    if not t then return "image()" end
+    for i,v in ipairs(t) do
+      if type(v) == "table" then
+        for ii,vv in ipairs(v) do
+          if type(vv) == "number" then
+            t[i][ii] = format("%.0f", vv * fac)
+          end
+        end
+      end
+    end
+    kind = shapedata.format or kind
+    return glyphimage(t, kind)
   end
-  kind = shapedata.format or kind
-  return glyphimage(t, kind)
 end
 
 %    \end{macrocode}
 %
 %    mpliboutlinetext : based on mkiv's font-mps.lua
 %    \begin{macrocode}
-local rulefmt = "mpliboutlinepic[%i]:=image(addto currentpicture contour \z
-  unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
-local outline_horz, outline_vert
-function outline_vert (res, box, curr, xshift, yshift)
-  local b2u = box.dir == "LTL"
-  local dy = (b2u and -box.depth or box.height)/factor
-  local ody = dy
-  while curr do
-    if curr.id == node.id"rule" then
-      local wd, ht, dp = getrulemetric(box, curr, true)
-      local hd = ht + dp
-      if hd ~= 0 then
-        dy = dy + (b2u and dp or -ht)
-        if wd ~= 0 and curr.subtype == 0 then
-          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
-        end
-        dy = dy + (b2u and ht or -dp)
-      end
-    elseif curr.id == node.id"glue" then
-      local vwidth = node.effective_glue(curr,box)/factor
-      if curr.leader then
-        local curr, kind = curr.leader, curr.subtype
-        if curr.id == node.id"rule" then
-          local wd = getrulemetric(box, curr, true)
-          if wd ~= 0 then
-            local hd = vwidth
-            local dy = dy + (b2u and 0 or -hd)
-            if hd ~= 0 and curr.subtype == 0 then
-              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+hd/2)
-            end
-          end
-        elseif curr.head then
-          local hd = (curr.height + curr.depth)/factor
-          if hd <= vwidth then
-            local dy, n, iy = dy, 0, 0
-            if kind == 100 or kind == 103 then -- todo: gleaders
-              local ady = abs(ody - dy)
-              local ndy = math.ceil(ady / hd) * hd
-              local diff = ndy - ady
-              n = math.floor((vwidth-diff) / hd)
-              dy = dy + (b2u and diff or -diff)
-            else
-              n = math.floor(vwidth / hd)
-              if kind == 101 then
-                local side = vwidth % hd / 2
-                dy = dy + (b2u and side or -side)
-              elseif kind == 102 then
-                iy = vwidth % hd / (n+1)
-                dy = dy + (b2u and iy or -iy)
-              end
-            end
-            dy = dy + (b2u and curr.depth or -curr.height)/factor
-            hd = b2u and hd or -hd
-            iy = b2u and iy or -iy
-            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
-            for i=1,n do
-              res = func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
-              dy = dy + hd + iy
-            end
-          end
-        end
-      end
-      dy = dy + (b2u and vwidth or -vwidth)
-    elseif curr.id == node.id"kern" then
-      dy = dy + curr.kern/factor * (b2u and 1 or -1)
-    elseif curr.id == node.id"vlist" then
-      dy = dy + (b2u and curr.depth or -curr.height)/factor
-      res = outline_vert(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
-      dy = dy + (b2u and curr.height or -curr.depth)/factor
-    elseif curr.id == node.id"hlist" then
-      dy = dy + (b2u and curr.depth or -curr.height)/factor
-      res = outline_horz(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
-      dy = dy + (b2u and curr.height or -curr.depth)/factor
-    end
-    curr = node.getnext(curr)
-  end
-  return res
-end
-function outline_horz (res, box, curr, xshift, yshift, discwd)
-  local r2l = box.dir == "TRT"
-  local dx = r2l and (discwd or box.width/factor) or 0
-  local dirs = { { dir = r2l, dx = dx } }
-  while curr do
-    if curr.id == node.id"dir" then
-      local sign, dir = curr.dir:match"(.)(...)"
-      local level, newdir = curr.level, r2l
-      if sign == "+" then
-        newdir = dir == "TRT"
-        if r2l ~= newdir then
-          local n = node.getnext(curr)
-          while n do
-            if n.id == node.id"dir" and n.level+1 == level then break end
-            n = node.getnext(n)
-          end
-          n = n or node.tail(curr)
-          dx = dx + node.rangedimensions(box, curr, n)/factor * (newdir and 1 or -1)
-        end
-        dirs[level] = { dir = r2l, dx = dx }
-      else
-        local level = level + 1
-        newdir = dirs[level].dir
-        if r2l ~= newdir then
-          dx = dirs[level].dx
-        end
-      end
-      r2l = newdir
-    elseif curr.char and curr.font and curr.font > 0 then
-      local ft = font.getfont(curr.font) or font.getcopy(curr.font)
-      local gid = ft.characters[curr.char].index or curr.char
-      local scale = ft.size / factor / 1000
-      local slant   = (ft.slant or 0)/1000
-      local extend  = (ft.extend or 1000)/1000
-      local squeeze = (ft.squeeze or 1000)/1000
-      local expand  = 1 + (curr.expansion_factor or 0)/1000000
-      local xscale, yscale = scale * extend * expand, scale * squeeze
-      dx = dx - (r2l and curr.width/factor*expand or 0)
-      local xoff, yoff = (curr.xoffset or 0)/factor, (curr.yoffset or 0)/factor
-      local xpos, ypos = dx + xshift + xoff, yshift + yoff
-      local vertical = ""
-      if ft.shared and (ft.shared.features.vert or ft.shared.features.vrt2) then
-        if ft.shared.features.vertical then -- luatexko
-          vertical = "rotated 90"
-          local data = ft.characters[curr.char] or { }
-          if ft.hb then
-            local hoff, voff = (data.luatexko_hoff or 0)/factor, (data.luatexko_voff or 0)/factor
-            local charraise = (ft.luatexko_charraise or 0)/factor
-            xpos, ypos = xpos - voff + hoff - charraise, ypos + hoff + voff + charraise
-          else
-            local cmds = data.commands or { {0,0}, {0,0} }
-            local voff, hoff = -cmds[1][2]/factor, cmds[2][2]/factor
-            xpos, ypos = xpos + hoff, ypos + voff
-          end
-        elseif curr ~= box.head then -- luatexja
-          vertical = "rotated 90"
-          local en = ft.parameters.quad/factor/2
-          xpos, ypos = xpos - xoff - yoff + en, ypos - yoff + xoff - en
-        end
-      end
-      local image
-      if ft.format == "opentype" or ft.format == "truetype" then
-        image = luamplib.glyph(curr.font, gid)
-      else
-        local name, scale = ft.name, 1
-        local vf = font.read_vf(name, ft.size)
-        if vf and vf.characters[gid] then
-          local cmds = vf.characters[gid].commands or {}
-          for _,v in ipairs(cmds) do
-            if v[1] == "char" then
-              gid = v[2]
-            elseif v[1] == "font" and vf.fonts[v[2]] then
-              name  = vf.fonts[v[2]].name
-              scale = vf.fonts[v[2]].size / ft.size
-            end
-          end
-        end
-        image = format("glyph %s of %q scaled %f", gid, name, scale)
-      end
-      res[#res+1] = format("mpliboutlinepic[%i]:=%s xscaled %f yscaled %f slanted %f %s shifted (%f,%f);",
-                           #res+1, image, xscale, yscale, slant, vertical, xpos, ypos)
-      dx = dx + (r2l and 0 or curr.width/factor*expand)
-    elseif curr.replace then
-      local width = node.dimensions(curr.replace)/factor
-      dx = dx - (r2l and width or 0)
-      res = outline_horz(res, box, curr.replace, xshift+dx, yshift, width)
-      dx = dx + (r2l and 0 or width)
-    elseif curr.id == node.id"rule" then
-      local wd, ht, dp = getrulemetric(box, curr, true)
-      if wd ~= 0 then
+do
+  local rulefmt = "mpliboutlinepic[%i]:=image(addto currentpicture contour \z
+    unitsquare shifted - center unitsquare;) xscaled %f yscaled %f shifted (%f,%f);"
+  local outline_horz, outline_vert
+  function outline_vert (res, box, curr, xshift, yshift)
+    local b2u = box.dir == "LTL"
+    local dy = (b2u and -box.depth or box.height)/factor
+    local ody = dy
+    while curr do
+      if curr.id == node.id"rule" then
+        local wd, ht, dp = getrulemetric(box, curr, true)
         local hd = ht + dp
-        dx = dx - (r2l and wd or 0)
-        if hd ~= 0 and curr.subtype == 0 then
-          res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
-        end
-        dx = dx + (r2l and 0 or wd)
-      end
-    elseif curr.id == node.id"glue" then
-      local width = node.effective_glue(curr, box)/factor
-      dx = dx - (r2l and width or 0)
-      if curr.leader then
-        local curr, kind = curr.leader, curr.subtype
-        if curr.id == node.id"rule" then
-          local wd, ht, dp = getrulemetric(box, curr, true)
-          local hd = ht + dp
-          if hd ~= 0 then
-            wd = width
-            if wd ~= 0 and curr.subtype == 0 then
-              res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
-            end
+        if hd ~= 0 then
+          dy = dy + (b2u and dp or -ht)
+          if wd ~= 0 and curr.subtype == 0 then
+            res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+(ht-dp)/2)
           end
-        elseif curr.head then
-          local wd = curr.width/factor
-          if wd <= width then
-            local dx = r2l and dx+width or dx
-            local n, ix = 0, 0
-            if kind == 100 or kind == 103 then -- todo: gleaders
-              local adx = abs(dx-dirs[1].dx)
-              local ndx = math.ceil(adx / wd) * wd
-              local diff = ndx - adx
-              n = math.floor((width-diff) / wd)
-              dx = dx + (r2l and -diff-wd or diff)
-            else
-              n = math.floor(width / wd)
-              if kind == 101 then
-                local side = width % wd /2
-                dx = dx + (r2l and -side-wd or side)
-              elseif kind == 102 then
-                ix = width % wd / (n+1)
-                dx = dx + (r2l and -ix-wd or ix)
+          dy = dy + (b2u and ht or -dp)
+        end
+      elseif curr.id == node.id"glue" then
+        local vwidth = node.effective_glue(curr,box)/factor
+        if curr.leader then
+          local curr, kind = curr.leader, curr.subtype
+          if curr.id == node.id"rule" then
+            local wd = getrulemetric(box, curr, true)
+            if wd ~= 0 then
+              local hd = vwidth
+              local dy = dy + (b2u and 0 or -hd)
+              if hd ~= 0 and curr.subtype == 0 then
+                res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+wd/2, yshift+dy+hd/2)
               end
             end
-            wd = r2l and -wd or wd
-            ix = r2l and -ix or ix
-            local func = curr.id == node.id"hlist" and outline_horz or outline_vert
-            for i=1,n do
-              res = func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
-              dx = dx + wd + ix
+          elseif curr.head then
+            local hd = (curr.height + curr.depth)/factor
+            if hd <= vwidth then
+              local dy, n, iy = dy, 0, 0
+              if kind == 100 or kind == 103 then -- todo: gleaders
+                local ady = abs(ody - dy)
+                local ndy = math.ceil(ady / hd) * hd
+                local diff = ndy - ady
+                n = math.floor((vwidth-diff) / hd)
+                dy = dy + (b2u and diff or -diff)
+              else
+                n = math.floor(vwidth / hd)
+                if kind == 101 then
+                  local side = vwidth % hd / 2
+                  dy = dy + (b2u and side or -side)
+                elseif kind == 102 then
+                  iy = vwidth % hd / (n+1)
+                  dy = dy + (b2u and iy or -iy)
+                end
+              end
+              dy = dy + (b2u and curr.depth or -curr.height)/factor
+              hd = b2u and hd or -hd
+              iy = b2u and iy or -iy
+              local func = curr.id == node.id"hlist" and outline_horz or outline_vert
+              for i=1,n do
+                res = func(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+                dy = dy + hd + iy
+              end
             end
           end
         end
+        dy = dy + (b2u and vwidth or -vwidth)
+      elseif curr.id == node.id"kern" then
+        dy = dy + curr.kern/factor * (b2u and 1 or -1)
+      elseif curr.id == node.id"vlist" then
+        dy = dy + (b2u and curr.depth or -curr.height)/factor
+        res = outline_vert(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+        dy = dy + (b2u and curr.height or -curr.depth)/factor
+      elseif curr.id == node.id"hlist" then
+        dy = dy + (b2u and curr.depth or -curr.height)/factor
+        res = outline_horz(res, curr, curr.head, xshift+curr.shift/factor, yshift+dy)
+        dy = dy + (b2u and curr.height or -curr.depth)/factor
       end
-      dx = dx + (r2l and 0 or width)
-    elseif curr.id == node.id"kern" then
-      dx = dx + curr.kern/factor * (r2l and -1 or 1)
-    elseif curr.id == node.id"math" then
-      dx = dx + curr.surround/factor * (r2l and -1 or 1)
-    elseif curr.id == node.id"vlist" then
-      dx = dx - (r2l and curr.width/factor or 0)
-      res = outline_vert(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
-      dx = dx + (r2l and 0 or curr.width/factor)
-    elseif curr.id == node.id"hlist" then
-      dx = dx - (r2l and curr.width/factor or 0)
-      res = outline_horz(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
-      dx = dx + (r2l and 0 or curr.width/factor)
+      curr = node.getnext(curr)
     end
-    curr = node.getnext(curr)
+    return res
   end
-  return res
-end
-function luamplib.outlinetext (text)
-  local fmt = process_tex_text(text)
-  local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
-  local box = texgetbox(id)
-  local res = outline_horz({ }, box, box.head, 0, 0)
-  if #res == 0 then res = { "mpliboutlinepic[1]:=image();" } end
-  return tableconcat(res) .. format("mpliboutlinenum:=%i;", #res)
+  function outline_horz (res, box, curr, xshift, yshift, discwd)
+    local r2l = box.dir == "TRT"
+    local dx = r2l and (discwd or box.width/factor) or 0
+    local dirs = { { dir = r2l, dx = dx } }
+    while curr do
+      if curr.id == node.id"dir" then
+        local sign, dir = curr.dir:match"(.)(...)"
+        local level, newdir = curr.level, r2l
+        if sign == "+" then
+          newdir = dir == "TRT"
+          if r2l ~= newdir then
+            local n = node.getnext(curr)
+            while n do
+              if n.id == node.id"dir" and n.level+1 == level then break end
+              n = node.getnext(n)
+            end
+            n = n or node.tail(curr)
+            dx = dx + node.rangedimensions(box, curr, n)/factor * (newdir and 1 or -1)
+          end
+          dirs[level] = { dir = r2l, dx = dx }
+        else
+          local level = level + 1
+          newdir = dirs[level].dir
+          if r2l ~= newdir then
+            dx = dirs[level].dx
+          end
+        end
+        r2l = newdir
+      elseif curr.char and curr.font and curr.font > 0 then
+        local ft = font.getfont(curr.font) or font.getcopy(curr.font)
+        local gid = ft.characters[curr.char].index or curr.char
+        local scale = ft.size / factor / 1000
+        local slant   = (ft.slant or 0)/1000
+        local extend  = (ft.extend or 1000)/1000
+        local squeeze = (ft.squeeze or 1000)/1000
+        local expand  = 1 + (curr.expansion_factor or 0)/1000000
+        local xscale, yscale = scale * extend * expand, scale * squeeze
+        dx = dx - (r2l and curr.width/factor*expand or 0)
+        local xoff, yoff = (curr.xoffset or 0)/factor, (curr.yoffset or 0)/factor
+        local xpos, ypos = dx + xshift + xoff, yshift + yoff
+        local vertical = ""
+        if ft.shared and (ft.shared.features.vert or ft.shared.features.vrt2) then
+          if ft.shared.features.vertical then -- luatexko
+            vertical = "rotated 90"
+            local data = ft.characters[curr.char] or { }
+            if ft.hb then
+              local hoff, voff = (data.luatexko_hoff or 0)/factor, (data.luatexko_voff or 0)/factor
+              local charraise = (ft.luatexko_charraise or 0)/factor
+              xpos, ypos = xpos - voff + hoff - charraise, ypos + hoff + voff + charraise
+            else
+              local cmds = data.commands or { {0,0}, {0,0} }
+              local voff, hoff = -cmds[1][2]/factor, cmds[2][2]/factor
+              xpos, ypos = xpos + hoff, ypos + voff
+            end
+          elseif curr ~= box.head then -- luatexja
+            vertical = "rotated 90"
+            local en = ft.parameters.quad/factor/2
+            xpos, ypos = xpos - xoff - yoff + en, ypos - yoff + xoff - en
+          end
+        end
+        local image
+        if ft.format == "opentype" or ft.format == "truetype" then
+          image = luamplib.glyph(curr.font, gid)
+        else
+          local name, scale = ft.name, 1
+          local vf = font.read_vf(name, ft.size)
+          if vf and vf.characters[gid] then
+            local cmds = vf.characters[gid].commands or {}
+            for _,v in ipairs(cmds) do
+              if v[1] == "char" then
+                gid = v[2]
+              elseif v[1] == "font" and vf.fonts[v[2]] then
+                name  = vf.fonts[v[2]].name
+                scale = vf.fonts[v[2]].size / ft.size
+              end
+            end
+          end
+          image = format("glyph %s of %q scaled %f", gid, name, scale)
+        end
+        res[#res+1] = format("mpliboutlinepic[%i]:=%s xscaled %f yscaled %f slanted %f %s shifted (%f,%f);",
+                             #res+1, image, xscale, yscale, slant, vertical, xpos, ypos)
+        dx = dx + (r2l and 0 or curr.width/factor*expand)
+      elseif curr.replace then
+        local width = node.dimensions(curr.replace)/factor
+        dx = dx - (r2l and width or 0)
+        res = outline_horz(res, box, curr.replace, xshift+dx, yshift, width)
+        dx = dx + (r2l and 0 or width)
+      elseif curr.id == node.id"rule" then
+        local wd, ht, dp = getrulemetric(box, curr, true)
+        if wd ~= 0 then
+          local hd = ht + dp
+          dx = dx - (r2l and wd or 0)
+          if hd ~= 0 and curr.subtype == 0 then
+            res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+          end
+          dx = dx + (r2l and 0 or wd)
+        end
+      elseif curr.id == node.id"glue" then
+        local width = node.effective_glue(curr, box)/factor
+        dx = dx - (r2l and width or 0)
+        if curr.leader then
+          local curr, kind = curr.leader, curr.subtype
+          if curr.id == node.id"rule" then
+            local wd, ht, dp = getrulemetric(box, curr, true)
+            local hd = ht + dp
+            if hd ~= 0 then
+              wd = width
+              if wd ~= 0 and curr.subtype == 0 then
+                res[#res+1] = rulefmt:format(#res+1, wd, hd, xshift+dx+wd/2, yshift+(ht-dp)/2)
+              end
+            end
+          elseif curr.head then
+            local wd = curr.width/factor
+            if wd <= width then
+              local dx = r2l and dx+width or dx
+              local n, ix = 0, 0
+              if kind == 100 or kind == 103 then -- todo: gleaders
+                local adx = abs(dx-dirs[1].dx)
+                local ndx = math.ceil(adx / wd) * wd
+                local diff = ndx - adx
+                n = math.floor((width-diff) / wd)
+                dx = dx + (r2l and -diff-wd or diff)
+              else
+                n = math.floor(width / wd)
+                if kind == 101 then
+                  local side = width % wd /2
+                  dx = dx + (r2l and -side-wd or side)
+                elseif kind == 102 then
+                  ix = width % wd / (n+1)
+                  dx = dx + (r2l and -ix-wd or ix)
+                end
+              end
+              wd = r2l and -wd or wd
+              ix = r2l and -ix or ix
+              local func = curr.id == node.id"hlist" and outline_horz or outline_vert
+              for i=1,n do
+                res = func(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+                dx = dx + wd + ix
+              end
+            end
+          end
+        end
+        dx = dx + (r2l and 0 or width)
+      elseif curr.id == node.id"kern" then
+        dx = dx + curr.kern/factor * (r2l and -1 or 1)
+      elseif curr.id == node.id"math" then
+        dx = dx + curr.surround/factor * (r2l and -1 or 1)
+      elseif curr.id == node.id"vlist" then
+        dx = dx - (r2l and curr.width/factor or 0)
+        res = outline_vert(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+        dx = dx + (r2l and 0 or curr.width/factor)
+      elseif curr.id == node.id"hlist" then
+        dx = dx - (r2l and curr.width/factor or 0)
+        res = outline_horz(res, curr, curr.head, xshift+dx, yshift-curr.shift/factor)
+        dx = dx + (r2l and 0 or curr.width/factor)
+      end
+      curr = node.getnext(curr)
+    end
+    return res
+  end
+  function luamplib.outlinetext (text)
+    local fmt = process_tex_text(text)
+    local id  = tonumber(fmt:match"mplibtexboxid=(%d+):")
+    local box = texgetbox(id)
+    local res = outline_horz({ }, box, box.head, 0, 0)
+    if #res == 0 then res = { "mpliboutlinepic[1]:=image();" } end
+    return tableconcat(res) .. format("mpliboutlinenum:=%i;", #res)
+  end
 end
 
 %    \end{macrocode}
@@ -2812,9 +2900,15 @@ end
 
 %    \end{macrocode}
 %
-%    Our \metapost preambles
+%    \metapost preambles
 %    \begin{macrocode}
 luamplib.preambles = {
+  preamble = [[
+boolean mplib ; mplib := true ;
+let dump = endinput ;
+let normalfontsize = fontsize;
+input %s ;
+]],
   mplibcode = [[
 texscriptmode := 2;
 def rawtextext primary t = runscript("luamplibtext{"&t&"}") enddef;
@@ -2884,7 +2978,7 @@ def mplibgraphictext primary t =
   mplibgraphictext_ (t)
 enddef;
 def mplibgraphictext_ (expr t) text rest =
-  save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
+  save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor, strokecolor,
     fb, fc, dc, graphictextpic, alsoordoublepath;
   picture graphictextpic; graphictextpic := nullpicture;
   numeric fb; string fc, dc; fb:=2; fc:="white"; dc:="black";
@@ -2892,12 +2986,12 @@ def mplibgraphictext_ (expr t) text rest =
   def fakebold  primary c = hide(fb:=c;) enddef;
   def fillcolor primary c = hide(fc:=colordecimals c;) enddef;
   def drawcolor primary c = hide(dc:=colordecimals c;) enddef;
-  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor; let strokecolor = drawcolor;
   def alsoordoublepath expr p = if picture p: also else: doublepath fi p enddef;
   addto graphictextpic alsoordoublepath (origin--cycle) rest; graphictextpic:=nullpicture;
   def fakebold  primary c = enddef;
   let fillcolor = fakebold; let drawcolor = fakebold;
-  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor; let strokecolor = drawcolor;
   image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
     & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
@@ -2911,15 +3005,33 @@ def mplibglyph expr c of f =
     & "')"
   )
 enddef;
+numeric luamplib_tmp_num_; luamplib_tmp_num_ = 0;
 def mplibdrawglyph expr g =
-  draw image(
-    save i; numeric i; i:=0;
-    for item within g:
-      i := i+1;
-      fill pathpart item
-      if i < length g: withpostscript "collect" fi;
-    endfor
-  )
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    fill pathpart item
+    if incr luamplib_tmp_num_ < length g: withpostscript "collect"; fi
+  endfor
+enddef;
+let mplibfillglyph = mplibdrawglyph;
+def mplibstrokeglyph expr g =
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    draw pathpart item
+    if incr luamplib_tmp_num_ < length g: withpostscript "collect"; fi
+  endfor
+enddef;
+def mplibfillandstrokeglyph expr g =
+  luamplib_tmp_num_ := 0;
+  for item within g:
+    draw pathpart item withpostscript
+    if incr luamplib_tmp_num_ < length g: "collect"; else: "both" fi
+  endfor
+enddef;
+def withmplibcolors (expr f, s) =
+  runscript("return luamplib.fillandstrokecolor('" &
+    if not string f: colordecimals fi f & "','" &
+    if not string s: colordecimals fi s & "')")
 enddef;
 def mplib_do_outline_text_set_b (text f) (text d) text r =
   def mplib_do_outline_options_f = f enddef;
@@ -3298,6 +3410,8 @@ enddef;
 
 %    \end{macrocode}
 %
+%   |process_mplibcode|
+%
 %    When \cs{mplibverbatim} is enabled, do not expand |mplibcode| data.
 %    \begin{macrocode}
 luamplib.verbatiminput = false
@@ -3361,21 +3475,6 @@ end
 
 %    \end{macrocode}
 %
-%    For parsing |prescript| materials.
-%    \begin{macrocode}
-local function script2table(s)
-  local t = {}
-  for _,i in ipairs(s:explode("\13+")) do
-    local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
-    if k and v and k ~= "" and not t[k] then
-      t[k] = v
-    end
-  end
-  return t
-end
-
-%    \end{macrocode}
-%
 %     pdfliterals will be stored in |figcontents| table, and written to pdf in one go
 %     at the end of the flushing figure.
 %     Subtable |post| is for the legacy behavior.
@@ -3391,7 +3490,6 @@ local function pdf_stopfigure()
   put2output("\\mplibstoptoPDF")
 end
 %    \end{macrocode}
-%
 %    |tex.sprint| with catcode regime -2, as sometimes |#| gets doubled
 %    in the argument of pdfliteral.
 %    \begin{macrocode}
@@ -3408,7 +3506,7 @@ local stop_pdf_code = pdfmode
 %    \end{macrocode}
 %
 %    Now we process hboxes created from |btex| |...| |etex| or
-%    |textext(...)| or |TEX(...)|, all being the same internally.
+%    |textext(...)| or |TEX(...)| etc.
 %    \begin{macrocode}
 local function put_tex_boxes (object,prescript)
   local box = prescript.mplibtexboxid:explode":"
@@ -3439,36 +3537,39 @@ end
 %
 %    Colors
 %    \begin{macrocode}
-local prev_override_color
-local function do_preobj_CR(object,prescript)
-  if object.postscript == "collect" then return end
-  local override = prescript and prescript.mpliboverridecolor
-  if override then
-    if pdfmode then
-      pdf_literalcode(override)
-      override = nil
-    else
-      put2output("\\special{%s}",override)
-      prev_override_color = override
-    end
-  else
-    local cs = object.color
-    if cs and #cs > 0 then
-      pdf_literalcode(luamplib.colorconverter(cs))
-      prev_override_color = nil
-    elseif not pdfmode then
-      override = prev_override_color
-      if override then
+local do_preobj_CR
+do
+  local prev_override_color
+  function do_preobj_CR(object,prescript)
+    if object.postscript == "collect" then return end
+    local override = prescript and prescript.mpliboverridecolor
+    if override then
+      if pdfmode then
+        pdf_literalcode(override)
+        override = nil
+      else
         put2output("\\special{%s}",override)
+        prev_override_color = override
+      end
+    else
+      local cs = object.color
+      if cs and #cs > 0 then
+        pdf_literalcode(luamplib.colorconverter(cs))
+        prev_override_color = nil
+      elseif not pdfmode then
+        override = prev_override_color
+        if override then
+          put2output("\\special{%s}",override)
+        end
       end
     end
+    return override
   end
-  return override
 end
 
 %    \end{macrocode}
 %
-%    For transparency and shading
+%    For transparency, shading, fading, and pattern
 %    \begin{macrocode}
 local pdfmanagement = is_defined'pdfmanagement_add:nnn'
 local pdfobjs, pdfetcs = {}, {}
@@ -3562,19 +3663,6 @@ end
 %
 %    Transparency
 %    \begin{macrocode}
-local transparancy_modes = { [0] = "Normal",
-  "Normal",       "Multiply",     "Screen",       "Overlay",
-  "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
-  "Darken",       "Lighten",      "Difference",   "Exclusion",
-  "Hue",          "Saturation",   "Color",        "Luminosity",
-  "Compatible",
-  normal     = "Normal",     multiply   = "Multiply",   screen    = "Screen",
-  overlay    = "Overlay",    softlight  = "SoftLight",  hardlight = "HardLight",
-  colordodge = "ColorDodge", colorburn  = "ColorBurn",  darken    = "Darken",
-  lighten    = "Lighten",    difference = "Difference", exclusion = "Exclusion",
-  hue        = "Hue",        saturation = "Saturation", color     = "Color",
-  luminosity = "Luminosity", compatible = "Compatible",
-}
 local function add_extgs_resources (on, new)
   local key = format("MPlibTr%s", on)
   if new then
@@ -3604,26 +3692,44 @@ local function add_extgs_resources (on, new)
   end
   return key
 end
-local function do_preobj_TR(object,prescript)
-  if object.postscript == "collect" then return end
-  local opaq = prescript and prescript.tr_transparency
-  if opaq then
-    local key, on, os, new
-    local mode = prescript.tr_alternative or 1
-    mode = transparancy_modes[tonumber(mode) or mode:lower()]
-    if not mode then
-      mode = prescript.tr_alternative
-      warn("unsupported blend mode: '%s'", mode)
-    end
-    opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
-    for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
-      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
-      on, new = update_pdfobjs(os)
-      key = add_extgs_resources(on,new)
-      if i == 1 then
-        pdf_literalcode("/%s gs",key)
-      else
-        return format("/%s gs",key)
+
+local do_preobj_TR
+do
+  local transparancy_modes = {
+    [0] = "Normal",
+    "Normal",       "Multiply",     "Screen",       "Overlay",
+    "SoftLight",    "HardLight",    "ColorDodge",   "ColorBurn",
+    "Darken",       "Lighten",      "Difference",   "Exclusion",
+    "Hue",          "Saturation",   "Color",        "Luminosity",
+    "Compatible",
+    normal     = "Normal",     multiply   = "Multiply",   screen    = "Screen",
+    overlay    = "Overlay",    softlight  = "SoftLight",  hardlight = "HardLight",
+    colordodge = "ColorDodge", colorburn  = "ColorBurn",  darken    = "Darken",
+    lighten    = "Lighten",    difference = "Difference", exclusion = "Exclusion",
+    hue        = "Hue",        saturation = "Saturation", color     = "Color",
+    luminosity = "Luminosity", compatible = "Compatible",
+  }
+  function do_preobj_TR(object,prescript)
+    if object.postscript == "collect" then return end
+    local opaq = prescript and prescript.tr_transparency
+    if opaq then
+      local key, on, os, new
+      local mode = prescript.tr_alternative or 1
+      mode = transparancy_modes[tonumber(mode) or mode:lower()]
+      if not mode then
+        mode = prescript.tr_alternative
+        warn("unsupported blend mode: '%s'", mode)
+      end
+      opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
+      for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
+        os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
+        on, new = update_pdfobjs(os)
+        key = add_extgs_resources(on,new)
+        if i == 1 then
+          pdf_literalcode("/%s gs",key)
+        else
+          return format("/%s gs",key)
+        end
       end
     end
   end
@@ -3687,147 +3793,151 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
   end
   return on
 end
-local function color_normalize(ca,cb)
-  if #cb == 1 then
-    if #ca == 4 then
-      cb[1], cb[2], cb[3], cb[4] = 0, 0, 0, 1-cb[1]
-    else -- #ca = 3
-      cb[1], cb[2], cb[3] = cb[1], cb[1], cb[1]
+
+local do_preobj_SH
+do
+  pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
+    run_tex_code({
+      [[\color_model_new:nnn]],
+      format("{mplibcolorspace_%s}", names:gsub(",","_")),
+      format("{DeviceN}{names={%s}}", names),
+      [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
+    }, ccexplat)
+    local colorspace = get_macro'mplib_@tempa'
+    t[names] = colorspace
+    return colorspace
+  end })
+  local function color_normalize(ca,cb)
+    if #cb == 1 then
+      if #ca == 4 then
+        cb[1], cb[2], cb[3], cb[4] = 0, 0, 0, 1-cb[1]
+      else -- #ca = 3
+        cb[1], cb[2], cb[3] = cb[1], cb[1], cb[1]
+      end
+    elseif #cb == 3 then -- #ca == 4
+      cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
     end
-  elseif #cb == 3 then -- #ca == 4
-    cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
   end
-end
-pdfetcs.clrspcs = setmetatable({ }, { __index = function(t,names)
-  run_tex_code({
-    [[\color_model_new:nnn]],
-    format("{mplibcolorspace_%s}", names:gsub(",","_")),
-    format("{DeviceN}{names={%s}}", names),
-    [[\edef\mplib_@tempa{\pdf_object_ref_last:}]],
-  }, ccexplat)
-  local colorspace = get_macro'mplib_@tempa'
-  t[names] = colorspace
-  return colorspace
-end })
-local function do_preobj_SH(object,prescript)
-  local shade_no
-  local sh_type = prescript and prescript.sh_type
-  if not sh_type then
-    return
-  else
-    local domain  = prescript.sh_domain or "0 1"
-    local centera = (prescript.sh_center_a or "0 0"):explode()
-    local centerb = (prescript.sh_center_b or "0 0"):explode()
-    local transform = prescript.sh_transform == "yes"
-    local sx,sy,sr,dx,dy = 1,1,1,0,0
-    if transform then
-      local first = (prescript.sh_first or "0 0"):explode()
-      local setx  = (prescript.sh_set_x or "0 0"):explode()
-      local sety  = (prescript.sh_set_y or "0 0"):explode()
-      local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
-      if x ~= 0 and y ~= 0 then
-        local path = object.path
-        local path1x = path[1].x_coord
-        local path1y = path[1].y_coord
-        local path2x = path[x].x_coord
-        local path2y = path[y].y_coord
-        local dxa = path2x - path1x
-        local dya = path2y - path1y
-        local dxb = setx[2] - first[1]
-        local dyb = sety[2] - first[2]
-        if dxa ~= 0 and dya ~= 0 and dxb ~= 0 and dyb ~= 0 then
-          sx = dxa / dxb ; if sx < 0 then sx = - sx end
-          sy = dya / dyb ; if sy < 0 then sy = - sy end
-          sr = math.sqrt(sx^2 + sy^2)
-          dx = path1x - sx*first[1]
-          dy = path1y - sy*first[2]
-        end
-      end
-    end
-    local ca, cb, colorspace, steps, fractions
-    ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "0"):explode":" }
-    cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "1"):explode":" }
-    steps = tonumber(prescript.sh_step) or 1
-    if steps > 1 then
-      fractions = { prescript.sh_fraction_1 or 0 }
-      for i=2,steps do
-        fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
-        ca[i] = (prescript[format("sh_color_a_%i",i)] or "0"):explode":"
-        cb[i] = (prescript[format("sh_color_b_%i",i)] or "1"):explode":"
-      end
-    end
-    if prescript.mplib_spotcolor then
-      ca, cb = { }, { }
-      local names, pos, objref = { }, -1, ""
-      local script = object.prescript:explode"\13+"
-      for i=#script,1,-1 do
-        if script[i]:find"mplib_spotcolor" then
-          local t, name, value = script[i]:explode"="[2]:explode":"
-          value, objref, name = t[1], t[2], t[3]
-          if not names[name] then
-            pos = pos+1
-            names[name] = pos
-            names[#names+1] = name
+  function do_preobj_SH(object,prescript)
+    local shade_no
+    local sh_type = prescript and prescript.sh_type
+    if not sh_type then
+      return
+    else
+      local domain  = prescript.sh_domain or "0 1"
+      local centera = (prescript.sh_center_a or "0 0"):explode()
+      local centerb = (prescript.sh_center_b or "0 0"):explode()
+      local transform = prescript.sh_transform == "yes"
+      local sx,sy,sr,dx,dy = 1,1,1,0,0
+      if transform then
+        local first = (prescript.sh_first or "0 0"):explode()
+        local setx  = (prescript.sh_set_x or "0 0"):explode()
+        local sety  = (prescript.sh_set_y or "0 0"):explode()
+        local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
+        if x ~= 0 and y ~= 0 then
+          local path = object.path
+          local path1x = path[1].x_coord
+          local path1y = path[1].y_coord
+          local path2x = path[x].x_coord
+          local path2y = path[y].y_coord
+          local dxa = path2x - path1x
+          local dya = path2y - path1y
+          local dxb = setx[2] - first[1]
+          local dyb = sety[2] - first[2]
+          if dxa ~= 0 and dya ~= 0 and dxb ~= 0 and dyb ~= 0 then
+            sx = dxa / dxb ; if sx < 0 then sx = - sx end
+            sy = dya / dyb ; if sy < 0 then sy = - sy end
+            sr = math.sqrt(sx^2 + sy^2)
+            dx = path1x - sx*first[1]
+            dy = path1y - sy*first[2]
           end
-          t = { }
-          for j=1,names[name] do t[#t+1] = 0 end
-          t[#t+1] = value
-          tableinsert(#ca == #cb and ca or cb, t)
         end
       end
-      for _,t in ipairs{ca,cb} do
-        for _,tt in ipairs(t) do
-          for i=1,#names-#tt do tt[#tt+1] = 0 end
+      local ca, cb, colorspace, steps, fractions
+      ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "0"):explode":" }
+      cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "1"):explode":" }
+      steps = tonumber(prescript.sh_step) or 1
+      if steps > 1 then
+        fractions = { prescript.sh_fraction_1 or 0 }
+        for i=2,steps do
+          fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
+          ca[i] = (prescript[format("sh_color_a_%i",i)] or "0"):explode":"
+          cb[i] = (prescript[format("sh_color_b_%i",i)] or "1"):explode":"
         end
       end
-      if #names == 1 then
-        colorspace = objref
+      if prescript.mplib_spotcolor then
+        ca, cb = { }, { }
+        local names, pos, objref = { }, -1, ""
+        local script = object.prescript:explode"\13+"
+        for i=#script,1,-1 do
+          if script[i]:find"mplib_spotcolor" then
+            local t, name, value = script[i]:explode"="[2]:explode":"
+            value, objref, name = t[1], t[2], t[3]
+            if not names[name] then
+              pos = pos+1
+              names[name] = pos
+              names[#names+1] = name
+            end
+            t = { }
+            for j=1,names[name] do t[#t+1] = 0 end
+            t[#t+1] = value
+            tableinsert(#ca == #cb and ca or cb, t)
+          end
+        end
+        for _,t in ipairs{ca,cb} do
+          for _,tt in ipairs(t) do
+            for i=1,#names-#tt do tt[#tt+1] = 0 end
+          end
+        end
+        if #names == 1 then
+          colorspace = objref
+        else
+          colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
+        end
       else
-        colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
-      end
-    else
-      local model = 0
-      for _,t in ipairs{ca,cb} do
-        for _,tt in ipairs(t) do
-          model = model > #tt and model or #tt
-        end
-      end
-      for _,t in ipairs{ca,cb} do
-        for _,tt in ipairs(t) do
-          if #tt < model then
-            color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
+        local model = 0
+        for _,t in ipairs{ca,cb} do
+          for _,tt in ipairs(t) do
+            model = model > #tt and model or #tt
           end
         end
+        for _,t in ipairs{ca,cb} do
+          for _,tt in ipairs(t) do
+            if #tt < model then
+              color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
+            end
+          end
+        end
+        colorspace = model == 4 and "/DeviceCMYK"
+                  or model == 3 and "/DeviceRGB"
+                  or model == 1 and "/DeviceGray"
+                  or err"unknown color model"
       end
-      colorspace = model == 4 and "/DeviceCMYK"
-                or model == 3 and "/DeviceRGB"
-                or model == 1 and "/DeviceGray"
-                or err"unknown color model"
+      if sh_type == "linear" then
+        local coordinates = format("%f %f %f %f",
+          dx + sx*centera[1], dy + sy*centera[2],
+          dx + sx*centerb[1], dy + sy*centerb[2])
+        shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      elseif sh_type == "circular" then
+        local factor = prescript.sh_factor or 1
+        local radiusa = factor * prescript.sh_radius_a
+        local radiusb = factor * prescript.sh_radius_b
+        local coordinates = format("%f %f %f %f %f %f",
+          dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
+          dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
+        shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      else
+        err"unknown shading type"
+      end
     end
-    if sh_type == "linear" then
-      local coordinates = format("%f %f %f %f",
-        dx + sx*centera[1], dy + sy*centera[2],
-        dx + sx*centerb[1], dy + sy*centerb[2])
-      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
-    elseif sh_type == "circular" then
-      local factor = prescript.sh_factor or 1
-      local radiusa = factor * prescript.sh_radius_a
-      local radiusb = factor * prescript.sh_radius_b
-      local coordinates = format("%f %f %f %f %f %f",
-        dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
-        dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
-      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
-    else
-      err"unknown shading type"
-    end
+    return shade_no
   end
-  return shade_no
 end
 
 %    \end{macrocode}
 %
-% Shading Patterns: much similar to the metafun's shade,
-% but we can apply shading to textual pictures as well as paths.
+% Shading Patterns:
+% we can apply shading to textual pictures as well as paths.
 %    \begin{macrocode}
 if not pdfmode then
   pdfetcs.patternresources = {}
@@ -4059,63 +4169,67 @@ function luamplib.registerpattern ( boxid, name, opts )
     patterns[name] = { id = cnt, colored = opts.colored }
   end
 end
-local function pattern_colorspace (cs)
-  local on, new = update_pdfobjs(format("[/Pattern %s]", cs))
-  if new then
-    local key, val = format("MPlibCS%i",on), format(pdfetcs.resfmt,on)
-    if pdfmanagement then
-      texsprint {
-        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ColorSpace}{", key, "}{", val, "}"
-      }
-    else
-      local res = format("/%s %s", key, val)
-      if is_defined(pdfetcs.pgfcolorspace) then
-        texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
+
+local do_preobj_PAT
+do
+  local function pattern_colorspace (cs)
+    local on, new = update_pdfobjs(format("[/Pattern %s]", cs))
+    if new then
+      local key, val = format("MPlibCS%i",on), format(pdfetcs.resfmt,on)
+      if pdfmanagement then
+        texsprint {
+          "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ColorSpace}{", key, "}{", val, "}"
+        }
       else
-        pdfetcs.fallback_update_resources("ColorSpace",res,"@MPlibCS")
+        local res = format("/%s %s", key, val)
+        if is_defined(pdfetcs.pgfcolorspace) then
+          texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
+        else
+          pdfetcs.fallback_update_resources("ColorSpace",res,"@MPlibCS")
+        end
       end
     end
+    return on
   end
-  return on
-end
-local function do_preobj_PAT(object, prescript)
-  local name = prescript and prescript.mplibpattern
-  if not name then return end
-  local patterns = pdfetcs.patterns
-  local patt = patterns[name]
-  local index = patt and patt.id or err("cannot get pattern object '%s'", name)
-  local key = format("MPlibPt%s",index)
-  if patt.colored then
-    pdf_literalcode("/Pattern cs /%s scn", key)
-  else
-    local color = prescript.mpliboverridecolor
-    if not color then
-      local t = object.color
-      color = t and #t>0 and luamplib.colorconverter(t)
-    end
-    if not color then return end
-    local cs
-    if color:find" cs " or color:find"@pdf.obj" then
-      local t = color:explode()
-      if pdfmode then
-        cs = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
-        color = t[3]
-      else
-        cs = t[2]
-        color = t[3]:match"%[(.+)%]"
-      end
+  function do_preobj_PAT(object, prescript)
+    local name = prescript and prescript.mplibpattern
+    if not name then return end
+    local patterns = pdfetcs.patterns
+    local patt = patterns[name]
+    local index = patt and patt.id or err("cannot get pattern object '%s'", name)
+    local key = format("MPlibPt%s",index)
+    if patt.colored then
+      pdf_literalcode("/Pattern cs /%s scn", key)
     else
-      local t = colorsplit(color)
-      cs = #t == 4 and "/DeviceCMYK" or #t == 3 and "/DeviceRGB" or "/DeviceGray"
-      color = tableconcat(t," ")
+      local color = prescript.mpliboverridecolor
+      if not color then
+        local t = object.color
+        color = t and #t>0 and luamplib.colorconverter(t)
+      end
+      if not color then return end
+      local cs
+      if color:find" cs " or color:find"@pdf.obj" then
+        local t = color:explode()
+        if pdfmode then
+          cs = format("%s 0 R", ltx.pdf.object_id( t[1]:sub(2,-1) ))
+          color = t[3]
+        else
+          cs = t[2]
+          color = t[3]:match"%[(.+)%]"
+        end
+      else
+        local t = colorsplit(color)
+        cs = #t == 4 and "/DeviceCMYK" or #t == 3 and "/DeviceRGB" or "/DeviceGray"
+        color = tableconcat(t," ")
+      end
+      pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
     end
-    pdf_literalcode("/MPlibCS%i cs %s /%s scn", pattern_colorspace(cs), color, key)
+    if not patt.done then
+      local val = pdfmode and format("%s 0 R",index) or patterns[index]
+      add_pattern_resources(key,val)
+    end
+    patt.done = true
   end
-  if not patt.done then
-    local val = pdfmode and format("%s 0 R",index) or patterns[index]
-    add_pattern_resources(key,val)
-  end
-  patt.done = true
 end
 
 %    \end{macrocode}
@@ -4311,139 +4425,151 @@ function luamplib.registergroup (boxid, name, opts)
   info("w/h/d of group '%s': %s", name, whd)
 end
 
-local function stop_special_effects(fade,opaq,over)
-  if fade then -- fading
-    stop_pdf_code()
-  end
-  if opaq then -- opacity
-    pdf_literalcode(opaq)
-  end
-  if over then -- color
-    put2output"\\special{pdf:ec}"
-  end
-end
-
 %    \end{macrocode}
 %
-%    Codes below for inserting PDF lieterals are mostly from ConTeXt general,
+%    |luamplib.convert|: flushing figures
+%    \begin{macrocode}
+do
+  local function stop_special_effects(fade,opaq,over)
+    if fade then -- fading
+      stop_pdf_code()
+    end
+    if opaq then -- opacity
+      pdf_literalcode(opaq)
+    end
+    if over then -- color
+      put2output"\\special{pdf:ec}"
+    end
+  end
+
+%    \end{macrocode}
+%    For parsing |prescript| materials.
+%    \begin{macrocode}
+  local function script2table(s)
+    local t = {}
+    for _,i in ipairs(s:explode("\13+")) do
+      local k,v = i:match("(.-)=(.*)") -- v may contain = or empty.
+      if k and v and k ~= "" and not t[k] then
+        t[k] = v
+      end
+    end
+    return t
+  end
+
+%    \end{macrocode}
+%    Codes below to insert PDF lieterals are mostly from ConTeXt general,
 %    with small changes when needed.
 %    \begin{macrocode}
-local function getobjects(result,figure,f)
-  return figure:objects()
-end
-
-function luamplib.convert (result, flusher)
-  luamplib.flush(result, flusher)
-  return true -- done
-end
-
-local function pdf_textfigure(font,size,text,width,height,depth)
-  text = text:gsub(".",function(c)
-    return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
-  end)
-  put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
-end
-
-local bend_tolerance = 131/65536
-
-local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
-
-local function pen_characteristics(object)
-  local t = mplib.pen_info(object)
-  rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
-  divider = sx*sy - rx*ry
-  return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
-end
-
-local function concat(px, py) -- no tx, ty here
-  return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
-end
-
-local function curved(ith,pth)
-  local d = pth.left_x - ith.right_x
-  if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
-    d = pth.left_y - ith.right_y
-    if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
-      return false
-    end
+  local function pdf_textfigure(font,size,text,width,height,depth)
+    text = text:gsub(".",function(c)
+      return format("\\hbox{\\char%i}",string.byte(c)) -- kerning happens in metapost : false
+    end)
+    put2output("\\mplibtextext{%s}{%f}{%s}{%s}{%s}",font,size,text,0,0)
   end
-  return true
-end
 
-local function flushnormalpath(path,open)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
-    elseif curved(ith,pth) then
-      pdf_literalcode("%f %f %f %f %f %f c",ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
-    else
-      pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
-    end
-    ith = pth
+  local bend_tolerance = 131/65536
+
+  local rx, sx, sy, ry, tx, ty, divider = 1, 0, 0, 1, 0, 0, 1
+
+  local function pen_characteristics(object)
+    local t = mplib.pen_info(object)
+    rx, ry, sx, sy, tx, ty = t.rx, t.ry, t.sx, t.sy, t.tx, t.ty
+    divider = sx*sy - rx*ry
+    return not (sx==1 and rx==0 and ry==0 and sy==1 and tx==0 and ty==0), t.width
   end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      pdf_literalcode("%f %f %f %f %f %f c",pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
-    else
+
+  local function concat(px, py) -- no tx, ty here
+    return (sy*px-ry*py)/divider,(sx*py-rx*px)/divider
+  end
+
+  local function curved(ith,pth)
+    local d = pth.left_x - ith.right_x
+    if abs(ith.right_x - ith.x_coord - d) <= bend_tolerance and
+       abs(pth.x_coord - pth.left_x - d) <= bend_tolerance then
+      d = pth.left_y - ith.right_y
+      if abs(ith.right_y - ith.y_coord - d) <= bend_tolerance and
+         abs(pth.y_coord - pth.left_y - d) <= bend_tolerance then
+        return false
+      end
+    end
+    return true
+  end
+
+  local function flushnormalpath(path,open)
+    local pth, ith
+    for i=1,#path do
+      pth = path[i]
+      if not ith then
+        pdf_literalcode("%f %f m",pth.x_coord,pth.y_coord)
+      elseif curved(ith,pth) then
+        pdf_literalcode("%f %f %f %f %f %f c",
+          ith.right_x,ith.right_y,pth.left_x,pth.left_y,pth.x_coord,pth.y_coord)
+      else
+        pdf_literalcode("%f %f l",pth.x_coord,pth.y_coord)
+      end
+      ith = pth
+    end
+    if not open then
+      local one = path[1]
+      if curved(pth,one) then
+        pdf_literalcode("%f %f %f %f %f %f c",
+          pth.right_x,pth.right_y,one.left_x,one.left_y,one.x_coord,one.y_coord )
+      else
+        pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
+      end
+    elseif #path == 1 then -- special case .. draw point
+      local one = path[1]
       pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
     end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",one.x_coord,one.y_coord)
   end
-end
 
-local function flushconcatpath(path,open)
-  pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
-  local pth, ith
-  for i=1,#path do
-    pth = path[i]
-    if not ith then
-      pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
-    elseif curved(ith,pth) then
-      local a, b = concat(ith.right_x,ith.right_y)
-      local c, d = concat(pth.left_x,pth.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
-    else
-      pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+  local function flushconcatpath(path,open)
+    pdf_literalcode("%f %f %f %f %f %f cm", sx, rx, ry, sy, tx ,ty)
+    local pth, ith
+    for i=1,#path do
+      pth = path[i]
+      if not ith then
+        pdf_literalcode("%f %f m",concat(pth.x_coord,pth.y_coord))
+      elseif curved(ith,pth) then
+        local a, b = concat(ith.right_x,ith.right_y)
+        local c, d = concat(pth.left_x,pth.left_y)
+        pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(pth.x_coord, pth.y_coord))
+      else
+        pdf_literalcode("%f %f l",concat(pth.x_coord, pth.y_coord))
+      end
+      ith = pth
     end
-    ith = pth
-  end
-  if not open then
-    local one = path[1]
-    if curved(pth,one) then
-      local a, b = concat(pth.right_x,pth.right_y)
-      local c, d = concat(one.left_x,one.left_y)
-      pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
-    else
+    if not open then
+      local one = path[1]
+      if curved(pth,one) then
+        local a, b = concat(pth.right_x,pth.right_y)
+        local c, d = concat(one.left_x,one.left_y)
+        pdf_literalcode("%f %f %f %f %f %f c",a,b,c,d,concat(one.x_coord, one.y_coord))
+      else
+        pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
+      end
+    elseif #path == 1 then -- special case .. draw point
+      local one = path[1]
       pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
     end
-  elseif #path == 1 then -- special case .. draw point
-    local one = path[1]
-    pdf_literalcode("%f %f l",concat(one.x_coord,one.y_coord))
   end
-end
 
 %    \end{macrocode}
-%
 %    Finally, flush figures by inserting PDF literals.
 %    \begin{macrocode}
-function luamplib.flush (result,flusher)
-  if result then
-    local figures = result.fig
-    if figures then
-      for f=1, #figures do
-        info("flushing figure %s",f)
-        local figure = figures[f]
-        local objects = getobjects(result,figure,f)
-        local fignum = tonumber(figure:filename():match("([%d]+)$") or figure:charcode() or 0)
-        local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-        local bbox = figure:boundingbox()
-        local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
-        if urx < llx then
+  local function flush (result,flusher)
+    if result then
+      local figures = result.fig
+      if figures then
+        for f=1, #figures do
+          info("flushing figure %s",f)
+          local figure = figures[f]
+          local objects = figure:objects()
+          local fignum = tonumber(figure:filename():match("([%d]+)$") or figure:charcode() or 0)
+          local miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+          local bbox = figure:boundingbox()
+          local llx, lly, urx, ury = bbox[1], bbox[2], bbox[3], bbox[4] -- faster than unpack
+          if urx < llx then
 %    \end{macrocode}
 %    luamplib silently ignores this invalid figure for those
 %    that do not contain |beginfig ... endfig|. (issue \#70)
@@ -4454,249 +4580,255 @@ function luamplib.flush (result,flusher)
 %    pdf_stopfigure()
 %\end{verbatim}
 %    \begin{macrocode}
-        else
+          else
 %    \end{macrocode}
 %    For legacy behavior, insert `pre-fig' \TeX\ code here.
 %    \begin{macrocode}
-          if tex_code_pre_mplib[f] then
-            put2output(tex_code_pre_mplib[f])
-          end
-          pdf_startfigure(fignum,llx,lly,urx,ury)
-          start_pdf_code()
-          if objects then
-            local savedpath = nil
-            local savedhtap = nil
-            for o=1,#objects do
-              local object        = objects[o]
-              local objecttype    = object.type
+            if tex_code_pre_mplib[f] then
+              put2output(tex_code_pre_mplib[f])
+            end
+            pdf_startfigure(fignum,llx,lly,urx,ury)
+            start_pdf_code()
+            if objects then
+              local savedpath = nil
+              local savedhtap = nil
+              for o=1,#objects do
+                local object        = objects[o]
+                local objecttype    = object.type
 %    \end{macrocode}
 %    The following 10 lines are part of |btex...etex| patch.
 %    Again, colors are processed at this stage.
 %    \begin{macrocode}
-              local prescript     = object.prescript
-              prescript = prescript and script2table(prescript) -- prescript is now a table
-              local cr_over = do_preobj_CR(object,prescript) -- color
-              local tr_opaq = do_preobj_TR(object,prescript) -- opacity
-              local fading_ = do_preobj_FADE(object,prescript) -- fading
-              local trgroup = do_preobj_GRP(object,prescript) -- transparency group
-              local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
-              local shading_ = do_preobj_shading(object,prescript) -- shading pattern
-              if prescript and prescript.mplibtexboxid then
-                put_tex_boxes(object,prescript)
-              elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
-              elseif objecttype == "start_clip" then
-                local evenodd = not object.istext and object.postscript == "evenodd"
-                start_pdf_code()
-                flushnormalpath(object.path,false)
-                pdf_literalcode(evenodd and "W* n" or "W n")
-              elseif objecttype == "stop_clip" then
-                stop_pdf_code()
-                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
-              elseif objecttype == "special" then
+                local prescript     = object.prescript
+                prescript = prescript and script2table(prescript) -- prescript is now a table
+                local cr_over = do_preobj_CR(object,prescript) -- color
+                local tr_opaq = do_preobj_TR(object,prescript) -- opacity
+                local fading_ = do_preobj_FADE(object,prescript) -- fading
+                local trgroup = do_preobj_GRP(object,prescript) -- transparency group
+                local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
+                local shading_ = do_preobj_shading(object,prescript) -- shading pattern
+                if prescript and prescript.mplibtexboxid then
+                  put_tex_boxes(object,prescript)
+                elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
+                elseif objecttype == "start_clip" then
+                  local evenodd = not object.istext and object.postscript == "evenodd"
+                  start_pdf_code()
+                  flushnormalpath(object.path,false)
+                  pdf_literalcode(evenodd and "W* n" or "W n")
+                elseif objecttype == "stop_clip" then
+                  stop_pdf_code()
+                  miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                elseif objecttype == "special" then
 %    \end{macrocode}
 %    Collect \TeX\ codes that will be executed after flushing.
 %    Legacy behavior.
 %    \begin{macrocode}
-                if prescript and prescript.postmplibverbtex then
-                  figcontents.post[#figcontents.post+1] = prescript.postmplibverbtex
-                end
-              elseif objecttype == "text" then
-                local ot = object.transform -- 3,4,5,6,1,2
-                start_pdf_code()
-                pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
-                pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
-                stop_pdf_code()
-              elseif not trgroup and fading_ ~= "stop" then
-                local evenodd, collect, both = false, false, false
-                local postscript = object.postscript
-                if not object.istext then
-                  if postscript == "evenodd" then
-                    evenodd = true
-                  elseif postscript == "collect" then
-                    collect = true
-                  elseif postscript == "both" then
-                    both = true
-                  elseif postscript == "eoboth" then
-                    evenodd = true
-                    both    = true
+                  if prescript and prescript.postmplibverbtex then
+                    figcontents.post[#figcontents.post+1] = prescript.postmplibverbtex
                   end
-                end
-                if collect then
-                  if not savedpath then
-                    savedpath = { object.path or false }
-                    savedhtap = { object.htap or false }
+                elseif objecttype == "text" then
+                  local ot = object.transform -- 3,4,5,6,1,2
+                  start_pdf_code()
+                  pdf_literalcode("%f %f %f %f %f %f cm",ot[3],ot[4],ot[5],ot[6],ot[1],ot[2])
+                  pdf_textfigure(object.font,object.dsize,object.text,object.width,object.height,object.depth)
+                  stop_pdf_code()
+                elseif not trgroup and fading_ ~= "stop" then
+                  local evenodd, collect, both = false, false, false
+                  local postscript = object.postscript
+                  if not object.istext then
+                    if postscript == "evenodd" then
+                      evenodd = true
+                    elseif postscript == "collect" then
+                      collect = true
+                    elseif postscript == "both" then
+                      both = true
+                    elseif postscript == "eoboth" then
+                      evenodd = true
+                      both    = true
+                    end
+                  end
+                  if collect then
+                    if not savedpath then
+                      savedpath = { object.path or false }
+                      savedhtap = { object.htap or false }
+                    else
+                      savedpath[#savedpath+1] = object.path or false
+                      savedhtap[#savedhtap+1] = object.htap or false
+                    end
                   else
-                    savedpath[#savedpath+1] = object.path or false
-                    savedhtap[#savedhtap+1] = object.htap or false
-                  end
-                else
 %    \end{macrocode}
 %    Removed from ConTeXt general: color stuff.
 %    \begin{macrocode}
-                  local ml = object.miterlimit
-                  if ml and ml ~= miterlimit then
-                    miterlimit = ml
-                    pdf_literalcode("%f M",ml)
-                  end
-                  local lj = object.linejoin
-                  if lj and lj ~= linejoin then
-                    linejoin = lj
-                    pdf_literalcode("%i j",lj)
-                  end
-                  local lc = object.linecap
-                  if lc and lc ~= linecap then
-                    linecap = lc
-                    pdf_literalcode("%i J",lc)
-                  end
-                  local dl = object.dash
-                  if dl then
-                    local d = format("[%s] %f d",tableconcat(dl.dashes or {}," "),dl.offset)
-                    if d ~= dashed then
-                      dashed = d
-                      pdf_literalcode(dashed)
+                    local ml = object.miterlimit
+                    if ml and ml ~= miterlimit then
+                      miterlimit = ml
+                      pdf_literalcode("%f M",ml)
                     end
-                  elseif dashed then
-                    pdf_literalcode("[] 0 d")
-                    dashed = false
-                  end
-                  local path = object.path
-                  local transformed, penwidth = false, 1
-                  local open = path and path[1].left_type and path[#path].right_type
-                  local pen = object.pen
-                  if pen then
-                    if pen.type == 'elliptical' then
-                      transformed, penwidth = pen_characteristics(object) -- boolean, value
-                      pdf_literalcode("%f w",penwidth)
-                      if objecttype == 'fill' then
-                        objecttype = 'both'
+                    local lj = object.linejoin
+                    if lj and lj ~= linejoin then
+                      linejoin = lj
+                      pdf_literalcode("%i j",lj)
+                    end
+                    local lc = object.linecap
+                    if lc and lc ~= linecap then
+                      linecap = lc
+                      pdf_literalcode("%i J",lc)
+                    end
+                    local dl = object.dash
+                    if dl then
+                      local d = format("[%s] %f d",tableconcat(dl.dashes or {}," "),dl.offset)
+                      if d ~= dashed then
+                        dashed = d
+                        pdf_literalcode(dashed)
                       end
-                    else -- calculated by mplib itself
-                      objecttype = 'fill'
+                    elseif dashed then
+                      pdf_literalcode("[] 0 d")
+                      dashed = false
                     end
-                  end
+                    local path = object.path
+                    local transformed, penwidth = false, 1
+                    local open = path and path[1].left_type and path[#path].right_type
+                    local pen = object.pen
+                    if pen then
+                      if pen.type == 'elliptical' then
+                        transformed, penwidth = pen_characteristics(object) -- boolean, value
+                        pdf_literalcode("%f w",penwidth)
+                        if objecttype == 'fill' then
+                          objecttype = 'both'
+                        end
+                      else -- calculated by mplib itself
+                        objecttype = 'fill'
+                      end
+                    end
 %    \end{macrocode}
 %    Added : shading
 %    \begin{macrocode}
-                  local shade_no = do_preobj_SH(object,prescript) -- shading
-                  if shade_no then
-                    pdf_literalcode"q /Pattern cs"
-                    objecttype = false
-                  end
-                  if transformed then
-                    start_pdf_code()
-                  end
-                  if path then
-                    if savedpath then
-                      for i=1,#savedpath do
-                        local path = savedpath[i]
-                        if transformed then
-                          flushconcatpath(path,open)
-                        else
-                          flushnormalpath(path,open)
-                        end
-                      end
-                      savedpath = nil
+                    local shade_no = do_preobj_SH(object,prescript) -- shading
+                    if shade_no then
+                      pdf_literalcode"q /Pattern cs"
+                      objecttype = false
                     end
-                    if transformed then
-                      flushconcatpath(path,open)
-                    else
-                      flushnormalpath(path,open)
-                    end
-                    if objecttype == "fill" then
-                      pdf_literalcode(evenodd and "h f*" or "h f")
-                    elseif objecttype == "outline" then
-                      if both then
-                        pdf_literalcode(evenodd and "h B*" or "h B")
-                      else
-                        pdf_literalcode(open and "S" or "h S")
-                      end
-                    elseif objecttype == "both" then
-                      pdf_literalcode(evenodd and "h B*" or "h B")
-                    end
-                  end
-                  if transformed then
-                    stop_pdf_code()
-                  end
-                  local path = object.htap
-%    \end{macrocode}
-%    How can we generate an |htap| object? Please let us know if you have succeeded.
-%    \begin{macrocode}
-                  if path then
                     if transformed then
                       start_pdf_code()
                     end
-                    if savedhtap then
-                      for i=1,#savedhtap do
-                        local path = savedhtap[i]
-                        if transformed then
-                          flushconcatpath(path,open)
-                        else
-                          flushnormalpath(path,open)
+                    if path then
+                      if savedpath then
+                        for i=1,#savedpath do
+                          local path = savedpath[i]
+                          if transformed then
+                            flushconcatpath(path,open)
+                          else
+                            flushnormalpath(path,open)
+                          end
                         end
+                        savedpath = nil
                       end
-                      savedhtap = nil
-                      evenodd   = true
-                    end
-                    if transformed then
-                      flushconcatpath(path,open)
-                    else
-                      flushnormalpath(path,open)
-                    end
-                    if objecttype == "fill" then
-                      pdf_literalcode(evenodd and "h f*" or "h f")
-                    elseif objecttype == "outline" then
-                      pdf_literalcode(open and "S" or "h S")
-                    elseif objecttype == "both" then
-                      pdf_literalcode(evenodd and "h B*" or "h B")
+                      if transformed then
+                        flushconcatpath(path,open)
+                      else
+                        flushnormalpath(path,open)
+                      end
+                      if objecttype == "fill" then
+                        pdf_literalcode(evenodd and "h f*" or "h f")
+                      elseif objecttype == "outline" then
+                        if both then
+                          pdf_literalcode(evenodd and "h B*" or "h B")
+                        else
+                          pdf_literalcode(open and "S" or "h S")
+                        end
+                      elseif objecttype == "both" then
+                        pdf_literalcode(evenodd and "h B*" or "h B")
+                      end
                     end
                     if transformed then
                       stop_pdf_code()
                     end
-                  end
+                    local path = object.htap
+%    \end{macrocode}
+%    How can we generate an |htap| object? Please let us know if you have succeeded.
+%    \begin{macrocode}
+                    if path then
+                      if transformed then
+                        start_pdf_code()
+                      end
+                      if savedhtap then
+                        for i=1,#savedhtap do
+                          local path = savedhtap[i]
+                          if transformed then
+                            flushconcatpath(path,open)
+                          else
+                            flushnormalpath(path,open)
+                          end
+                        end
+                        savedhtap = nil
+                        evenodd   = true
+                      end
+                      if transformed then
+                        flushconcatpath(path,open)
+                      else
+                        flushnormalpath(path,open)
+                      end
+                      if objecttype == "fill" then
+                        pdf_literalcode(evenodd and "h f*" or "h f")
+                      elseif objecttype == "outline" then
+                        pdf_literalcode(open and "S" or "h S")
+                      elseif objecttype == "both" then
+                        pdf_literalcode(evenodd and "h B*" or "h B")
+                      end
+                      if transformed then
+                        stop_pdf_code()
+                      end
+                    end
 %    \end{macrocode}
 %    Added to ConTeXt general: post-object colors and shading stuff.
-%    We should beware the |q ... Q| scope.
+%    Beware |q ... Q| scope.
 %    \begin{macrocode}
-                  if shade_no then -- shading
-                    pdf_literalcode("W%s n /MPlibSh%s sh Q",evenodd and "*" or "",shade_no)
+                    if shade_no then -- shading
+                      pdf_literalcode("W%s n /MPlibSh%s sh Q",evenodd and "*" or "",shade_no)
+                    end
                   end
                 end
-              end
-              if fading_ == "start" then
-                pdfetcs.fading.specialeffects = {fading_, tr_opaq, cr_over}
-              elseif trgroup == "start" then
-                pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
-              elseif fading_ == "stop" then
-                local se = pdfetcs.fading.specialeffects
-                if se then stop_special_effects(se[1], se[2], se[3]) end
-              elseif trgroup == "stop" then
-                local se = pdfetcs.tr_group.specialeffects
-                if se then stop_special_effects(se[1], se[2], se[3]) end
-              else
-                stop_special_effects(fading_, tr_opaq, cr_over)
-              end
-              if fading_ or trgroup then -- extgs resetted
-                miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                if fading_ == "start" then
+                  pdfetcs.fading.specialeffects = {fading_, tr_opaq, cr_over}
+                elseif trgroup == "start" then
+                  pdfetcs.tr_group.specialeffects = {fading_, tr_opaq, cr_over}
+                elseif fading_ == "stop" then
+                  local se = pdfetcs.fading.specialeffects
+                  if se then stop_special_effects(se[1], se[2], se[3]) end
+                elseif trgroup == "stop" then
+                  local se = pdfetcs.tr_group.specialeffects
+                  if se then stop_special_effects(se[1], se[2], se[3]) end
+                else
+                  stop_special_effects(fading_, tr_opaq, cr_over)
+                end
+                if fading_ or trgroup then -- extgs resetted
+                  miterlimit, linecap, linejoin, dashed = -1, -1, -1, false
+                end
               end
             end
-          end
-          stop_pdf_code()
-          pdf_stopfigure()
+            stop_pdf_code()
+            pdf_stopfigure()
 %    \end{macrocode}
 %    output collected materials to PDF, plus legacy |verbatimtex| code.
 %    \begin{macrocode}
-          for _,v in ipairs(figcontents) do
-            if type(v) == "table" then
-              texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
-            else
-              texsprint(v)
+            for _,v in ipairs(figcontents) do
+              if type(v) == "table" then
+                texsprint"\\mplibtoPDF{"; texsprint(v[1], v[2]); texsprint"}"
+              else
+                texsprint(v)
+              end
             end
+            if #figcontents.post > 0 then texsprint(figcontents.post) end
+            figcontents = { post = { } }
           end
-          if #figcontents.post > 0 then texsprint(figcontents.post) end
-          figcontents = { post = { } }
         end
       end
     end
+  end
+
+  function luamplib.convert (result, flusher)
+    flush(result, flusher)
+    return true -- done
   end
 end
 
@@ -4736,7 +4868,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/12/19 v2.37.8 mplib package for LuaTeX]
+    [2025/12/26 v2.38.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5103,8 +5235,7 @@ end
 \fi
 %    \end{macrocode}
 %
-%    Allow \TeX\ dimen/color macros. Now |runscript| does the job,
-%    so the following lines are not needed for most cases.
+%    \TeX\ macros for dimen/color
 %    \begin{macrocode}
 \def\mpdim#1{ runscript("luamplibdimen{#1}") }
 \def\mpcolor#1#{\domplibcolor{#1}}
