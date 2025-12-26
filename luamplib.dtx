@@ -493,6 +493,10 @@ See source file '\inFileName' for licencing and contact information.
 %      withcolor mplibtexcolor"red!50"
 %      ;
 %\end{verbatim}
+%   But, the better is to revise your code so that the color can have effect inside the image:
+%\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{red!50}) scaled 5;
+%\end{verbatim}
 %
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
