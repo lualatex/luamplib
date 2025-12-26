@@ -463,14 +463,10 @@ See source file '\inFileName' for licencing and contact information.
 %   in the mplibcode environment. This feature is inpired by \pkg{gmp} package authored by
 %   Enrico Gregorio. Please refer to the manual of \pkg{gmp} package for details.
 %\begin{verbatim}
-%    \begin{mplibcode}
-%      beginfig(1)
-%        draw origin--(.6\mpdim{\linewidth},0)
-%          withpen pencircle scaled 4 dashed evenly scaled 4
-%          withcolor \mpcolor{orange}
-%          ;
-%      endfig;
-%    \end{mplibcode}
+%    draw origin--(.6\mpdim{\linewidth},0)
+%      withpen pencircle scaled 4 dashed evenly scaled 4
+%      withcolor \mpcolor{orange}
+%      ;
 %\end{verbatim}
 %
 % \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}\label{sec:mpcolor}
@@ -695,19 +691,22 @@ See source file '\inFileName' for licencing and contact information.
 %   (see below \secref{mpliboutlinetext}).
 %   However the syntax is somewhat different.
 %\begin{verbatim}
-%    draw mplibgraphictext "Funny"
-%      fakebold 2.3                           % fontspec option
-%      drawcolor .7blue fillcolor "red!50"    % color expressions
+%    draw mplibgraphictext "\bfseries Funny" scaled 2
+%      fakebold 2.3                               % fontspec option
+%      fillcolor "red!50"                         % color expression
+%      drawcolor 2/3 blue                         % or strokecolor 2/3 blue
 %      ;
 %\end{verbatim}
-%   |fakebold|, |drawcolor| and |fillcolor| are optional;
-%   default values are |2|, |"black"| and |"white"| respectively.
+%   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
+%   default values are |2|, |"white"| and |"black"| respectively.\footnote{Users can
+%     use the |withmplibcolors| macro instead of |fillcolor| and |drawcolor| options.
+%     See \secref{withmplibcolors} on this macro.}
 %   When the color expressions are given in string type, they are regarded as
 %   \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expressions.
 %   All from |mplibgraphictext| to the end of sentence will compose an
-%   anonymous |picture|, which can be drawn or assigned to a variable.
-%   Incidentally, |withdrawcolor| and |withfillcolor| are synonyms of
-%   |drawcolor| and |fillcolor|, hopefully to be compatible with |graphictext|.
+%   anonymous picture, which can be drawn or assigned to a variable.
+%   Incidentally, |withfillcolor| and |withdrawcolor| are synonyms of
+%   |fillcolor| and |drawcolor|, hopefully to be compatible with |graphictext|.
 %
 %   \textsc{n.b.}
 %   In some cases,
@@ -736,7 +735,7 @@ See source file '\inFileName' for licencing and contact information.
 %    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
 %    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
 %\end{verbatim}
-%   Both arguments before and after of ``|of|'' can be either a number or a string.
+%   Both arguments before and after ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
 %   String argument at the left side is regarded as a glyph name in the font or a unicode character.
 %   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
@@ -1240,18 +1239,18 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
 %   \label{sec:withmplibcolors}
 %   Unlike the |withcolor| command, users can specify one color for filling
-%   and another color for stroking using the macro |withmplibcolors|.
+%   and another color for stroking using the macro |withmplibcolors| at the end of a sentence.
 %   The syntax is |withmplibcolors| |(|\meta{fill color expr}|,| \meta{stroke color expr}|)|.
 %   When the argument is in string type, it is regarded as the color expression of \TeX\ side.
 %   A simple example (see also the example above at \secref{mplibdrawglyph}):
 %\begin{verbatim}
-%    \mpfig
-%      filldraw fullcircle scaled 30
-%        withpen pencircle scaled 1
-%        withmplibcolors ("orange!60", 2/3red)
-%        ;
-%    \endmpfig
+%    filldraw fullcircle scaled 30
+%      withpen pencircle scaled 1
+%      withmplibcolors ("orange!60", 2/3red)
+%      ;
 %\end{verbatim}
+%   The PDF file size is much smaller than issueing two sentences with different colors,
+%   though the apparent effect is the same.
 %
 % \subsection{Lua}
 %
@@ -2964,7 +2963,7 @@ def mplibgraphictext primary t =
   mplibgraphictext_ (t)
 enddef;
 def mplibgraphictext_ (expr t) text rest =
-  save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor,
+  save fakebold, scale, fillcolor, drawcolor, withfillcolor, withdrawcolor, strokecolor,
     fb, fc, dc, graphictextpic, alsoordoublepath;
   picture graphictextpic; graphictextpic := nullpicture;
   numeric fb; string fc, dc; fb:=2; fc:="white"; dc:="black";
@@ -2972,12 +2971,12 @@ def mplibgraphictext_ (expr t) text rest =
   def fakebold  primary c = hide(fb:=c;) enddef;
   def fillcolor primary c = hide(fc:=colordecimals c;) enddef;
   def drawcolor primary c = hide(dc:=colordecimals c;) enddef;
-  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor; let strokecolor = drawcolor;
   def alsoordoublepath expr p = if picture p: also else: doublepath fi p enddef;
   addto graphictextpic alsoordoublepath (origin--cycle) rest; graphictextpic:=nullpicture;
   def fakebold  primary c = enddef;
   let fillcolor = fakebold; let drawcolor = fakebold;
-  let withfillcolor = fillcolor; let withdrawcolor = drawcolor;
+  let withfillcolor = fillcolor; let withdrawcolor = drawcolor; let strokecolor = drawcolor;
   image(draw runscript("return luamplib.graphictext([===["&t&"]===],"
     & decimal fb &",'"& fc &"','"& dc &"')") rest;)
   endgroup;
