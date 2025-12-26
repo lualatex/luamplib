@@ -7,7 +7,7 @@
         mplibfillglyph, mplibstrokeglyph, mplibfillandstrokeglyph
    * fix the macro mplibdrawglyph
    * documentation: add explanations about withpostscript "both"/"eoboth"
-
+   * documentation: add a caution about \mpcolor command
 
 2025/12/19 2.37.8
    * support Chinese/Japanese vertical writing in mpliboutlinetext

@@ -480,6 +480,20 @@ See source file '\inFileName' for licencing and contact information.
 %   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
 %
+%   \textsc{n.b.}
+%   As the \cs{mpcolor} command produces internally a |withprescript| statement,
+%   only the first object will be colored as you intended
+%   among multiple graphical objects in a \metapost image.
+%   In this case,
+%   consider using |mplibtexcolor| operator described below at \secref{mplibtexcolor}.
+%   For instance:
+%\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5) scaled 5
+%      % withcolor \mpcolor{red!50} does not work properly
+%      withcolor mplibtexcolor"red!50"
+%      ;
+%\end{verbatim}
+%
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
 %   \cs{mplibcode ...} \cs{endmplibcode} (for Plain),
@@ -668,6 +682,7 @@ See source file '\inFileName' for licencing and contact information.
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
 % \subsubsection[\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}]{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
+%   \label{sec:mplibtexcolor}
 %   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| command.
