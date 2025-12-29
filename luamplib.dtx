@@ -480,22 +480,27 @@ See source file '\inFileName' for licencing and contact information.
 %   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
 %
-%   \textsc{n.b.}
-%   As the \cs{mpcolor} command produces internally a |withprescript| statement,
-%   only the first object will be colored as you intended
-%   among multiple graphical objects in a \metapost image.
-%   In this case,
-%   consider using |mplibtexcolor| operator described below at \secref{mplibtexcolor}.
-%   For instance:
+%   \textsc{n.b.} Formerly,
+%   only the first object would have been colored as you intended
+%   among multiple graphical objects in a \metapost image,
+%   because the \cs{mpcolor} produced a |withprescript| command internally.
+%   Since v2.38.1, now that \cs{mpcolor} returns a \metapost color expression if possible,
+%   users can issue the sentence as follows
+%   without worring about the location of the color command:
 %\begin{verbatim}
-%    draw image (drawarrow (left--right) scaled 5) scaled 5
-%      % withcolor \mpcolor{red!50} does not work properly
-%      withcolor mplibtexcolor"red!50"
+%    draw image (drawarrow (left--right) scaled 5)
+%      scaled 5
+%      withcolor \mpcolor{red!50}
 %      ;
 %\end{verbatim}
-%   But, the better is to revise your code so that the color can have effect inside the image:
+%   Be aware, however, that even after v2.38.1 \cs{mpcolor} will still insert
+%   the |withprescript| command when the color specified is a spot color.
+%   Users therefore have to revise the code so that the color can have effect inside the image.
+%   For instance:
 %\begin{verbatim}
-%    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{red!50}) scaled 5;
+%    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
+%      scaled 5
+%      ;
 %\end{verbatim}
 %
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
@@ -1892,7 +1897,19 @@ if is_defined'color_select:n' then
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local process_color
+local process_color, process_mplibcolor
+%    \end{macrocode}
+% A common function for color functions
+%    \begin{macrocode}
+local function colorsplit (res)
+  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if not tonumber(tt[i]) then break end
+    t[#t+1] = tt[i]
+  end
+  return t
+end
 do
   local colfmt = ccexplat and "l3color" or "xcolor"
   local mplibcolorfmt = {
@@ -1937,6 +1954,12 @@ do
       return format('1 withprescript "mpliboverridecolor=%s"', t)
     end
     return ""
+  end
+  function process_mplibcolor(str)
+    local res = process_color(str)
+    if res:find" cs " or res:find"@pdf.obj" then return res end
+    res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
+    return format("(%s)", tableconcat(res, ","))
   end
 end
 
@@ -2018,7 +2041,7 @@ catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or catlatex
 do
   local runscript_funcs = {
     luamplibtext    = process_tex_text,
-    luamplibcolor   = process_color,
+    luamplibcolor   = process_mplibcolor,
     luamplibdimen   = process_dimen,
     luamplibprefig  = process_verbatimtex_prefig,
     luamplibinfig   = process_verbatimtex_infig,
@@ -2119,16 +2142,6 @@ end
 %
 %    luamplib's \metapost color operators
 %    \begin{macrocode}
-local function colorsplit (res)
-  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if not tonumber(tt[i]) then break end
-    t[#t+1] = tt[i]
-  end
-  return t
-end
-
 luamplib.gettexcolor = function (str, rgb)
   local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then
