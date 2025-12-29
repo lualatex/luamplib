@@ -483,7 +483,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} Formerly,
 %   only the first object would have been colored as you intended
 %   among multiple graphical objects in a \metapost image,
-%   because the \cs{mpcolor} produced a |withprescript| command internally.
+%   because the \cs{mpcolor} always produced a |withprescript| command internally.
 %   Since v2.38.1, now that \cs{mpcolor} returns a \metapost color expression if possible,
 %   users can issue the sentence as follows
 %   without worring about the location of the color command:
@@ -1948,8 +1948,12 @@ do
       end
       run_tex_code(myfmt:format(str), ccexplat or catat11)
       local t = texgettoks"mplibtmptoks"
-      if not pdfmode and not t:find"^pdf" then
-        t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+      if not pdfmode then
+        if t:find"^hsb" then
+          t = "color push " .. t
+        elseif not t:find"^pdf" then
+          t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+        end
       end
       return format('1 withprescript "mpliboverridecolor=%s"', t)
     end
@@ -1957,7 +1961,7 @@ do
   end
   function process_mplibcolor(str)
     local res = process_color(str)
-    if res:find" cs " or res:find"@pdf.obj" then return res end
+    if res:find" cs " or res:find"@pdf.obj" or res:find"color push" then return res end
     res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
     return format("(%s)", tableconcat(res, ","))
   end
@@ -4455,7 +4459,11 @@ do
       pdf_literalcode(opaq)
     end
     if over then -- color
-      put2output"\\special{pdf:ec}"
+      if over:find"pdf:bc" then
+        put2output"\\special{pdf:ec}"
+      else
+        put2output"\\special{color pop}"
+      end
     end
   end
 
