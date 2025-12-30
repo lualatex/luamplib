@@ -932,24 +932,18 @@ See source file '\inFileName' for licencing and contact information.
 %        picture tex;
 %        tex = mpliboutlinetext.p ("\bfseries \TeX");
 %        for i=1 upto mpliboutlinenum:
-%          j:=0;
-%          for item within mpliboutlinepic[i]:
-%            filldraw pathpart item scaled 10
-%              if incr(j) < length mpliboutlinepic[i]:
-%                withpostscript "collect"
-%              else:
-%                withmppattern "pattnocolor"
-%                withpen pencircle scaled 1/2
-%                withcolor (i/4)[red,blue]          % paints the pattern
-%              fi
-%              ;
-%          endfor
+%          mplibfillandstrokeglyph mpliboutlinepic[i]
+%            scaled 10
+%            withmppattern "pattnocolor"
+%            withpen pencircle scaled 1/2
+%            withcolor (i/4)[red,blue]          % paints the pattern
+%            ;
 %        endfor
 %      endfig;
 %    \end{mplibcode}
 %\end{verbatim}
 % A much simpler and efficient way to obtain a similar result
-% (without colorful characters in this example)
+% (but without colorful characters in this example)
 % is to give a \emph{textual picture} as the operand of |withmppattern|:
 %\begin{verbatim}
 %    \begin{mplibcode}
