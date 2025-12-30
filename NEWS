@@ -3,6 +3,7 @@
    * Now \mpcolor (or mplibcolor) will return a MP color expression
    when the color specified is not a spot color.  With spot colors,
    withprescript command will be inserted as before.
+   * fix color routine for named color in DVI mode with no \DocumentMetadata
 
 2025/12/26 2.38.0
    * a new macro to specify fill color and stroke color differently:

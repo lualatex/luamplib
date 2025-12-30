@@ -483,7 +483,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \textsc{n.b.} Formerly,
 %   only the first object would have been colored as you intended
 %   among multiple graphical objects in a \metapost image,
-%   because the \cs{mpcolor} always produced a |withprescript| command internally.
+%   because \cs{mpcolor} always produced a |withprescript| command internally.
 %   Since v2.38.1, now that \cs{mpcolor} returns a \metapost color expression if possible,
 %   users can issue the sentence as follows
 %   without worring about the location of the color command:
@@ -1908,6 +1908,10 @@ local function colorsplit (res)
     if not tonumber(tt[i]) then break end
     t[#t+1] = tt[i]
   end
+  if #t == 0 then -- named color in DVI mode with no DocumentMetadata
+    run_tex_code{"\\extractcolorspecs{", tt[3], "}\\mplibtmpa\\mplibtmpb"}
+    t = get_macro"mplibtmpb":explode","
+  end
   return t
 end
 do
@@ -1949,7 +1953,7 @@ do
       run_tex_code(myfmt:format(str), ccexplat or catat11)
       local t = texgettoks"mplibtmptoks"
       if not pdfmode then
-        if t:find"^hsb" then
+        if t:find"^hsb" or not t:find"%d" then
           t = "color push " .. t
         elseif not t:find"^pdf" then
           t = t:gsub("%a+ (.+)","pdf:bc [%1]")
@@ -2295,7 +2299,7 @@ do
       end
       return tableconcat(tt," ")
     end
-    return col:gsub("^.- ","")
+    return format("[%s]", tableconcat(colorsplit(col)," "))
   end
   function luamplib.fillandstrokecolor (fill, stroke)
     fill   = graphictextcolor(fill, "fill")
