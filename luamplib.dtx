@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/12/26 v2.38.0 Interface for using the mplib library]%
+  [2025/12/30 v2.38.1 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{metalogo,multicol,xspace}
 \usepackage[x11names]{xcolor}
@@ -130,6 +130,7 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\mplib {\pkg{mplib}\xspace}
 
 \protected\def\secref#1{\S\,\ref{sec:#1}}
+\newcommand*\notabene{\textsc{n.b.}\quad}
 
 \flushbottom
 \begin{document}
@@ -160,7 +161,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/12/26 v2.38.0}
+% \date{2025/12/30 v2.38.1}
 %
 % \maketitle
 %
@@ -245,7 +246,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the format to be used by future figures at any time using
 %   \cs{mplibsetformat}\marg{format name}.
 %
-%   \textsc{n.b.} As \emph{metafun} is such a complicated format,
+%   \notabene As \emph{metafun} is such a complicated format,
 %   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
 %   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
@@ -326,8 +327,8 @@ See source file '\inFileName' for licencing and contact information.
 %      verbatimtex \endgraf\moveright 1cm etex; beginfig(3); ... endfig;
 %    \endmplibcode
 %\end{verbatim}
-%   \textsc{n.b.} \cs{endgraf} should be used instead of \cs{par} inside
-%   |verbatimtex| |...| |etex|.
+%   \notabene \cs{endgraf} should be used instead of \cs{par} inside
+%   mplibcode environment.
 %
 %   On the other hand, \TeX\ code in |verbatimtex| |...| |etex|
 %   between |beginfig()| and |endfig| will be inserted
@@ -371,7 +372,7 @@ See source file '\inFileName' for licencing and contact information.
 %   So, |label("my text",| |origin)| thereafter is exactly the same as
 %   |label(textext| |"my text",| |origin)|.
 %
-%   \textsc{n.b.} In the background,
+%   \notabene In the background,
 %   \pkg{luamplib} redefines |infont| operator so that the right side
 %   argument (the font part) is totally ignored. Therefore the left side arguemnt (the text part)
 %   will be typeset with the current \TeX\ font.
@@ -480,17 +481,27 @@ See source file '\inFileName' for licencing and contact information.
 %   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
 %   as well.
 %
-%   \textsc{n.b.}
-%   As the \cs{mpcolor} command produces internally a |withprescript| statement,
-%   only the first object will be colored as you intended
-%   among multiple graphical objects in a \metapost image.
-%   In this case,
-%   consider using |mplibtexcolor| operator described below at \secref{mplibtexcolor}.
+%   \notabene Formerly,
+%   only the first object would have been colored as you intended
+%   among multiple graphical objects in a \metapost image,
+%   because \cs{mpcolor} always produced a |withprescript| command internally.
+%   Since v2.38.1, now that \cs{mpcolor} returns a \metapost color expression if possible,
+%   users can issue the sentence as follows
+%   without worring about the location of the color command:
+%\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5)
+%      scaled 5
+%      withcolor \mpcolor{red!50}
+%      ;
+%\end{verbatim}
+%   Be aware, however, that even after v2.38.1 \cs{mpcolor} will still insert
+%   the |withprescript| command when the color specified is a spot color
+%   (or named color in DVI mode).
+%   Users therefore have to revise the code so that the color can have effect inside the image.
 %   For instance:
 %\begin{verbatim}
-%    draw image (drawarrow (left--right) scaled 5) scaled 5
-%      % withcolor \mpcolor{red!50} does not work properly
-%      withcolor mplibtexcolor"red!50"
+%    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
+%      scaled 5
 %      ;
 %\end{verbatim}
 %
@@ -526,10 +537,11 @@ See source file '\inFileName' for licencing and contact information.
 %      circleit.a(btex Box 1 etex); drawboxed(a);
 %    \endmpfig
 %\end{verbatim}
-%   The instance name (default: |@mpfig|) can be changed by redefining
+%   Users can change the instance name (default value:\ |@mpfig|) by redefining
 %   \cs{mpfiginstancename}, after which a new \mplib instance will start and
-%   code inheritance too will begin anew.  \cs{let}\allowbreak\cs{mpfiginstancename}\allowbreak\cs{empty} will
-%   prevent code inheritance if \cs{mplibcodeinherit}\allowbreak|{true}| is not declared.
+%   code inheritance too will begin anew.
+%   \cs{let}\allowbreak\cs{mpfiginstancename}\allowbreak\cs{empty} will
+%   prevent code inheritance if \cs{mplibcodeinherit} is not true.
 %
 % \subsubsection{About cache files}
 %   To support |btex| |...| |etex| in external |.mp| files, \pkg{luamplib}
@@ -697,7 +709,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |cmykcolor col;| should have been declared.
 %   By contrast, |mplibrgbtexcolor| \meta{string} always returns rgb-model expressions.
 %
-%   \textsc{n.b.} Spot colors are forced to cmyk or rgb model,
+%   \notabene Spot colors are forced to cmyk or rgb model,
 %   so these operators are not recommended for spot colors.
 %
 % \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
@@ -723,7 +735,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Incidentally, |withfillcolor| and |withdrawcolor| are synonyms of
 %   |fillcolor| and |drawcolor|, hopefully to be compatible with |graphictext|.
 %
-%   \textsc{n.b.}
+%   \notabene
 %   In some cases,
 %   especially when processing complicated \TeX\ code,
 %   |mplibgraphictext| will produce better results than \ConTeXt\
@@ -819,7 +831,7 @@ See source file '\inFileName' for licencing and contact information.
 %   |mpliboutlinepic[1]| |...| |mpliboutlinepic[mpliboutlinenum]|
 %   will be an array of images, each of which containing outline paths of a glyph or a rule.
 %
-%   \textsc{n.b.} As Unicode grapheme cluster is not considered in the array, a unit that must be
+%   \notabene As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
 % \subsubsection[\cs{mppattern}, \cs{endmppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withmppattern ...}}
@@ -1361,8 +1373,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.38.0",
-  date          = "2025/12/26",
+  version       = "2.38.1",
+  date          = "2025/12/30",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1888,7 +1900,23 @@ if is_defined'color_select:n' then
 end
 local ccexplat = luatexbase.registernumber"luamplibcctabexplat"
 
-local process_color
+local process_color, process_mplibcolor
+%    \end{macrocode}
+% A common function for color functions
+%    \begin{macrocode}
+local function colorsplit (res)
+  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
+  local be = tt[1]:find"^%d" and 1 or 2
+  for i=be, #tt do
+    if not tonumber(tt[i]) then break end
+    t[#t+1] = tt[i]
+  end
+  if #t == 0 then -- named color in DVI mode with no DocumentMetadata
+    run_tex_code{"\\extractcolorspecs{", tt[3], "}\\mplibtmpa\\mplibtmpb"}
+    t = get_macro"mplibtmpb":explode","
+  end
+  return t
+end
 do
   local colfmt = ccexplat and "l3color" or "xcolor"
   local mplibcolorfmt = {
@@ -1927,12 +1955,22 @@ do
       end
       run_tex_code(myfmt:format(str), ccexplat or catat11)
       local t = texgettoks"mplibtmptoks"
-      if not pdfmode and not t:find"^pdf" then
-        t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+      if not pdfmode then
+        if t:find"^hsb" or not t:find"%d" then
+          t = "color push " .. t
+        elseif not t:find"^pdf" then
+          t = t:gsub("%a+ (.+)","pdf:bc [%1]")
+        end
       end
       return format('1 withprescript "mpliboverridecolor=%s"', t)
     end
     return ""
+  end
+  function process_mplibcolor(str)
+    local res = process_color(str)
+    if res:find" cs " or res:find"@pdf.obj" or res:find"color push" then return res end
+    res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
+    return format("(%s)", tableconcat(res, ","))
   end
 end
 
@@ -2014,7 +2052,7 @@ catcodes.numbers.txtcatcodes = catcodes.numbers.txtcatcodes or catlatex
 do
   local runscript_funcs = {
     luamplibtext    = process_tex_text,
-    luamplibcolor   = process_color,
+    luamplibcolor   = process_mplibcolor,
     luamplibdimen   = process_dimen,
     luamplibprefig  = process_verbatimtex_prefig,
     luamplibinfig   = process_verbatimtex_infig,
@@ -2115,16 +2153,6 @@ end
 %
 %    luamplib's \metapost color operators
 %    \begin{macrocode}
-local function colorsplit (res)
-  local t, tt = { }, res:gsub("[%[%]]","",2):explode()
-  local be = tt[1]:find"^%d" and 1 or 2
-  for i=be, #tt do
-    if not tonumber(tt[i]) then break end
-    t[#t+1] = tt[i]
-  end
-  return t
-end
-
 luamplib.gettexcolor = function (str, rgb)
   local res = process_color(str):match'"mpliboverridecolor=(.+)"'
   if res:find" cs " or res:find"@pdf.obj" then
@@ -2274,7 +2302,7 @@ do
       end
       return tableconcat(tt," ")
     end
-    return col:gsub("^.- ","")
+    return format("[%s]", tableconcat(colorsplit(col)," "))
   end
   function luamplib.fillandstrokecolor (fill, stroke)
     fill   = graphictextcolor(fill, "fill")
@@ -4438,7 +4466,11 @@ do
       pdf_literalcode(opaq)
     end
     if over then -- color
-      put2output"\\special{pdf:ec}"
+      if over:find"pdf:bc" then
+        put2output"\\special{pdf:ec}"
+      else
+        put2output"\\special{color pop}"
+      end
     end
   end
 
@@ -4868,7 +4900,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/12/26 v2.38.0 mplib package for LuaTeX]
+    [2025/12/30 v2.38.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
