@@ -856,17 +856,15 @@ See source file '\inFileName' for licencing and contact information.
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
 %        xstep = 10,
-%        ystep = 12,
-%        matrix = {0, 1, -1, 0},      % or "0 1 -1 0" or "rotated 90"
+%        ystep = 7.5,
+%        matrix = "rotated 45",       % or "0.7 0.7 -0.7 0.7" or {0.7, 0.7, -0.7, 0.7}
 %      ]
 %      \mpfig                         % or any other TeX code
-%        draw (origin--(1,1))
-%          scaled 10
-%          withcolor 1/3[blue,white]
+%        draw (up--down) scaled 5
+%          withcolor 2/3[blue,white]
 %          ;
-%        draw (up--right)
-%          scaled 10
-%          withcolor 1/3[red,white]
+%        draw (left--right) scaled 5
+%          withcolor 2/3[red,white]
 %          ;
 %      \endmpfig
 %    \endmppattern                    % or \end{mppattern}
@@ -875,11 +873,11 @@ See source file '\inFileName' for licencing and contact information.
 %      draw fullcircle scaled 90
 %        withpostscript "collect"
 %        ;
-%      filldraw fullcircle scaled 200
+%      draw fullcircle scaled 200
 %        withmppattern "mypatt"
 %        withpen pencircle scaled 1
 %        withcolor \mpcolor{red!50!blue!50}
-%        withpostscript "evenodd"
+%        withpostscript "eoboth"
 %        ;
 %    \endmpfig
 %\end{verbatim}
@@ -1070,7 +1068,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \usemplibgroup{mygroup}
 %
 %    \mpfig
-%      usemplibgroup "mygroup" rotated 15
+%      usemplibgroup "mygroup"
 %        withtransparency (1, 0.5)
 %        ;
 %      draw (left--right) scaled 10;
