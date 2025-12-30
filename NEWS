@@ -1,9 +1,11 @@
                        History of the luamplib package
 
-   * Now \mpcolor (or mplibcolor) will return a MP color expression
-   when the color specified is not a spot color.  With spot colors,
-   withprescript command will be inserted as before.
+2025/12/30 2.38.1
+   * Now \mpcolor (or mplibcolor) returns a metapost color expression
+   when the color specified is not a spot or named color.
+   With spot or named colors, withprescript command will be inserted as before.
    * fix color routine for named color in DVI mode with no \DocumentMetadata
+   (assumes xcolor package is loaded)
 
 2025/12/26 2.38.0
    * a new macro to specify fill color and stroke color differently:
