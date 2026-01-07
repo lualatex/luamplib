@@ -87,9 +87,8 @@ See source file '\inFileName' for licencing and contact information.
 \ProvidesFile{luamplib.drv}%
   [2025/12/30 v2.38.1 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
-\usepackage{metalogo,multicol,xspace}
+\usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
-\usepackage{geometry}
 \AssignSocketPlug{build/column/outputbox}{space-floats-footnotes}
 %
 \def\primarycolor{DodgerBlue4}  %%-> rgb  16  78 139 | #104e8b
@@ -119,9 +118,7 @@ See source file '\inFileName' for licencing and contact information.
 \setsansfont[UprightFont=*Medium,BoldFont=*Heavy,Ligatures=TeX,Scale=MatchLowercase]{Iwona}
 %setmathfont{XITS Math}
 
-\usepackage{hologo}
-
-\newcommand\ConTeXt {Con\TeX t\xspace}
+\newcommand\ConTeXt {Con\-\TeX t\xspace}
 
 \newcommand*\email [1] {<\href{mailto:#1}{#1}>}
 \newcommand \file       {\nolinkurl}
@@ -482,9 +479,9 @@ See source file '\inFileName' for licencing and contact information.
 %   as well.
 %
 %   \notabene Formerly,
-%   only the first object would have been colored as you intended
+%   only the first object would have been colored as intended
 %   among multiple graphical objects in a \metapost image,
-%   because \cs{mpcolor} always produced a |withprescript| command internally.
+%   because \cs{mpcolor} always produced |withprescript| command internally.
 %   Since v2.38.1, now that \cs{mpcolor} returns a \metapost color expression if possible,
 %   users can issue the sentence as follows
 %   without worring about the location of the color command:
@@ -782,14 +779,14 @@ See source file '\inFileName' for licencing and contact information.
 %   according to the nonzero winding number rule.
 %   As a result, for instance, the area surrounded by inner path of ``O'' will remain transparent.
 %
-%   \noindent\llap{\textcolor{red}{☞}}\indent
+%   \notabene
 %   To apply the nonzero winding number rule to a picture containing paths,
 %   \pkg{luamplib} appends |withpostscript| |"collect"|
 %   to the paths except the last one in the picture.
 %   If you want the even-odd rule instead, you can
 %   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
 %
-%   \noindent\llap{\textcolor{red}{☞}}\indent
+%   \notabene
 %   By the way, when you want fill-and-stroke effect,
 %   issueing |filldraw| command to the last path will not always produce what you want:
 %   in such cases, you have to issue the command
@@ -1140,7 +1137,7 @@ See source file '\inFileName' for licencing and contact information.
 % The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
-% \subsubsection[\texttt{withtransparency}]{\texttt{... withtransparency ...}}
+% \subsubsection[\texttt{withtransparency}]{\texttt{withtransparency (..., ...)}}
 %   \label{sec:luamplibtransparency}
 %   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
 %   is provided for \emph{plain} format as well.
@@ -2286,13 +2283,10 @@ do
     end
     col = process_color(col):match'"mpliboverridecolor=(.+)"'
     if pdfmode then
-      local t, tt = col:explode(), { }
+      local t = col:explode()
       local b = filldraw == "fill" and 1 or #t/2+1
       local e = b == 1 and #t/2 or #t
-      for i=b,e do
-        tt[#tt+1] = t[i]
-      end
-      return tableconcat(tt," ")
+      return tableconcat(t," ", b, e)
     end
     return format("[%s]", tableconcat(colorsplit(col)," "))
   end
@@ -4481,7 +4475,7 @@ do
   end
 
 %    \end{macrocode}
-%    Codes below to insert PDF lieterals are mostly from ConTeXt general,
+%    Codes below to insert PDF lieterals are mostly from \ConTeXt general,
 %    with small changes when needed.
 %    \begin{macrocode}
   local function pdf_textfigure(font,size,text,width,height,depth)
@@ -4597,7 +4591,7 @@ do
 %    \end{macrocode}
 %    luamplib silently ignores this invalid figure for those
 %    that do not contain |beginfig ... endfig|. (issue \#70)
-%    Original code of ConTeXt general was:
+%    Original code of \ConTeXt general was:
 %\begin{verbatim}
 %    -- invalid
 %    pdf_startfigure(fignum,0,0,0,0)
@@ -4681,7 +4675,7 @@ do
                     end
                   else
 %    \end{macrocode}
-%    Removed from ConTeXt general: color stuff.
+%    Removed from \ConTeXt general: color stuff.
 %    \begin{macrocode}
                     local ml = object.miterlimit
                     if ml and ml ~= miterlimit then
@@ -4804,7 +4798,7 @@ do
                       end
                     end
 %    \end{macrocode}
-%    Added to ConTeXt general: post-object colors and shading stuff.
+%    Added to \ConTeXt general: post-object colors and shading stuff.
 %    Beware |q ... Q| scope.
 %    \begin{macrocode}
                     if shade_no then -- shading
@@ -5330,7 +5324,7 @@ end
 }}
 %    \end{macrocode}
 %
-%    The followings are from ConTeXt general, mostly.
+%    The followings are from \ConTeXt general, mostly.
 %
 %    We use a dedicated scratchbox.
 %    \begin{macrocode}
