@@ -131,9 +131,10 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\notabene{\textsc{n.b.}\quad}
 
 \usepackage{luamplib}\mplibforcehmode
-\def\startmpfig{\vskip\topsep\par\setbox0\vbox\bgroup\raggedleft\hbadness\maxdimen}
+\def\startmpfig{\vskip\topsep\par\setbox0\vbox\bgroup\raggedleft
+  \leftskip=0pt plus1fill\relax \parfillskip=0pt plus1fil\relax }
 \def\stopmpfig#1{\egroup\ifdim\dimexpr\pagegoal-\pagetotal\relax<\ht0 \newpage\fi
-  \nointerlineskip\vbox to 0pt{\vskip#1\baselineskip\unvbox0 \vfill}\relax
+  \nointerlineskip\vbox to 0pt{\vskip#1\baselineskip\unvbox0 \vss}\relax
   \vskip-\topsep\nobreak\nointerlineskip }
 \topsep=9pt plus 2pt minus 2pt
 \partopsep=0pt
@@ -988,14 +989,14 @@ See source file '\inFileName' for licencing and contact information.
 % (but without colorful characters in this example)
 % is to give a \emph{textual picture} as the operand of |withmppattern|:
 %\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 1/3[red,black]); \endmpfig
-%\stopmpfig{2}
+%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 1/3[red,black]); \endmpfig
+%\stopmpfig{1}
 %\begin{verbatim}
 %    \begin{mplibcode}
 %      beginfig(2)
 %        draw mplibgraphictext "\bfseries\TeX"
 %          fakebold 1/2
-%          scaled 8
+%          rotated 15 scaled 8
 %          withmppattern "pattnocolor"
 %          withmplibcolors (
 %            1/3[white,red],                 % paints the pattern
@@ -1102,8 +1103,8 @@ See source file '\inFileName' for licencing and contact information.
 % \end{description}
 % An example showing the difference between the \TeX\ and \metapost commands:
 %\startmpfig
-%\mpfig draw image( fill fullcircle scaled 60 shifted 25right withcolor blue; fill fullcircle scaled 60 withcolor red ;) asgroup "" withgroupname "mygroup" withtransparency (1, 0.5); draw (left--right) scaled 10; draw (up--down) scaled 10; \endmpfig \par
-%\noindent \clap{\vrule width 20pt height .25pt depth .25pt}\clap{\vrule width .5pt height 10pt depth 10pt}\usemplibgroup{mygroup} \par
+%\mpfig draw image(fill fullcircle scaled 60 shifted 25right withcolor blue; fill fullcircle scaled 60 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1, 0.5); draw (left--right) scaled 10; draw (up--down) scaled 10; \endmpfig \vskip10pt
+%\noindent\clap{\vrule width 20pt height .25pt depth .25pt}\clap{\vrule width .5pt height 10pt depth 10pt}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1, 0.3); draw (left--right) scaled 10; draw (up--down) scaled 10; \endmpfig
 %\stopmpfig{3}
 %\begin{verbatim}
