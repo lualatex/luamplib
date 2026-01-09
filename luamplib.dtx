@@ -131,13 +131,18 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\notabene{\textsc{n.b.}\quad}
 
 \usepackage{luamplib}\mplibforcehmode
-\def\startmpfig{\vskip\topsep\par\setbox0\vbox\bgroup\raggedleft
+\def\startmpfig{\vskip\topsep\setbox0\vbox\bgroup\raggedleft
   \leftskip=0pt plus1fill\relax \parfillskip=0pt plus1fil\relax }
-\def\stopmpfig#1{\egroup\ifdim\dimexpr\pagegoal-\pagetotal\relax<\ht0 \newpage\fi
+\def\stopmpfig#1{\egroup \ifdim\pagegoal>\pagetotal
+  \ifdim\dimexpr\pagegoal-\pagetotal\relax<\ht0 \newpage\fi \fi
   \nointerlineskip\vbox to 0pt{\vskip#1\baselineskip\unvbox0 \vss}\relax
   \vskip-\topsep\nobreak\nointerlineskip }
 \topsep=9pt plus 2pt minus 2pt
 \partopsep=0pt
+\def\Xstartmpfig{\vskip-\topsep\setbox0\vbox\bgroup\raggedleft
+  \leftskip=0pt plus1fill\relax \parfillskip=0pt plus1fil\relax }
+\def\Xstopmpfig#1{\egroup\nointerlineskip
+  \vbox to 0pt{\vss \unvbox0 \vskip#1\baselineskip}\nobreak\vskip\topsep }
 
 \flushbottom
 \begin{document}
@@ -742,270 +747,125 @@ See source file '\inFileName' for licencing and contact information.
 %   \notabene Spot colors are forced to cmyk or rgb model,
 %   so these operators are not recommended for spot colors.
 %
-% \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
-%   |mplibgraphictext| is a \metapost operator, the effect of which is similar to that of
-%   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
-%   (see below \secref{mpliboutlinetext}).
-%   However the syntax is somewhat different.
+% \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
+%   \label{sec:withmplibcolors}
+%   Unlike the |withcolor| command, users can specify one color for filling
+%   and another color for stroking using the macro |withmplibcolors| at the end of a sentence.
+%   The syntax is |withmplibcolors| |(|\meta{fill color expr}|,| \meta{stroke color expr}|)|.
+%   When the argument is in string type, it is regarded as the color expression of \TeX\ side.
+%   A simple example (see also the example at \secref{mplibdrawglyph}):
 %\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries Funny" rotated 20 scaled 3 fakebold 2.3 fillcolor "red!50" drawcolor 2/3 blue; \endmpfig
+%\mpfig filldraw fullcircle scaled 40 withpen pencircle scaled 2 withmplibcolors ("orange!60", 2/3red); \endmpfig
 %\stopmpfig{0}
 %\begin{verbatim}
-%    draw mplibgraphictext "\bfseries Funny"
-%      rotated 20 scaled 3
-%      fakebold 2.3                           % fontspec option
-%      fillcolor "red!50"                     % color expression
-%      drawcolor 2/3 blue                     % or strokecolor 2/3 blue
+%    filldraw fullcircle scaled 40
+%      withpen pencircle scaled 2
+%      withmplibcolors ("orange!60", 2/3red)
 %      ;
 %\end{verbatim}
-%   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
-%   default values are |2|, |"white"| and |"black"| respectively.\footnote{Users can
-%     use the |withmplibcolors| macro instead of |fillcolor| and |drawcolor| options.
-%     See \secref{withmplibcolors} on this macro.}
-%   When the color expressions are given in string type, they are regarded as
-%   \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expressions.
-%   All from |mplibgraphictext| to the end of sentence will compose an
-%   anonymous picture, which can be drawn or assigned to a variable.
-%   Incidentally, |withfillcolor| and |withdrawcolor| are synonyms of
-%   |fillcolor| and |drawcolor|, hopefully to be compatible with |graphictext|.
+%   The PDF file size is much smaller than issueing two sentences with different colors,
+%   though the apparent effect is the same.
 %
-%   \notabene
-%   In some cases,
-%   especially when processing complicated \TeX\ code,
-%   |mplibgraphictext| will produce better results than \ConTeXt\
-%   or even than our own |mpliboutlinetext|, not to mention the much smaller PDF file size.
-%   There are, however, some limitations such that you can't
-%   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
-%   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
-%     See below \secref{luamplibshading}.}
-%   Again,
-%   in DVI mode, \pkg{unicode-math} package is needed for math formulae,
-%   as we cannot embolden type1 fonts in DVI mode.
-%   But the most critical limitation is that, unlike |mpliboutlinetext|,
-%   you cannot manipulate the shape of outline paths,
-%   because the returned picture is basically a |btex| |...| |etex| picture.
-%
-%   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
-%   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
-%   containing outline paths of a glyph in opentype, truetype or type1 fonts.
-%   When a type1 font is specified, \metapost primitive |glyph| will be called.
-%\begin{verbatim}
-%    mplibglyph 50  of \fontid\font           % slot 50 of current font
-%    mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"      % font csname
-%    mplibglyph "Q" of "texgyrepagella-regular.otf"       % raw filename
-%    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
-%    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
-%\end{verbatim}
-%   Both arguments before and after ``|of|'' can be either a number or a string.
-%   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
-%   String argument at the left side is regarded as a glyph name in the font or a unicode character.
-%   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
-%   the raw filename of a font. When it is a font filename, a number within parentheses
-%   after the filename denotes a
-%   subfont number (starting from zero) of a TTC font; a string within brackets denotes
-%   an instance name of a variable font.
-%
-%   \subsubsection[\texttt{mplibdrawglyph}, \texttt{mplibstrokeglyph},
-%     \texttt{mplibfillandstrokeglyph}]{\texttt{mplibdrawglyph ...}, \texttt{mplibstrokeglyph ...},
-%     \texttt{mplibfillandstrokeglyph ...}}
-%     \label{sec:mplibdrawglyph}
-%   As the picture returned by |mplibglyph| will be quite similar to
-%   the result of |glyph| primitive in its structure,
-%   \metapost's |draw| command will fill the inner path of the picture with the background color.
-%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths
-%   according to the nonzero winding number rule.
-%   As a result, for instance, the area surrounded by inner path of ``O'' will remain transparent.
-%
-%   \notabene
-%   To apply the nonzero winding number rule to a picture containing paths,
-%   \pkg{luamplib} appends |withpostscript| |"collect"|
-%   to the paths except the last one in the picture.
-%   If you want the even-odd rule instead, you can
-%   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
-%
-%   \notabene
-%   By the way, when you want fill-and-stroke effect,
-%   issueing |filldraw| command to the last path will not always produce what you want:
-%   in such cases, you have to issue the command
-%   |draw| \meta{the last path} |withpostscript| |"both"|
-%   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
-%     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
-%     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
-%
-%   As this could be somewhat annoying to users, \pkg{luamplib} provides these commands as well:
-%   |mplibfillandstrokeglyph| \meta{picture}, |mplibstrokeglyph| \meta{picture},
-%   and |mplibfillglyph| \meta{picture}, the last one being a synonym of |mplibdrawglyph| command.
-%   An example (see below \secref{withmplibcolors} on the macro |withmplibcolors|):
+% \subsubsection[\texttt{withtransparency}]{\texttt{withtransparency (..., ...)}}
+%   \label{sec:luamplibtransparency}
+%   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
+%   is provided for \emph{plain} format as well as \emph{metafun}.
+%   The first argument accepts a number or a name of
+%   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
+%   The second argument accepts a number denoting opacity.
 %\startmpfig
-%\mpfig mplibfillandstrokeglyph mplibglyph "R" of \fontid\font scaled 1/12 withpen pencircle scaled 1 withmplibcolors ("orange", 2/3red); \endmpfig
-%\stopmpfig{0}
+%\mpfig fill unitsquare scaled 40 withcolor 2/3[blue,white]; fill fullcircle scaled 40 withcolor red withtransparency (1, 0.5); \endmpfig
+%\stopmpfig{2}
 %\begin{verbatim}
-%    mplibfillandstrokeglyph
-%      mplibglyph "R" of \fontid\font scaled 1/12
-%      withpen pencircle scaled 1
-%      withmplibcolors ("orange", 2/3red)
-%      ;
-%\end{verbatim}
-%
-%
-% \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
-%   \label{sec:mpliboutlinetext}
-%   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
-%   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
-%   manual \S\,8.7 (|texdoc| |metafun|). A simple example:
-%\startmpfig
-%\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!30}) (withpen pencircle scaled .2 withcolor red) scaled 3; \endmpfig
-%\stopmpfig{.5}
-%\begin{verbatim}
-%    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
-%      (withcolor \mpcolor{red!30})
-%      (withpen pencircle scaled .2 withcolor red)
-%      scaled 3
-%      ;
-%\end{verbatim}
-%   After the process, |mpliboutlinepic[]|
-%   and |mpliboutlinenum| will be preserved as global variables;
-%   |mpliboutlinepic[1]| |...| |mpliboutlinepic[mpliboutlinenum]|
-%   will be an array of images, each of which containing outline paths of a glyph or a rule.
-%
-%   \notabene As Unicode grapheme cluster is not considered in the array, a unit that must be
-%   a single cluster might be separated apart.
-%
-% \subsubsection[\cs{mppattern}, \cs{endmppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withmppattern ...}}
-%   \label{sec:mppattern}
-%   \TeX\ macros
-%   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
-%   associated with the \meta{name}.
-%   \metapost command |withmppattern|, the syntax being
-%   \meta{path}\,\textbar\,\meta{textual picture} |withmppattern| \meta{string}, will fill
-%   the given path or text with the tiling pattern of the \meta{name}
-%   by replicating it horizontally and vertically.\footnote{\relax
-%     |withpattern| is an operator virtually the same as |withmppattern|,
-%     but the former forces a \metapost picture. So users cannot
-%     use the drawing commands such as |fill| or |filldraw| with |withpattern| operator.
-%   }
-%   The \emph{textual picture} here means any text typeset by \TeX, mostly the result
-%   of the |btex| command (though technically this is not a true textual picture)
-%   or the |infont| operator.
-%
-%   An example:
-%\startmpfig
-%\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig draw fullcircle scaled 65 withpostscript "collect"; draw fullcircle scaled 140 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
-%\stopmpfig{10}
-%\begin{verbatim}
-%    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
-%      [                              % options: see below
-%        xstep = 10,
-%        ystep = 7,
-%        matrix = "rotated 45",       % or "0.7 0.7 -0.7 0.7" or {0.7, 0.7, -0.7, 0.7}
-%      ]
-%      \mpfig                         % or any other TeX code
-%        draw (up--down) scaled 5
-%          withcolor 2/3[blue,white]
-%          ;
-%        draw (left--right) scaled 5
-%          withcolor 2/3[red,white]
-%          ;
-%      \endmpfig
-%    \endmppattern                    % or \end{mppattern}
-%
 %    \mpfig
-%      draw fullcircle scaled 65
-%        withpostscript "collect"
+%      fill unitsquare scaled 40
+%        withcolor 2/3[blue,white]
 %        ;
-%      draw fullcircle scaled 140
-%        withmppattern "mypatt"
-%        withpen pencircle scaled 1
-%        withcolor \mpcolor{red!50!blue!50}
-%        withpostscript "eoboth"
+%      fill fullcircle scaled 40
+%        withcolor red
+%        withtransparency (1, 0.5)           % or ("normal", 0.5)
 %        ;
-%    \endmpfig
+%    \mpfig
 %\end{verbatim}
 %
-%   The available options are listed in Table~\ref{tab:mppatternoptions}.
-%   \begin{table}
-%   \centering
-%   \caption{options for \cs{mppattern}}\label{tab:mppatternoptions}
-%   \begin{tabular}{lll}\hline
-%     Key   & Value Type & Explanation\\\hline
-%     |xstep|    &\emph{number} & horizontal spacing between pattern cells\\
-%     |ystep|    &\emph{number} & vertical spacing between pattern cells\\
-%     |xshift|   &\emph{number} & horizontal shifting of pattern cells\\
-%     |yshift|   &\emph{number} & vertical shifting of pattern cells\\
-%     |bbox|     &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
-%     |matrix|   &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
-%     |resources|&\emph{string} & PDF resources if needed\\
-%     |colored| or |coloured| &\emph{boolean}& |false| for uncolored pattern. default: |true|\\\hline
-%                &                & \small *\,in string type, numbers are separated by spaces\\
-%   \end{tabular}
-%   \end{table}
-%
-%   For the sake of convenience, the width and height values of tiling patterns will be written down
-%   into the log file. (depth is always zero.) Users can refer to them for option setting.
-%
-%   As for |matrix| option, \metapost code such as |"rotated 30 slanted .2"| is allowed as well
-%   as string or table of four numbers. You can also set |xshift| and |yshift|
-%   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
-%   given, they have precedence over the effect of `|shifted|' operator.
-%
-%   When you use special effects such as transparency in a pattern,
-%   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
-%   However, as \pkg{luamplib} automatically includes the resources of the current page, this option
-%   is not needed in most cases.
-%
-%   Option |colored=false| (or |coloured=false|) will generate an uncolored pattern which shall have no color at all.
-%   Uncolored pattern will be painted later by the color of a \metapost object.
-%   An example:
+% \subsubsection[\texttt{withshadingmethod}]{\texttt{... withshadingmethod ...}}
+%   \label{sec:luamplibshading}
+%   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
+%   the `|shade|' contained in each and every macro name has changed to
+%   `|shading|' in \pkg{luamplib}: for instance, while |withshademethod| is
+%   a macro name which only works with \emph{metafun} format,
+%   the equivalent provided by \pkg{luamplib}, |withshadingmethod|, works with \emph{plain} as well.
+%   Other differences to the \emph{metafun}'s and some cautions are:
+%   \begin{itemize}
+%   \item \emph{textual pictures} as well as paths can have shading effect.
+%     The term \emph{textual picture} means
+%     a picture generated by |btex| |...| |etex|, |textext|, |TEX|, |maketext|,
+%     |mplibgraphictext| (see below \secref{mplibgraphictext} on this macro), or |infont| operator,
+%     though technically only the last one is a true textual picture.
 %\startmpfig
-%\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
-%\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{4}
-%\begin{verbatim}
-%    \begin{mppattern}{pattnocolor}
-%      [
-%        colored = false,
-%        matrix = "slanted .3 rotated 30",
-%      ]
-%      \tiny\TeX
-%    \end{mppattern}
-%
-%    \begin{mplibcode}
-%      beginfig(1)
-%        picture tex;
-%        tex = mpliboutlinetext.p ("\bfseries \TeX");
-%        for i=1 upto mpliboutlinenum:
-%          mplibfillandstrokeglyph mpliboutlinepic[i]
-%            scaled 8
-%            withmppattern "pattnocolor"
-%            withpen pencircle scaled 1/2
-%            withcolor (i/4)[red,blue]       % paints the pattern
-%            ;
-%        endfor
-%      endfig;
-%    \end{mplibcode}
-%\end{verbatim}
-% A much simpler and efficient way to obtain a similar result
-% (but without colorful characters in this example)
-% is to give a \emph{textual picture} as the operand of |withmppattern|:
-%\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 1/3[red,black]); \endmpfig
+%\mpfig draw btex \bfseries\TeX etex rotated 20 scaled 6 withshadingmethod "linear" withshadingvector (0,3) withshadingstep ( withshadingfraction 1/2 withshadingcolors (red,green)) withshadingstep ( withshadingfraction 1 withshadingcolors (green,blue)); \endmpfig
 %\stopmpfig{1}
 %\begin{verbatim}
-%    \begin{mplibcode}
-%      beginfig(2)
-%        draw mplibgraphictext "\bfseries\TeX"
-%          fakebold 1/2
-%          rotated 15 scaled 8
-%          withmppattern "pattnocolor"
-%          withmplibcolors (
-%            1/3[white,red],                 % paints the pattern
-%            1/3[red,black]
-%          )
-%          ;
-%      endfig;
-%    \end{mplibcode}
+%    draw btex \bfseries\TeX etex rotated 20 scaled 6
+%      withshadingmethod "linear"
+%      withshadingvector (0,3)
+%      withshadingstep (
+%        withshadingfraction 1/2
+%        withshadingcolors (red,green)
+%      )
+%      withshadingstep (
+%        withshadingfraction 1
+%        withshadingcolors (green,blue)
+%      )
+%      ;
 %\end{verbatim}
+%   \item When you give shading effect to a picture generated by `|infont|' operator,
+%     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
+%     as \pkg{luamplib} considers only the bounding box of the picture in this case.
+%   \end{itemize}
+% As shown above,
+% the syntax is \meta{path}\,\textbar\,\meta{textual picture} |withshadingmethod| \meta{string},
+% where the latter shall be either |"linear"| or |"circular"|.
+%
+% Other macros for optional values are:
+% \begin{description}
+%   \let\bfseries\relax
+%   \item[\texttt{withshadingvector} \meta{pair}]
+%     Starting and ending points (as time value) on the path.
+%   \item[\texttt{withshadingdirection} \meta{pair}]
+%     Starting and ending points (as time value) on the bounding box.
+%     Default value: |(0,2)|
+%   \item[\texttt{withshadingorigin} \meta{pair}]
+%     The center of starting and ending circles.
+%     Default value: |center p|
+%   \item[\texttt{withshadingradius} \meta{pair}]
+%     Radii of starting and ending circles. This is no-op in linear mode.
+%     Default value: |(0, abs(center p - urcorner p))|
+%   \item[\texttt{withshadingfactor} \meta{number}]
+%     Multiplier of the radii. This is no-op in linear mode.
+%     Default value: |1.2|
+%   \item[\texttt{withshadingcenter} \meta{pair}]
+%     Values for shifting starting center.
+%     For instance,
+%     |(0,0)| means that the center of starting circle is |center p|;
+%     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
+%   \item[\texttt{withshadingtransform} \meta{string}]
+%     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
+%     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
+%   \item[\texttt{withshadingdomain} \meta{pair}]
+%     Limiting values of parametric variable
+%     that varies on the axis of color gradient.
+%     Default value: |(0,1)|
+%   \item[\texttt{withshadingstep (...)}]
+%     for combined shading of more than two colors.
+%   \item[\texttt{withshadingfraction} \meta{number}]
+%     Fractional number of each shading step.
+%     Only meaningful with |withshadingstep|.
+%   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
+%     Starting and ending colors.
+%     Default value is |(white,| |black)|.
+%     String-type argument is regarded as the color expression of \TeX\ side.
+% \end{description}
 %
 % \subsubsection[\texttt{withfademethod}]{\texttt{... withfademethod ...}}
 %   This is a \metapost operator which makes the color of an object gradiently transparent.
@@ -1054,6 +914,278 @@ See source file '\inFileName' for licencing and contact information.
 %        withfadeopacity (1, 0)
 %        ;
 %    \endmpfig
+%\end{verbatim}
+%
+% \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
+%     \label{sec:mplibgraphictext}
+%   |mplibgraphictext| \meta{string} is a \metapost operator,
+%   the effect of which is similar to that of
+%   \ConTeXt's |graphictext| or our own |mpliboutlinetext|
+%   (see below \secref{mpliboutlinetext}).
+%   However the syntax is somewhat different.
+%\startmpfig
+%\mpfig draw mplibgraphictext "\bfseries Funny" rotated 20 scaled 3 fakebold 2.3 fillcolor "red!50" drawcolor 2/3 blue; \endmpfig
+%\stopmpfig{0}
+%\begin{verbatim}
+%    draw mplibgraphictext "\bfseries Funny"
+%      rotated 20 scaled 3
+%      fakebold 2.3                           % fontspec option
+%      fillcolor "red!50"                     % color expression
+%      drawcolor 2/3 blue                     % or strokecolor 2/3 blue
+%      ;
+%\end{verbatim}
+%   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
+%   default values are |2|, |"white"| and |"black"| respectively.\footnote{Users can
+%     use the |withmplibcolors| macro instead of |fillcolor| and |drawcolor| options.
+%     See \secref{withmplibcolors} on this macro.}
+%   When the color expressions are given in string type, they are regarded as
+%   \pkg{color}, \pkg{xcolor} or \pkg{l3color}'s expressions.
+%   All from |mplibgraphictext| to the end of sentence will compose an
+%   anonymous picture, which can be drawn or assigned to a variable.
+%   Incidentally, |withfillcolor| and |withdrawcolor| are synonyms of
+%   |fillcolor| and |drawcolor|, hopefully to be compatible with |graphictext|.
+%
+%   \notabene
+%   In some cases,
+%   especially when processing complicated \TeX\ code,
+%   |mplibgraphictext| will produce better results than \ConTeXt\
+%   or even than our own |mpliboutlinetext|, not to mention the much smaller PDF file size.
+%   There are, however, some limitations such that you can't
+%   apply shading (gradient colors) to the text with \emph{metafun}'s |withshademethod|.\relax
+%   \footnote{But this limitation is now lifted by the introduction of |withshadingmethod|.
+%     See above \secref{luamplibshading}.}
+%   Again,
+%   in DVI mode, \pkg{unicode-math} package is needed for math formulae,
+%   as we cannot embolden type1 fonts in DVI mode.
+%   But the most critical limitation is that, unlike |mpliboutlinetext|,
+%   you cannot manipulate the shape of outline paths,
+%   because the returned picture is basically a |btex| |...| |etex| picture.
+%
+%   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
+%   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
+%   containing outline paths of a glyph in opentype, truetype or type1 fonts.
+%   When a type1 font is specified, \metapost primitive |glyph| will be called.
+%\begin{verbatim}
+%    mplibglyph 50  of \fontid\font           % slot 50 of current font
+%    mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"      % font csname
+%    mplibglyph "Q" of "texgyrepagella-regular.otf"       % raw filename
+%    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
+%    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
+%\end{verbatim}
+%   Both arguments before and after ``|of|'' can be either a number or a string.
+%   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
+%   String argument at the left side is regarded as a glyph name in the font or a unicode character.
+%   String argument at the right side is regarded as a \TeX\ font csname (without backslash) or
+%   the raw filename of a font. When it is a font filename, a number within parentheses
+%   after the filename denotes a
+%   subfont number (starting from zero) of a TTC font; a string within brackets denotes
+%   an instance name of a variable font.
+%
+%   \subsubsection[\texttt{mplibdrawglyph}, \texttt{mplibstrokeglyph},
+%     \texttt{mplibfillandstrokeglyph}]{\texttt{mplibdrawglyph ...}, \texttt{mplibstrokeglyph ...},
+%     \texttt{mplibfillandstrokeglyph ...}}
+%     \label{sec:mplibdrawglyph}
+%   As the structure of the picture returned by |mplibglyph| will be quite similar to
+%   the result of |glyph| primitive,
+%   \metapost's |draw| command will fill the inner path of the picture with the background color.
+%   In contrast, |mplibdrawglyph| \meta{picture} command fills the paths
+%   according to the nonzero winding number rule.
+%   As a result, for instance, the area surrounded by inner path of ``O'' will remain transparent.
+%
+%   \notabene
+%   To apply the nonzero winding number rule to a picture containing paths,
+%   \pkg{luamplib} appends |withpostscript| |"collect"|
+%   to the paths except the last one in the picture.
+%   If you want the even-odd rule instead, you can
+%   additionally declare |withpostscript| |"evenodd"| to the last path in the picture.
+%
+%   \notabene
+%   By the way, when you want fill-and-stroke effect,
+%   issueing |filldraw| command to the last path will not always produce what you want:
+%   in such cases, you have to issue the command
+%   |draw| \meta{the last path} |withpostscript| |"both"|
+%   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
+%     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
+%     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
+%
+%   As this could be somewhat annoying to users, we provide the following commands as well:
+%   |mplibfillandstrokeglyph| \meta{picture}, |mplibstrokeglyph| \meta{picture},
+%   and |mplibfillglyph| \meta{picture}, the last one being a synonym of |mplibdrawglyph| command.
+%
+%   An example:
+%\startmpfig
+%\mpfig mplibfillandstrokeglyph mplibglyph "R" of \fontid\font scaled 1/12 withpen pencircle scaled 1 withmplibcolors ("orange", 2/3red); \endmpfig
+%\stopmpfig{0}
+%\begin{verbatim}
+%    mplibfillandstrokeglyph
+%      mplibglyph "R" of \fontid\font scaled 1/12
+%      withpen pencircle scaled 1
+%      withmplibcolors ("orange", 2/3red)
+%      ;
+%\end{verbatim}
+%
+%
+% \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
+%   \label{sec:mpliboutlinetext}
+%   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
+%   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
+%   manual \S\,8.7 (|texdoc| |metafun|). A simple example:
+%\startmpfig
+%\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!30}) (withpen pencircle scaled .2 withcolor red) scaled 3; \endmpfig
+%\stopmpfig{.5}
+%\begin{verbatim}
+%    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
+%      (withcolor \mpcolor{red!30})
+%      (withpen pencircle scaled .2 withcolor red)
+%      scaled 3
+%      ;
+%\end{verbatim}
+%   After the process, |mpliboutlinepic[]|
+%   and |mpliboutlinenum| will be preserved as global variables;
+%   |mpliboutlinepic[1]| |...| |mpliboutlinepic[mpliboutlinenum]|
+%   will be an array of images, each of which containing outline paths of a glyph or a rule.
+%
+%   \notabene As Unicode grapheme cluster is not considered in the array, a unit that must be
+%   a single cluster might be separated apart.
+%
+% \subsubsection[\cs{mppattern}, \cs{endmppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withmppattern ...}}
+%   \label{sec:mppattern}
+%   \TeX\ macros
+%   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
+%   associated with the \meta{name}.
+%   \metapost command |withmppattern|, the syntax being
+%   \meta{cyclic path}\,\textbar\,\meta{textual picture} |withmppattern| \meta{string}, will fill
+%   the given path or text with the tiling pattern of the \meta{name}
+%   by replicating it horizontally and vertically.\footnote{\relax
+%     |withpattern| is an operator virtually the same as |withmppattern|,
+%     but the former forces a \metapost picture. Therefore
+%     you cannot but use |draw| command with |withpattern| operator.
+%     On the other hand,
+%     if some special command is not appended (see the example just below),
+%     \meta{cyclic path} |withmppattern| \meta{string} works as intended
+%     only with |fill| or |filldraw| command.
+%   }
+%   As said before at \secref{luamplibshading},
+%   the \emph{textual picture} here means any text typeset by \TeX, mostly the result
+%   of the |btex| command (and its derivatives) or the |infont| operator.
+%
+%   An example:
+%\begin{verbatim}
+%    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
+%      [                              % options: see below
+%        xstep = 10,
+%        ystep = 7,
+%        matrix = "rotated 45",       % or "0.7 0.7 -0.7 0.7" or {0.7, 0.7, -0.7, 0.7}
+%      ]
+%      \mpfig                         % or any other TeX code
+%        draw (up--down) scaled 5
+%          withcolor 2/3[blue,white]
+%          ;
+%        draw (left--right) scaled 5
+%          withcolor 2/3[red,white]
+%          ;
+%      \endmpfig
+%    \endmppattern                    % or \end{mppattern}
+%
+%    \mpfig
+%      draw fullcircle scaled 65
+%        withpostscript "collect"
+%        ;
+%      draw fullcircle scaled 140
+%        withmppattern "mypatt"
+%        withpen pencircle scaled 1
+%        withcolor \mpcolor{red!50!blue!50}
+%        withpostscript "eoboth"
+%        ;
+%    \endmpfig
+%\end{verbatim}
+%\Xstartmpfig
+%\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
+%\mpfig draw fullcircle scaled 65 withpostscript "collect"; draw fullcircle scaled 140 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
+%\Xstopmpfig{2}
+%
+%   The available options are listed in Table~\ref{tab:mppatternoptions}.
+%   \begin{table}
+%   \centering
+%   \caption{options for \cs{mppattern}}\label{tab:mppatternoptions}
+%   \begin{tabular}{lll}\hline
+%     Key   & Value Type & Explanation\\\hline
+%     |xstep|    &\emph{number} & horizontal spacing between pattern cells\\
+%     |ystep|    &\emph{number} & vertical spacing between pattern cells\\
+%     |xshift|   &\emph{number} & horizontal shifting of pattern cells\\
+%     |yshift|   &\emph{number} & vertical shifting of pattern cells\\
+%     |bbox|     &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
+%     |matrix|   &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt* or MP transform code\\
+%     |resources|&\emph{string} & PDF resources if needed\\
+%     |colored| or |coloured| &\emph{boolean}& |false| for uncolored pattern. default: |true|\\\hline
+%                &                & \small *\,in string type, numbers are separated by spaces\\
+%   \end{tabular}
+%   \end{table}
+%
+%   For the sake of convenience, the width and height values of tiling patterns will be written down
+%   into the log file. (depth is always zero.) Users can refer to them for option setting.
+%
+%   As for |matrix| option, \metapost code such as |"rotated 30 slanted .2"| is allowed as well
+%   as string or table of four numbers. You can also set |xshift| and |yshift|
+%   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
+%   given, they have precedence over the effect of `|shifted|' operator.
+%
+%   When you use special effects such as transparency in a pattern,
+%   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
+%   However, as \pkg{luamplib} automatically includes the resources of the current page, this option
+%   is not needed in most cases.
+%
+%   Option |colored=false| (or |coloured=false|) will generate an uncolored pattern which shall have no color at all.
+%   Uncolored pattern will be painted later by the color of a \metapost object.
+%   An example:
+%\startmpfig
+%\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
+%\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
+%\stopmpfig{5}
+%\begin{verbatim}
+%    \begin{mppattern}{pattnocolor}
+%      [
+%        colored = false,
+%        matrix = "slanted .3 rotated 30",
+%      ]
+%      \tiny\TeX
+%    \end{mppattern}
+%
+%    \begin{mplibcode}
+%      beginfig(1)
+%        picture tex;
+%        tex = mpliboutlinetext.p ("\bfseries \TeX");
+%        for i=1 upto mpliboutlinenum:
+%          mplibfillandstrokeglyph mpliboutlinepic[i]
+%            scaled 8
+%            withmppattern "pattnocolor"
+%            withpen pencircle scaled 1/2
+%            withcolor (i/4)[red,blue]       % paints the pattern
+%            ;
+%        endfor
+%      endfig;
+%    \end{mplibcode}
+%\end{verbatim}
+% A much simpler and efficient way to obtain a similar result
+% (but without colorful characters in this example)
+% is to give a \emph{textual picture} as the operand of |withmppattern|:
+%\startmpfig
+%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 1/3[red,black]); \endmpfig
+%\stopmpfig{1}
+%\begin{verbatim}
+%    \begin{mplibcode}
+%      beginfig(2)
+%        draw mplibgraphictext "\bfseries\TeX"
+%          fakebold 1/2
+%          rotated 15 scaled 8
+%          withmppattern "pattnocolor"
+%          withmplibcolors (
+%            1/3[white,red],                 % paints the pattern
+%            1/3[red,black]
+%          )
+%          ;
+%      endfig;
+%    \end{mplibcode}
 %\end{verbatim}
 %
 % \subsubsection[\texttt{asgroup}]{\texttt{... asgroup ...}}\label{sec:transparencygroup}
@@ -1204,104 +1336,6 @@ See source file '\inFileName' for licencing and contact information.
 % The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
-% \subsubsection[\texttt{withtransparency}]{\texttt{withtransparency (..., ...)}}
-%   \label{sec:luamplibtransparency}
-%   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
-%   is provided for \emph{plain} format as well.
-%   The first argument accepts a number or a name of
-%   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
-%   The second argument accepts a number denoting opacity.
-%\startmpfig
-%\mpfig fill unitsquare scaled 40 withcolor 2/3[blue,white]; fill fullcircle scaled 40 withcolor red withtransparency (1, 0.5); \endmpfig
-%\stopmpfig{2}
-%\begin{verbatim}
-%    \mpfig
-%      fill unitsquare scaled 40
-%        withcolor 2/3[blue,white]
-%        ;
-%      fill fullcircle scaled 40
-%        withcolor red
-%        withtransparency (1, 0.5)           % or ("normal", 0.5)
-%        ;
-%    \mpfig
-%\end{verbatim}
-%
-% \subsubsection[\texttt{withshadingmethod}]{\texttt{... withshadingmethod ...}}
-%   \label{sec:luamplibshading}
-%   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
-%   the `|shade|' contained in each and every macro name has changed to
-%   `|shading|' in \pkg{luamplib}: for instance, while |withshademethod| is
-%   a macro name which only works with \emph{metafun} format,
-%   the equivalent provided by \pkg{luamplib}, |withshadingmethod|, works with \emph{plain} as well.
-%   Other differences to the \emph{metafun}'s and some cautions are:
-%   \begin{itemize}
-%   \item \emph{textual pictures} (pictures made by |btex| |...| |etex|, |textext|,
-%     |TEX|, |maketext|, |mplibgraphictext|, |infont|, etc)
-%     as well as paths can have shading effect.
-%\startmpfig
-%\mpfig draw btex \bfseries\TeX etex rotated 20 scaled 6 withshadingmethod "linear" withshadingvector (0,3) withshadingstep ( withshadingfraction 1/2 withshadingcolors (red,green)) withshadingstep ( withshadingfraction 1 withshadingcolors (green,blue)); \endmpfig
-%\stopmpfig{1}
-%\begin{verbatim}
-%    draw btex \bfseries\TeX etex rotated 20 scaled 6
-%      withshadingmethod "linear"
-%      withshadingvector (0,3)
-%      withshadingstep (
-%        withshadingfraction 1/2
-%        withshadingcolors (red,green)
-%      )
-%      withshadingstep (
-%        withshadingfraction 1
-%        withshadingcolors (green,blue)
-%      )
-%      ;
-%\end{verbatim}
-%   \item When you give shading effect to a picture made by `|infont|' operator,
-%     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
-%     as \pkg{luamplib} considers only the bounding box of the picture in this case.
-%   \end{itemize}
-% Macros provided by \pkg{luamplib} are:
-% \begin{description}
-%   \let\bfseries\relax
-%   \item[\meta{path}\,\textbar\,\meta{textual picture} \texttt{withshadingmethod} \meta{string}]
-%     where \meta{string} shall be either |"linear"| or |"circular"|.
-%     This is the only `must' item to get shading effect; all the macros below are optional.
-%   \item[\texttt{withshadingvector} \meta{pair}]
-%     Starting and ending points (as time value) on the path.
-%   \item[\texttt{withshadingdirection} \meta{pair}]
-%     Starting and ending points (as time value) on the bounding box.
-%     Default value: |(0,2)|
-%   \item[\texttt{withshadingorigin} \meta{pair}]
-%     The center of starting and ending circles.
-%     Default value: |center p|
-%   \item[\texttt{withshadingradius} \meta{pair}]
-%     Radii of starting and ending circles. This is no-op in linear mode.
-%     Default value: |(0, abs(center p - urcorner p))|
-%   \item[\texttt{withshadingfactor} \meta{number}]
-%     Multiplier of the radii. This is no-op in linear mode.
-%     Default value: |1.2|
-%   \item[\texttt{withshadingcenter} \meta{pair}]
-%     Values for shifting starting center.
-%     For instance,
-%     |(0,0)| means that the center of starting circle is |center p|;
-%     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
-%   \item[\texttt{withshadingtransform} \meta{string}]
-%     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
-%     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
-%   \item[\texttt{withshadingdomain} \meta{pair}]
-%     Limiting values of parametric variable
-%     that varies on the axis of color gradient.
-%     Default value: |(0,1)|
-%   \item[\texttt{withshadingstep (...)}]
-%     for combined shading of more than two colors.
-%   \item[\texttt{withshadingfraction} \meta{number}]
-%     Fractional number of each shading step.
-%     Only meaningful with |withshadingstep|.
-%   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
-%     Starting and ending colors.
-%     Default value is |(white,| |black)|.
-%     String-type argument is regarded as the color expression of \TeX\ side.
-% \end{description}
-%
 % \subsubsection[\texttt{mpliblength}, \texttt{mplibuclength}]{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
 %   |mpliblength| \meta{string} returns the number of unicode characters in the string.
 %   This is a unicode-aware version equivalent to the \metapost primitive |length|, but
@@ -1329,25 +1363,6 @@ See source file '\inFileName' for licencing and contact information.
 %   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
 %   returns |"Ä"|, not |"A"|.
 %   This operator requires \pkg{lua-uni-algos} package.
-%
-% \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
-%   \label{sec:withmplibcolors}
-%   Unlike the |withcolor| command, users can specify one color for filling
-%   and another color for stroking using the macro |withmplibcolors| at the end of a sentence.
-%   The syntax is |withmplibcolors| |(|\meta{fill color expr}|,| \meta{stroke color expr}|)|.
-%   When the argument is in string type, it is regarded as the color expression of \TeX\ side.
-%   A simple example (see also the example above at \secref{mplibdrawglyph}):
-%\startmpfig
-%\mpfig filldraw fullcircle scaled 40 withpen pencircle scaled 2 withmplibcolors ("orange!60", 2/3red); \endmpfig
-%\stopmpfig{0}
-%\begin{verbatim}
-%    filldraw fullcircle scaled 40
-%      withpen pencircle scaled 2
-%      withmplibcolors ("orange!60", 2/3red)
-%      ;
-%\end{verbatim}
-%   The PDF file size is much smaller than issueing two sentences with different colors,
-%   though the apparent effect is the same.
 %
 % \subsection{Lua}
 %
