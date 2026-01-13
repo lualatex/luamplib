@@ -131,18 +131,13 @@ See source file '\inFileName' for licencing and contact information.
 \newcommand*\notabene{\textsc{n.b.}\quad}
 
 \usepackage{luamplib}\mplibforcehmode
-\def\startmpfig{\vskip\topsep\setbox0\vbox\bgroup\raggedleft
+\newcount\vln
+\def\startmpfig{\setbox0\vbox\bgroup\raggedleft
   \leftskip=0pt plus1fill\relax \parfillskip=0pt plus1fil\relax }
-\def\stopmpfig#1{\egroup \ifdim\pagegoal>\pagetotal
-  \ifdim\dimexpr\pagegoal-\pagetotal\relax<\ht0 \newpage\fi \fi
-  \nointerlineskip\vbox to 0pt{\vskip#1\baselineskip\unvbox0 \vss}\relax
-  \vskip-\topsep\nobreak\nointerlineskip }
-\topsep=9pt plus 2pt minus 2pt
-\partopsep=0pt
-\def\Xstartmpfig{\vskip-\topsep\setbox0\vbox\bgroup\raggedleft
-  \leftskip=0pt plus1fill\relax \parfillskip=0pt plus1fil\relax }
-\def\Xstopmpfig#1{\egroup\nointerlineskip
-  \vbox to 0pt{\vss \unvbox0 \vskip#1\baselineskip}\nobreak\vskip\topsep }
+\def\stopmpfig#1{\egroup \vln=0\relax
+  \AddToHook{para/begin}[mpfig/example]{\advance\vln 1\relax
+    \ifnum #1=\vln \vadjust{\vbox to 0pt{\vskip-2ex \vss \unvbox0 \vss}}\fi }\relax
+  \AddToHookNext{env/verbatim/after}{\RemoveFromHook{para/begin}[mpfig/example]}}
 
 \flushbottom
 \begin{document}
@@ -245,7 +240,7 @@ See source file '\inFileName' for licencing and contact information.
 %   be automatically inserted at the beginning and ending of each \metapost code chunk.
 %\startmpfig
 %\mpfig draw fullcircle scaled 1cm; \endmpfig
-%\stopmpfig{2}
+%\stopmpfig{3}
 %\begin{verbatim}
 %    \everymplib{ beginfig(0); }
 %    \everyendmplib{ endfig; }
@@ -355,7 +350,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mpfig D:=sqrt(2)**9; draw fullcircle scaled D; VerbatimTeX("\gdef\Dia{"&decimal D&"}");\endmpfig
 %\par diameter: \Dia bp.
-%\stopmpfig{2}
+%\stopmpfig{4}
 %\begin{verbatim}
 %    \mplibcode
 %      D := sqrt(2)**9;
@@ -375,7 +370,7 @@ See source file '\inFileName' for licencing and contact information.
 %   following |btex| |...| |etex| codes.
 %\startmpfig
 %\mpfig draw btex ABC etex; verbatimtex \bfseries etex; draw btex DEF etex shifted (1cm,0); draw btex GHI etex shifted (2cm,0); \endmpfig
-%\stopmpfig{3}
+%\stopmpfig{4}
 %\begin{verbatim}
 %    \begin{mplibcode}
 %      beginfig(0);
@@ -427,7 +422,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mpfig label(btex $\sqrt{2}$ etex, origin); draw fullcircle scaled 20; picture pic; pic := currentpicture; \endmpfig
 %\par\mpfig currentpicture := pic scaled 2; \endmpfig
-%\stopmpfig{3}
+%\stopmpfig{6}
 %\begin{verbatim}
 %    \mplibcodeinherit{enable}
 %    %\mplibglobaltextext{enable}
@@ -491,7 +486,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Enrico Gregorio. Please refer to the manual of \pkg{gmp} package for details.
 %\startmpfig
 %\mpfig draw origin--(.4\mpdim{\linewidth},0) withpen pencircle scaled 4 dashed evenly scaled 4 withcolor \mpcolor{orange}; \endmpfig
-%\stopmpfig{2}
+%\stopmpfig{3}
 %\begin{verbatim}
 %    draw origin--(.4\mpdim{\linewidth},0)
 %      withpen pencircle scaled 4 dashed evenly scaled 4
@@ -519,7 +514,7 @@ See source file '\inFileName' for licencing and contact information.
 %   without worring about the location of the color command:
 %\startmpfig
 %\mpfig draw image (drawarrow (left--right) scaled 5) scaled 7 withcolor \mpcolor{red!50};\endmpfig
-%\stopmpfig{0}
+%\stopmpfig{2}
 %\begin{verbatim}
 %    draw image (drawarrow (left--right) scaled 5)
 %      scaled 7
@@ -564,7 +559,7 @@ See source file '\inFileName' for licencing and contact information.
 %   A simple example:
 %\startmpfig
 %\mpfig* input boxes \endmpfig \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
-%\stopmpfig{1}
+%\stopmpfig{3}
 %\begin{verbatim}
 %    \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
 %    \mpfig* input boxes \endmpfig
@@ -756,7 +751,7 @@ See source file '\inFileName' for licencing and contact information.
 %   A simple example (see also the example at \secref{mplibdrawglyph}):
 %\startmpfig
 %\mpfig filldraw fullcircle scaled 40 withpen pencircle scaled 2 withmplibcolors ("orange!60", 2/3red); \endmpfig
-%\stopmpfig{0}
+%\stopmpfig{2}
 %\begin{verbatim}
 %    filldraw fullcircle scaled 40
 %      withpen pencircle scaled 2
@@ -775,7 +770,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The second argument accepts a number denoting opacity.
 %\startmpfig
 %\mpfig fill unitsquare scaled 40 withcolor 2/3[blue,white]; fill fullcircle scaled 40 withcolor red withtransparency (1, 0.5); \endmpfig
-%\stopmpfig{2}
+%\stopmpfig{6}
 %\begin{verbatim}
 %    \mpfig
 %      fill unitsquare scaled 40
@@ -804,7 +799,7 @@ See source file '\inFileName' for licencing and contact information.
 %     though technically only the last one is a true textual picture.
 %\startmpfig
 %\mpfig draw btex \bfseries\TeX etex rotated 20 scaled 6 withshadingmethod "linear" withshadingvector (0,3) withshadingstep ( withshadingfraction 1/2 withshadingcolors (red,green)) withshadingstep ( withshadingfraction 1 withshadingcolors (green,blue)); \endmpfig
-%\stopmpfig{1}
+%\stopmpfig{6}
 %\begin{verbatim}
 %    draw btex \bfseries\TeX etex rotated 20 scaled 6
 %      withshadingmethod "linear"
@@ -823,10 +818,9 @@ See source file '\inFileName' for licencing and contact information.
 %     the result of |withshadingvector| will be the same as that of |withshadingdirection|,
 %     as \pkg{luamplib} considers only the bounding box of the picture in this case.
 %   \end{itemize}
-% As shown above,
+% As shown,
 % the syntax is \meta{path}\,\textbar\,\meta{textual picture} |withshadingmethod| \meta{string},
 % where the latter shall be either |"linear"| or |"circular"|.
-%
 % Other macros for optional values are:
 % \begin{description}
 %   \let\bfseries\relax
@@ -902,7 +896,7 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mpfig picture mill; mill = btex \includegraphics[width=100bp]{mill} etex; draw mill withfademethod  "circular" withfadecenter (center mill, center mill) withfaderadius (20, 50) withfadeopacity (1, 0); \endmpfig
-%\stopmpfig{0}
+%\stopmpfig{5}
 %\begin{verbatim}
 %    \mpfig
 %      picture mill;
@@ -925,7 +919,7 @@ See source file '\inFileName' for licencing and contact information.
 %   However the syntax is somewhat different.
 %\startmpfig
 %\mpfig draw mplibgraphictext "\bfseries Funny" rotated 20 scaled 3 fakebold 2.3 fillcolor "red!50" drawcolor 2/3 blue; \endmpfig
-%\stopmpfig{0}
+%\stopmpfig{3}
 %\begin{verbatim}
 %    draw mplibgraphictext "\bfseries Funny"
 %      rotated 20 scaled 3
@@ -1015,7 +1009,7 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mpfig mplibfillandstrokeglyph mplibglyph "R" of \fontid\font scaled 1/12 withpen pencircle scaled 1 withmplibcolors ("orange", 2/3red); \endmpfig
-%\stopmpfig{0}
+%\stopmpfig{3}
 %\begin{verbatim}
 %    mplibfillandstrokeglyph
 %      mplibglyph "R" of \fontid\font scaled 1/12
@@ -1032,7 +1026,7 @@ See source file '\inFileName' for licencing and contact information.
 %   manual \S\,8.7 (|texdoc| |metafun|). A simple example:
 %\startmpfig
 %\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!30}) (withpen pencircle scaled .2 withcolor red) scaled 3; \endmpfig
-%\stopmpfig{.5}
+%\stopmpfig{2}
 %\begin{verbatim}
 %    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
 %      (withcolor \mpcolor{red!30})
@@ -1070,6 +1064,10 @@ See source file '\inFileName' for licencing and contact information.
 %   of the |btex| command (and its derivatives) or the |infont| operator.
 %
 %   An example:
+%\startmpfig
+%\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
+%\mpfig draw fullcircle scaled 50 withpostscript "collect"; draw fullcircle scaled 120 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
+%\stopmpfig{22}
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
@@ -1088,10 +1086,10 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmppattern                    % or \end{mppattern}
 %
 %    \mpfig
-%      draw fullcircle scaled 65
+%      draw fullcircle scaled 50
 %        withpostscript "collect"
 %        ;
-%      draw fullcircle scaled 140
+%      draw fullcircle scaled 120
 %        withmppattern "mypatt"
 %        withpen pencircle scaled 1
 %        withcolor \mpcolor{red!50!blue!50}
@@ -1099,10 +1097,6 @@ See source file '\inFileName' for licencing and contact information.
 %        ;
 %    \endmpfig
 %\end{verbatim}
-%\Xstartmpfig
-%\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig draw fullcircle scaled 65 withpostscript "collect"; draw fullcircle scaled 140 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
-%\Xstopmpfig{2}
 %
 %   The available options are listed in Table~\ref{tab:mppatternoptions}.
 %   \begin{table}
@@ -1141,7 +1135,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{5}
+%\stopmpfig{14}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1160,7 +1154,7 @@ See source file '\inFileName' for licencing and contact information.
 %            scaled 8
 %            withmppattern "pattnocolor"
 %            withpen pencircle scaled 1/2
-%            withcolor (i/4)[red,blue]       % paints the pattern
+%            withcolor (i/4)[red,blue]      % paints the pattern
 %            ;
 %        endfor
 %      endfig;
@@ -1170,8 +1164,8 @@ See source file '\inFileName' for licencing and contact information.
 % (but without colorful characters in this example)
 % is to give a \emph{textual picture} as the operand of |withmppattern|:
 %\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 1/3[red,black]); \endmpfig
-%\stopmpfig{1}
+%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 2/3red); \endmpfig
+%\stopmpfig{6}
 %\begin{verbatim}
 %    \begin{mplibcode}
 %      beginfig(2)
@@ -1180,8 +1174,8 @@ See source file '\inFileName' for licencing and contact information.
 %          rotated 15 scaled 8
 %          withmppattern "pattnocolor"
 %          withmplibcolors (
-%            1/3[white,red],                 % paints the pattern
-%            1/3[red,black]
+%            1/3[white,red],                % paints the pattern
+%            2/3 red
 %          )
 %          ;
 %      endfig;
@@ -1235,35 +1229,35 @@ See source file '\inFileName' for licencing and contact information.
 % \end{description}
 % An example showing the difference between the \TeX\ and \metapost commands:
 %\startmpfig
-%\mpfig draw image(fill fullcircle scaled 60 shifted 25right withcolor blue; fill fullcircle scaled 60 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1, 0.5); draw (left--right) scaled 10; draw (up--down) scaled 10; \endmpfig \vskip10pt
-%\noindent\clap{\vrule width 20pt height .25pt depth .25pt}\clap{\vrule width .5pt height 10pt depth 10pt}\usemplibgroup{mygroup} \par
-%\mpfig usemplibgroup "mygroup" withtransparency (1, 0.3); draw (left--right) scaled 10; draw (up--down) scaled 10; \endmpfig
-%\stopmpfig{3}
+%\mpfig draw image(fill fullcircle scaled 50 shifted 20right withcolor blue; fill fullcircle scaled 50 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig \vskip5pt
+%\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
+%\mpfig usemplibgroup "mygroup" withtransparency (1,1/4); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+%\stopmpfig{14}
 %\begin{verbatim}
 %    \mpfig
 %      draw image(
-%          fill fullcircle scaled 100 shifted 25right withcolor blue;
-%          fill fullcircle scaled 100 withcolor red ;
+%          fill fullcircle scaled 50 shifted 20right withcolor blue;
+%          fill fullcircle scaled 50 withcolor red ;
 %        )
 %        asgroup ""
 %        withgroupname "mygroup"
-%        withtransparency (1, 0.5)
+%        withtransparency (1, 1/2)
 %        ;
-%      draw (left--right) scaled 10;
-%      draw (up--down) scaled 10;
+%      draw (left--right) scaled 5;
+%      draw (up--down) scaled 5;
 %    \endmpfig
 %
 %    \noindent
-%    \clap{\vrule width 20pt height .25pt depth .25pt}%
-%    \clap{\vrule width .5pt height 10pt depth 10pt}%
+%    \clap{\vrule width 10bp height .25bp depth .25bp}%
+%    \clap{\vrule width .5bp height 5bp depth 5bp}%
 %    \usemplibgroup{mygroup}
 %
 %    \mpfig
 %      usemplibgroup "mygroup"
-%        withtransparency (1, 0.3)
+%        withtransparency (1, 1/4)
 %        ;
-%      draw (left--right) scaled 10;
-%      draw (up--down) scaled 10;
+%      draw (left--right) scaled 5;
+%      draw (up--down) scaled 5;
 %    \endmpfig
 %\end{verbatim}
 %
@@ -1278,12 +1272,13 @@ See source file '\inFileName' for licencing and contact information.
 % Users can define a transparency group or a normal \emph{form XObject}
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
+%
 % An example:
 %\startmpfig
 %\mplibgroup{mygrx}[asgroup="",]\mpfig pickup pencircle scaled 10; draw (left--right) scaled 30 rotated 45; draw (left--right) scaled 30 rotated -45; \endmpfig \endmplibgroup
 %\usemplibgroup{mygrx} \par
 %\mpfig usemplibgroup "mygrx" scaled 1.5 withtransparency (1, 0.5); \endmpfig
-%\stopmpfig{2}
+%\stopmpfig{10}
 %\begin{verbatim}
 %    \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
 %      [                                 % options: see below

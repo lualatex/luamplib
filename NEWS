@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+   * include figures generated from some example code
+   * rearrange the order of subsections on metapost macros
+
 2025/12/30 2.38.1
    * Now \mpcolor (or mplibcolor) returns a metapost color expression
    when the color specified is not a spot or named color.
