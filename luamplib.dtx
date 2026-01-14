@@ -1,6 +1,6 @@
 % \iffalse meta-comment -- by the way, this file contains UTF-8
 %
-% Copyright (C) 2008-2025 by Hans Hagen, Taco Hoekwater, Elie Roux,
+% Copyright (C) 2008-2026 by Hans Hagen, Taco Hoekwater, Elie Roux,
 % Manuel Pégourié-Gonnard, Philipp Gesang and Kim Dohyun.
 % Currently maintained by Kim Dohyun.
 % Support: <https://github.com/lualatex/luamplib>
@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2025/12/30 v2.38.1 Interface for using the mplib library]%
+  [2026/01/14 v2.38.2 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -168,7 +168,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2025/12/30 v2.38.1}
+% \date{2026/01/14 v2.38.2}
 %
 % \maketitle
 %
@@ -227,7 +227,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection{\cs{mplibforcehmode}}\label{sec:mplibforcehmode}
 %   When this macro is declared, every \metapost figure box will be
-%   typeset in horizontal mode, so \cs{centering}, \cs{raggedleft} etc
+%   typeset in horizontal mode; so \cs{centering}, \cs{raggedleft} etc\@.
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this command with anything suitable before a box.
@@ -659,14 +659,17 @@ See source file '\inFileName' for licencing and contact information.
 %   of course |[taggingoff]| and its trailing spaces will be gobbled by \pkg{luamplib}.
 %   For example, the first and the third boxes in the following figure will not be tagged,
 %   and still remain in the |Artifact| MC-chunks.
+%\startmpfig
+%\mpfig draw btex [taggingoff] $\sqrt 2$ etex; draw textext "$\sqrt 3$" shifted 12down; draw TEX "[taggingoff] $\sqrt 5$" shifted 24down; draw maketext "$\sqrt 7$" shifted 36down; draw mplibgraphictext "$\sqrt x$" shifted 48down; \endmpfig
+%\stopmpfig{5}
 %\begin{verbatim}
 %    \begin{mplibcode}[text]
 %      beginfig(1)
 %        draw btex [taggingoff] $\sqrt 2$ etex ;
-%        draw textext "$\sqrt 3$" shifted 10down ;
-%        draw TEX "[taggingoff] $\sqrt 5$" shifted 20down ;
-%        draw maketext "$\sqrt 7$" shifted 30down ;
-%        draw mplibgraphictext "$\sqrt x$" shifted 40down ;
+%        draw textext "$\sqrt 3$" shifted 12down ;
+%        draw TEX "[taggingoff] $\sqrt 5$" shifted 24down ;
+%        draw maketext "$\sqrt 7$" shifted 36down ;
+%        draw mplibgraphictext "$\sqrt x$" shifted 48down ;
 %      endfig;
 %    \end{mplibcode}
 %\end{verbatim}
@@ -684,13 +687,11 @@ See source file '\inFileName' for licencing and contact information.
 % \item[\texttt{tagging-setup=}\meta{key-val list}]
 %   This key accepts as its value the list of key-value options mentioned so far.
 % \end{description}
-%
-% You can set these tagging options anywhere in the document by declaring
+% You can set these options anywhere in the document by declaring
 % \cs{SetKeys}\allowbreak |[luamplib/tagging]|\allowbreak \marg{key-val list},
-% which will affect \pkg{luamplib} figures thereafter in the scope.
-%
-% And these options are provided also for \cs{mpfig} and \cs{usemplibgroup}
-% (see \hyperlink{usemplibgroup}{below}) commands.
+% which will affect \pkg{mplib} figures thereafter in the scope.
+% And the options listed above are provided for \cs{mpfig} and \cs{usemplibgroup}
+% (see \hyperlink{usemplibgroup}{below} \secref{transparencygroup}) commands as well.
 %\begin{verbatim}
 %    \begin{mplibcode}[myInstanceName, alt=drawing of a circle]
 %      ...
@@ -891,7 +892,7 @@ See source file '\inFileName' for licencing and contact information.
 %     Though this option is not needed in most cases, there could be cases when users want to
 %     explicitly control the bounding box.
 %     Particularly, see the description \hyperlink{withgroupbbox}{below}
-%     on the analogous macro |withgroupbbox|.
+%     at \secref{transparencygroup} on the analogous macro |withgroupbbox|.
 %   \end{description}
 %   An example:
 %\startmpfig
@@ -975,9 +976,8 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   \subsubsection[\texttt{mplibdrawglyph}, \texttt{mplibstrokeglyph},
-%     \texttt{mplibfillandstrokeglyph}]{\texttt{mplibdrawglyph ...}, \texttt{mplibstrokeglyph ...},
-%     \texttt{mplibfillandstrokeglyph ...}}
+%   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\texttt{mplibdrawglyph ...},
+%     \texttt{mplibstrokeglyph ...}, \texttt{mplibfillandstrokeglyph ...}}
 %     \label{sec:mplibdrawglyph}
 %   As the structure of the picture returned by |mplibglyph| will be quite similar to
 %   the result of |glyph| primitive,
@@ -999,7 +999,7 @@ See source file '\inFileName' for licencing and contact information.
 %   in such cases, you have to issue the command
 %   |draw| \meta{the last path} |withpostscript| |"both"|
 %   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
-%     |nofill|, |eofill|, |fillup|, |eofillup| etc. (see \emph{metafun} manual \S\,2.11),
+%     |nofill|, |eofill|, |fillup|, |eofillup| etc\@. (see \emph{metafun} manual \S\,2.11),
 %     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
 %
 %   As this could be somewhat annoying to users, we provide the following commands as well:
@@ -1042,7 +1042,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \notabene As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \subsubsection[\cs{mppattern}, \cs{endmppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...} \cs{endmppattern}, \texttt{... withmppattern ...}}
+% \subsubsection[\cs{mppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...}
+%   \cs{endmppattern}, \texttt{... withmppattern ...}}
 %   \label{sec:mppattern}
 %   \TeX\ macros
 %   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
@@ -1124,7 +1125,7 @@ See source file '\inFileName' for licencing and contact information.
 %   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
 %   given, they have precedence over the effect of `|shifted|' operator.
 %
-%   When you use special effects such as transparency in a pattern,
+%   When you use special effect such as transparency in a pattern,
 %   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
 %   However, as \pkg{luamplib} automatically includes the resources of the current page, this option
 %   is not needed in most cases.
@@ -1265,7 +1266,7 @@ See source file '\inFileName' for licencing and contact information.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
 %
-% \subsubsection[\cs{mplibgroup}, \cs{endmplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
+% \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
 % These \TeX\ macros are described here in this subsection, as they are
 % deeply related to the |asgroup| operator.
@@ -1328,7 +1329,8 @@ See source file '\inFileName' for licencing and contact information.
 % As shown, you can reuse the mplibgroup
 % using the \TeX\ command \cs{usemplibgroup} or
 % the \metapost command |usemplibgroup|.
-% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above},
+% The behavior of these commands is the same as that described \hyperlink{usemplibgroup}{above}
+% at \secref{transparencygroup},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
 % \subsubsection[\texttt{mpliblength}, \texttt{mplibuclength}]{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
@@ -1453,8 +1455,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.38.1",
-  date          = "2025/12/30",
+  version       = "2.38.2",
+  date          = "2026/01/14",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4977,7 +4979,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2025/12/30 v2.38.1 mplib package for LuaTeX]
+    [2026/01/14 v2.38.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
