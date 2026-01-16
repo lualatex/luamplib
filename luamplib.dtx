@@ -1364,7 +1364,9 @@ See source file '\inFileName' for licencing and contact information.
 % \subsection{Lua}
 %
 % \subsubsection[\texttt{runscript}]{\texttt{runscript ...}}
-%   Using the primitive |runscript| \meta{string}, you can run a Lua code chunk from \metapost side
+%   Many of the \metapost macros described in this documentation have been implemented
+%   using the primitive |runscript|.
+%   With |runscript| \meta{string}, you can run a Lua code chunk from \metapost side
 %   and get some \metapost code returned by Lua if you want.
 %   As the functionality is provided by the \mplib library itself,
 %   \pkg{luamplib} does not have much to say about it.
@@ -1403,13 +1405,19 @@ See source file '\inFileName' for licencing and contact information.
 %      end
 %    }
 %\end{verbatim}
-%   Of course, this sort of Lua code can also be executed inside \metapost code using |runscript|.
-%   Again, of course you can access a \metapost value using your own \TeX\ macro. For example:
+%   Of course, this sort of Lua code can also be executed inside \metapost code using |runscript|
+%   command.
+%   Again, of course you can access a \metapost variable using your own \TeX\ macro. For example:
+%\startmpfig
+%\mpfig* numeric n; n = 3;\endmpfig
+%\def\mpnumeric#1#2{\directlua{tex.sprint(tostring(luamplib.instances["#1"]:get_numeric"#2"))}}
+%\mpnumeric{@mpfig}{n}\relax
+%\stopmpfig{4}
 %\begin{verbatim}
-%    \def\mpnumeric#1{\directlua{
-%      tex.sprint(tostring(luamplib.instances.myinstance:get_numeric"#1"))
+%    \def\mpnumeric#1#2{\directlua{
+%      tex.sprint(tostring(luamplib.instances["#1"]:get_numeric"#2"))
 %    }}
-%    \mpnumeric{n}\relax
+%    \mpnumeric{myinstance}{n}\relax
 %\end{verbatim}
 %
 % \subsubsection[\texttt{luamplib.process\_mplibcode}]{Lua function \texttt{luamplib.process\_mplibcode}}
@@ -1444,8 +1452,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{table}
 %
 % \subsubsection[\texttt{luamplib.registerpattern}]{Lua function \texttt{luamplib.registerpattern}}
-%   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern}.
-%   See above \secref{mppattern}.
+%   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern},
+%   described above at \secref{mppattern}.
 %\begin{verbatim}
 %    luamplib.registerpattern (<number> box register, <string> pattern name, <table> options)
 %\end{verbatim}
@@ -1456,20 +1464,22 @@ See source file '\inFileName' for licencing and contact information.
 %   or corresponding Lua code.
 %
 %   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
+%   The argument cannot be absent, but can be an empty table, i.e. |{ }|.
 %
 % \subsubsection[\texttt{luamplib.registergroup}]{Lua function \texttt{luamplib.registergroup}}
-%   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup}.
-%   See above \secref{mplibgroupendmplibgroup}.
+%   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup},
+%   described above at \secref{mplibgroupendmplibgroup}.
 %\begin{verbatim}
 %    luamplib.registergroup (<number> box register, <string> group name, <table> options)
 %\end{verbatim}
 %
 %   The first argument is the register of a box prepared in advance by the user.
-%   Before invoking the Lua function, please make sure that
-%   both the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
-%   if the contents of the box have been generated from \TeX\ (not \metapost) code.
+%   When the contents of the box have been generated from \TeX\ (not \metapost) code,
+%   please make sure that both of the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
+%   before invoking the Lua function,
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
+%   The argument cannot be absent, but can be an empty table, i.e. |{ }|.
 %
 %   Reusing an mplibgroup, \cs{usemplibgroup}\marg{name}, is basically the same as
 %   executing the \TeX\ macro `|luamplib.group.|\meta{name}'.
