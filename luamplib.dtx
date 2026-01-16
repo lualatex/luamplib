@@ -558,10 +558,10 @@ See source file '\inFileName' for licencing and contact information.
 %   Again, as both share the same instance name, \metapost codes are inherited among them.
 %   A simple example:
 %\startmpfig
-%\mpfig* input boxes \endmpfig \mpfig circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
+%\mpfig* input boxes \endmpfig \mpfig drawoptions(withcolor 1/3[red,white]); circleit.a(btex Box 1 etex); drawboxed(a); \endmpfig
 %\stopmpfig{3}
 %\begin{verbatim}
-%    \everymplib[@mpfig]{ drawoptions(withcolor .5[red,white]); }
+%    \everymplib[@mpfig]{ drawoptions(withcolor 1/3[red,white]); }
 %    \mpfig* input boxes \endmpfig
 %    \mpfig
 %      circleit.a(btex Box 1 etex); drawboxed(a);
@@ -1165,7 +1165,7 @@ See source file '\inFileName' for licencing and contact information.
 % (but without colorful characters in this example)
 % is to give a \emph{textual picture} as the operand of |withmppattern|:
 %\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(1/3[white,red], 2/3red); \endmpfig
+%\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(2/3[red,white], 2/3red); \endmpfig
 %\stopmpfig{6}
 %\begin{verbatim}
 %    \begin{mplibcode}
@@ -1175,7 +1175,7 @@ See source file '\inFileName' for licencing and contact information.
 %          rotated 15 scaled 8
 %          withmppattern "pattnocolor"
 %          withmplibcolors (
-%            1/3[white,red],                % paints the pattern
+%            2/3[red,white],                % paints the pattern
 %            2/3 red
 %          )
 %          ;
@@ -1417,6 +1417,7 @@ See source file '\inFileName' for licencing and contact information.
 %\begin{verbatim}
 %    luamplib.process_mplibcode (<string> metapost code, <string> instance name)
 %\end{verbatim}
+%
 %   The second argument cannot be absent, but can be an empty string (|""|) which
 %   means that it has no instance name.
 %
@@ -1441,6 +1442,39 @@ See source file '\inFileName' for licencing and contact information.
 %     |verbatiminput| & \emph{boolean} & \cs{mplibverbatim}\\\hline
 %   \end{tabular}
 %   \end{table}
+%
+% \subsubsection[\texttt{luamplib.registerpattern}]{Lua function \texttt{luamplib.registerpattern}}
+%   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern}.
+%   See above \secref{mppattern}.
+%\begin{verbatim}
+%    luamplib.registerpattern (<number> box register, <string> pattern name, <table> options)
+%\end{verbatim}
+%
+%   The first argument is the register of a box containing a pattern cell,
+%   which should be prepared in advance by the user. For instance,
+%   \cs{setbox0=}\allowbreak\cs{hbox}\allowbreak|{\tiny\TeX}|,
+%   or corresponding Lua code.
+%
+%   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
+%
+% \subsubsection[\texttt{luamplib.registergroup}]{Lua function \texttt{luamplib.registergroup}}
+%   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup}.
+%   See above \secref{mplibgroupendmplibgroup}.
+%\begin{verbatim}
+%    luamplib.registergroup (<number> box register, <string> group name, <table> options)
+%\end{verbatim}
+%
+%   The first argument is the register of a box prepared in advance by the user.
+%   Before invoking the Lua function, please make sure that
+%   both the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
+%   if the contents of the box have been generated from \TeX\ (not \metapost) code.
+%
+%   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
+%
+%   Reusing an mplibgroup, \cs{usemplibgroup}\marg{name}, is basically the same as
+%   executing the \TeX\ macro `|luamplib.group.|\meta{name}'.
+%   If you need the boxresource index,
+%   inspect this macro using |token.get_macro| function.
 %
 %
 %    \section{Implementation}
