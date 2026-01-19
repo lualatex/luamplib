@@ -235,7 +235,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection[\cs{everymplib}, \cs{everyendmplib}]{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
-%   the lua table containing \metapost code
+%   the Lua table containing \metapost code
 %   which will
 %   be automatically inserted at the beginning and ending of each \metapost code chunk.
 %\startmpfig
@@ -497,7 +497,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\cs{mpcolor}]{\cs{mpcolor[...]\{...\}}}\label{sec:mpcolor}
 %   With \cs{mpcolor} command, color names or expressions of
 %   \pkg{color}, \pkg{xcolor} and \pkg{l3color} module/packages can be used in the mplibcode
-%   environment (after |withcolor| command).
+%   environment (after |withcolor| command, in principle).
 %   See the example above at \secref{mpdim}.
 %   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
 %   For spot colors, \pkg{l3color} (in PDF/DVI mode),
@@ -770,16 +770,17 @@ See source file '\inFileName' for licencing and contact information.
 %   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
 %   The second argument accepts a number denoting opacity.
 %\startmpfig
-%\mpfig fill unitsquare scaled 40 withcolor 2/3[blue,white]; fill fullcircle scaled 40 withcolor red withtransparency (1, 0.5); \endmpfig
+%\mpfig fill unitsquare scaled 40 withcolor 1/3[blue,white] withtransparency(1,0.5); fill fullcircle scaled 40 withcolor red withtransparency (1,0.5); \endmpfig
 %\stopmpfig{6}
 %\begin{verbatim}
 %    \mpfig
 %      fill unitsquare scaled 40
-%        withcolor 2/3[blue,white]
+%        withcolor 1/3[blue,white]
+%        withtransparency (1, 0.5)           % or ("normal", 0.5)
 %        ;
 %      fill fullcircle scaled 40
 %        withcolor red
-%        withtransparency (1, 0.5)           % or ("normal", 0.5)
+%        withtransparency (1, 0.5)
 %        ;
 %    \mpfig
 %\end{verbatim}
@@ -832,7 +833,7 @@ See source file '\inFileName' for licencing and contact information.
 %     Default value: |(0,2)|
 %   \item[\texttt{withshadingorigin} \meta{pair}]
 %     The center of starting and ending circles.
-%     Default value: |center p|
+%     Default value: |center p|, where |p| is the operand of |withshadingmethod|.
 %   \item[\texttt{withshadingradius} \meta{pair}]
 %     Radii of starting and ending circles. This is no-op in linear mode.
 %     Default value: |(0, abs(center p - urcorner p))|
@@ -1046,11 +1047,11 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{endmppattern}, \texttt{... withmppattern ...}}
 %   \label{sec:mppattern}
 %   \TeX\ macros
-%   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern
+%   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern cell
 %   associated with the \meta{name}.
 %   \metapost command |withmppattern|, the syntax being
 %   \meta{cyclic path}\,\textbar\,\meta{textual picture} |withmppattern| \meta{string}, will fill
-%   the given path or text with the tiling pattern of the \meta{name}
+%   the given path or text with the tiling pattern cell of the \meta{name}
 %   by replicating it horizontally and vertically.\footnote{\relax
 %     |withpattern| is an operator virtually the same as |withmppattern|,
 %     but the former forces a \metapost picture. Therefore
@@ -1117,7 +1118,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{tabular}
 %   \end{table}
 %
-%   For the sake of convenience, the width and height values of tiling patterns will be written down
+%   For the sake of convenience, the width and height values of the tiling pattern cell will be written down
 %   into the log file. (depth is always zero.) Users can refer to them for option setting.
 %
 %   As for |matrix| option, \metapost code such as |"rotated 30 slanted .2"| is allowed as well
@@ -1125,12 +1126,12 @@ See source file '\inFileName' for licencing and contact information.
 %   values by using `|shifted|' operator. But when |xshift| or |yshift| option is explicitly
 %   given, they have precedence over the effect of `|shifted|' operator.
 %
-%   When you use special effect such as transparency in a pattern,
+%   When you use special effect such as transparency in a pattern cell,
 %   |resources| option is needed: for instance, |resources="/ExtGState 1 0 R"|.
 %   However, as \pkg{luamplib} automatically includes the resources of the current page, this option
 %   is not needed in most cases.
 %
-%   Option |colored=false| (or |coloured=false|) will generate an uncolored pattern which shall have no color at all.
+%   Option |colored=false| (or |coloured=false|) will generate an uncolored pattern cell which shall have no color at all.
 %   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\startmpfig
@@ -1210,7 +1211,7 @@ See source file '\inFileName' for licencing and contact information.
 %   is a \TeX\ command to reuse a transparency group of the name
 %   once used.
 %   Note that the position of the group will be origin-based:
-%   in other words, lower-left corner of the group will be shifted to the origin.
+%   in other words, lower-left corner of the bounding box will be shifted to the origin.
 %
 % \item[|usemplibgroup| \meta{string}] is a \metapost command which will add
 %   a transparency group of the name to the |currentpicture|.
@@ -1232,7 +1233,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mpfig draw image(fill fullcircle scaled 50 shifted 20right withcolor blue; fill fullcircle scaled 50 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig \vskip5pt
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
-%\mpfig usemplibgroup "mygroup" withtransparency (1,1/4); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+%\mpfig usemplibgroup "mygroup" withtransparency (1,1/3); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 %\stopmpfig{14}
 %\begin{verbatim}
 %    \mpfig
@@ -1255,7 +1256,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %    \mpfig
 %      usemplibgroup "mygroup"
-%        withtransparency (1, 1/4)
+%        withtransparency (1, 1/3)
 %        ;
 %      draw (left--right) scaled 5;
 %      draw (up--down) scaled 5;
@@ -1364,7 +1365,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsection{Lua}
 %
 % \subsubsection[\texttt{runscript}]{\texttt{runscript ...}}
-%   Many of the \metapost macros described in this documentation have been implemented
+%   A good many \metapost macros described in this documentation have been implemented
 %   using the primitive |runscript|.
 %   With |runscript| \meta{string}, you can run a Lua code chunk from \metapost side
 %   and get some \metapost code returned by Lua if you want.
@@ -1452,7 +1453,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \end{table}
 %
 % \subsubsection[\texttt{luamplib.registerpattern}]{Lua function \texttt{luamplib.registerpattern}}
-%   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern},
+%   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern}
 %   described above at \secref{mppattern}.
 %\begin{verbatim}
 %    luamplib.registerpattern (<number> box register, <string> pattern name, <table> options)
@@ -1467,7 +1468,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The argument cannot be absent, but can be an empty table, i.e. |{ }|.
 %
 % \subsubsection[\texttt{luamplib.registergroup}]{Lua function \texttt{luamplib.registergroup}}
-%   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup},
+%   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup}
 %   described above at \secref{mplibgroupendmplibgroup}.
 %\begin{verbatim}
 %    luamplib.registergroup (<number> box register, <string> group name, <table> options)
@@ -1476,7 +1477,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The first argument is the register of a box prepared in advance by the user.
 %   When the contents of the box have been generated from \TeX\ (not \metapost) code,
 %   please make sure that both of the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
-%   before invoking the Lua function,
+%   before invoking the Lua function.
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e. |{ }|.

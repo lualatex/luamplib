@@ -1,6 +1,7 @@
                        History of the luamplib package
 
    * add subsections on registerpattern() and registergroup() to the doc
+   * generalize the code for the example macro \mpnumeric in the doc
 
 2026/01/14 2.38.2
    Documentation changes only:
