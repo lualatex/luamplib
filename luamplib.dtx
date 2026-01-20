@@ -227,7 +227,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection{\cs{mplibforcehmode}}\label{sec:mplibforcehmode}
 %   When this macro is declared, every \metapost figure box will be
-%   typeset in horizontal mode; so \cs{centering}, \cs{raggedleft} etc\@.
+%   typeset in horizontal mode; so \cs{centering}, \cs{raggedleft} etc.\
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this command with anything suitable before a box.
@@ -1003,10 +1003,10 @@ See source file '\inFileName' for licencing and contact information.
 %   in such cases, you have to issue the command
 %   |draw| \meta{the last path} |withpostscript| |"both"|
 %   (or |"eoboth"| to apply even-odd rule).\footnote{\emph{metafun} provides macros
-%     |nofill|, |eofill|, |fillup|, |eofillup| etc\@. (see \emph{metafun} manual \S\,2.11),
+%     |nofill|, |eofill|, |fillup|, |eofillup| etc.\ (see \emph{metafun} manual \S\,2.11),
 %     which \pkg{luamplib} with \emph{plain} format does not provide currently. }
 %
-%   As this could be somewhat annoying to users, we provide the following commands as well:
+%   As this could be somewhat annoying to users, \pkg{luamplib} v2.38.0 or later provides the following commands as well:
 %   |mplibfillandstrokeglyph| \meta{picture}, |mplibstrokeglyph| \meta{picture},
 %   and |mplibfillglyph| \meta{picture}, the last one being a synonym of |mplibdrawglyph| command.
 %
@@ -1072,7 +1072,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig draw fullcircle scaled 50 withpostscript "collect"; draw fullcircle scaled 120 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
-%\stopmpfig{22}
+%\stopmpfig{21}
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
@@ -1280,8 +1280,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 % An example:
 %\startmpfig
-%\mplibgroup{mygrx}[asgroup="",]\mpfig pickup pencircle scaled 10; draw (left--right) scaled 30 rotated 45; draw (left--right) scaled 30 rotated -45; \endmpfig \endmplibgroup
-%\usemplibgroup{mygrx} \par
+%\mplibgroup{mygrx}[asgroup="",]\mpfig pickup pencircle scaled 10; draw (left--right) scaled 20 rotated 45; draw (left--right) scaled 20 rotated -45; \endmpfig \endmplibgroup
+%\usemplibgroup{mygrx} \vskip5pt\par
 %\mpfig usemplibgroup "mygrx" scaled 1.5 withtransparency (1, 0.5); \endmpfig
 %\stopmpfig{10}
 %\begin{verbatim}
@@ -1291,8 +1291,8 @@ See source file '\inFileName' for licencing and contact information.
 %      ]
 %      \mpfig                            % or any other TeX code
 %        pickup pencircle scaled 10;
-%        draw (left--right) scaled 30 rotated 45 ;
-%        draw (left--right) scaled 30 rotated -45 ;
+%        draw (left--right) scaled 20 rotated 45 ;
+%        draw (left--right) scaled 20 rotated -45 ;
 %      \endmpfig
 %    \endmplibgroup                      % or \end{mplibgroup}
 %
@@ -1465,10 +1465,10 @@ See source file '\inFileName' for licencing and contact information.
 %   The first argument is the register of a box containing a pattern cell,
 %   which should be prepared in advance by the user. For instance,
 %   \cs{setbox0=}\allowbreak\cs{hbox}\allowbreak|{\tiny\TeX}|,
-%   or corresponding Lua code; then the argument should be |0|.
+%   or corresponding Lua code using |tex.setbox| function; then the argument should be |0|.
 %
 %   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
-%   The argument cannot be absent, but can be an empty table, i.e. |{ }|.
+%   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
 %
 % \subsubsection[\texttt{luamplib.registergroup}]{Lua function \texttt{luamplib.registergroup}}
 %   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup}
@@ -1483,7 +1483,7 @@ See source file '\inFileName' for licencing and contact information.
 %   before invoking the Lua function.
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
-%   The argument cannot be absent, but can be an empty table, i.e. |{ }|.
+%   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
 %
 %   Reusing an mplibgroup, \cs{usemplibgroup}\marg{name}, is basically the same as
 %   executing the \TeX\ macro `|luamplib.group.|\meta{name}'.
