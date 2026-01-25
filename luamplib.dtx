@@ -234,8 +234,9 @@ See source file '\inFileName' for licencing and contact information.
 %     But see \secref{taggedPDF} on Tagged PDF. }
 %
 % \subsubsection[\cs{everymplib}, \cs{everyendmplib}]{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
+%   \label{sec:everymplib}
 %   \cs{everymplib} and \cs{everyendmplib} redefine
-%   the Lua table containing \metapost code
+%   the Lua table entry containing \metapost code
 %   which will
 %   be automatically inserted at the beginning and ending of each \metapost code chunk.
 %\startmpfig
@@ -251,6 +252,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \subsubsection[\cs{mplibsetformat}]{\cs{mplibsetformat\{plain\textbar metafun\}}}
+%   \label{sec:mplibsetformat}
 %   There are (basically) two formats for \metapost: \emph{plain} and
 %   \emph{metafun}. By default, the \emph{plain} format is used, but you can set
 %   the format to be used by future figures at any time using
@@ -268,8 +270,8 @@ See source file '\inFileName' for licencing and contact information.
 % \item[transparency]
 %   (|texdoc metafun| \S\,8.2) Transparency is so simple that you can apply it to an object,
 %   with \emph{plain} format as well as \emph{metafun},
-%   just by appending |withprescript| |"tr_transparency=|\meta{number}|"| to the sentence.
-%   ($0 \le \meta{number} \le 1$)
+%   just by appending |withprescript| |"tr_transparency=|\allowbreak\meta{numeric}|"| to the sentence.
+%   ($0 \le \meta{numeric} \le 1$)
 %
 %   From v2.36, |withtransparency| is available with \emph{plain} as well.
 %   See below \secref{luamplibtransparency}.
@@ -302,12 +304,14 @@ See source file '\inFileName' for licencing and contact information.
 % \end{description}
 %
 % \subsubsection[\cs{mplibnumbersystem}]{\cs{mplibnumbersystem\{scaled\textbar double\textbar decimal\}}}
+%   \label{sec:mplibnumbersystem}
 %   Users can choose |numbersystem| option.
 %   The default value is |scaled|, which can be changed
 %   by declaring \cs{mplibnumbersystem\{double\}} or
 %   \cs{mplibnumbersystem\{decimal\}}.
 %
 % \subsubsection[\cs{mplibshowlog}]{\cs{mplibshowlog\{enable\textbar disable\}}}
+%   \label{sec:mplibshowlog}
 %   Default: |disable|.
 %   When \cs{mplibshowlog\{enable\}}\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
@@ -383,6 +387,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \subsubsection[\cs{mplibtextextlabel}]{\cs{mplibtextextlabel\{enable\textbar disable\}}}
+%   \label{sec:mplibtextextlabel}
 %   Default: |disable|.
 %   \cs{mplibtextextlabel\{enable\}} enables
 %   the labels typeset via |textext| instead of |infont| operator.
@@ -405,20 +410,22 @@ See source file '\inFileName' for licencing and contact information.
 %   as this might bring unpermitted characters into \TeX.
 %
 % \subsubsection[\cs{mplibcodeinherit}]{\cs{mplibcodeinherit\{enable\textbar disable\}}}
+%   \label{sec:mplibcodeinherit}
 %   Default: |disable|.
 %   \cs{mplibcodeinherit\{enable\}} enables the inheritance
 %   of variables, constants, and macros defined by previous \metapost code chunks.
-%   On the contrary, \cs{mplibcodeinherit\{disable\}} will make
+%   On the other hand, \cs{mplibcodeinherit}\allowbreak|{disable}| will make
 %   each code chunk being treated as an independent instance, never
 %   affected by previous code chunks.
 %
 % \subsubsection[\cs{mplibglobaltextext}]{\cs{mplibglobaltextext\{enable\textbar disable\}}}
+%   \label{sec:mplibglobaltextext}
 %   Default: |disable|.
 %   Formerly, to inherit |btex| |...| |etex| boxes as well as other \metapost macros, variables and constants,
 %   it was necessary to declare \cs{mplibglobaltextext}\allowbreak|{enable}| in advance.
 %   But from v2.27, this is implicitly enabled when \cs{mplibcodeinherit}
 %   is enabled.
-%   This optional command still remains mostly for backward compatibility.
+%   The command still remains mostly for backward compatibility.
 %\startmpfig
 %\mpfig label(btex $\sqrt{2}$ etex, origin); draw fullcircle scaled 20; picture pic; pic := currentpicture; \endmpfig
 %\par\mpfig currentpicture := pic scaled 2; \endmpfig
@@ -439,8 +446,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection{Separate \metapost instances}
 %   \pkg{luamplib} v2.22 has added the support for several named \metapost instances
-%   in \LaTeX{} |mplibcode| environment.
-%   Plain \TeX\ users also can use this functionality.
+%   in \LaTeX\ environment |mplibcode| or
+%   Plain \TeX\ commands \cs{mplibcode} |...| \cs{endmplibcode}.
 %   The syntax for \LaTeX\ is:
 %\begin{verbatim}
 %    \begin{mplibcode}[instanceName]
@@ -472,6 +479,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 % \subsubsection[\cs{mplibverbatim}]{\cs{mplibverbatim\{enable\textbar disable\}}}
+%   \label{sec:mplibverbatim}
 %   Default: |disable|.
 %   Users can issue \cs{mplibverbatim\{enable\}}, after which
 %   the contents of mplibcode environment will be read verbatim. As a result,
@@ -574,6 +582,7 @@ See source file '\inFileName' for licencing and contact information.
 %   prevent code inheritance if \cs{mplibcodeinherit} is not true.
 %
 % \subsubsection{About cache files}
+%   \label{sec:mplibcachedir}
 %   To support |btex| |...| |etex| in external |.mp| files, \pkg{luamplib}
 %   inspects the content of each and every |.mp| file and makes caches
 %   if nececcsary before returning their paths to the \mplib library.
@@ -716,7 +725,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{\textsc{MetaPost}}
 %
-% \subsubsection[\texttt{mplibdimen}, \texttt{mplibcolor}]{\texttt{mplibdimen ...}, \texttt{mplibcolor ...}}
+% \subsubsection[\ttfamily mplibdimen, mplibcolor]{\ttfamily mplibdimen ..., mplibcolor ...}
 %   These are \metapost interfaces for the \TeX\ commands
 %   \cs{mpdim} and \cs{mpcolor} (see above \secref{mpdim} and \secref{mpcolor}). For example,
 %   |mplibdimen| |"\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
@@ -724,7 +733,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The difference is that these \metapost operators can also be used in external |.mp| files,
 %   which cannot have \TeX\ commands outside of the |btex| or |verbatimtex| |...| |etex|.
 %
-% \subsubsection[\texttt{mplibtexcolor}, \texttt{mplibrgbtexcolor}]{\texttt{mplibtexcolor ...}, \texttt{mplibrgbtexcolor ...}}
+% \subsubsection[\ttfamily mplibtexcolor, mplibrgbtexcolor]{\ttfamily mplibtexcolor ..., mplibrgbtexcolor ...}
 %   \label{sec:mplibtexcolor}
 %   |mplibtexcolor|, which accepts a string argument, is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
@@ -746,7 +755,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \notabene Spot colors are forced to cmyk or rgb model,
 %   so these operators are not recommended for spot colors.
 %
-% \subsubsection[\texttt{withmplibcolors}]{\texttt{withmplibcolors (..., ...)}}
+% \subsubsection[\ttfamily withmplibcolors]{\ttfamily withmplibcolors (..., ...)}
 %   \label{sec:withmplibcolors}
 %   Unlike the |withcolor| command, users can specify one color for filling
 %   and another color for stroking using the macro |withmplibcolors| at the end of a sentence.
@@ -765,13 +774,13 @@ See source file '\inFileName' for licencing and contact information.
 %   The PDF file size is much smaller than issueing two sentences with different colors,
 %   though the apparent effect is the same.
 %
-% \subsubsection[\texttt{withtransparency}]{\texttt{withtransparency (..., ...)}}
+% \subsubsection[\ttfamily withtransparency]{\ttfamily withtransparency (..., ...)}
 %   \label{sec:luamplibtransparency}
-%   |withtransparency(|\emph{number}\,\textbar\,\emph{string}, \emph{number}|)|
+%   |withtransparency(|\meta{number}\,\textbar\,\meta{string}|,| \meta{numeric}|)|
 %   is provided for \emph{plain} format as well as \emph{metafun}.
 %   The first argument accepts a number or a name of
 %   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
-%   The second argument accepts a number denoting opacity.
+%   The second argument accepts a numeric expression denoting opacity.
 %\startmpfig
 %\mpfig fill unitsquare scaled 40 withcolor 1/3[blue,white] withtransparency(1,0.5); fill fullcircle scaled 40 withcolor red withtransparency (1,0.5); \endmpfig
 %\stopmpfig{6}
@@ -788,7 +797,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \mpfig
 %\end{verbatim}
 %
-% \subsubsection[\texttt{withshadingmethod}]{\texttt{... withshadingmethod ...}}
+% \subsubsection[\ttfamily withshadingmethod]{\ttfamily ... withshadingmethod ...}
 %   \label{sec:luamplibshading}
 %   The syntax is exactly the same as \emph{metafun}'s new shading method (|texdoc metafun| \S\,8.3.3), except that
 %   the `|shade|' contained in each and every macro name has changed to
@@ -829,44 +838,44 @@ See source file '\inFileName' for licencing and contact information.
 % Other macros for optional values are:
 % \begin{description}
 %   \let\bfseries\relax
-%   \item[\texttt{withshadingvector} \meta{pair}]
+%   \item[|withshadingvector| \meta{pair}]
 %     Starting and ending points (as time value) on the path.
-%   \item[\texttt{withshadingdirection} \meta{pair}]
+%   \item[|withshadingdirection| \meta{pair}]
 %     Starting and ending points (as time value) on the bounding box.
 %     Default value: |(0,2)|
-%   \item[\texttt{withshadingorigin} \meta{pair}]
+%   \item[|withshadingorigin| \meta{pair}]
 %     The center of starting and ending circles.
 %     Default value: |center p|, where |p| is the operand of |withshadingmethod|.
-%   \item[\texttt{withshadingradius} \meta{pair}]
+%   \item[|withshadingradius| \meta{pair}]
 %     Radii of starting and ending circles. This is no-op in linear mode.
 %     Default value: |(0, abs(center p - urcorner p))|
-%   \item[\texttt{withshadingfactor} \meta{number}]
+%   \item[|withshadingfactor| \meta{numeric}]
 %     Multiplier of the radii. This is no-op in linear mode.
 %     Default value: |1.2|
-%   \item[\texttt{withshadingcenter} \meta{pair}]
+%   \item[|withshadingcenter| \meta{pair}]
 %     Values for shifting starting center.
 %     For instance,
 %     |(0,0)| means that the center of starting circle is |center p|;
 %     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
-%   \item[\texttt{withshadingtransform} \meta{string}]
+%   \item[|withshadingtransform| \meta{string}]
 %     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
 %     Default value: |"no"| for pictures made by |infont| operator; |"yes"| for all other cases.
-%   \item[\texttt{withshadingdomain} \meta{pair}]
+%   \item[|withshadingdomain| \meta{pair}]
 %     Limiting values of parametric variable
 %     that varies on the axis of color gradient.
 %     Default value: |(0,1)|
-%   \item[\texttt{withshadingstep (...)}]
+%   \item[|withshadingstep (...)|]
 %     for combined shading of more than two colors.
-%   \item[\texttt{withshadingfraction} \meta{number}]
+%   \item[|withshadingfraction| \meta{numeric}]
 %     Fractional number of each shading step.
 %     Only meaningful with |withshadingstep|.
-%   \item[\texttt{withshadingcolors (}\emph{color expr}, \emph{color expr}\texttt{)}]
-%     Starting and ending colors.
-%     Default value is |(white,| |black)|.
+%   \item[|withshadingcolors (|\meta{color expr}|,| \meta{color expr}|)|]
+%     Starting and ending colors,
+%     default value being |(white,| |black)|.
 %     String-type argument is regarded as the color expression of \TeX\ side.
 % \end{description}
 %
-% \subsubsection[\texttt{withfademethod}]{\texttt{... withfademethod ...}}
+% \subsubsection[\ttfamily withfademethod]{\ttfamily ... withfademethod ...}
 %   This is a \metapost operator which makes the color of an object gradiently transparent.
 %   The syntax is \meta{path}\,\textbar\,\meta{picture} |withfademethod| \meta{string},
 %   the latter being either |"linear"| or |"circular"|.
@@ -877,21 +886,21 @@ See source file '\inFileName' for licencing and contact information.
 %   Related macros to control optional values are:
 %   \begin{description}
 %     \let\bfseries\relax
-%   \item [|withfadeopacity (|\emph{number, number}|)|]
+%   \item [|withfadeopacity (|\meta{numeric}|,| \meta{numeric}|)|]
 %     sets the starting opacity and the ending opacity, default value being |(1,0)|.
 %     `|1|' denotes full color; `|0|' full transparency.
-%   \item [|withfadevector (|\emph{pair, pair}|)|]
+%   \item [|withfadevector (|\meta{pair}|,| \meta{pair}|)|]
 %     sets the starting and ending points. Default value in the linear mode is
 %     |(llcorner p, lrcorner p)|, where |p| is the operand,
 %     meaning that fading starts from the left edge and ends at the right edge.
 %     Default value in the circular mode is |(center p, center p)|, which means
 %     centers of both starting and ending circles are the center of the bounding box.
 %   \item [|withfadecenter|] is a synonym of |withfadevector|.
-%   \item [|withfaderadius (|\emph{number, number}|)|]
+%   \item [|withfaderadius (|\meta{numeric}|,| \meta{numeric}|)|]
 %     sets the radii of starting and ending circles. This is no-op in the linear mode.
 %     Default value is |(0, abs(center p - urcorner p))|, meaning that fading starts from the
 %     center and ends at the four corners of the bounding box.
-%   \item [|withfadebbox (|\emph{pair, pair}|)|]
+%   \item [|withfadebbox (|\meta{pair}|,| \meta{pair}|)|]
 %     sets the bounding box of the fading area, default value being |(llcorner| |p,| |urcorner| |p)|.
 %     Though this option is not needed in most cases, there could be cases when users want to
 %     explicitly control the bounding box.
@@ -915,7 +924,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
-% \subsubsection[\texttt{mplibgraphictext}]{\texttt{mplibgraphictext ...}}
+% \subsubsection[\ttfamily mplibgraphictext]{\ttfamily mplibgraphictext ...}
 %     \label{sec:mplibgraphictext}
 %   |mplibgraphictext| \meta{string} is a \metapost operator,
 %   the effect of which is similar to that of
@@ -960,7 +969,7 @@ See source file '\inFileName' for licencing and contact information.
 %   you cannot manipulate the shape of outline paths,
 %   because the returned picture is basically a |btex| |...| |etex| picture.
 %
-%   \subsubsection[\texttt{mplibglyph}]{\texttt{mplibglyph ... of ...}}
+%   \subsubsection[\ttfamily mplibglyph]{\ttfamily mplibglyph ... of ...}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
 %   containing outline paths of a glyph in opentype, truetype or type1 fonts.
 %   When a type1 font is specified, \metapost primitive |glyph| will be called.
@@ -980,8 +989,8 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name of a variable font.
 %
-%   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\texttt{mplibdrawglyph ...},
-%     \texttt{mplibstrokeglyph ...}, \texttt{mplibfillandstrokeglyph ...}}
+%   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
+%     mplibstrokeglyph ..., mplibfillandstrokeglyph ...}
 %     \label{sec:mplibdrawglyph}
 %   As the structure of the picture returned by |mplibglyph| will be quite similar to
 %   the result of |glyph| primitive,
@@ -1023,7 +1032,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %
 %
-% \subsubsection[\texttt{mpliboutlinetext}]{\texttt{mpliboutlinetext (...)}}
+% \subsubsection[\ttfamily mpliboutlinetext]{\ttfamily mpliboutlinetext (...)}
 %   \label{sec:mpliboutlinetext}
 %   From v2.31, a new \metapost operator |mpliboutlinetext| is available, which mimicks
 %   \emph{metafun}'s |outlinetext|. So the syntax is the same: see the \emph{metafun}
@@ -1046,8 +1055,8 @@ See source file '\inFileName' for licencing and contact information.
 %   \notabene As Unicode grapheme cluster is not considered in the array, a unit that must be
 %   a single cluster might be separated apart.
 %
-% \subsubsection[\cs{mppattern}, \texttt{withmppattern}]{\cs{mppattern\{...\} ...}
-%   \cs{endmppattern}, \texttt{... withmppattern ...}}
+% \subsubsection[\cs{mppattern}, \ttfamily withmppattern]{\cs{mppattern\{...\} ...}
+%   \cs{endmppattern}, \ttfamily ... withmppattern ...}
 %   \label{sec:mppattern}
 %   \TeX\ macros
 %   \cs{mppattern}\marg{name} |...| \cs{endmppattern} define a tiling pattern cell
@@ -1072,7 +1081,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig draw fullcircle scaled 50 withpostscript "collect"; draw fullcircle scaled 120 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
-%\stopmpfig{21}
+%\stopmpfig{20}
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
@@ -1103,7 +1112,11 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
-%   The available options are listed in Table~\ref{tab:mppatternoptions}.
+%   The available options, actually elements of a Lua \emph{table},
+%   are listed in Table~\ref{tab:mppatternoptions}.
+%   For the sake of convenience, the width and height values of the tiling pattern cell will be written down
+%   into the log file (depth is always zero). Users can refer to them for option setting.
+%
 %   \begin{table}
 %   \centering
 %   \caption{options for \cs{mppattern}}\label{tab:mppatternoptions}
@@ -1120,9 +1133,6 @@ See source file '\inFileName' for licencing and contact information.
 %                &                & \small *\,in string type, numbers are separated by spaces\\
 %   \end{tabular}
 %   \end{table}
-%
-%   For the sake of convenience, the width and height values of the tiling pattern cell will be written down
-%   into the log file (depth is always zero). Users can refer to them for option setting.
 %
 %   As for |matrix| option, \metapost code such as |"rotated 30 slanted .2"| is allowed as well
 %   as the string or table of four numbers. You can also set |xshift| and |yshift|
@@ -1187,7 +1197,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \end{mplibcode}
 %\end{verbatim}
 %
-% \subsubsection[\texttt{asgroup}]{\texttt{... asgroup ...}}\label{sec:transparencygroup}
+% \subsubsection[\ttfamily asgroup]{\ttfamily ... asgroup ...}\label{sec:transparencygroup}
 % As said \hyperlink{metafunformat}{before},
 % transparency group is available with \emph{plain} as well as \emph{metafun} format.
 % The syntax is exactly the same:
@@ -1221,7 +1231,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Contrary to the \TeX\ command just mentioned,
 %   the position of the group is the same as the original transparency group.
 %
-% \item[|withgroupbbox (|\emph{pair}|,|\emph{pair}|)|]
+% \item[|withgroupbbox (|\meta{pair}|,| \meta{pair}|)|]
 %   \hypertarget{withgroupbbox}{}\relax
 %   sets the bounding box of the transparency group,
 %   default value being |(llcorner p, urcorner p)|.
@@ -1237,7 +1247,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mpfig draw image(fill fullcircle scaled 50 shifted 20right withcolor blue; fill fullcircle scaled 50 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig \vskip5pt
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1,1/3); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
-%\stopmpfig{13}
+%\stopmpfig{10}
 %\begin{verbatim}
 %    \mpfig
 %      draw image(
@@ -1308,6 +1318,7 @@ See source file '\inFileName' for licencing and contact information.
 % Availabe options, much fewer than those for \cs{mppattern},
 % are listed in Table~\ref{tab:mplibgroupoptions}.
 % Again, the width/height/depth values of the mplibgroup will be written down into the log file.
+%
 % \begin{table}
 % \centering
 % \caption{options for \cs{mplibgroup}}\label{tab:mplibgroupoptions}
@@ -1337,7 +1348,7 @@ See source file '\inFileName' for licencing and contact information.
 % at \secref{transparencygroup},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
-% \subsubsection[\texttt{mpliblength}, \texttt{mplibuclength}]{\texttt{mpliblength ...}, \texttt{mplibuclength ...}}
+% \subsubsection[\ttfamily mpliblength, mplibuclength]{\ttfamily mpliblength ..., mplibuclength ...}
 %   |mpliblength| \meta{string} returns the number of unicode characters in the string.
 %   This is a unicode-aware version equivalent to the \metapost primitive |length|, but
 %   accepts only a string-type argument.
@@ -1350,7 +1361,7 @@ See source file '\inFileName' for licencing and contact information.
 %   returns |5|, not |6| or |7|.
 %   This operator requires \pkg{lua-uni-algos} package.
 %
-% \subsubsection[\texttt{mplibsubstring}, \texttt{mplibucsubstring}]{\texttt{mplibsubstring ... of ...}, \texttt{mplibucsubstring ... of ...}}
+% \subsubsection[\ttfamily mplibsubstring, mplibucsubstring]{\ttfamily mplibsubstring ... of ..., mplibucsubstring ... of ...}
 %   |mplibsubstring| \meta{pair} |of| \meta{string} is a unicode-aware version equivalent to the
 %   \metapost's |substring ... of ...| primitive. The syntax is the same as the latter,
 %   but the string is indexed by unicode characters.
@@ -1367,7 +1378,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsection{Lua}
 %
-% \subsubsection[\texttt{runscript}]{\texttt{runscript ...}}
+% \subsubsection[\ttfamily runscript]{\ttfamily runscript ...}
 %   A good many \metapost macros described in this documentation have been implemented
 %   using the primitive |runscript|.
 %   With |runscript| \meta{string}, you can run a Lua code chunk from \metapost side
@@ -1383,7 +1394,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, |runscript|\,|"return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
 %   automatically.
 %
-% \subsubsection[\texttt{luamplib.instances}]{Lua table \texttt{luamplib.instances}}
+% \subsubsection[\ttfamily luamplib.instances]{Lua table \ttfamily luamplib.instances}
 %   \label{sec:luamplibinstances}
 %   Users can access the Lua table containing \mplib instances, |luamplib.instances|,
 %   through which \metapost variables are also easily accessible from Lua side,
@@ -1424,7 +1435,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \mpnumeric{myinstance}{n}\relax
 %\end{verbatim}
 %
-% \subsubsection[\texttt{luamplib.process\_mplibcode}]{Lua function \texttt{luamplib.process\_mplibcode}}
+% \subsubsection[\ttfamily luamplib.process\_mplibcode]{Lua function \ttfamily luamplib.process\_mplibcode}
 %   Users can execute a \metapost code chunk from Lua side by using this function:
 %\begin{verbatim}
 %    luamplib.process_mplibcode (<string> metapost code, <string> instance name)
@@ -1435,27 +1446,28 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   Some other elements in the |luamplib| namespace, listed in Table~\ref{tab:elementsinluamplib},
 %   can affect the process of |process_mplibcode|.
+%
 %   \begin{table}
 %     \centering
 %     \caption{elements in \texttt{luamplib} table (partial)}\label{tab:elementsinluamplib}
-%   \begin{tabular}{lll}\hline
-%     Key & Type & Related \TeX\ macro \\\hline
-%     |codeinherit|	& \emph{boolean} & \cs{mplibcodeinherit}\\
-%     |everyendmplib|	& \emph{table} & \cs{everyendmplib}\\
-%     |everymplib| & \emph{table} & \cs{everymplib}\\
-%     |getcachedir|	& \emph{function} (\meta{string}) & \cs{mplibcachedir}\\
-%     |globaltextext|	& \emph{boolean} & \cs{mplibglobaltextext}\\
-%     |legacyverbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior}\\
-%     |noneedtoreplace|	& \emph{table} & \cs{mplibmakenocache}\\
-%     |numbersystem|	& \emph{string} & \cs{mplibnumbersystem}\\
-%     |setformat|	& \emph{function} (\meta{string}) & \cs{mplibsetformat}\\
-%     |showlog|	& \emph{boolean} & \cs{mplibshowlog}\\
-%     |textextlabel| & \emph{boolean} & \cs{mplibtextextlabel}\\
-%     |verbatiminput| & \emph{boolean} & \cs{mplibverbatim}\\\hline
+%   \begin{tabular}{llll}\hline
+%     Key & Type & Related \TeX\ macro & Cf. \\\hline
+%     |codeinherit|	& \emph{boolean} & \cs{mplibcodeinherit} & \secref{mplibcodeinherit}\\
+%     |everyendmplib|	& \emph{table} & \cs{everyendmplib} & \secref{everymplib}\\
+%     |everymplib| & \emph{table} & \cs{everymplib} & \secref{everymplib}\\
+%     |getcachedir|	& \emph{function} \parg{string} & \cs{mplibcachedir} & \secref{mplibcachedir}\\
+%     |globaltextext|	& \emph{boolean} & \cs{mplibglobaltextext} & \secref{mplibglobaltextext}\\
+%     |legacyverbatimtex| & \emph{boolean} & \cs{mpliblegacybehavior} & \secref{mpliblegacybehavior}\\
+%     |noneedtoreplace|	& \emph{table} & \cs{mplibmakenocache} & \secref{mplibcachedir}\\
+%     |numbersystem|	& \emph{string} & \cs{mplibnumbersystem} & \secref{mplibnumbersystem}\\
+%     |setformat|	& \emph{function} \parg{string} & \cs{mplibsetformat} & \secref{mplibsetformat}\\
+%     |showlog|	& \emph{boolean} & \cs{mplibshowlog} & \secref{mplibshowlog}\\
+%     |textextlabel| & \emph{boolean} & \cs{mplibtextextlabel} & \secref{mplibtextextlabel}\\
+%     |verbatiminput| & \emph{boolean} & \cs{mplibverbatim} & \secref{mplibverbatim}\\\hline
 %   \end{tabular}
 %   \end{table}
 %
-% \subsubsection[\texttt{luamplib.registerpattern}]{Lua function \texttt{luamplib.registerpattern}}
+% \subsubsection[\ttfamily luamplib.registerpattern]{Lua function \ttfamily luamplib.registerpattern}
 %   This is the Lua interface for \cs{mppattern} |...| \cs{endmppattern}
 %   described above at \secref{mppattern}.
 %\begin{verbatim}
@@ -1470,7 +1482,7 @@ See source file '\inFileName' for licencing and contact information.
 %   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
 %
-% \subsubsection[\texttt{luamplib.registergroup}]{Lua function \texttt{luamplib.registergroup}}
+% \subsubsection[\ttfamily luamplib.registergroup]{Lua function \ttfamily luamplib.registergroup}
 %   This is the Lua interface for \cs{mplibgroup} |...| \cs{endmplibgroup}
 %   described above at \secref{mplibgroupendmplibgroup}.
 %\begin{verbatim}
