@@ -1,7 +1,11 @@
                        History of the luamplib package
 
-   * add subsections on registerpattern() and registergroup() to the doc
-   * generalize the code for the example macro \mpnumeric in the doc
+   Run file changes:
+   * new optional macro for shading: withshadingstroke
+
+   Documentation changes:
+   * add subsections on registerpattern() and registergroup()
+   * generalize the code for the example macro \mpnumeric
 
 2026/01/14 2.38.2
    Documentation changes only:
