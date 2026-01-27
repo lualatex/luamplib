@@ -1,11 +1,14 @@
                        History of the luamplib package
 
+2026/01/27 2.38.3
    Run file changes:
    * new optional macro for shading: withshadingstroke
+   * avoid error upon shading a picture composed of multiple paths
 
    Documentation changes:
-   * add subsections on registerpattern() and registergroup()
+   * be more precise about the term 'textual picture'
    * generalize the code for the example macro \mpnumeric
+   * add subsections on registerpattern() and registergroup()
 
 2026/01/14 2.38.2
    Documentation changes only:

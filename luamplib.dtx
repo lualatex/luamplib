@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/01/14 v2.38.2 Interface for using the mplib library]%
+  [2026/01/27 v2.38.3 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -168,7 +168,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/01/14 v2.38.2}
+% \date{2026/01/27 v2.38.3}
 %
 % \maketitle
 %
@@ -1528,8 +1528,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.38.2",
-  date          = "2026/01/14",
+  version       = "2.38.3",
+  date          = "2026/01/27",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3412,6 +3412,7 @@ primarydef p withshadingmethod m =
       mplib_with_shade_method (boundingbox p, m)
     else:
       withprescript "sh_transform=yes"
+      withprescript "sh_length_p=" & decimal length pathpart p
       mplib_with_shade_method (pathpart p, m)
     fi
   else :
@@ -4001,7 +4002,7 @@ do
       cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
     end
   end
-  function do_preobj_SH(object,prescript)
+  function do_preobj_SH(object, prescript, savedpath)
     local shade_no
     local sh_type = prescript and prescript.sh_type
     if not sh_type then
@@ -4019,6 +4020,15 @@ do
         local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
         if x ~= 0 and y ~= 0 then
           local path = object.path
+          -- avoid error upon pictures composed of multiple paths
+          if savedpath and savedpath[1] and prescript.sh_length_p then
+            local length_p = tonumber(prescript.sh_length_p)
+            if length_p ~= #path then
+              for _,v in ipairs(savedpath) do
+                if length_p == #v then path = v; break end
+              end
+            end
+          end
           local path1x = path[1].x_coord
           local path1y = path[1].y_coord
           local path2x = path[x].x_coord
@@ -4156,9 +4166,9 @@ function luamplib.dolatelua (on, os)
     end
   end
 end
-local function do_preobj_shading (object, prescript)
+local function do_preobj_shading (object, prescript, savedpath)
   if not prescript or not prescript.sh_operand_type then return end
-  local on = do_preobj_SH(object, prescript)
+  local on = do_preobj_SH(object, prescript, savedpath)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
   on = update_pdfobjs()
   if pdfmode then
@@ -4793,7 +4803,7 @@ do
                 local fading_ = do_preobj_FADE(object,prescript) -- fading
                 local trgroup = do_preobj_GRP(object,prescript) -- transparency group
                 local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
-                local shading_ = do_preobj_shading(object,prescript) -- shading pattern
+                local shading_ = do_preobj_shading(object,prescript,savedpath) -- shading pattern
                 if prescript and prescript.mplibtexboxid then
                   put_tex_boxes(object,prescript)
                 elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -5056,7 +5066,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/01/14 v2.38.2 mplib package for LuaTeX]
+    [2026/01/27 v2.38.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
