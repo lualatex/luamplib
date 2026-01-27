@@ -200,23 +200,25 @@ See source file '\inFileName' for licencing and contact information.
 % The most notable changes are:
 %
 % \begin{itemize}
-% \item possibility to use |btex| |...| |etex| to typeset \TeX\ code.
+% \item Possibility to use |btex| |...| |etex| to typeset \TeX\ code.
 %   |textext|\,\meta{string} is a more versatile macro equivalent to |TEX|\,\meta{string} from \pkg{TEX.mp}.
 %   |TEX| is also allowed and is a synonym of |textext|.
 %   The argument of
 %   \mplib's primitive |maketext| will also be processed by the same routine.
 %
-% \item possibility to use |verbatimtex| |...| |etex|, though its behavior cannot
-%   be the same as the stand-alone \pkg{mpost}.
-%   Of course you cannot include \cs{documentclass}, \cs{usepackage} etc.
+% \item Possibility to use |verbatimtex| |...| |etex| to run a \TeX\ code.
+%   |VerbatimTeX| \meta{string} is a more versatile macro corresponding to |verbatimtex| command.
+%   Of course the behavior cannot be the same as the stand-alone \pkg{mpost}, so that
+%   you cannot include \cs{documentclass}, \cs{usepackage} etc.
 %   When these \TeX\ commands are found in |verbatimtex| |...| |etex|, the entire code will be
 %   ignored.
+%
 %   The treatment of |verbatimtex| command has changed a lot since v2.20:
 %   see below \secref{mpliblegacybehavior}.
 %
-% \item in the past,
+% \item In the past,
 %   the package required PDF mode in order to have some output.
-%   Starting with version 2.7 it works in DVI mode as well, though
+%   Starting with v2.7 it works in DVI mode as well, though
 %   DVIPDFMx is the only DVI tool currently supported.
 % \end{itemize}
 %
@@ -230,7 +232,7 @@ See source file '\inFileName' for licencing and contact information.
 %   typeset in horizontal mode; so \cs{centering}, \cs{raggedleft} etc.\
 %   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
 %   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
-%     can redefine this command with anything suitable before a box.
+%     can redefine this macro with anything suitable before a box.
 %     But see \secref{taggedPDF} on Tagged PDF. }
 %
 % \subsubsection[\cs{everymplib}, \cs{everyendmplib}]{\cs{everymplib\{...\}}, \cs{everyendmplib\{...\}}}
@@ -273,7 +275,7 @@ See source file '\inFileName' for licencing and contact information.
 %   just by appending |withprescript| |"tr_transparency=|\allowbreak\meta{numeric}|"| to the sentence.
 %   ($0 \le \meta{numeric} \le 1$)
 %
-%   From v2.36, |withtransparency| is available with \emph{plain} as well.
+%   From v2.36, |withtransparency| is available with \emph{plain} format as well.
 %   See below \secref{luamplibtransparency}.
 %
 % \item[shading]
@@ -299,7 +301,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Beware that currently many of the PDF rendering applications, except Adobe Acrobat,
 %   cannot properly render the isolated or knockout effect.
 %
-%   Transparency group is available with \emph{plain} format as well, with extended functionality.
+%   Transparency group is available with \emph{plain} format as well with extended functionality.
 %   See below \secref{transparencygroup}.
 % \end{description}
 %
@@ -315,12 +317,13 @@ See source file '\inFileName' for licencing and contact information.
 %   Default: |disable|.
 %   When \cs{mplibshowlog\{enable\}}\footnote{As for user's setting,
 %   |enable|, |true| and |yes| are identical;
-%   |disable|, |false| and |no| are identical.} is declared, log messages returned by
+%   all others are identical to |disable|.} is declared, log messages returned by
 %   the \metapost process will be printed to the |.log| file.
 %   This is the \TeX{} side interface for |luamplib.showlog|.
 %
 % \subsubsection[\cs{mpliblegacybehavior}]{\cs{mpliblegacybehavior\{enable\textbar disable\}}}
 %   \label{sec:mpliblegacybehavior}
+%   \paragraph{Legacy behavior}
 %   By default, \cs{mpliblegacybehavior\{enable\}}
 %   is already declared for backward compatibility,
 %   in which case \TeX\ code in
@@ -346,9 +349,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   On the other hand, \TeX\ code in |verbatimtex| |...| |etex|
 %   between |beginfig()| and |endfig| will be inserted
-%   after flushing out the \metapost figure.
-%   As shown in the example below, |VerbatimTeX| \meta{string} is a synonym of
-%   |verbatimtex| |...| |etex|.\footnote{But the recommended way to access \metapost variables
+%   after flushing out the \metapost figure. An example:\footnote{\relax
+%     But the recommended way to access \metapost variables
 %     from \TeX\ (or Lua) side is to use Lua code via |luamplib.instances|.
 %     For details see below \secref{luamplibinstances}.}
 %\startmpfig
@@ -366,12 +368,13 @@ See source file '\inFileName' for licencing and contact information.
 %    diameter: \Dia bp.
 %\end{verbatim}
 %
+%   \paragraph{New and recommended way}
 %   By contrast,
 %   when \cs{mpliblegacybehavior\{disable\}} is declared, any
-%   |verbatimtex| |...| |etex| will be executed, along with |btex| |...| |etex|,
+%   |verbatimtex| |...| |etex|, along with |btex| |...| |etex|, will be run
 %   sequentially one by one.
-%   So, some \TeX\ code in |verbatimtex| |...| |etex| will have effects on
-%   following |btex| |...| |etex| codes.
+%   So, some \TeX\ code in |verbatimtex| |...| |etex| will have effect on
+%   |btex| |...| |etex| codes thereafter.
 %\startmpfig
 %\mpfig draw btex ABC etex; verbatimtex \bfseries etex; draw btex DEF etex shifted (1cm,0); draw btex GHI etex shifted (2cm,0); \endmpfig
 %\stopmpfig{4}
@@ -806,13 +809,14 @@ See source file '\inFileName' for licencing and contact information.
 %   the equivalent provided by \pkg{luamplib}, |withshadingmethod|, works with \emph{plain} as well.
 %   Other differences to the \emph{metafun}'s and some cautions are:
 %   \begin{itemize}
-%   \item \emph{textual pictures} as well as paths can have shading effect.
+%   \item \emph{Textual pictures} as well as paths can have shading effect.
 %     The term \emph{textual picture} means
 %     a picture generated by |btex| |...| |etex|, |textext|, |TEX|, |maketext|,
-%     |mplibgraphictext| (see below \secref{mplibgraphictext}),
-%     |usemplibgroup| (when the object has no color; see below \secref{transparencygroup}),
-%     or |infont| operator,
+%     |mplibgraphictext| (see below \secref{mplibgraphictext}), or |infont| operator,
 %     though technically only the last one is a true textual picture.
+%     Note that the transparency group in which path or text objects are filled without color
+%     (see below \secref{transparencygroup} and \secref{mplibgroupendmplibgroup})
+%     can also be regarded as a textual picture.
 %\startmpfig
 %\mpfig draw btex \bfseries\TeX etex rotated 20 scaled 6 withshadingmethod "linear" withshadingvector (0,3) withshadingstep ( withshadingfraction 1/2 withshadingcolors (red,green)) withshadingstep ( withshadingfraction 1 withshadingcolors (green,blue)); \endmpfig
 %\stopmpfig{6}
@@ -1507,7 +1511,7 @@ See source file '\inFileName' for licencing and contact information.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
 %
 %   Reusing an mplibgroup, \cs{usemplibgroup}\marg{name}, is basically the same as
-%   executing the \TeX\ macro `|luamplib.group.|\meta{name}'.
+%   running the \TeX\ macro `|luamplib.group.|\meta{name}'.
 %   If you need the boxresource index,
 %   inspect this macro using |token.get_macro| function.
 %
