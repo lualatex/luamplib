@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2026/01/29 2.38.4
+   * fix "avoid error upon shading a picture composed of multiple paths"
+
 2026/01/27 2.38.3
    Run file changes:
    * new optional macro for shading: withshadingstroke
