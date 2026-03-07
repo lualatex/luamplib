@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/02/09 v2.39.0 Interface for using the mplib library]%
+  [2026/03/07 v2.40.0 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -168,7 +168,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/02/09 v2.39.0}
+% \date{2026/03/07 v2.40.0}
 %
 % \maketitle
 %
@@ -261,7 +261,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{mplibsetformat}\marg{format name}.
 %
 %   \notabene As \emph{metafun} is such a complicated format,
-%   we cannot support all the functionalities producing special effects provided by \emph{metafun}.
+%   we cannot support all the special effects provided by \emph{metafun}.
 %   At least, however, transparency (actually opacity), shading (gradient colors) and transparency group
 %   are fully supported,
 %   and outlinetext is supported by our own alternative |mpliboutlinetext|
@@ -785,7 +785,7 @@ See source file '\inFileName' for licencing and contact information.
 %   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
 %   The second argument accepts a numeric expression denoting opacity.
 %\startmpfig
-%\mpfig fill unitsquare scaled 40 withcolor 1/3[blue,white] withtransparency(1,0.5); fill fullcircle scaled 40 withcolor red withtransparency (1,0.5); \endmpfig
+%\mpfig fill unitsquare scaled 40 withcolor 1/3[blue,white] withtransparency(1,0.5); fill fullcircle scaled 40 withcolor 1/3[red,white] withtransparency (1,0.5); \endmpfig
 %\stopmpfig{6}
 %\begin{verbatim}
 %    \mpfig
@@ -794,10 +794,38 @@ See source file '\inFileName' for licencing and contact information.
 %        withtransparency (1, 0.5)           % or ("normal", 0.5)
 %        ;
 %      fill fullcircle scaled 40
-%        withcolor red
+%        withcolor 1/3[red,white]
 %        withtransparency (1, 0.5)
 %        ;
+%    \endmpfig
+%\end{verbatim}
+%
+% \subsubsection[\ttfamily withmplibopacities]{\ttfamily withmplibopacities (..., ..., ...)}
+%   \label{sec:withmplibopacities}
+% By analogy with the macro |withmplibcolors| (see above \secref{withmplibcolors}),
+% the macro |withmplibopacities| is also provided.
+% The syntax is |withmplibopacities|
+% |(|\meta{number}\,\textbar\,\meta{string}|,| \meta{numeric}, \meta{numeric}|)|.
+% The first argument is the same as that of |withtransparency| command
+% described above at \secref{luamplibtransparency};
+% the latter two arguments are numeric expressions denoting
+% \emph{fill opacity} and \emph{stroke opacity} respectively.
+% It is more efficient than issueing two sentences with different opacities.
+%\startmpfig
+%\mpfig pickup pencircle scaled 2; filldraw unitsquare scaled 40 withcolor 1/3[blue,white] withmplibopacities (1, 1/2, 1); filldraw fullcircle scaled 40 withcolor 1/3[red,white] withmplibopacities (1, 1/2, 1); \endmpfig
+%\stopmpfig{6}
+%\begin{verbatim}
 %    \mpfig
+%      pickup pencircle scaled 2;
+%      filldraw unitsquare scaled 40
+%        withcolor 1/3[blue,white]
+%        withmplibopacities (1, 1/2, 1)      % or ("normal", 1/2, 1)
+%        ;
+%      filldraw fullcircle scaled 40
+%        withcolor 1/3[red,white]
+%        withmplibopacities (1, 1/2, 1)
+%        ;
+%    \endmpfig
 %\end{verbatim}
 %
 % \subsubsection[\ttfamily withshadingmethod]{\ttfamily ... withshadingmethod ...}
@@ -815,7 +843,7 @@ See source file '\inFileName' for licencing and contact information.
 %     |mplibgraphictext| (see below \secref{mplibgraphictext}), or |infont| operator,
 %     though technically only the last one is a true textual picture.
 %     Note that the picture, including transparency group,
-%     in which all the objects are filled \emph{without} color
+%     in which the objects are filled \emph{without} color
 %     (e.g., see below \secref{mplibdrawglyph};
 %     see also \secref{transparencygroup} and \secref{mplibgroupendmplibgroup})
 %     can also be regarded as a textual picture.
@@ -872,7 +900,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item[|withshadingdomain| \meta{pair}]
 %     Limiting values of parametric variable
 %     that varies on the axis of color gradient.
-%     Default value: |(0,1)|
+%     Default value is |(0,1)|. Of course the values can be negative or greater than $1$.
 %   \item[|withshadingstep (...)|]
 %     for combined shading of more than two colors.
 %   \item[|withshadingfraction| \meta{numeric}]
@@ -886,7 +914,7 @@ See source file '\inFileName' for licencing and contact information.
 %     where \meta{string} shall be |"yes"| or |"no"|.
 %     Only meaningful when the shading object is a \meta{path};
 %     if |"yes"|, we get the path stroked and \emph{then} shaded.
-%     More efficient than issueing two sentences.
+%     It is more efficient than issueing two sentences.
 % \end{description}
 %
 % \subsubsection[\ttfamily withfademethod]{\ttfamily ... withfademethod ...}
@@ -924,7 +952,7 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mpfig picture mill; mill = btex \includegraphics[width=100bp]{mill} etex; draw mill withfademethod  "circular" withfadecenter (center mill, center mill) withfaderadius (20, 50) withfadeopacity (1, 0); \endmpfig
-%\stopmpfig{5}
+%\stopmpfig{6}
 %\begin{verbatim}
 %    \mpfig
 %      picture mill;
@@ -1094,8 +1122,8 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig draw fullcircle scaled 50 withpostscript "collect"; draw fullcircle scaled 120 withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50} withpostscript "eoboth";\endmpfig
-%\stopmpfig{20}
+%\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
+%\stopmpfig{19}
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
@@ -1114,14 +1142,13 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmppattern                    % or \end{mppattern}
 %
 %    \mpfig
-%      draw fullcircle scaled 50
-%        withpostscript "collect"
-%        ;
-%      draw fullcircle scaled 120
+%      mplibdrawglyph image(
+%          draw fullcircle scaled 120;
+%          draw reverse fullcircle scaled 50;
+%        )
 %        withmppattern "mypatt"
 %        withpen pencircle scaled 1
 %        withcolor \mpcolor{red!50!blue!50}
-%        withpostscript "eoboth"
 %        ;
 %    \endmpfig
 %\end{verbatim}
@@ -1166,7 +1193,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{14}
+%\stopmpfig{13}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1263,7 +1290,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mpfig draw image(fill fullcircle scaled 50 shifted 20right withcolor blue; fill fullcircle scaled 50 withcolor red;) asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig \vskip5pt
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1,1/3); draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
-%\stopmpfig{10}
+%\stopmpfig{14}
 %\begin{verbatim}
 %    \mpfig
 %      draw image(
@@ -1300,7 +1327,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \label{sec:mplibgroupendmplibgroup}
 % These \TeX\ macros are described here in this subsection, as they are
 % deeply related to the |asgroup| operator.
-% Users can define a transparency group or a normal \emph{form XObject}
+% Users can define a transparency group or an ordinary \emph{form XObject}
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
 %
@@ -1309,7 +1336,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mplibgroup{mygrx}[asgroup="",]\mpfig pickup pencircle scaled 10; draw (left--right) scaled 20 rotated 45; draw (left--right) scaled 20 rotated -45; \endmpfig \endmplibgroup
 %\usemplibgroup{mygrx} \vskip5pt\par
 %\mpfig usemplibgroup "mygrx" scaled 1.5 withtransparency (1, 0.5); \endmpfig
-%\stopmpfig{10}
+%\stopmpfig{12}
 %\begin{verbatim}
 %    \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
 %      [                                 % options: see below
@@ -1353,7 +1380,7 @@ See source file '\inFileName' for licencing and contact information.
 % \end{table}
 %
 % When |asgroup| option, including empty string, is not given,
-% a normal form XObject will be generated rather than a transparency group.
+% an ordinary form XObject will be generated rather than a transparency group.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command.
 %
@@ -1387,7 +1414,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mplibgroup{mymask}[asgroup="masking"]
 %\mpfig fill bbox pic withcolor 1/10; label(TEX"\sffamily\bfseries\scshape\huge Meta" scaled 2, center pic) withcolor 1; \endmpfig
 %\endmplibgroup
-%\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(3/4red,3/4blue); draw pic withmaskinggroup "mymask"; \endmpfig
+%\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(4/5red,4/5blue); draw pic withmaskinggroup "mymask"; \endmpfig
 %\stopmpfig{20}
 %\begin{verbatim}
 %    \mpfig*
@@ -1410,7 +1437,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \mpfig
 %      fill bbox pic
 %        withshadingmethod "linear"
-%        withshadingcolors(3/4red, 3/4blue)
+%        withshadingcolors(4/5red, 4/5blue)
 %        ;
 %      draw pic
 %        withmaskinggroup "mymask"
@@ -1586,8 +1613,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.39.0",
-  date          = "2026/02/09",
+  version       = "2.40.0",
+  date          = "2026/03/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3271,6 +3298,10 @@ def withmplibcolors (expr f, s) =
     if not string f: colordecimals fi f & "','" &
     if not string s: colordecimals fi s & "')")
 enddef;
+def withmplibopacities (expr a, f, s) =
+  withprescript "tr_alternative=" & if numeric a: decimal fi a
+  withprescript "tr_transparency=" & decimal f & ":" & decimal s
+enddef;
 def mplib_do_outline_text_set_b (text f) (text d) text r =
   def mplib_do_outline_options_f = f enddef;
   def mplib_do_outline_options_d = d enddef;
@@ -3973,9 +4004,12 @@ do
         mode = prescript.tr_alternative
         warn("unsupported blend mode: '%s'", mode)
       end
-      opaq = format("%.3f", opaq) :gsub(decimals,rmzeros)
-      for i,v in ipairs{ {mode,opaq},{"Normal",1} } do
-        os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[2])
+      opaq = opaq:explode":"
+      for i,v in ipairs(opaq) do
+        opaq[i] = format("%.3f", v) :gsub(decimals,rmzeros)
+      end
+      for i,v in ipairs{ {mode,opaq[1],opaq[2] or opaq[1]},{"Normal",1,1} } do
+        os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[3])
         on, new = update_pdfobjs(os)
         key = add_extgs_resources(on,new)
         if i == 1 then
@@ -5158,7 +5192,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/02/09 v2.39.0 mplib package for LuaTeX]
+    [2026/03/07 v2.40.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
