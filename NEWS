@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+2026/03/07 2.40.0
+   * new metapost macro, withmplibopacities
+
 2026/02/09 2.39.0
    Run file changes:
    * new metapost macro, withmaskinggroup
