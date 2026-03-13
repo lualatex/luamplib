@@ -29,7 +29,7 @@ ZIPS      = $(CTAN_ZIP) $(TDS_ZIP)
 DOLATEX   = texfot --quiet --tee=/dev/null --ignore "hypdoc" --ignore "^Overfull" --ignore "^Underfull" lualatex -recorder $(DTX)
 
 all: $(GENERATED)
-doc: $(DOC)
+doc: all
 unpack: $(UNPACKED)
 ctan: check $(CTAN_ZIP)
 tds: $(TDS_ZIP)
