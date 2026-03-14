@@ -919,11 +919,12 @@ See source file '\inFileName' for licencing and contact information.
 % \end{description}
 %
 % \subsubsection[\ttfamily withfademethod]{\ttfamily ... withfademethod ...}
-%   This is a \metapost command which makes the color of an object gradiently transparent.
+%   This is a \metapost command which makes the color of an object gradiently transparent,
+%   a.k.a.\ \emph{fading}.
 %   The syntax is \bsx\meta{path}\,\textbar\,\meta{picture} |withfademethod| \meta{string}\esx,
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| from \emph{metafun},
-%   the differences are: (1) the operand of |withfademethod| can be a picture as well as a path;
+%   the differences are: (1) the object of fading can be a picture as well as a path;
 %   (2) you cannot make gradient colors, but can only make gradient opacity.
 %   Technically speaking, this command generates and applies a special kind of
 %   masking transparency group described below at \secref{withmaskinggroup}.
@@ -976,14 +977,14 @@ See source file '\inFileName' for licencing and contact information.
 %   (see below \secref{mpliboutlinetext}).
 %   However the syntax is somewhat different.
 %\startmpfig
-%\mpfig draw mplibgraphictext "\bfseries Funny" rotated 20 scaled 3 fakebold 2.3 fillcolor "red!50" drawcolor 2/3 blue; \endmpfig
+%\mpfig draw mplibgraphictext "$\sqrt{2+x}$" rotated 15 scaled 3 fakebold 2.5 fillcolor "red!50" drawcolor 2/3 red; \endmpfig
 %\stopmpfig{3}
 %\begin{verbatim}
-%    draw mplibgraphictext "\bfseries Funny"
-%      rotated 20 scaled 3
-%      fakebold 2.3                           % fontspec option
+%    draw mplibgraphictext "$\sqrt{2+x}$"
+%      rotated 15 scaled 3
+%      fakebold 2.5                           % fontspec option
 %      fillcolor "red!50"                     % color expression
-%      drawcolor 2/3 blue                     % or strokecolor 2/3 blue
+%      drawcolor 2/3 red                      % or strokecolor 2/3 blue
 %      ;
 %\end{verbatim}
 %   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
@@ -1080,17 +1081,17 @@ See source file '\inFileName' for licencing and contact information.
 %   As said before at \secref{mplibsetformat}, \pkg{luamplib} provides
 %   the \metapost operator \bsx|mpliboutlinetext| |(|\meta{string}|)|\esx\ which mimicks
 %   \emph{metafun}'s |outlinetext|,
-%   but with some enhancements including the support for left-to-right writing direction.
+%   but with some enhancements including the support for right-to-left writing direction.
 %   The syntax is the same as that of \emph{metafun}: see the \emph{metafun}
 %   documentation \S\,8.7 (|texdoc| |metafun|).
 %   A simple example:
 %\startmpfig
-%\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!33}) (withpen pencircle scaled .2 withcolor 2/3red) scaled 3; \endmpfig
+%\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!50}) (withpen pencircle scaled .25 withcolor 2/3red) scaled 3; \endmpfig
 %\stopmpfig{2}
 %\begin{verbatim}
 %    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
-%      (withcolor \mpcolor{red!33})
-%      (withpen pencircle scaled .2 withcolor 2/3red)
+%      (withcolor \mpcolor{red!50})
+%      (withpen pencircle scaled .25 withcolor 2/3red)
 %      scaled 3 ;
 %\end{verbatim}
 %   After the process, |mpliboutlinepic[]|
@@ -1337,7 +1338,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
 % These \TeX\ macros are described here in this subsection, as they are
-% deeply related to the |asgroup| operator.
+% deeply related to the |asgroup| operator (see above \secref{transparencygroup}).
 % Users can define a transparency group or an ordinary \emph{form XObject}
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
@@ -1430,7 +1431,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mplibgroup{mymask}[asgroup="masking"]
 %\mpfig fill bbox pic withcolor 1/10; label(TEX "\sffamily\bfseries\scshape\Huge Meta" scaled 2, center pic) withcolor 1;\endmpfig
 %\endmplibgroup
-%\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(red, blue); draw pic withmaskinggroup "mymask" withtransparency (1, 0.9);\endmpfig
+%\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(red, blue); draw pic withmaskinggroup "mymask" withtransparency (1, 0.8);\endmpfig
 %\stopmpfig{21}
 %\begin{verbatim}
 %    \mpfig*
@@ -1457,7 +1458,7 @@ See source file '\inFileName' for licencing and contact information.
 %        withshadingcolors (red, blue) ;
 %      draw pic
 %        withmaskinggroup "mymask"
-%        withtransparency (1, 0.9) ;
+%        withtransparency (1, 0.8) ;
 %    \endmpfig
 %\end{verbatim}
 %
