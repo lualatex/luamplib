@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2026/03/17 2.40.1
+   * new option for withmaskinggroup, withmaskingbgcolor <numeric>
+     which sets the background color of the masking group
+
 2026/03/07 2.40.0
    * new metapost macro, withmplibopacities
 
