@@ -439,7 +439,6 @@ mplibfillandstrokeglyph pic
 \endmpfig
 \mplibgroup{mymask}[asgroup="masking"]
   \mpfig[off]
-    fill bbox pic withcolor 0.1;
     label(btex \sffamily\bfseries\Huge Meta etex scaled 2, center pic) withcolor 1;
   \endmpfig
 \endmplibgroup
@@ -450,6 +449,7 @@ mplibfillandstrokeglyph pic
     ;
   draw pic
     withmaskinggroup "mymask"
+    withmaskingbgcolor 0.1
     ;
 \endmpfig
 \end{center}
