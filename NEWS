@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+   * new option for asgroup: asgroup <boolean>
+     When it is false, an ordinary From XObject will be generated.
+
 2026/03/17 2.40.1
    * new option for withmaskinggroup, withmaskingbgcolor <numeric>
      which sets the background color of the masking group

@@ -547,7 +547,7 @@ See source file '\inFileName' for licencing and contact information.
 %      withcolor \mpcolor{spotA}
 %      withoutcolor ;
 %\end{verbatim}
-% or
+% or preferably,
 %\begin{verbatim}
 %    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
 %      scaled 8 ;
@@ -1252,7 +1252,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\ttfamily asgroup]{\ttfamily ... asgroup ...}\label{sec:transparencygroup}
 % As said \hyperlink{metafunformat}{before} at \secref{mplibsetformat},
 % transparency group is available with \emph{plain} as well as \emph{metafun}.
-% The syntax is exactly the same as \emph{metafun}'s:
+% The syntax is basically the same as \emph{metafun}'s:
 % \bsx\meta{picture}\,\textbar\,\meta{path} |asgroup|
 % |""|\,\textbar\,|"isolated"|\,\textbar\,|"knockout"|\,\textbar\ |"isolated,knockout"|\esx,
 % which will return a \metapost picture.
@@ -1260,11 +1260,17 @@ See source file '\inFileName' for licencing and contact information.
 % to produce a single object, so that outer transparency effect, if any,
 % will be applied to the group as a whole, not to the individual objects cumulatively.
 %
-% The additional feature provided by \pkg{luamplib} is that
-% you can reuse the group as many times as you want
-% in the \TeX{} code or in other \metapost code chunks,
-% with infinitesimal increase in the size of PDF file.
-% For this functionality we provide \TeX{} and \metapost macros as follows:
+% The additional features provided by \pkg{luamplib} are:
+% \begin{itemize}
+% \item We allow \meta{boolean} as well as \meta{string}-type argument at the right side:
+%   \bsx|asgroup| |true|\esx\ is the same as |asgroup| |""|, whereas
+%   \bsx|asgroup| |false|\esx\ will produce an ordinary \emph{Form XObject}
+%   rather than a transparency group.
+% \item You can reuse the group as many times as you want
+%   in the \TeX{} code or in other \metapost code chunks,
+%   with infinitesimal increase in the size of PDF file.
+%   For this functionality we provide \TeX{} and \metapost macros as follows:
+% \end{itemize}
 % \begin{description}
 % \item[withgroupname \meta{string}] associates a transparency group with the given name.
 %   When this is not appended to the sentence with |asgroup| operator,
@@ -2568,7 +2574,11 @@ do
       local e = b == 1 and #t/2 or #t
       return tableconcat(t," ", b, e)
     end
-    return format("[%s]", tableconcat(colorsplit(col)," "))
+    if col:find"@pdf.obj" then
+      return col:gsub("pdf:bc%s*","",1)
+    else
+      return format("[%s]", tableconcat(colorsplit(col)," "))
+    end
   end
   function luamplib.fillandstrokecolor (fill, stroke)
     fill   = graphictextcolor(fill, "fill")
@@ -3510,7 +3520,11 @@ primarydef p asgroup s =
         decimal (xpart urcorner p +1/4) & ":" &
         decimal (ypart urcorner p +1/4)
       withprescript "gr_state=start"
-      withprescript "gr_type=" & s;
+      withprescript "gr_type=" &
+        if string s: s
+        elseif s: "true"
+        else: "false"
+        fi ;
     draw p;
     draw center p withprescript "gr_state=stop";
   )
@@ -4660,8 +4674,14 @@ local function do_preobj_GRP (object, prescript)
       format("\\ht\\mplibscratchbox %fbp", ury-lly),
       "\\dp\\mplibscratchbox 0pt",
     })
-    local on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout))
-    local grattr = format("/Group %s", pdfetcs.resfmt:format(on))
+    local grattr
+    if trgroup["false"] then
+      grattr = ""
+    else
+      local on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>",
+                                       trgroup.isolated, trgroup.knockout))
+      grattr = format("/Group %s", pdfetcs.resfmt:format(on))
+    end
     local res = gather_resources()
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
@@ -4705,7 +4725,7 @@ end
 function luamplib.registergroup (boxid, name, opts)
   local box = texgetbox(boxid)
   local wd, ht, dp = node.getwhd(box)
-  local is_mask = opts.asgroup and opts.asgroup:find"masking"
+  local is_mask = opts.asgroup and tostring(opts.asgroup):find"masking"
   local res = opts.resources or ""
   res = res .. gather_resources(res, is_mask) -- glitch on masking with acrobat
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
@@ -4734,7 +4754,7 @@ function luamplib.registergroup (boxid, name, opts)
   end
   if opts.asgroup then
     local t = { isolated = false, knockout = false, masking = false }
-    for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
+    for _,v in ipairs(tostring(opts.asgroup):explode",+") do t[v] = true end
     local on
     if t.masking then
       on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
