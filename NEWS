@@ -1,8 +1,5 @@
                        History of the luamplib package
 
-   * prepend 'withoutcolor' to the macro 'withmplibcolors'
-     so that all the components in an image are affected
-
 2026/03/17 2.40.1
    * new option for withmaskinggroup, withmaskingbgcolor <numeric>
      which sets the background color of the masking group

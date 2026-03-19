@@ -536,11 +536,11 @@ See source file '\inFileName' for licencing and contact information.
 %      scaled 8
 %      withcolor \mpcolor{red!50} ;
 %\end{verbatim}
-%   \notabene Be aware, however, that even after v2.38.1 \cs{mpcolor} will still insert
-%   the |withprescript| command when the color specified is a spot color
+%   \notabene Be aware, however, that even after v2.38.1 \cs{mpcolor} still inserts
+%   |withprescript| command when the color specified is a spot color
 %   (or named color in DVI mode).
 %   Users therefore have to revise the code so that the color can have effect inside the image.
-%   For instance: ^^X(or you can append |withoutcolor| to the end of sentence)
+%   For instance:
 %\begin{verbatim}
 %    draw image (drawarrow (left--right) scaled 5)
 %      scaled 8
@@ -552,6 +552,7 @@ See source file '\inFileName' for licencing and contact information.
 %    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
 %      scaled 8 ;
 %\end{verbatim}
+%
 %
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
@@ -1089,10 +1090,11 @@ See source file '\inFileName' for licencing and contact information.
 %   but with some enhancements including the support for right-to-left writing direction.
 %   The syntax is the same as that of \emph{metafun}: see the \emph{metafun}
 %   documentation \S\,8.7 (|texdoc| |metafun|).
+%
 %   A simple example:
 %\startmpfig
 %\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!50}) (withpen pencircle scaled .25 withcolor 2/3red) scaled 3; \endmpfig
-%\stopmpfig{3}
+%\stopmpfig{2}
 %\begin{verbatim}
 %    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
 %      (withcolor \mpcolor{red!50})
@@ -1133,7 +1135,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{16}
+%\stopmpfig{15}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -1201,7 +1203,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{15}
+%\stopmpfig{12}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -3321,7 +3323,6 @@ def mplibfillandstrokeglyph expr g =
   endfor
 enddef;
 def withmplibcolors (expr f, s) =
-  withoutcolor
   runscript("return luamplib.fillandstrokecolor('" &
     if not string f: colordecimals fi f & "','" &
     if not string s: colordecimals fi s & "')")
