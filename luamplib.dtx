@@ -1265,7 +1265,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item We allow \meta{boolean} as well as \meta{string}-type argument at the right side:
 %   \bsx|asgroup| |true|\esx\ is the same as |asgroup| |""|, whereas
 %   \bsx|asgroup| |false|\esx\ will produce an ordinary \emph{Form XObject}
-%   rather than a transparency group.
+%   rather than a transparency group XObject.
 % \item You can reuse the group as many times as you want
 %   in the \TeX{} code or in other \metapost code chunks,
 %   with infinitesimal increase in the size of PDF file.
@@ -1303,27 +1303,22 @@ See source file '\inFileName' for licencing and contact information.
 % the difference between the \TeX\ and \metapost commands:
 %\startmpfig\baselineskip=60pt
 %   \hypertarget{noasgroupexample}{}\relax
-%\mpfig draw image(drawarrow (left--right) scaled 5 withcolor red withtransparency (1,1/2);) scaled 10; \endmpfig \par
-%\mpfig draw image(drawarrow (left--right) scaled 5 withcolor red;) scaled 10 asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig \par
+%\mpfig picture pic; pic = image(drawarrow (left--right) scaled 5 withcolor red) scaled 10; draw pic asgroup false withtransparency (1, 1/2);\endmpfig\par
+%\mpfig draw pic asgroup "" withgroupname "mygroup" withtransparency (1, 1/2); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig\par
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1,2/3); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig
-%\stopmpfig{18}
+%\stopmpfig{16}
 %\begin{verbatim}
 %    \mpfig
-%      draw image(
-%          drawarrow (left--right) scaled 5
-%            withcolor red
-%            withtransparency (1, 1/2) ;
-%        )
-%        scaled 10 ;
+%      picture pic;
+%      pic = image(drawarrow (left--right) scaled 5 withcolor red) scaled 10 ;
+%      draw pic
+%        asgroup false
+%        withtransparency (1, 1/2) ;
 %    \endmpfig
 %
 %    \mpfig
-%      draw image(
-%          drawarrow (left--right) scaled 5
-%            withcolor red ;
-%        )
-%        scaled 10
+%      draw pic
 %        asgroup ""
 %        withgroupname "mygroup"
 %        withtransparency (1, 1/2) ;
@@ -1389,11 +1384,15 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{table}
 % \centering
 % \caption{options for \cs{mplibgroup}}\label{tab:mplibgroupoptions}
+% \def\Dcell#1#2{\vbox to 22pt{\hbox{\strut#1}\vss\hbox{\strut#2}}}
+% \def\Ccell#1{\vbox to 22pt{\vss\hbox{\strut#1}\vss}}
 % \begin{tabular}{lll}
 % \hline
 %   Key         & Value Type    & Explanation\\
 % \hline
-%   |asgroup|   &\emph{string}  & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"| or |"masking"|\\
+%   \Ccell{|asgroup|} &
+%   \Dcell{\emph{boolean} or}{\emph{string}} &
+%   \Dcell{|false| for ordinary Form XObject}{|""|, |"isolated"|, |"knockout"|, |"isolated,knockout"| or |"masking"|}\\
 %   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
 %     or MP transform code\\
@@ -1403,11 +1402,12 @@ See source file '\inFileName' for licencing and contact information.
 % \end{tabular}
 % \end{table}
 %
-% When |asgroup| option, including empty string, is not given,
+% When |asgroup| option is |false| or not given,
 % an ordinary form XObject will be generated rather than a transparency group.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command, just like the first figure
 % in the example \hyperlink{noasgroupexample}{above} at \secref{transparencygroup}.
+% On the contrary, |asgroup=true| is the same as |asgroup=""| (empty string).
 %
 % As for the option |asgroup="masking"|, see the next subsection \secref{withmaskinggroup}.
 %
@@ -4660,7 +4660,7 @@ local function do_preobj_GRP (object, prescript)
   local trgroup = pdfetcs.tr_group
   if grstate == "start" then
     trgroup.name = prescript.mplibgroupname or "lastmplibgroup"
-    trgroup.isolated, trgroup.knockout = false, false
+    trgroup.isolated, trgroup.knockout, trgroup["false"] = false, false, false
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
     end
@@ -4725,7 +4725,8 @@ end
 function luamplib.registergroup (boxid, name, opts)
   local box = texgetbox(boxid)
   local wd, ht, dp = node.getwhd(box)
-  local is_mask = opts.asgroup and tostring(opts.asgroup):find"masking"
+  local asgroup = opts.asgroup and tostring(opts.asgroup)
+  local is_mask = asgroup and asgroup:find"masking"
   local res = opts.resources or ""
   res = res .. gather_resources(res, is_mask) -- glitch on masking with acrobat
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
@@ -4752,9 +4753,9 @@ function luamplib.registergroup (boxid, name, opts)
     attr[#attr+1] = format("/Matrix[%s]", opts.matrix)
     grtype = opts.bbox and 4 or 1
   end
-  if opts.asgroup then
+  if asgroup then
     local t = { isolated = false, knockout = false, masking = false }
-    for _,v in ipairs(tostring(opts.asgroup):explode",+") do t[v] = true end
+    for _,v in ipairs(asgroup:explode",+") do t[v] = true end
     local on
     if t.masking then
       on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
