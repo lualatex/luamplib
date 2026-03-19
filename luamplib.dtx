@@ -236,8 +236,8 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection{\cs{mplibforcehmode}}\label{sec:mplibforcehmode}
 %   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so that \cs{centering}, \cs{raggedleft} etc.\
-%   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
-%   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
+%   will have effects. \cs{mplibnoforcehmode}, being default for backward compatibility,
+%   reverts this setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this macro with anything suitable before a box.
 %     But see \secref{taggedPDF} on Tagged PDF. }
 %
@@ -540,7 +540,14 @@ See source file '\inFileName' for licencing and contact information.
 %   the |withprescript| command when the color specified is a spot color
 %   (or named color in DVI mode).
 %   Users therefore have to revise the code so that the color can have effect inside the image.
-%   For instance:
+%   For instance: ^^X(or you can append |withoutcolor| to the end of sentence)
+%\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5)
+%      scaled 8
+%      withcolor \mpcolor{spotA}
+%      withoutcolor ;
+%\end{verbatim}
+% or
 %\begin{verbatim}
 %    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
 %      scaled 8 ;
@@ -1194,7 +1201,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{16}
+%\stopmpfig{15}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -3314,6 +3321,7 @@ def mplibfillandstrokeglyph expr g =
   endfor
 enddef;
 def withmplibcolors (expr f, s) =
+  withoutcolor
   runscript("return luamplib.fillandstrokecolor('" &
     if not string f: colordecimals fi f & "','" &
     if not string s: colordecimals fi s & "')")
