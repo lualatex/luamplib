@@ -1,7 +1,9 @@
                        History of the luamplib package
 
-   * new option for asgroup: asgroup <boolean>
-     When it is false, an ordinary From XObject will be generated.
+2026/03/20 2.40.2
+   * new option for asgroup: asgroup "off"
+     which will generate an ordinary From XObject rather than group XObject.
+   * \mplibmakenocache{*} will suppress making caches for *.mp files.
 
 2026/03/17 2.40.1
    * new option for withmaskinggroup, withmaskingbgcolor <numeric>
