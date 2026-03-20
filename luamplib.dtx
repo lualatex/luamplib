@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/03/17 v2.40.1 Interface for using the mplib library]%
+  [2026/03/20 v2.40.2 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/03/17 v2.40.1}
+% \date{2026/03/20 v2.40.2}
 %
 % \maketitle
 %
@@ -207,7 +207,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \begin{itemize}
 % \item Possibility to use |btex| |...| |etex| to typeset \TeX\ code.
-%   \bsx|textext|\,\meta{string}\esx\ is a more versatile macro equivalent to \bsx|TEX|\,\meta{string}\esx\ from \pkg{TEX.mp}.
+%   \bsx|textext| \meta{string}\esx\ is a more versatile macro equivalent to \bsx|TEX| \meta{string}\esx\ from \pkg{TEX.mp}.
 %   |TEX| is also allowed and is a synonym of |textext|.
 %   The argument of
 %   \mplib's primitive |maketext| will also be processed by the same routine.
@@ -236,8 +236,8 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection{\cs{mplibforcehmode}}\label{sec:mplibforcehmode}
 %   When this macro is declared, every \metapost figure box will be
 %   typeset in horizontal mode, so that \cs{centering}, \cs{raggedleft} etc.\
-%   will have effects. \cs{mplibnoforcehmode}, being default, reverts this
-%   setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
+%   will have effects. \cs{mplibnoforcehmode}, being default for backward compatibility,
+%   reverts this setting.\footnote{Actually these commands redefine \cs{prependtomplibbox}. So you
 %     can redefine this macro with anything suitable before a box.
 %     But see \secref{taggedPDF} on Tagged PDF. }
 %
@@ -516,10 +516,10 @@ See source file '\inFileName' for licencing and contact information.
 %   environment (after |withcolor| command, in principle).
 %   See the example above at \secref{mpdim}.
 %   The optional |[...]| denotes the option of \pkg{xcolor}'s \cs{color} command.
-%   For spot colors, \pkg{l3color} (in PDF/DVI mode),
-%   \pkg{colorspace}, \pkg{spotcolor}
-%   (in PDF mode) and \pkg{xespotcolor} (in DVI mode) packages are supported
-%   as well.
+%   For spot colors, \pkg{l3color} module is well supported in PDF and DVI mode.
+%   Package \pkg{colorspace} is supported as well in PDF mode,
+%   but could conflict with \pkg{luamplib}'s special features such as shading
+%   when \cs{DocumentMetadata}, ie.\ PDF management code, is not loaded.
 %
 %   \notabene Formerly,
 %   only the first object would have been colored as intended
@@ -536,15 +536,23 @@ See source file '\inFileName' for licencing and contact information.
 %      scaled 8
 %      withcolor \mpcolor{red!50} ;
 %\end{verbatim}
-%   \notabene Be aware, however, that even after v2.38.1 \cs{mpcolor} will still insert
-%   the |withprescript| command when the color specified is a spot color
+%   \notabene Be aware, however, that even after v2.38.1 \cs{mpcolor} still inserts
+%   |withprescript| command when the color specified is a spot color
 %   (or named color in DVI mode).
 %   Users therefore have to revise the code so that the color can have effect inside the image.
 %   For instance:
 %\begin{verbatim}
+%    draw image (drawarrow (left--right) scaled 5)
+%      scaled 8
+%      withcolor \mpcolor{spotA}
+%      withoutcolor ;
+%\end{verbatim}
+% or preferably,
+%\begin{verbatim}
 %    draw image (drawarrow (left--right) scaled 5 withcolor \mpcolor{spotA})
 %      scaled 8 ;
 %\end{verbatim}
+%
 %
 % \subsubsection[\cs{mpfig}, \cs{endmpfig}]{\cs{mpfig ...} \cs{endmpfig}}
 %   Besides the |mplibcode| environment (for \LaTeX) and
@@ -600,9 +608,11 @@ See source file '\inFileName' for licencing and contact information.
 %   \item \cs{mplibmakenocache}|{|\meta{filename}|[,|\meta{filename}|,...]}|
 %   \item \cs{mplibcancelnocache}|{|\meta{filename}|[,|\meta{filename}|,...]}|
 %   \end{itemize}
-%   where \meta{filename} is a filename excluding |.mp| extension.
+%   where \meta{filename} is a filename without |.mp| extension.
 %   Note that |.mp| files under |$TEXMFMAIN/|\allowbreak|metapost/|\allowbreak|base| and
 %   |$TEXMFMAIN/metapost/context/base| are already registered by default.
+%   \notabene \bsx\cs{mplibmakenocache}|{*}|\esx\ will suppress making cache files.
+%   Use it at your own risk.
 %
 %   By default, cache files will be stored in |$TEXMFVAR/luamplib_cache| or,
 %   if it's not available (mostly not writable),
@@ -733,7 +743,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsection{\textsc{MetaPost}}
 %
 % \subsubsection[\ttfamily mplibdimen, mplibcolor]{\ttfamily mplibdimen ..., mplibcolor ...}
-%   \bsx|mplibdimen|\,\meta{string}\esx\ and \bsx|mplibcolor|\,\meta{string}\esx\
+%   \bsx|mplibdimen| \meta{string}\esx\ and \bsx|mplibcolor| \meta{string}\esx\
 %   are \metapost interfaces for the \TeX\ commands
 %   \cs{mpdim} and \cs{mpcolor} (see above \secref{mpdim} and \secref{mpcolor}). For example,
 %   |mplibdimen| |"\linewidth"| is basically the same as \cs{mpdim\{\cs{linewidth}\}}, and
@@ -743,7 +753,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection[\ttfamily mplibtexcolor, mplibrgbtexcolor]{\ttfamily mplibtexcolor ..., mplibrgbtexcolor ...}
 %   \label{sec:mplibtexcolor}
-%   \bsx|mplibtexcolor|\,\meta{string}\esx\ is a \metapost operator that converts a \TeX\ color expression
+%   \bsx|mplibtexcolor| \meta{string}\esx\ is a \metapost operator that converts a \TeX\ color expression
 %   to a \metapost color expression, that can be used anywhere color expression is expected
 %   as well as after the |withcolor| command.\footnote{\relax
 %     Since v2.38.1, the operation of |mplibtexcolor| is the same as that of |mplibcolor|
@@ -783,7 +793,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \subsubsection[\ttfamily withtransparency]{\ttfamily withtransparency (..., ...)}
 %   \label{sec:luamplibtransparency}
-%   \bsx|withtransparency(|\meta{number}\,\textbar\,\meta{string}|,| \meta{numeric}|)|\esx\
+%   \bsx|withtransparency(|\meta{number} \textbar\ \meta{string}|,| \meta{numeric}|)|\esx\
 %   is provided for \emph{plain} format as well as \emph{metafun}.
 %   The first argument accepts a number or a name of
 %   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
@@ -809,7 +819,7 @@ See source file '\inFileName' for licencing and contact information.
 % By analogy with the macro |withmplibcolors| (see above \secref{withmplibcolors}),
 % the macro |withmplibopacities| is also provided.
 % The syntax is \bsx|withmplibopacities|
-% |(|\meta{number}\,\textbar\,\meta{string}|,| \meta{numeric}, \meta{numeric}|)|\esx.
+% |(|\meta{number} \textbar\ \meta{string}|,| \meta{numeric}, \meta{numeric}|)|\esx.
 % The first argument is the same as that of |withtransparency| command
 % described above at \secref{luamplibtransparency};
 % the latter two arguments are numeric expressions denoting
@@ -874,7 +884,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \item Optional macro |withshadingstroke| is available (see below).
 %   \end{itemize}
 % As shown,
-% the syntax is \bsx\meta{path}\,\textbar\,\meta{textual picture} |withshadingmethod| \meta{string}\esx,
+% the syntax is \bsx\meta{path} \textbar\ \meta{textual picture} |withshadingmethod| \meta{string}\esx,
 % where the latter shall be either |"linear"| or |"circular"|.
 % Other macros for optional values are:
 % \begin{description}
@@ -924,11 +934,11 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\ttfamily withfademethod]{\ttfamily ... withfademethod ...}
 %   This is a \metapost command which makes the color of an object gradiently transparent,
 %   a.k.a.\ \emph{fading}.
-%   The syntax is \bsx\meta{path}\,\textbar\,\meta{picture} |withfademethod| \meta{string}\esx,
+%   The syntax is \bsx\meta{path} \textbar\ \meta{picture} |withfademethod| \meta{string}\esx,
 %   the latter being either |"linear"| or |"circular"|.
 %   Though it is similar to the |withshademethod| from \emph{metafun},
-%   the differences are: (1) the object of fading can be a picture as well as a path;
-%   (2) you cannot make gradient colors, but can only make gradient opacity.
+%   the differences are: (1)~the object of fading can be a picture as well as a path;
+%   (2)~you cannot make gradient colors, but can only make gradient opacity.
 %   Technically speaking, this command generates and applies a special kind of
 %   masking transparency group described below at \secref{withmaskinggroup}.
 %
@@ -982,7 +992,7 @@ See source file '\inFileName' for licencing and contact information.
 %      rotated 15 scaled 3
 %      fakebold 2.5                           % fontspec option
 %      fillcolor "red!50"                     % color expression
-%      drawcolor 2/3 red                      % or strokecolor 2/3 blue
+%      drawcolor 2/3 red                      % or strokecolor 2/3 red
 %      ;
 %\end{verbatim}
 %   |fakebold|, |fillcolor| and |drawcolor| (or |strokecolor|) are optional;
@@ -1082,10 +1092,11 @@ See source file '\inFileName' for licencing and contact information.
 %   but with some enhancements including the support for right-to-left writing direction.
 %   The syntax is the same as that of \emph{metafun}: see the \emph{metafun}
 %   documentation \S\,8.7 (|texdoc| |metafun|).
+%
 %   A simple example:
 %\startmpfig
 %\mpfig draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$") (withcolor \mpcolor{red!50}) (withpen pencircle scaled .25 withcolor 2/3red) scaled 3; \endmpfig
-%\stopmpfig{3}
+%\stopmpfig{2}
 %\begin{verbatim}
 %    draw mpliboutlinetext.b ("$\sqrt{2+\alpha}$")
 %      (withcolor \mpcolor{red!50})
@@ -1107,7 +1118,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \bsx\cs{mppattern}\marg{name}\esx\ |...| \bsx\cs{endmppattern}\esx\ define a tiling pattern cell
 %   associated with the \meta{name}.
 %   \metapost command |withmppattern|, the syntax being
-%   \bsx\meta{cyclic path}\,\textbar\,\meta{textual picture} |withmppattern| \meta{string}\esx, will fill
+%   \bsx\meta{cyclic path} \textbar\ \meta{textual picture} |withmppattern| \meta{string}\esx, will fill
 %   the given path or text with the tiling pattern cell of the \meta{name}
 %   by replicating it horizontally and vertically.\footnote{\relax
 %     |withpattern| is an operator virtually the same as |withmppattern|,
@@ -1126,7 +1137,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{16}
+%\stopmpfig{15}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -1194,7 +1205,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{16}
+%\stopmpfig{12}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1243,19 +1254,27 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\ttfamily asgroup]{\ttfamily ... asgroup ...}\label{sec:transparencygroup}
 % As said \hyperlink{metafunformat}{before} at \secref{mplibsetformat},
 % transparency group is available with \emph{plain} as well as \emph{metafun}.
-% The syntax is exactly the same as \emph{metafun}'s:
-% \bsx\meta{picture}\,\textbar\,\meta{path} |asgroup|
-% |""|\,\textbar\,|"isolated"|\,\textbar\,|"knockout"|\,\textbar\ |"isolated,knockout"|\esx,
-% which will return a \metapost picture.
 % It is called \emph{Transparency Group} because the objects contained in the group are composited
 % to produce a single object, so that outer transparency effect, if any,
 % will be applied to the group as a whole, not to the individual objects cumulatively.
 %
-% The additional feature provided by \pkg{luamplib} is that
-% you can reuse the group as many times as you want
-% in the \TeX{} code or in other \metapost code chunks,
-% with infinitesimal increase in the size of PDF file.
-% For this functionality we provide \TeX{} and \metapost macros as follows:
+% The syntax is basically the same as \emph{metafun}'s:
+% \bsx\meta{picture} \textbar\ \meta{path} |asgroup|
+% |""| \textbar\ |"isolated"| \textbar\ |"knockout"| \textbar\ |"isolated,knockout"| \textbar\ |"off"|\esx,
+% which will return a \metapost picture.
+% The additional features provided by \pkg{luamplib} are:
+% \begin{itemize}
+% \item As shown, in addition to those arguments mimicking \emph{metafun}'s,
+%   we allow another argument at the right-hand side:
+%   |asgroup| |"off"| will produce an ordinary \emph{Form XObject}
+%   rather than a transparency group XObject.
+%   On the contrary, |asgroup| |""| (empty string) will produce a transparency group
+%   in which both of the PDF keys |/I| and |/K| are |false|.
+% \item You can reuse the group as many times as you want
+%   in the \TeX{} code or in other \metapost code chunks,
+%   with infinitesimal increase in the size of PDF file.
+%   For this functionality we provide \TeX{} and \metapost macros as follows:
+% \end{itemize}
 % \begin{description}
 % \item[withgroupname \meta{string}] associates a transparency group with the given name.
 %   When this is not appended to the sentence with |asgroup| operator,
@@ -1288,27 +1307,22 @@ See source file '\inFileName' for licencing and contact information.
 % the difference between the \TeX\ and \metapost commands:
 %\startmpfig\baselineskip=60pt
 %   \hypertarget{noasgroupexample}{}\relax
-%\mpfig draw image(drawarrow (left--right) scaled 5 withcolor red withtransparency (1,1/2);) scaled 10; \endmpfig \par
-%\mpfig draw image(drawarrow (left--right) scaled 5 withcolor red;) scaled 10 asgroup "" withgroupname "mygroup" withtransparency (1,1/2); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig \par
+%\mpfig picture pic; pic = image(drawarrow (left--right) scaled 5 withcolor red) scaled 10; draw pic asgroup "off" withtransparency (1, 1/2);\endmpfig\par
+%\mpfig draw pic asgroup "" withgroupname "mygroup" withtransparency (1, 1/2); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig\par
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1,2/3); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig
-%\stopmpfig{18}
+%\stopmpfig{16}
 %\begin{verbatim}
 %    \mpfig
-%      draw image(
-%          drawarrow (left--right) scaled 5
-%            withcolor red
-%            withtransparency (1, 1/2) ;
-%        )
-%        scaled 10 ;
+%      picture pic;
+%      pic = image(drawarrow (left--right) scaled 5 withcolor red) scaled 10 ;
+%      draw pic
+%        asgroup "off"
+%        withtransparency (1, 1/2) ;
 %    \endmpfig
 %
 %    \mpfig
-%      draw image(
-%          drawarrow (left--right) scaled 5
-%            withcolor red ;
-%        )
-%        scaled 10
+%      draw pic
 %        asgroup ""
 %        withgroupname "mygroup"
 %        withtransparency (1, 1/2) ;
@@ -1336,7 +1350,7 @@ See source file '\inFileName' for licencing and contact information.
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
 % These \TeX\ macros are described here in this subsection, as they are
-% deeply related to the |asgroup| operator (see above \secref{transparencygroup}).
+% deeply related to the |asgroup| operator described just above at \secref{transparencygroup}.
 % Users can define a transparency group or an ordinary \emph{form XObject}
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
@@ -1378,7 +1392,7 @@ See source file '\inFileName' for licencing and contact information.
 % \hline
 %   Key         & Value Type    & Explanation\\
 % \hline
-%   |asgroup|   &\emph{string}  & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"| or |"masking"|\\
+%   |asgroup|   &\emph{string} & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"|, |"masking"| or |"off"|\\
 %   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
 %     or MP transform code\\
@@ -1388,7 +1402,7 @@ See source file '\inFileName' for licencing and contact information.
 % \end{tabular}
 % \end{table}
 %
-% When |asgroup| option, including empty string, is not given,
+% When |asgroup| option is not given or is given as |"off"|,
 % an ordinary form XObject will be generated rather than a transparency group.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command, just like the first figure
@@ -1409,7 +1423,7 @@ See source file '\inFileName' for licencing and contact information.
 % the mplibgroup (see above \secref{mplibgroupendmplibgroup})
 % generated by the option \bsx|asgroup=|\allowbreak|"masking"|\esx\ (see Table~\ref{tab:mplibgroupoptions})
 % can be utilized as a masking transparency group upon a picture or a path object.
-% The syntax is \bsx\meta{picture}\,\textbar\,\meta{path} |withmaskinggroup| \meta{string}\esx,
+% The syntax is \bsx\meta{picture} \textbar\ \meta{path} |withmaskinggroup| \meta{string}\esx,
 % the latter being the name of a pre-defined masking group.
 %
 % The masking group should be prepared in \emph{grayscale} color model:
@@ -1423,11 +1437,11 @@ See source file '\inFileName' for licencing and contact information.
 % which you can change by this macro:
 % \begin{description}
 % \item[withmaskingbgcolor \meta{numeric}] sets the background color of the masking group.
-%   |0| denotes full transparency (invisibility); |1|, full opacity.
+%   |0| denotes full transparency (invisibility); |1|, full color.
 % \end{description}
 %
 % \notabene Tiling pattern (see above \secref{mppattern}) is not allowed in the masking group,
-% though the tiling pattern in the picture or path object is no problem.
+% whereas the tiling pattern in the object of |withmaskinggroup| is no problem.
 %
 % An example:
 %\startmpfig
@@ -1509,7 +1523,7 @@ See source file '\inFileName' for licencing and contact information.
 %   it is automatically converted to a relevant \metapost data type
 %   such as pair, color, cmykcolor or transform.
 %   So users can save some extra toil of converting a table to a string, though it's not a big deal.
-%   For instance, |runscript|\,|"return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
+%   For instance, |runscript| |"return {1,0,0}"| will give you the \metapost color expression |(1,0,0)|
 %   automatically.
 %
 % \subsubsection[\ttfamily luamplib.instances]{Lua table \ttfamily luamplib.instances}
@@ -1633,8 +1647,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.1",
-  date          = "2026/03/17",
+  version       = "2.40.2",
+  date          = "2026/03/20",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1908,7 +1922,7 @@ do
       ftype = special_ftype[ftype] or ftype
       local file = mpkpse:find_file(name,ftype)
       if file then
-        if lfstouch and ftype == "mp" and not noneedtoreplace[name] then
+        if lfstouch and ftype == "mp" and not noneedtoreplace[name] and not noneedtoreplace["*.mp"] then
           file = replaceinputmpfile(name,file)
         end
       else
@@ -2559,7 +2573,11 @@ do
       local e = b == 1 and #t/2 or #t
       return tableconcat(t," ", b, e)
     end
-    return format("[%s]", tableconcat(colorsplit(col)," "))
+    if col:find"@pdf.obj" then
+      return col:gsub("pdf:bc%s*","",1)
+    else
+      return format("[%s]", tableconcat(colorsplit(col)," "))
+    end
   end
   function luamplib.fillandstrokecolor (fill, stroke)
     fill   = graphictextcolor(fill, "fill")
@@ -4637,7 +4655,7 @@ local function do_preobj_GRP (object, prescript)
   local trgroup = pdfetcs.tr_group
   if grstate == "start" then
     trgroup.name = prescript.mplibgroupname or "lastmplibgroup"
-    trgroup.isolated, trgroup.knockout = false, false
+    trgroup.isolated, trgroup.knockout, trgroup.off = false, false, false
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
     end
@@ -4651,8 +4669,14 @@ local function do_preobj_GRP (object, prescript)
       format("\\ht\\mplibscratchbox %fbp", ury-lly),
       "\\dp\\mplibscratchbox 0pt",
     })
-    local on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>",trgroup.isolated,trgroup.knockout))
-    local grattr = format("/Group %s", pdfetcs.resfmt:format(on))
+    local grattr
+    if trgroup.off then
+      grattr = ""
+    else
+      local on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>",
+                                       trgroup.isolated, trgroup.knockout))
+      grattr = format("/Group %s", pdfetcs.resfmt:format(on))
+    end
     local res = gather_resources()
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
@@ -4723,7 +4747,7 @@ function luamplib.registergroup (boxid, name, opts)
     attr[#attr+1] = format("/Matrix[%s]", opts.matrix)
     grtype = opts.bbox and 4 or 1
   end
-  if opts.asgroup then
+  if opts.asgroup and not opts.asgroup:find"off" then
     local t = { isolated = false, knockout = false, masking = false }
     for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
     local on
@@ -5218,7 +5242,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/03/17 v2.40.1 mplib package for LuaTeX]
+    [2026/03/20 v2.40.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5603,23 +5627,23 @@ end
 %
 %    Settings for |.mp| cache files.
 %    \begin{macrocode}
-\def\mplibmakenocache#1{\mplibdomakenocache #1,*,}
+\def\mplibmakenocache#1{\mplibdomakenocache #1,\stop,}
 \def\mplibdomakenocache#1,{%
   \ifx\empty#1\empty
     \expandafter\mplibdomakenocache
   \else
-    \ifx*#1\else
+    \ifx\stop#1\else
       \directlua{luamplib.noneedtoreplace["#1.mp"]=true}%
       \expandafter\expandafter\expandafter\mplibdomakenocache
     \fi
   \fi
 }
-\def\mplibcancelnocache#1{\mplibdocancelnocache #1,*,}
+\def\mplibcancelnocache#1{\mplibdocancelnocache #1,\stop,}
 \def\mplibdocancelnocache#1,{%
   \ifx\empty#1\empty
     \expandafter\mplibdocancelnocache
   \else
-    \ifx*#1\else
+    \ifx\stop#1\else
       \directlua{luamplib.noneedtoreplace["#1.mp"]=false}%
       \expandafter\expandafter\expandafter\mplibdocancelnocache
     \fi
