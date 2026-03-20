@@ -1762,26 +1762,26 @@ end
 %
 %     First of all, determine the directory to store cache files.
 %    \begin{macrocode}
-local outputdir, cachedir
-if lfstouch then
-  for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
-    local var = i == 3 and v or kpse.var_value(v)
-    if var and var ~= "" then
-      for _,vv in next, var:explode(os.type == "unix" and ":" or ";") do
-        local dir = format("%s/%s",vv,"luamplib_cache")
-        if not lfsisdir(dir) then
-          mk_full_path(dir)
-        end
-        if is_writable(dir) then
-          outputdir = dir
-          break
+local cachedir
+local function outputdir ()
+  if lfstouch then
+    for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
+      local var = i == 3 and v or kpse.var_value(v)
+      if var and var ~= "" then
+        for _,vv in next, var:explode(os.type == "unix" and ":" or ";") do
+          local dir = format("%s/%s",vv,"luamplib_cache")
+          if not lfsisdir(dir) then
+            mk_full_path(dir)
+          end
+          if is_writable(dir) then
+            cachedir = dir; return cachedir
+          end
         end
       end
-      if outputdir then break end
     end
   end
+  cachedir = "."; return cachedir
 end
-outputdir = outputdir or '.'
 function luamplib.getcachedir(dir)
   dir = dir:gsub("##","#")
   dir = dir:gsub("^~",
@@ -1858,7 +1858,7 @@ do
     local ofmodify = lfsattributes(file,"modification")
     if not ofmodify then return file end
     local newfile = name:gsub("%W","_")
-    newfile = format("%s/luamplib_input_%s", cachedir or outputdir, newfile)
+    newfile = format("%s/luamplib_input_%s", cachedir or outputdir(), newfile)
     if newfile and luamplibtime then
       local nf = lfsattributes(newfile)
       if nf and nf.mode == "file" and
@@ -2876,7 +2876,7 @@ do
     local time = lfsattributes(filename,"modification")
     local k = format("shapes_%s(%s)[%s]", filename, subfont or "", instance or "")
     local h = format(string.rep('%02x', 256/8), string.byte(sha2.digest256(k), 1, -1))
-    local newname = format("%s/%s.lua", cachedir or outputdir, h)
+    local newname = format("%s/%s.lua", cachedir or outputdir(), h)
     local newtime = lfsattributes(newname,"modification") or 0
     if time == newtime then
       shapedata = require(newname)

@@ -1,5 +1,7 @@
                        History of the luamplib package
 
+   * 'outputdir' is now a lua function and called upon when needed.
+
 2026/03/20 2.40.2
    * new option for asgroup: asgroup "off"
      which will generate an ordinary From XObject rather than group XObject.
