@@ -2725,6 +2725,7 @@ do
             name = format('%s;embolden=%s;',name,fakebold)
             _, i = fonts.constructors.readanddefine(name,ft.size)
           elseif pdfmode then
+            local ft = table.copy(ft)
             ft.mode, ft.width = 2, width
             i = font.define(ft)
           else
