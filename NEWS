@@ -1,8 +1,12 @@
                        History of the luamplib package
 
+2026/03/24 2.40.3
+   * fix mplibgraphictext upon variable fonts (#178)
+   * 'outputdir' is now a lua function and called upon when needed.
+
 2026/03/20 2.40.2
    * new option for asgroup: asgroup "off"
-     which will generate an ordinary From XObject rather than group XObject.
+     which will generate an ordinary Form XObject rather than group XObject.
    * \mplibmakenocache{*} will suppress making caches for *.mp files.
 
 2026/03/17 2.40.1
