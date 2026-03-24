@@ -1,7 +1,8 @@
                        History of the luamplib package
 
 2026/03/24 2.40.3
-   * fix mplibgraphictext upon variable fonts (#178)
+   * fix mplibgraphictext for variable fonts (#178)
+   * fix mplibglyph for variable fonts with axis option
    * 'outputdir' is now a lua function and called upon when needed.
 
 2026/03/20 2.40.2

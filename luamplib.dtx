@@ -2844,6 +2844,7 @@ do
       local fontdata = font.getfont(fid) or font.getcopy(fid)
       filename, subfont, kind = fontdata.filename, fontdata.subfont, fontdata.format
       instance = fontdata.specification and fontdata.specification.instance
+        or fontdata.shared and fontdata.shared.features.axis
       filename = filename and filename:gsub("^harfloaded:","")
     else
       local name
