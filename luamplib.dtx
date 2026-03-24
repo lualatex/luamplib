@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/03/20 v2.40.2 Interface for using the mplib library]%
+  [2026/03/24 v2.40.3 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/03/20 v2.40.2}
+% \date{2026/03/24 v2.40.3}
 %
 % \maketitle
 %
@@ -1647,8 +1647,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.2",
-  date          = "2026/03/20",
+  version       = "2.40.3",
+  date          = "2026/03/24",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1768,7 +1768,7 @@ local function outputdir ()
     for i,v in ipairs{'TEXMFVAR','TEXMF_OUTPUT_DIRECTORY','.','TEXMFOUTPUT'} do
       local var = i == 3 and v or kpse.var_value(v)
       if var and var ~= "" then
-        for _,vv in next, var:explode(os.type == "unix" and ":" or ";") do
+        for _,vv in ipairs(var:explode(os.type == "unix" and ":" or ";")) do
           local dir = format("%s/%s",vv,"luamplib_cache")
           if not lfsisdir(dir) then
             mk_full_path(dir)
@@ -2718,18 +2718,17 @@ do
         local i = emboldenfonts[key]
         if not i then
           local ft = font.getfont(f) or font.getcopy(f)
-          if pdfmode then
-            width = ft.size * fakebold / factor * 10
-            emboldenfonts.width = width
-            ft.mode, ft.width = 2, width
-            i = font.define(ft)
-          else
-            if ft.format ~= "opentype" and ft.format ~= "truetype" then
-              goto skip_type1
-            end
+          local width = ft.size * fakebold / factor * 10
+          emboldenfonts.width = width
+          if ft.format == "opentype" or ft.format == "truetype" then
             local name = ft.name:gsub('"',''):gsub(';$','')
             name = format('%s;embolden=%s;',name,fakebold)
             _, i = fonts.constructors.readanddefine(name,ft.size)
+          elseif pdfmode then
+            ft.mode, ft.width = 2, width
+            i = font.define(ft)
+          else
+            goto skip_type1
           end
           emboldenfonts[key] = i
         end
@@ -5242,7 +5241,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/03/20 v2.40.2 mplib package for LuaTeX]
+    [2026/03/24 v2.40.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
