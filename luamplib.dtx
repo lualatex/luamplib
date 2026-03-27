@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/03/24 v2.40.3 Interface for using the mplib library]%
+  [2026/03/27 v2.40.4 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/03/24 v2.40.3}
+% \date{2026/03/27 v2.40.4}
 %
 % \maketitle
 %
@@ -1032,6 +1032,7 @@ See source file '\inFileName' for licencing and contact information.
 %    mplibglyph "Q" of "texgyrepagella-regular.otf"       % raw filename
 %    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
 %    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
+%    mplibglyph "R" of "SourceHanSansK-VF.otf[wght=800]"  % axis names & values
 %\end{verbatim}
 %   Both arguments before and after ``|of|'' can be either a number or a string.
 %   Number arguments are regarded as a glyph slot (GID) and a font id number, repectively.
@@ -1040,7 +1041,7 @@ See source file '\inFileName' for licencing and contact information.
 %   the raw filename of a font. When it is a font filename, a number within parentheses
 %   after the filename denotes a
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
-%   an instance name of a variable font.
+%   an instance name, or names and values for |axis| feature, of a variable font.
 %
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
 %     mplibstrokeglyph ..., mplibfillandstrokeglyph ...}
@@ -1126,8 +1127,7 @@ See source file '\inFileName' for licencing and contact information.
 %     you cannot but use |draw| command with |withpattern| operator.
 %     On the other hand,
 %     \meta{cyclic path} |withmppattern| \meta{string} works as intended
-%     only with |fill| or |filldraw| command,
-%     unless some special command is used (see the example \hyperlink{firstpatternexample}{just below}).
+%     only with |fill| or |filldraw| command.
 %   }
 %   As said before at \secref{luamplibshading},
 %   the \emph{textual picture} here means any text typeset by \TeX, mostly the result
@@ -1198,8 +1198,8 @@ See source file '\inFileName' for licencing and contact information.
 %   is not needed in most cases.
 %
 %   Option \bsx|colored=false|\esx\ (or |coloured=false|) will generate an uncolored pattern cell which
-%   shall have no color at all (i.e.\ |withoutcolor| command is needed for the cells
-%   made from \metapost code).
+%   shall have no color at all (i.e.\ |withoutcolor| command is needed for \metapost code).\relax
+%   \footnote{When using DVI mode, |-c| option might be needed to the |dvipdfmx| command.}
 %   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\startmpfig
@@ -1346,6 +1346,9 @@ See source file '\inFileName' for licencing and contact information.
 % Also note that normally the transparency groups are not affected by outer color commands.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
+% \notabene Shading effect upon a \emph{textual picture} (ie.\ non-path object)
+% inside transparency group may not produce the intended outcome.
+% Outer shading effect has no problem.
 %
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
@@ -1647,8 +1650,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.3",
-  date          = "2026/03/24",
+  version       = "2.40.4",
+  date          = "2026/03/27",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4978,9 +4981,9 @@ do
                 local cr_over = do_preobj_CR(object,prescript) -- color
                 local tr_opaq = do_preobj_TR(object,prescript) -- opacity
                 local fading_ = do_preobj_FADE(object,prescript) -- fading
-                local trgroup = do_preobj_GRP(object,prescript) -- transparency group
                 local pattern_ = do_preobj_PAT(object,prescript) -- tiling pattern
                 local shading_ = do_preobj_shading(object,prescript) -- shading pattern
+                local trgroup = do_preobj_GRP(object,prescript) -- transparency group
                 if prescript and prescript.mplibtexboxid then
                   put_tex_boxes(object,prescript)
                 elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then --skip
@@ -5243,7 +5246,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/03/24 v2.40.3 mplib package for LuaTeX]
+    [2026/03/27 v2.40.4 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
