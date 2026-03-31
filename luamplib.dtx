@@ -795,7 +795,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \label{sec:luamplibtransparency}
 %   \bsx|withtransparency(|\meta{number} \textbar\ \meta{string}|,| \meta{numeric}|)|\esx\
 %   is provided for \emph{plain} format as well as \emph{metafun}.
-%   The first argument accepts a number or a name of
+%   The first argument accepts a number or a name among
 %   alternative transparency methods (see |texdoc| |metafun| \S\,8.2 Figure~8.1).
 %   The second argument accepts a numeric expression denoting opacity.
 %\startmpfig
@@ -1024,12 +1024,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \subsubsection[\ttfamily mplibglyph]{\ttfamily mplibglyph ... of ...}
 %   From v2.30, we provide a new \metapost operator |mplibglyph|, which returns a \metapost picture
-%   containing outline paths of a glyph in opentype, truetype or type1 fonts.
-%   When a type1 font is specified, \metapost primitive |glyph| will be called.
+%   containing outline paths of a glyph in OpenType, TrueType or Type1 fonts.
+%   When a TFM font is specified, \metapost primitive |glyph| will be called.
 %\begin{verbatim}
 %    mplibglyph 50  of \fontid\font           % slot 50 of current font
 %    mplibglyph "Q" of "TU/TeXGyrePagella(0)/m/n/10"      % font csname
 %    mplibglyph "Q" of "texgyrepagella-regular.otf"       % raw filename
+%    mplibglyph "Q" of "utmr8a.pfb"                       % raw filename (type1 font)
 %    mplibglyph "Q" of "Times.ttc(2)"                     % subfont number
 %    mplibglyph "Q" of "SourceHanSansK-VF.otf[Regular]"   % instance name
 %    mplibglyph "R" of "SourceHanSansK-VF.otf[wght=800]"  % axis names & values
@@ -2862,14 +2863,14 @@ do
       name = name or f
       subfont = (subfont or 0)+1
       instance = instance and instance:lower()
-      for _,ftype in ipairs{"opentype", "truetype"} do
+      for _,ftype in ipairs{"opentype", "truetype", "type1"} do
         filename = kpse.find_file(name, ftype.." fonts")
         if filename then
           kind = ftype; break
         end
       end
     end
-    if kind ~= "opentype" and kind ~= "truetype" then
+    if kind ~= "opentype" and kind ~= "truetype" and kind ~= "type1" then
       f = fid and fid > 0 and tex.fontname(fid) or f
       if kpse.find_file(f, "tfm") then
         return format("glyph %s of %q", tonumber(c) or format("%q",c), f)
@@ -2886,7 +2887,10 @@ do
       shapedata = require(newname)
     end
     if not shapedata then
-      shapedata = fonts and fonts.handlers.otf.readers.loadshapes(filename,subfont,instance)
+      if fonts then
+        local handler = kind == "type1" and fonts.handlers.afm or fonts.handlers.otf
+        shapedata = handler.readers.loadshapes(filename,subfont,instance)
+      end
       if not shapedata then return mperr"loadshapes() failed. luaotfload not loaded?" end
       table.tofile(newname, shapedata, "return")
       lfstouch(newname, time, time)
