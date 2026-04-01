@@ -1044,6 +1044,10 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name, or names and values for |axis| feature, of a variable font.
 %
+%   \notabene Regrettably we seem have some unknown bug in processing
+%   |cmr10.pfb| and its family Type1 fonts.
+%   If that happens, consider using |glyph| insteat of |mplibglyph|.
+%
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
 %     mplibstrokeglyph ..., mplibfillandstrokeglyph ...}
 %     \label{sec:mplibdrawglyph}
@@ -1138,7 +1142,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{15}
+%\stopmpfig{14}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -1206,7 +1210,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{12}
+%\stopmpfig{10}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1454,7 +1458,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mpfig label(TEX "\sffamily\bfseries\scshape\Huge Meta" scaled 2, center pic) withcolor 1;\endmpfig
 %\endmplibgroup
 %\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(red, blue); draw pic withmaskinggroup "mymask" withmaskingbgcolor 1/10 withtransparency (1, 0.8);\endmpfig
-%\stopmpfig{20}
+%\stopmpfig{19}
 %\begin{verbatim}
 %    \mpfig*
 %      picture pic;
@@ -2863,19 +2867,24 @@ do
       name = name or f
       subfont = (subfont or 0)+1
       instance = instance and instance:lower()
-      for _,ftype in ipairs{"opentype", "truetype", "type1"} do
+      for _,ftype in ipairs{"opentype", "truetype"} do
         filename = kpse.find_file(name, ftype.." fonts")
         if filename then
           kind = ftype; break
         end
       end
     end
-    if kind ~= "opentype" and kind ~= "truetype" and kind ~= "type1" then
+    if kind ~= "opentype" and kind ~= "truetype" then
       f = fid and fid > 0 and tex.fontname(fid) or f
       if kpse.find_file(f, "tfm") then
         return format("glyph %s of %q", tonumber(c) or format("%q",c), f)
       else
-        return mperr"font not found"
+        filename = kpse.find_file(f, "type1 fonts")
+        if filename then
+          kind = "type1" -- there's bug in processing cmr family
+        else
+          return mperr"font not found"
+        end
       end
     end
     local time = lfsattributes(filename,"modification")
@@ -2917,8 +2926,7 @@ do
         end
       end
     end
-    kind = shapedata.format or kind
-    return glyphimage(t, kind)
+    return glyphimage(t, shapedata.format or kind)
   end
 end
 

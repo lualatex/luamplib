@@ -1,6 +1,6 @@
                        History of the luamplib package
 
-   * mplibglyph operator accepts Type1 font filename such as "cmr10.pfb"
+   * mplibglyph operator accepts Type1 font (.pfb) filename.
 
 2026/03/27 2.40.4
    Runtime file change:
