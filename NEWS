@@ -2,6 +2,9 @@
 
 2026/04/02 2.40.5
    * mplibglyph operator accepts Type1 font (.pfb) filename.
+     N.B. Some glyphs in cmr10 and its family (or maybe other) Type1 fonts
+     are not working properly.
+   * fix the mplibgraphictext function to embolden rules when fakebold == 0
 
 2026/03/27 2.40.4
    Runtime file change:

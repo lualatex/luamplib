@@ -1026,7 +1026,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \metapost operator \bsx|mplibglyph|
 %   \meta{number} \textbar\ \meta{string} |of| \meta{number} \textbar\ \meta{string}\esx\
 %   returns a \metapost picture
-%   containing outline paths of a glyph in OpenType, TrueType or Type1 fonts.
+%   containing outline paths of a glyph in OpenType, TrueType or Type1 (|.pfb|) fonts.
 %   When a TFM font is specified, \metapost primitive |glyph| will be called.
 %\begin{verbatim}
 %    mplibglyph 50  of \fontid\font           % slot 50 of current font
@@ -1046,8 +1046,8 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name, or names and values for |axis| feature, of a variable font.
 %
-%   \notabene Regrettably we seem have some unknown bug in processing
-%   |cmr10.pfb| and its family Type1 fonts.
+%   \notabene Regrettably we seem have some bug in processing
+%   a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.
 %   If that happens, consider using |glyph| instead of |mplibglyph|.
 %
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
@@ -2626,6 +2626,14 @@ end
 %    \begin{macrocode}
 do
   local emboldenfonts = { }
+  local function roundupwidth (f, fb)
+    local wd = math.round(f.size * fb / factor * 10)
+    if wd == 0 and fb ~= 0 then
+      wd = 1
+    end
+    emboldenfonts.width = wd
+    return wd
+  end
   local function getemboldenwidth (curr, fakebold)
     local width = emboldenfonts.width
     if not width then
@@ -2641,15 +2649,15 @@ do
         end
       end
       getglyph(curr)
-      width = font.getcopy(f or font.current()).size * fakebold / factor * 10
-      emboldenfonts.width = width
+      width = roundupwidth(font.getcopy(f or font.current()), fakebold)
     end
     return width
   end
   local function getrulewhatsit (line, wd, ht, dp)
     line, wd, ht, dp = line/1000, wd/factor, ht/factor, dp/factor
+    line = line == 0 and "" or ("%f w"):format(line)
     local pl
-    local fmt = "%f w %f %f %f %f re %s"
+    local fmt = "q %s %f %f %f %f re B Q"
     if pdfmode then
       pl = node.new("whatsit","pdf_literal")
       pl.mode = 0
@@ -2657,7 +2665,7 @@ do
       fmt = "pdf:content "..fmt
       pl = node.new("whatsit","special")
     end
-    pl.data = fmt:format(line, 0, -dp, wd, ht+dp, "B") :gsub(decimals,rmzeros)
+    pl.data = fmt:format(line, 0, -dp, wd, ht+dp) :gsub(decimals,rmzeros)
     local ss = node.new"glue"
     node.setglue(ss, 0, 65536, 65536, 2, 2)
     pl.next = ss
@@ -2728,8 +2736,7 @@ do
         local i = emboldenfonts[key]
         if not i then
           local ft = font.getfont(f) or font.getcopy(f)
-          local width = ft.size * fakebold / factor * 10
-          emboldenfonts.width = width
+          local width = roundupwidth(ft, fakebold)
           if ft.format == "opentype" or ft.format == "truetype" then
             local name = ft.name:gsub('"',''):gsub(';$','')
             name = format('%s;embolden=%s;',name,fakebold)
