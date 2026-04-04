@@ -2795,9 +2795,34 @@ do
     end
     return r/360
   end
-  local function glyphimage(t, fmt)
-    local q,p,r = {{},{}}
-    local towarn, lastcmd
+  local function glyphimage(t, fmt, kind)
+    local towarn
+
+    if kind == "type1" then -- attempt to bypass some bug in font-cff.lua
+      local tt = { }
+      for i,v in ipairs(t) do
+        if v[#v] == "m" then
+          local pv, nv = t[i-1], t[i+1]
+          local pc, nc = pv and pv[#pv], nv and nv[#nv]
+          if nc ~= "l" and nc ~= "c" then -- ("m") -> "m", close, or none
+            towarn = true
+          elseif pc == "m" and #tt > 0 then --  "m" -> ("m") -> "l" or "c"
+            tableinsert(tt, {v[1], v[2], "l" })
+          else
+            tableinsert(tt, v)
+          end
+        else
+          tableinsert(tt, v)
+        end
+      end
+      t = tt
+    end
+
+    local q, p, r, lastcmd = {{},{}}
+    local function closepath(dots)
+      tableinsert(p, format("%scycle", dots or "--"))
+      tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
+    end
     for i,v in ipairs(t) do
       local cmd = v[#v]
       if cmd == "m" then
@@ -2806,34 +2831,26 @@ do
         r = {{x=v[1],y=v[2]}}
       else
         local nt = t[i+1]
-        local last = not nt or nt[#nt] == "m"
+        local final = not nt or nt[#nt] == "m" or nt[1] == "close"
         if cmd == "l" then
-          local pt = t[i-1]
-          local seco = pt[#pt] == "m"
-          if (last or seco) and r[1].x == v[1] and r[1].y == v[2] then
+          if (final or lastcmd == "m") and r[1].x == v[1] and r[1].y == v[2] then
           else
             tableinsert(p, format('--(%s,%s)',v[1],v[2]))
             tableinsert(r, {x=v[1],y=v[2]})
           end
-          if last then
-            tableinsert(p, '--cycle')
-          end
+          if final then closepath() end
         elseif cmd == "c" then
           tableinsert(p, format('..controls(%s,%s)and(%s,%s)',v[1],v[2],v[3],v[4]))
-          if last and r[1].x == v[5] and r[1].y == v[6] then
-            tableinsert(p, '..cycle')
+          if final and r[1].x == v[5] and r[1].y == v[6] then
+            closepath ".."
           else
             tableinsert(p, format('..(%s,%s)',v[5],v[6]))
-            if last then
-              tableinsert(p, '--cycle')
-            end
             tableinsert(r, {x=v[5],y=v[6]})
+            if final then closepath() end
           end
+        elseif cmd == "path" or cmd == "move" then
         else
           return mperr"unknown operator"
-        end
-        if last then
-          tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
         end
       end
       lastcmd = cmd
@@ -2934,7 +2951,7 @@ do
     end
     if not gid then return mperr"cannot get GID (glyph id)" end
     local fac = 1000 / (shapedata.units or 1000)
-    local t = shapedata.glyphs[gid].segments
+    local t = shapedata.glyphs[gid]; t = t and t.segments
     if not t then return "image()" end
     for i,v in ipairs(t) do
       if type(v) == "table" then
@@ -2945,7 +2962,7 @@ do
         end
       end
     end
-    local result, towarn = glyphimage(t, shapedata.format or kind)
+    local result, towarn = glyphimage(t, shapedata.format or kind, kind)
     if towarn then
       warn("mplibglyph %s not working properly. Use glyph instead", f)
     end
