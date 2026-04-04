@@ -1047,8 +1047,12 @@ See source file '\inFileName' for licencing and contact information.
 %   an instance name, or names and values for |axis| feature, of a variable font.
 %
 %   \notabene Regrettably we seem have some bug in processing
-%   a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.
-%   If that happens, consider using |glyph| instead of |mplibglyph|.
+%   not a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.\relax
+%   \footnote{\pkg{luamplib} tries to work around the bug in \pkg{luaotfload}'s fontloader
+%     (specifically |font-cff.lua| from \ConTeXt mkiv),
+%     but the result is certainly short of satisfaction. As for |cmr10.pfb|, however,
+%     it is better than nothig and looks `not bad' in the human eyes.}
+%   If that happens, consider using |glyph| operator instead of |mplibglyph|.
 %
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
 %     mplibstrokeglyph ..., mplibfillandstrokeglyph ...}
@@ -1143,8 +1147,8 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{14}
+%\mpfig mplibdrawglyph image(draw fullcircle scaled 110; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
+%\stopmpfig{11}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -1163,7 +1167,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 %    \mpfig
 %      mplibdrawglyph image(
-%          draw fullcircle scaled 120;
+%          draw fullcircle scaled 110;
 %          draw reverse fullcircle scaled 50;
 %        )
 %        withmppattern "mypatt"
@@ -1212,7 +1216,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{9}
+%\stopmpfig{15}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1460,7 +1464,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mpfig label(TEX "\sffamily\bfseries\scshape\Huge Meta" scaled 2, center pic) withcolor 1;\endmpfig
 %\endmplibgroup
 %\mpfig fill bbox pic withshadingmethod "linear" withshadingcolors(red, blue); draw pic withmaskinggroup "mymask" withmaskingbgcolor 1/10 withtransparency (1, 0.8);\endmpfig
-%\stopmpfig{19}
+%\stopmpfig{17}
 %\begin{verbatim}
 %    \mpfig*
 %      picture pic;
