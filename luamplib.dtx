@@ -1046,12 +1046,8 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name, or names and values for |axis| feature, of a variable font.
 %
-%   \notabene Regrettably we seem have some bug in processing
-%   not a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.\relax
-%   \footnote{\pkg{luamplib} tries to work around the bug in \pkg{luaotfload}'s fontloader
-%     (specifically |font-cff.lua| from \ConTeXt mkiv),
-%     but the result is certainly short of satisfaction. As for |cmr10.pfb|, however,
-%     it is better than nothig and looks `not bad' in the human eyes.}
+%   \notabene Regrettably we seem to have some bug in processing
+%   not a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.
 %   If that happens, consider using |glyph| operator instead of |mplibglyph|.
 %
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
@@ -1147,7 +1143,7 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig mplibdrawglyph image(draw fullcircle scaled 110; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
+%\mpfig mplibdrawglyph image(draw fullcircle scaled 100; draw reverse fullcircle scaled 40;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
 %\stopmpfig{11}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
@@ -1167,8 +1163,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 %    \mpfig
 %      mplibdrawglyph image(
-%          draw fullcircle scaled 110;
-%          draw reverse fullcircle scaled 50;
+%          draw fullcircle scaled 100;
+%          draw reverse fullcircle scaled 40;
 %        )
 %        withmppattern "mypatt"
 %        withpen pencircle scaled 1
@@ -2799,45 +2795,24 @@ do
     end
     return r/360
   end
-  local function glyphimage(t, fmt, kind)
-    local towarn
-
-    if kind == "type1" then -- attempt to bypass some bug in font-cff.lua
-      local tt = { }
-      for i,v in ipairs(t) do
-        if v[#v] == "m" then
-          local pv, nv = t[i-1], t[i+1]
-          local pc, nc = pv and pv[#pv], nv and nv[#nv]
-          if nc ~= "l" and nc ~= "c" then -- ("m") -> "m", close, or none
-            towarn = true
-          elseif pc == "m" and #tt > 0 then --  "m" -> ("m") -> "l" or "c"
-            tableinsert(tt, {v[1], v[2], "l" })
-          else
-            tableinsert(tt, v)
-          end
-        else
-          tableinsert(tt, v)
-        end
-      end
-      t = tt
-    end
-
-    local q, p, r, lastcmd = {{},{}}
+  local function glyphimage(t, fmt)
+    local q, p, r, towarn = {{},{}}
     local function closepath(dots)
       tableinsert(p, format("%scycle", dots or "--"))
       tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
     end
     for i,v in ipairs(t) do
       local cmd = v[#v]
+      local nt = t[i+1]
+      local final = not nt or nt[#nt] ~= "l" and nt[#nt] ~= "c"
       if cmd == "m" then
-        if lastcmd == "m" then towarn = true end
+        if final then towarn = true end
         p = {format('(%s,%s)',v[1],v[2])}
         r = {{x=v[1],y=v[2]}}
       else
-        local nt = t[i+1]
-        local final = not nt or nt[#nt] == "m" or nt[1] == "close"
         if cmd == "l" then
-          if (final or lastcmd == "m") and r[1].x == v[1] and r[1].y == v[2] then
+          local pt = t[i-1]
+          if (final or pt and pt[#pt] == "m") and r[1].x == v[1] and r[1].y == v[2] then
           else
             tableinsert(p, format('--(%s,%s)',v[1],v[2]))
             tableinsert(r, {x=v[1],y=v[2]})
@@ -2857,7 +2832,6 @@ do
           return mperr"unknown operator"
         end
       end
-      lastcmd = cmd
     end
     r = { }
     if fmt == "opentype" then
@@ -2966,7 +2940,7 @@ do
         end
       end
     end
-    local result, towarn = glyphimage(t, shapedata.format or kind, kind)
+    local result, towarn = glyphimage(t, shapedata.format or kind)
     if towarn then
       warn("mplibglyph %s not working properly. Use glyph instead", f)
     end
