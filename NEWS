@@ -1,5 +1,8 @@
                        History of the luamplib package
 
+   * allow withshadingmethod preceded by asgroup "off"
+     to get a transparency group with shading pattern inside
+
 2026/04/02 2.40.5
    * mplibglyph operator accepts Type1 font (.pfb) filename.
      N.B. Some glyphs in cmr10 and its family (or maybe other) Type1 fonts
