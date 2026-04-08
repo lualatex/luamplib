@@ -1359,7 +1359,7 @@ See source file '\inFileName' for licencing and contact information.
 % colors will have effects on the uncolored objects in the group.
 % \notabene When we give shading effect upon a \emph{textual picture} (ie.\ non-path object)
 % inside transparency group, Mac OS's Preview does not interprete PDF coordinates properly.
-% If that happens, consider using other PDF renderer such as Firefox. An Example:
+% If that happens, consider using other PDF renderer such as Acrobat or Firefox. An example:
 % \startmpfig
 % \mpfig* picture pic; pic = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 30right withoutcolor;); pic := image(draw pic withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
 % \mpfig draw pic asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
@@ -4379,9 +4379,17 @@ function luamplib.dolatelua (on, os)
     pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %s %s]>>", os, h, v))
     pdf.refobj(on)
   else
-    local shift = os:explode()
-    if tonumber(h) ~= tonumber(shift[1]) or tonumber(v) ~= tonumber(shift[2]) then
-      warn([[Add 'withprescript "sh_matrixshift=%s %s"' to the picture shading]], h, v)
+    local t = pdfetcs.patternshadings[on] or { }
+    if h ~= t[1] or v ~= t[2] then
+      warn"Rerun to get correct shading pattern"
+    end
+    local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
+    local f = ioopen(name, on == 1 and "w" or "a")
+    if f then
+      f:write(("%s %s %s\n"):format(on, h, v))
+      f:close()
+    else
+      err"cannot write a file. check the cache dir path"
     end
   end
 end
@@ -4420,9 +4428,24 @@ local function do_preobj_shading (object, prescript)
         ]>>}"
       })
     else
-      local shift = prescript.sh_matrixshift or "0 0"
-      texsprint{ "\\special{pdf:put ",format(pdfetcs.resfmt, on)," <<",os,"/Matrix[1 0 0 1 ",shift,"]>>}" }
-      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",shift,"]]) }" })
+      local num = (pdfetcs.patternshadingnum or 0) + 1
+      pdfetcs.patternshadingnum = num
+      if num == 1 then
+        pdfetcs.patternshadings = { }
+        local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
+        local f = ioopen(name)
+        if f then
+          for line in f:lines() do
+            local t = line:explode()
+            pdfetcs.patternshadings[ tonumber(t[1]) ] = { t[2], t[3] }
+          end
+          f:close()
+        end
+      end
+      local t = pdfetcs.patternshadings[num] or { }
+      texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
+        format(" <<%s/Matrix[1 0 0 1 %s %s]>>}", os, t[1] or 0, t[2] or 0) }
+      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",num,") }" })
     end
   end
   ::skip_latelua::
