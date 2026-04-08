@@ -1357,11 +1357,53 @@ See source file '\inFileName' for licencing and contact information.
 % Also note that normally the transparency groups are not affected by outer color commands.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
-% \notabene Shading upon a \emph{textual picture} (ie.\ non-path object)
-% inside transparency group would not produce the intended outcome (but can be done
-% with \cs{mplibgroup} command; see the
-% \hyperlink{shadingintransparencygroup}{example} at \secref{mplibgroupendmplibgroup}).
-% Outer shading effect has no problem.
+% \notabene When we give shading effect upon a \emph{textual picture} (ie.\ non-path object)
+% inside transparency group, Mac OS's Preview does not interprete PDF coordinates properly.
+% If that happens, consider using other PDF renderer such as Firefox. An Example:
+% \startmpfig
+% \mpfig* picture pic; pic = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 30right withoutcolor;); pic := image(draw pic withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
+% \mpfig draw pic asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
+% \mplibgroup{mygrshpic}[asgroup=""]
+% \mpfig draw pic; \endmpfig
+% \endmplibgroup
+% \usemplibgroup{mygrshpic}\vskip15pt
+% \mpfig usemplibgroup "mygrshpic" withtransparency (1, 2/3); \endmpfig
+% \stopmpfig{18}
+%\begin{verbatim}
+%    \mpfig*
+%      picture pic;
+%      pic = image(
+%          fill fullcircle scaled 60 withoutcolor;
+%          fill fullcircle scaled 60 shifted 30right withoutcolor;
+%        ) ;
+%      pic := image(
+%        draw pic
+%          withshadingmethod "linear"
+%          withshadingvector (2, 1)
+%          withshadingcolors (red, blue)
+%      ) ;
+%    \endmpfig
+%
+%    \mpfig
+%      draw pic
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%
+%    \mplibgroup{mygrshpic}[asgroup=""]     % see next subsection
+%      \mpfig
+%        draw pic ;
+%      \endmpfig
+%    \endmplibgroup
+%
+%    \usemplibgroup{mygrshpic}
+%
+%    \mpfig
+%      usemplibgroup "mygrshpic"
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+%
 %
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
@@ -1433,37 +1475,6 @@ See source file '\inFileName' for licencing and contact information.
 % at \secref{transparencygroup},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
-% \notabene To obtain shading on a \emph{textual picture} inside transparency group,
-% |withshadingmethod| command should be preceded by |asgroup| |"off"|. An example:
-% \startmpfig
-% \mplibgroup{mygrshpic}[asgroup=""]
-% \mpfig draw image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 30right withoutcolor;) asgroup "off" withshadingmethod "linear" withshadingvector (2,1) withshadingcolors (red,blue);\endmpfig
-% \endmplibgroup
-% \usemplibgroup{mygrshpic}\vskip15pt
-% \mpfig usemplibgroup "mygrshpic" withtransparency (1, 2/3);\endmpfig
-% \stopmpfig{12}
-% \hypertarget{shadingintransparencygroup}{}
-%\begin{verbatim}
-%    \mplibgroup{mygrshpic}[asgroup=""]
-%      \mpfig
-%        draw image(
-%            fill fullcircle scaled 60 withoutcolor;
-%            fill fullcircle scaled 60 shifted 30right withoutcolor;
-%          )
-%          asgroup "off"                % this line is needed
-%          withshadingmethod "linear"
-%          withshadingvector (2, 1)
-%          withshadingcolors (red, blue) ;
-%      \endmpfig
-%    \endmplibgroup
-%
-%    \usemplibgroup{mygrshpic}
-%
-%    \mpfig
-%      usemplibgroup "mygrshpic"
-%        withtransparency (1, 2/3) ;
-%    \endmpfig
-%\end{verbatim}
 %
 % \subsubsection[\ttfamily withmaskinggroup]{\ttfamily ... withmaskinggroup ...}
 %   \label{sec:withmaskinggroup}
@@ -3590,7 +3601,7 @@ primarydef p asgroup s =
         decimal (ypart urcorner p +1/4)
       withprescript "gr_state=start"
       withprescript "gr_type=" & s;
-    draw p;
+    draw p withprescript "sh_in_xobj=yes";
     draw center p withprescript "gr_state=stop";
   )
 enddef;
@@ -3619,6 +3630,9 @@ primarydef p withshadingmethod m =
   p
   if picture p :
     withprescript "sh_operand_type=picture"
+    withprescript "sh_inxobj_shift=" &
+      decimal xpart llcorner p & ":" &
+      decimal ypart llcorner p
     if textual p or (length p > 1):
       withprescript "sh_transform=no"
       mplib_with_shade_method (boundingbox p, m)
@@ -4375,8 +4389,13 @@ local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
   local on = do_preobj_SH(object, prescript)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
-  if prescript.gr_type and prescript.gr_type:find"off" then
-    on = update_pdfobjs("<<" .. os .. ">>")
+  if prescript.sh_in_xobj == "yes" then
+    on = update_pdfobjs(("<<%s>>"):format(os))
+    goto skip_latelua
+  elseif is_defined"mplibgroupname" then
+    local llxy = prescript.sh_inxobj_shift:explode":"
+    llxy = ("/Matrix[1 0 0 1 %s %s]"):format(-llxy[1], -llxy[2]) :gsub(decimals, rmzeros)
+    on = update_pdfobjs(("<<%s %s>>"):format(os, llxy))
     goto skip_latelua
   end
   on = update_pdfobjs()
