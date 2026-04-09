@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/04/02 v2.40.5 Interface for using the mplib library]%
+  [2026/04/09 v2.40.6 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -119,7 +119,7 @@ See source file '\inFileName' for licencing and contact information.
 \setsansfont[UprightFont=*Medium,BoldFont=*Heavy,Ligatures=TeX,Scale=MatchLowercase]{Iwona}
 %setmathfont{XITS Math}
 
-\newcommand\ConTeXt {Con\-\TeX t\xspace}
+\newcommand\ConTeXt {Con\-\kern-.0667em\TeX t\xspace}
 
 \newcommand*\email [1] {<\href{mailto:#1}{#1}>}
 \newcommand \file       {\nolinkurl}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/04/02 v2.40.5}
+% \date{2026/04/09 v2.40.6}
 %
 % \maketitle
 %
@@ -304,7 +304,7 @@ See source file '\inFileName' for licencing and contact information.
 %    draw <picture>|<path> asgroup <string>
 %\end{verbatim}
 %   where \meta{string} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
-%   Beware that currently many of the PDF rendering applications, except Adobe Acrobat,
+%   Beware that currently many of the PDF rendering applications, except Adobe Acrobat and Foxit Editor,
 %   cannot properly render the isolated or knockout effect.
 %
 %   Transparency group is available with \emph{plain} format as well with extended functionality.
@@ -1046,9 +1046,13 @@ See source file '\inFileName' for licencing and contact information.
 %   subfont number (starting from zero) of a TTC font; a string within brackets denotes
 %   an instance name, or names and values for |axis| feature, of a variable font.
 %
-%   \notabene Regrettably we seem have some bug in processing
-%   a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.
-%   If that happens, consider using |glyph| instead of |mplibglyph|.
+%   \notabene Regrettably we have some bug in processing
+%   not a few glyphs in |cmr10.pfb| and its family (or maybe other) Type1 fonts.\relax
+%     \footnote{The bug seems to be fixed in |font-cff.lmt| contained in \ConTeXt mkxl, but
+%     current \pkg{luaotfload} is based on |font-cff.lua| from \ConTeXt mkiv.
+%     As you see, |mplibglyph| operator requires \pkg{luaotfload} package loaded,
+%     which however is done automatically by \LaTeX\ format.}
+%   If that happens, consider using |glyph| operator instead of |mplibglyph|.
 %
 %   \subsubsection[\texttt{mplibdrawglyph}, and its friends]{\ttfamily mplibdrawglyph ...,
 %     mplibstrokeglyph ..., mplibfillandstrokeglyph ...}
@@ -1143,8 +1147,8 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
-%\mpfig mplibdrawglyph image(draw fullcircle scaled 120; draw reverse fullcircle scaled 50;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{14}
+%\mpfig mplibdrawglyph image(draw fullcircle scaled 100; draw reverse fullcircle scaled 40;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
+%\stopmpfig{11}
 %\hypertarget{firstpatternexample}{}\relax
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
@@ -1163,8 +1167,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 %    \mpfig
 %      mplibdrawglyph image(
-%          draw fullcircle scaled 120;
-%          draw reverse fullcircle scaled 50;
+%          draw fullcircle scaled 100;
+%          draw reverse fullcircle scaled 40;
 %        )
 %        withmppattern "mypatt"
 %        withpen pencircle scaled 1
@@ -1212,7 +1216,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
-%\stopmpfig{9}
+%\stopmpfig{15}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
@@ -1266,8 +1270,8 @@ See source file '\inFileName' for licencing and contact information.
 % will be applied to the group as a whole, not to the individual objects cumulatively.
 %
 % The syntax is basically the same as \emph{metafun}'s:
-% \bsx\meta{picture} \textbar\ \meta{path} |asgroup|
-% |""| \textbar\ |"isolated"| \textbar\ |"knockout"| \textbar\ |"isolated,knockout"| \textbar\ |"off"|\esx,
+% \bsx\meta{picture} \textbar\ \meta{path} |asgroup| \meta{string}\esx, the latter being
+% \bsx|""| \textbar\ |"isolated"| \textbar\ |"knockout"| \textbar\ |"isolated,knockout"| \textbar\ |"off"|\esx,
 % which will return a \metapost picture.
 % The additional features provided by \pkg{luamplib} are:
 % \begin{itemize}
@@ -1353,9 +1357,64 @@ See source file '\inFileName' for licencing and contact information.
 % Also note that normally the transparency groups are not affected by outer color commands.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
-% \notabene Shading effect upon a \emph{textual picture} (ie.\ non-path object)
-% inside transparency group may not produce the intended outcome.
-% Outer shading effect has no problem.
+% \notabene When you give shading effect upon a \emph{textual picture} (ie.\ non-path object)
+% inside or outside a transparency group, many of the PDF renderers including Mac OS Preview
+% do not interprete PDF coordinates properly.
+% If that happens, consider using other PDF viewer such as Adobe Acrobat. An example:
+% \startmpfig
+% \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 30right withoutcolor;); pic2 := image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
+% \mpfig draw pic2 asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
+% \mplibgroup{mygrshpic}[asgroup=""]
+% \mpfig draw pic2; \endmpfig
+% \endmplibgroup
+% \usemplibgroup{mygrshpic}\vskip15pt
+% \mpfig usemplibgroup "mygrshpic" withtransparency (1, 2/3); \endmpfig\vskip15pt
+% \mpfig draw pic1 asgroup "" withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue) withtransparency (1, 2/3); \endmpfig
+% \stopmpfig{20}
+%\begin{verbatim}
+%    \mpfig*
+%      picture pic[];
+%      pic1 = image(
+%          fill fullcircle scaled 60 withoutcolor;
+%          fill fullcircle scaled 60 shifted 30right withoutcolor;
+%        ) ;
+%      pic2 := image(                     % shading inside group
+%        draw pic1
+%          withshadingmethod "linear"
+%          withshadingvector (2, 1)
+%          withshadingcolors (red, blue)
+%      ) ;
+%    \endmpfig
+%
+%    \mpfig
+%      draw pic2
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%
+%    \mplibgroup{mygrshpic}[asgroup=""]   % see next subsection
+%      \mpfig
+%        draw pic2 ;
+%      \endmpfig
+%    \endmplibgroup
+%
+%    \usemplibgroup{mygrshpic}
+%
+%    \mpfig
+%      usemplibgroup "mygrshpic"
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%
+%    \mpfig                               % shading outside group
+%      draw pic1
+%        asgroup ""
+%        withshadingmethod "linear"
+%        withshadingvector (2, 1)
+%        withshadingcolors (red, blue)
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+%
 %
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
@@ -1427,6 +1486,7 @@ See source file '\inFileName' for licencing and contact information.
 % at \secref{transparencygroup},
 % excepting that the mplibgroup made by \TeX\ code (not by \metapost code) respects original height and depth.
 %
+%
 % \subsubsection[\ttfamily withmaskinggroup]{\ttfamily ... withmaskinggroup ...}
 %   \label{sec:withmaskinggroup}
 % Using this command,
@@ -1449,10 +1509,6 @@ See source file '\inFileName' for licencing and contact information.
 % \item[withmaskingbgcolor \meta{numeric}] sets the background color of the masking group.
 %   |0| denotes full transparency (invisibility); |1|, full color.
 % \end{description}
-%
-% \notabene Tiling pattern (see above \secref{mppattern}) is not allowed in the masking group,
-% whereas the tiling pattern in the object of |withmaskinggroup| is no problem.
-%
 % An example:
 %\startmpfig
 %\mpfig* picture pic; pic = image(fill fullcircle scaled 80 withcolor blue; fill fullcircle scaled 80 shifted (25,0) withcolor green; fill fullcircle scaled 80 shifted (50,0) withcolor red;);\endmpfig
@@ -1489,6 +1545,8 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
+% \notabene Tiling pattern (see above \secref{mppattern}) is not allowed in the masking group,
+% whereas the tiling pattern in the object of |withmaskinggroup| is no problem.
 %
 % \subsubsection[\ttfamily mpliblength, mplibuclength]{\ttfamily mpliblength ..., mplibuclength ...}
 %   \bsx|mpliblength| \meta{string}\esx\ returns the number of unicode characters in the string.
@@ -1634,7 +1692,9 @@ See source file '\inFileName' for licencing and contact information.
 %   The first argument is the register of a box prepared in advance by the user.
 %   When the contents of the box have been generated from \TeX\ (not \metapost) code,
 %   please make sure that both of the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
-%   before invoking the Lua function.
+%   before invoking the Lua function.\footnote{\relax
+%     Again, \TeX\ macro `|mplibgroupname|' should be set as \meta{group name} before preparing
+%     the box, if shading pattern (ie.\ shading on picture) is used in the mplibgroup. }
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
@@ -1657,8 +1717,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.5",
-  date          = "2026/04/02",
+  version       = "2.40.6",
+  date          = "2026/04/09",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2796,47 +2856,42 @@ do
     return r/360
   end
   local function glyphimage(t, fmt)
-    local q,p,r = {{},{}}
-    local towarn, lastcmd
+    local q, p, r, towarn = {{},{}}
+    local function closepath(dots)
+      tableinsert(p, format("%scycle", dots or "--"))
+      tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
+    end
     for i,v in ipairs(t) do
       local cmd = v[#v]
+      local nt = t[i+1]
+      local final = not nt or nt[#nt] ~= "l" and nt[#nt] ~= "c"
       if cmd == "m" then
-        if lastcmd == "m" then towarn = true end
+        if final then towarn = true end
         p = {format('(%s,%s)',v[1],v[2])}
         r = {{x=v[1],y=v[2]}}
       else
-        local nt = t[i+1]
-        local last = not nt or nt[#nt] == "m"
         if cmd == "l" then
           local pt = t[i-1]
-          local seco = pt[#pt] == "m"
-          if (last or seco) and r[1].x == v[1] and r[1].y == v[2] then
+          if (final or pt and pt[#pt] == "m") and r[1].x == v[1] and r[1].y == v[2] then
           else
             tableinsert(p, format('--(%s,%s)',v[1],v[2]))
             tableinsert(r, {x=v[1],y=v[2]})
           end
-          if last then
-            tableinsert(p, '--cycle')
-          end
+          if final then closepath() end
         elseif cmd == "c" then
           tableinsert(p, format('..controls(%s,%s)and(%s,%s)',v[1],v[2],v[3],v[4]))
-          if last and r[1].x == v[5] and r[1].y == v[6] then
-            tableinsert(p, '..cycle')
+          if final and r[1].x == v[5] and r[1].y == v[6] then
+            closepath ".."
           else
             tableinsert(p, format('..(%s,%s)',v[5],v[6]))
-            if last then
-              tableinsert(p, '--cycle')
-            end
             tableinsert(r, {x=v[5],y=v[6]})
+            if final then closepath() end
           end
+        elseif cmd == "path" or cmd == "move" then
         else
           return mperr"unknown operator"
         end
-        if last then
-          tableinsert(q[ turning(r) > 0 and 1 or 2 ], tableconcat(p))
-        end
       end
-      lastcmd = cmd
     end
     r = { }
     if fmt == "opentype" then
@@ -2934,7 +2989,7 @@ do
     end
     if not gid then return mperr"cannot get GID (glyph id)" end
     local fac = 1000 / (shapedata.units or 1000)
-    local t = shapedata.glyphs[gid].segments
+    local t = shapedata.glyphs[gid]; t = t and t.segments
     if not t then return "image()" end
     for i,v in ipairs(t) do
       if type(v) == "table" then
@@ -3559,7 +3614,7 @@ primarydef p asgroup s =
         decimal (ypart urcorner p +1/4)
       withprescript "gr_state=start"
       withprescript "gr_type=" & s;
-    draw p;
+    draw p withprescript "sh_in_xobj=yes";
     draw center p withprescript "gr_state=stop";
   )
 enddef;
@@ -4326,6 +4381,7 @@ local function add_pattern_resources (key, val)
     end
   end
 end
+pdfetcs.shadingpatterns = { }
 function luamplib.dolatelua (on, os)
   local h, v = pdf.getpos()
   h = format("%f", h/factor) :gsub(decimals,rmzeros)
@@ -4334,9 +4390,17 @@ function luamplib.dolatelua (on, os)
     pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %s %s]>>", os, h, v))
     pdf.refobj(on)
   else
-    local shift = os:explode()
-    if tonumber(h) ~= tonumber(shift[1]) or tonumber(v) ~= tonumber(shift[2]) then
-      warn([[Add 'withprescript "sh_matrixshift=%s %s"' to the picture shading]], h, v)
+    local t = pdfetcs.shadingpatterns[on] or { }
+    if h ~= t[1] or v ~= t[2] then
+      warn"Rerun to get correct shading pattern"
+    end
+    local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
+    local f = ioopen(name, on == 1 and "w" or "a")
+    if f then
+      f:write(("%s %s %s\n"):format(on, h, v))
+      f:close()
+    else
+      err"cannot write a file. check the cache dir path"
     end
   end
 end
@@ -4344,6 +4408,14 @@ local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
   local on = do_preobj_SH(object, prescript)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
+  if prescript.sh_in_xobj == "yes" then
+    on = update_pdfobjs(("<<%s>>"):format(os))
+    goto skip_latelua
+  elseif is_defined"mplibgroupname" then
+    on = update_pdfobjs()
+    pdfetcs.shadingpatterns[ get_macro"mplibgroupname" ] = { on, os }
+    goto skip_latelua
+  end
   on = update_pdfobjs()
   if pdfmode then
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
@@ -4366,11 +4438,26 @@ local function do_preobj_shading (object, prescript)
         ]>>}"
       })
     else
-      local shift = prescript.sh_matrixshift or "0 0"
-      texsprint{ "\\special{pdf:put ",format(pdfetcs.resfmt, on)," <<",os,"/Matrix[1 0 0 1 ",shift,"]>>}" }
-      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",shift,"]]) }" })
+      local num = (pdfetcs.patternshadingnum or 0) + 1
+      pdfetcs.patternshadingnum = num
+      if num == 1 then
+        local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
+        local f = ioopen(name)
+        if f then
+          for line in f:lines() do
+            local t = line:explode()
+            pdfetcs.shadingpatterns[ tonumber(t[1]) ] = { t[2], t[3] }
+          end
+          f:close()
+        end
+      end
+      local t = pdfetcs.shadingpatterns[num] or { }
+      texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
+        format(" <<%s/Matrix[1 0 0 1 %s %s]>>}", os, t[1] or 0, t[2] or 0) }
+      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",num,") }" })
     end
   end
+  ::skip_latelua::
   local key, val = format("MPlibPt%s", on), format(pdfetcs.resfmt, on)
   add_pattern_resources(key,val)
   pdf_literalcode("/Pattern cs/%s scn", key)
@@ -4781,6 +4868,18 @@ function luamplib.registergroup (boxid, name, opts)
     t[5], t[6] = t[5]+mpllx, t[6]+mplly
     opts.matrix = format("%f %f %f %f %f %f",tableunpack(t))
     mpllx, mplly = 0, 0
+  end
+%    \end{macrocode}
+% We write shading pattern object (see |do_preobj_shading| above) to PDF.
+%    \begin{macrocode}
+  if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf
+    local t = pdfetcs.shadingpatterns[name]
+    local llxy = format("/Matrix[1 0 0 1 %s %s]", -mpllx, -mplly) :gsub(decimals,rmzeros)
+    if pdfmode then
+      pdf.immediateobj(t[1], format("<<%s%s>>", t[2], llxy))
+    else
+      texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
+    end
   end
   if opts.matrix then
     attr[#attr+1] = format("/Matrix[%s]", opts.matrix)
@@ -5281,7 +5380,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/02 v2.40.5 mplib package for LuaTeX]
+    [2026/04/09 v2.40.6 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
