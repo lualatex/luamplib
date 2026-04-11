@@ -1,5 +1,7 @@
                        History of the luamplib package
 
+   * allow tiling pattern inside masking transparency group
+
 2026/04/09 2.40.6
    * fix the function for shading pattern inside transparency group
    * [doc] add an example and caution re. shading pattern inside/outside

@@ -1362,7 +1362,7 @@ See source file '\inFileName' for licencing and contact information.
 % do not interprete PDF coordinates properly.
 % If that happens, consider using other PDF viewer such as Adobe Acrobat. An example:
 % \startmpfig
-% \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 30right withoutcolor;); pic2 := image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
+% \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 25right withoutcolor;); pic2 = image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
 % \mpfig draw pic2 asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
 % \mplibgroup{mygrshpic}[asgroup=""]
 % \mpfig draw pic2; \endmpfig
@@ -1376,9 +1376,9 @@ See source file '\inFileName' for licencing and contact information.
 %      picture pic[];
 %      pic1 = image(
 %          fill fullcircle scaled 60 withoutcolor;
-%          fill fullcircle scaled 60 shifted 30right withoutcolor;
+%          fill fullcircle scaled 60 shifted 25right withoutcolor;
 %        ) ;
-%      pic2 := image(                     % shading inside group
+%      pic2 = image(                      % shading inside group
 %        draw pic1
 %          withshadingmethod "linear"
 %          withshadingvector (2, 1)
@@ -1545,8 +1545,6 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
-% \notabene Tiling pattern (see above \secref{mppattern}) is not allowed in the masking group,
-% whereas the tiling pattern in the object of |withmaskinggroup| is no problem.
 %
 % \subsubsection[\ttfamily mpliblength, mplibuclength]{\ttfamily mpliblength ..., mplibuclength ...}
 %   \bsx|mpliblength| \meta{string}\esx\ returns the number of unicode characters in the string.
@@ -1677,7 +1675,10 @@ See source file '\inFileName' for licencing and contact information.
 %   The first argument is the register of a box containing a pattern cell,
 %   which should be prepared in advance by the user. For instance,
 %   \cs{setbox0=}\allowbreak\cs{hbox}\allowbreak|{\tiny\TeX}|,
-%   or corresponding Lua code using |tex.setbox| function; then the argument should be |0|.
+%   or corresponding Lua code using |tex.setbox| function; then the argument should be |0|.\relax
+%     \footnote{In DVI mode, \TeX\ macro `|mplibpatternname|' should be set as \meta{pattern name}
+%     before preparing the box, if shading pattern (ie.\ shading on picture) is used
+%     in the pattern cell. }
 %
 %   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
@@ -1693,8 +1694,8 @@ See source file '\inFileName' for licencing and contact information.
 %   When the contents of the box have been generated from \TeX\ (not \metapost) code,
 %   please make sure that both of the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
 %   before invoking the Lua function.\footnote{\relax
-%     Again, \TeX\ macro `|mplibgroupname|' should be set as \meta{group name} before preparing
-%     the box, if shading pattern (ie.\ shading on picture) is used in the mplibgroup. }
+%     In DVI mode, \TeX\ macro `|mplibgroupname|' also should be set as \meta{group name} before
+%     preparing the box, if shading pattern (ie.\ shading on picture) is used in the mplibgroup. }
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
@@ -4068,13 +4069,14 @@ else
     "\\special{pdf:obj @MPlibCS<<>>}",
     "\\special{pdf:obj @MPlibPt<<>>}}",
   }
-  pdfetcs.resadded = { }
   pdfetcs.fallback_update_resources = function (name,res,obj)
     texsprint{"\\special{pdf:put ", obj, " <<", res, ">>}"}
-    if not pdfetcs.resadded[name] then
+    local tabname = format("%s_res",name)
+    if not pdfetcs[tabname] then
       texsprint{"\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}"}
-      pdfetcs.resadded[name] = obj
+      pdfetcs[tabname] = { }
     end
+    tableinsert(pdfetcs[tabname], res)
   end
 end
 
@@ -4361,9 +4363,6 @@ end
 % Shading Patterns:
 % we can apply shading to textual pictures as well as paths.
 %    \begin{macrocode}
-if not pdfmode then
-  pdfetcs.patternresources = {}
-end
 local function add_pattern_resources (key, val)
   if pdfmanagement then
     texsprint {
@@ -4375,13 +4374,12 @@ local function add_pattern_resources (key, val)
       texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
     else
       pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
-      if not pdfmode then
-        tableinsert(pdfetcs.patternresources, res) -- for gather_resources()
-      end
     end
   end
 end
-pdfetcs.shadingpatterns = { }
+if not pdfmode then
+  pdfetcs.shadingpatterns = { }
+end
 function luamplib.dolatelua (on, os)
   local h, v = pdf.getpos()
   h = format("%f", h/factor) :gsub(decimals,rmzeros)
@@ -4411,15 +4409,22 @@ local function do_preobj_shading (object, prescript)
   if prescript.sh_in_xobj == "yes" then
     on = update_pdfobjs(("<<%s>>"):format(os))
     goto skip_latelua
-  elseif is_defined"mplibgroupname" then
-    on = update_pdfobjs()
-    pdfetcs.shadingpatterns[ get_macro"mplibgroupname" ] = { on, os }
-    goto skip_latelua
   end
   on = update_pdfobjs()
   if pdfmode then
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
   else
+    if is_defined"mplibgroupname" then
+      local name = get_macro"mplibgroupname"
+      pdfetcs.shadingpatterns[name] = pdfetcs.shadingpatterns[name] or { }
+      tableinsert(pdfetcs.shadingpatterns[name], { on, os })
+      goto skip_latelua
+    elseif is_defined"mplibpatternname" then
+      local name = get_macro"mplibpatternname"
+      pdfetcs.shadingpatterns[name] = pdfetcs.shadingpatterns[name] or { }
+      tableinsert(pdfetcs.shadingpatterns[name], { on, os })
+      goto skip_latelua
+    end
 %    \end{macrocode}
 % Why |@xpos| |@ypos| do not work properly???\\
 % Anyway, this seems to be needed for proper functioning:
@@ -4471,102 +4476,71 @@ end
 %
 %    Tiling Patterns
 %    \begin{macrocode}
-pdfetcs.patterns = { _luamplib_pattern_resources_ = { } }
-local function gather_resources (optres, is_mask)
-  local t, do_pattern = { }, not optres
-  local names = {"ExtGState","ColorSpace","Shading"}
-  if do_pattern then
-    names[#names+1] = "Pattern"
-  end
-  if pdfmode then
-    if pdfmanagement then
-      for _,v in ipairs(names) do
-        if ltx.__pdf.Page.Resources[v] then
-          t[#t+1] = format("/%s %s 0 R", v, ltx.pdf.object_id("__pdf/Page/Resources/"..v))
-        end
-      end
-    else
-      local res = pdfetcs.getpageres() or ""
-      run_tex_code[[\mplibtmptoks\expandafter{\the\pdfvariable pageresources}]]
-      res = res .. texgettoks'mplibtmptoks'
-      if do_pattern then return res end
-      res = res:explode"/+"
-      for _,v in ipairs(res) do
-        v = v:match"^%s*(.-)%s*$"
-        if not v:find"Pattern" and not optres:find(v) then
-          t[#t+1] = "/" .. v
-        end
-      end
-    end
-  else
-    if pdfmanagement then
-      for _,v in ipairs(names) do
-        run_tex_code ({
-          "\\mplibtmptoks\\expanded{{",
-          "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/", v, "}",
-          "{/", v, " \\pdf_object_ref:n{__pdf/Page/Resources/", v, "}}}}",
-        },ccexplat)
-        t[#t+1] = texgettoks'mplibtmptoks'
-      end
-    elseif is_defined(pdfetcs.pgfextgs) then
+pdfetcs.patterns = { }
+local function gather_resources (ispattern)
+  local names, t = {"ExtGState","ColorSpace","Pattern","Shading"}, { }
+  if pdfmanagement then
+    for _,v in ipairs(names) do
+      local mytoks
       run_tex_code ({
         "\\mplibtmptoks\\expanded{{",
-        "\\ifpgf@sys@pdf@extgs@exists /ExtGState @pgfextgs\\fi",
-        "\\ifpgf@sys@pdf@colorspaces@exists /ColorSpace @pgfcolorspaces\\fi",
-        do_pattern and "\\ifpgf@sys@pdf@patterns@exists /Pattern @pgfpatterns \\fi" or "",
-        "}}",
-      }, catat11)
-      t[#t+1] = texgettoks'mplibtmptoks'
-      if pdfetcs.resadded.Shading then
-        t[#t+1] = format("/Shading %s", pdfetcs.resadded.Shading)
+        "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/",v,"}",
+        "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/",v,"}}", "}}",
+      },ccexplat)
+      mytoks = texgettoks"mplibtmptoks"
+      if not pdfmode then
+        mytoks = mytoks:gsub("\\str_convert_pdfname:n%s*{(.-)}","%1") -- why not expanded?
       end
-    else
-      for _,v in ipairs(names) do
-        local vv = pdfetcs.resadded[v]
-        if vv then
-          t[#t+1] = format("/%s %s", v, vv)
-        end
+      mytoks = mytoks and mytoks:gsub("^%s*(.-)%s*$", "%1")
+      if mytoks and mytoks ~= "" then
+        t[#t+1] = ("/%s<<%s>>"):format(v, mytoks)
       end
-    end
-  end
-  if do_pattern then return tableconcat(t) end
-  -- get pattern resources
-  local mytoks
-  if pdfmanagement then
-    run_tex_code ({
-      "\\mplibtmptoks\\expanded{{",
-      "\\pdfdict_if_empty:nF{g__pdf_Core/Page/Resources/Pattern}",
-      "{\\pdfdict_use:n{g__pdf_Core/Page/Resources/Pattern}}", "}}",
-    },ccexplat)
-    mytoks = texgettoks"mplibtmptoks"
-    if not pdfmode then
-      mytoks = mytoks:gsub("\\str_convert_pdfname:n%s*{(.-)}","%1") -- why not expanded?
     end
   elseif is_defined(pdfetcs.pgfextgs) then
     if pdfmode then
-      mytoks = get_macro"pgf@sys@pgf@resource@list@patterns"
-    else
-      local tt, abc = {}, get_macro"pgfutil@abc" or ""
-      for v in abc:gmatch"@pgfpatterns%s*<<(.-)>>" do
-        tt[#tt+1] = v
-      end
-      mytoks = tableconcat(tt)
-    end
-  else
-    local tt = pdfmode and pdfetcs.Pattern_res or pdfetcs.patternresources
-    mytoks = tt and tableconcat(tt)
-  end
-  if mytoks and mytoks ~= "" then
-    if is_mask then -- glitch with acrobat
-      local res, tt = pdfetcs.patterns._luamplib_pattern_resources_, { }
-      for _,item in ipairs(mytoks:explode"/") do
-        if not res[item:match"^%s*(.-)%s*$"] then
-          tt[#tt+1] = item
+      for k,v in pairs {
+        ExtGState  = "pgf@sys@pgf@resource@list@extgs",
+        Pattern    = "pgf@sys@pgf@resource@list@patterns",
+        ColorSpace = "pgf@sys@pgf@resource@list@colorspaces", } do
+        local res = (get_macro(v) or ""):gsub("^%s*(.-)%s*$","%1")
+        if res ~= "" then
+          t[#t+1] = ("/%s<<%s>>"):format(k, res )
         end
       end
-      mytoks = tableconcat(tt,"/")
+    else
+      local abc = get_macro"pgfutil@abc" or ""
+      for k,v in pairs {
+        ExtGState  = "@pgfextgs",
+        Pattern    = "@pgfpatterns",
+        ColorSpace = "@pgfcolorspaces", } do
+        local tt = { }
+        for vv in abc:gmatch( v .. "%s*<<%s*(.-)%s*>>" ) do
+          tt[#tt+1] = vv
+        end
+        if #tt > 0 then
+          t[#t+1] = ("/%s<<%s>>"):format(k, tableconcat(tt) )
+        end
+      end
     end
-    t[#t+1] = format("/Pattern<<%s>>",mytoks)
+    if pdfetcs.Shading_res then
+      t[#t+1] = ("/Shading<<%s>>"):format( tableconcat(pdfetcs.Shading_res) )
+    end
+  else
+    if ispattern and is_defined"TRP@list" then
+%    \end{macrocode}
+% We do not gather \pkg{transparent} package's \cs{TRP@list}
+% as Acrobat glitches on tiling pattern plus masking group,
+% so warn users and recommend \cs{DocumentMetadata}
+%    \begin{macrocode}
+      warn"transparent package is not fully functional without pdfmanagement code."
+    end
+    for _,v in ipairs(names) do
+      local tt = pdfetcs[v.."_res"]
+      if tt then
+        local res = tableconcat( tt )
+        t[#t+1] = ("/%s<<%s>>"):format(v, res)
+      end
+    end
   end
   return tableconcat(t)
 end
@@ -4603,7 +4577,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix[%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
-  optres = optres .. gather_resources(optres)
+  optres = optres .. gather_resources(true) -- tiling pattern plus masking glitches with acrobat
   local patterns = pdfetcs.patterns
   if pdfmode then
     if opts.bbox then
@@ -4613,6 +4587,16 @@ function luamplib.registerpattern ( boxid, name, opts )
     local index = tex.saveboxresource(boxid, attr, optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
+%    \end{macrocode}
+% Here we write shading pattern object (see |do_preobj_shading| above) to PDF.
+%    \begin{macrocode}
+    if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf in dvi mode
+      local llx, lly = get_macro'MPllx', get_macro'MPlly'
+      local llxy = format("/Matrix[1 0 0 1 %s %s]", -llx, -lly)
+      for _,t in ipairs(pdfetcs.shadingpatterns[name]) do
+        texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
+      end
+    end
     local cnt = #patterns + 1
     local objname = "@mplibpattern" .. cnt
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
@@ -4690,7 +4674,6 @@ do
     if not patt.done then
       local val = pdfmode and format("%s 0 R",index) or patterns[index]
       add_pattern_resources(key,val)
-      patterns._luamplib_pattern_resources_[format("%s %s",key,val)] = true -- glitch with acrobat
     end
     patt.done = true
   end
@@ -4848,7 +4831,7 @@ function luamplib.registergroup (boxid, name, opts)
   local wd, ht, dp = node.getwhd(box)
   local is_mask = opts.asgroup and opts.asgroup:find"masking"
   local res = opts.resources or ""
-  res = res .. gather_resources(res, is_mask) -- glitch on masking with acrobat
+  res = res .. gather_resources()
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
@@ -4868,18 +4851,6 @@ function luamplib.registergroup (boxid, name, opts)
     t[5], t[6] = t[5]+mpllx, t[6]+mplly
     opts.matrix = format("%f %f %f %f %f %f",tableunpack(t))
     mpllx, mplly = 0, 0
-  end
-%    \end{macrocode}
-% We write shading pattern object (see |do_preobj_shading| above) to PDF.
-%    \begin{macrocode}
-  if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf
-    local t = pdfetcs.shadingpatterns[name]
-    local llxy = format("/Matrix[1 0 0 1 %s %s]", -mpllx, -mplly) :gsub(decimals,rmzeros)
-    if pdfmode then
-      pdf.immediateobj(t[1], format("<<%s%s>>", t[2], llxy))
-    else
-      texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
-    end
   end
   if opts.matrix then
     attr[#attr+1] = format("/Matrix[%s]", opts.matrix)
@@ -4907,6 +4878,15 @@ function luamplib.registergroup (boxid, name, opts)
     }, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
+%    \end{macrocode}
+% Here we write shading pattern object (see |do_preobj_shading| above) to PDF.
+%    \begin{macrocode}
+    if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf in dvi mode
+      local llxy = format("/Matrix[1 0 0 1 %s %s]", -mpllx, -mplly) :gsub(decimals,rmzeros)
+      for _,t in ipairs(pdfetcs.shadingpatterns[name]) do
+        texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
+      end
+    end
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
     texsprint {

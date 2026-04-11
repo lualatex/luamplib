@@ -16,6 +16,7 @@
 \mpliblegacybehavior{true}%
 \begin{document}
 \title{testing LuaMPlib}
+\parindent0pt
 \mplibalttext{testing}
 \tracingcommands1
 A%
@@ -515,5 +516,93 @@ draw btex a square with side $=a$, inherited from the same instance etex shifted
   draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+
+\begin{center}* \qquad * \qquad *\end{center}
+
+shading pattern and xobject:
+\mpfig*
+picture pic[];
+pic1 = image(
+fill fullcircle scaled 44 withoutcolor;
+fill fullcircle scaled 44 shifted 22right withoutcolor;
+) ;
+pic2 = image( draw pic1
+withshadingmethod "linear"
+withshadingvector (2, 1)
+withshadingcolors (red, blue)
+% shading inside group
+) ;
+\endmpfig
+\mpfig
+draw pic2
+asgroup ""
+withtransparency (1, 2/3) ;
+\endmpfig
+\mplibgroup{mygrshpic}[asgroup=""] % see next subsection
+\mpfig
+draw pic2 ;
+\endmpfig
+\endmplibgroup
+\usemplibgroup{mygrshpic}
+\mpfig
+usemplibgroup "mygrshpic"
+withtransparency (1, 2/3) ;
+\endmpfig
+\mpfig % shading outside group
+draw pic1
+asgroup ""
+withshadingmethod "linear"
+withshadingvector (2, 1)
+withshadingcolors (red, blue)
+withtransparency (1, 2/3) ;
+\endmpfig
+
+pattern after masking
+\mppattern{mypatt2}[ xstep = 2, ystep = 2, matrix = "rotated 30", ]
+\mpfig[off]
+draw (up--down) scaled 5 withcolor 2/3[blue,white] ;
+draw (left--right) scaled 5 withcolor 2/3[red,white] ;
+\endmpfig
+\endmppattern
+\mpfig
+draw mplibgraphictext "\bfseries ABCDE" fakebold 1/2 drawcolor 2/3red scaled 5
+withmppattern "mypatt2";
+\endmpfig
+
+masking inside pattern
+\mplibgroup{mymask2}[asgroup="masking"]
+\mpfig[off]
+picture tex;
+tex = TEX "\tiny\TeX";
+draw tex withcolor 1;
+\endmpfig
+\endmplibgroup
+\mppattern{mypattern}
+\mpfig[off]
+bboxmargin:=1/5;
+fill bbox tex
+  withshadingmethod"linear" withshadingcolors(2/3[white,red], 2/3[white,blue])
+  withmaskinggroup "mymask2";
+\endmpfig
+\endmppattern
+\mpfig
+fill fullcircle xscaled 140 yscaled 70 withmppattern "mypattern" ;
+\endmpfig
+
+pattern inside masking
+\mppattern{mypattern}[colored=false]
+\SuspendTagging\relax
+\tiny\TeX
+\endmppattern
+\mplibgroup{mygroup}[asgroup="masking"]
+\mpfig[off]
+fill fullcircle xscaled 140 yscaled 70 withmppattern "mypattern" withcolor 1 ;
+\endmpfig
+\endmplibgroup
+\mpfig
+fill fullcircle xscaled 140 yscaled 70
+  withshadingmethod "linear" withshadingcolors (red,blue)
+  withmaskinggroup "mygroup" ;
+\endmpfig
 
 \end{document}
