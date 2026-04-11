@@ -9,8 +9,8 @@
 
 # generated files
 *.pdf
-*.sty
-*.lua
+# *.sty
+# *.lua
 *.zip
 *.mp
 *.fls
