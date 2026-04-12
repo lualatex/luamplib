@@ -2459,18 +2459,33 @@ local function gather_resources (ispattern)
         end
       end
     end
-    if pdfetcs.Shading_res then
-      t[#t+1] = ("/Shading<<%s>>"):format( tableconcat(pdfetcs.Shading_res) )
+    if luatexbase.callbacktypes.finish_pdffile then
+      if pdfetcs.Shading_res then
+        t[#t+1] = ("/Shading<<%s>>"):format( tableconcat(pdfetcs.Shading_res) )
+      end
+    else
+      local res = pdfetcs.getpageres()
+      res = res and res:match"/Shading%s*%b<>"
+      if res then
+        t[#t+1] = res
+      end
     end
   else
     if ispattern and is_defined"TRP@list" then
       warn"transparent package is not fully functional without pdfmanagement code."
     end
-    for _,v in ipairs(names) do
-      local tt = pdfetcs[v.."_res"]
-      if tt then
-        local res = tableconcat( tt )
-        t[#t+1] = ("/%s<<%s>>"):format(v, res)
+    if luatexbase.callbacktypes.finish_pdffile then
+      for _,v in ipairs(names) do
+        local tt = pdfetcs[v.."_res"]
+        if tt then
+          local res = tableconcat( tt )
+          t[#t+1] = ("/%s<<%s>>"):format(v, res)
+        end
+      end
+    else
+      local res = pdfetcs.getpageres()
+      if res then
+        t[#t+1] = res
       end
     end
   end
