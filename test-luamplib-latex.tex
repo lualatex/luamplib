@@ -5,12 +5,15 @@
   \documentclass{article}
 \else
   \documentclass[dvipdfmx]{article}
+  \pagewidth=\paperwidth
+  \pageheight=\paperheight
+  \special{papersize=\the\paperwidth,\the\paperheight}
 \fi
 \usepackage{fontspec}
 \setmainfont{latin modern roman}
 \newfontfamily\hangulfont{NotoSansCJKKR}[Script=Hangul,Language=Korean]
 \usepackage{luamplib}
-\usepackage{unicode-math,graphicx,xcolor}
+\usepackage{geometry,unicode-math,graphicx,xcolor}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
@@ -527,8 +530,7 @@ fill fullcircle scaled 44 withoutcolor;
 fill fullcircle scaled 44 shifted 22right withoutcolor;
 ) ;
 pic2 = image( draw pic1
-withshadingmethod "linear"
-withshadingvector (2, 1)
+withshadingmethod "circular"
 withshadingcolors (red, blue)
 % shading inside group
 ) ;
@@ -551,8 +553,7 @@ withtransparency (1, 2/3) ;
 \mpfig % shading outside group
 draw pic1
 asgroup ""
-withshadingmethod "linear"
-withshadingvector (2, 1)
+withshadingmethod "circular"
 withshadingcolors (red, blue)
 withtransparency (1, 2/3) ;
 \endmpfig

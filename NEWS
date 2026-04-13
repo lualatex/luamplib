@@ -1,6 +1,7 @@
                        History of the luamplib package
 
    * allow tiling pattern inside masking transparency group
+   * additional fix for shading pattern inside transparency group in DVI mode
 
 2026/04/09 2.40.6
    * fix the function for shading pattern inside transparency group

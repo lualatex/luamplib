@@ -2095,27 +2095,27 @@ do
   function do_preobj_TR(object,prescript)
     if object.postscript == "collect" then return end
     local opaq = prescript and prescript.tr_transparency
-    if opaq then
-      local key, on, os, new
-      local mode = prescript.tr_alternative or 1
-      mode = transparancy_modes[tonumber(mode) or mode:lower()]
-      if not mode then
-        mode = prescript.tr_alternative
-        warn("unsupported blend mode: '%s'", mode)
-      end
-      opaq = opaq:explode":"
-      for i,v in ipairs(opaq) do
-        opaq[i] = format("%.3f", v) :gsub(decimals,rmzeros)
-      end
-      for i,v in ipairs{ {mode,opaq[1],opaq[2] or opaq[1]},{"Normal",1,1} } do
-        os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[3])
-        on, new = update_pdfobjs(os)
-        key = add_extgs_resources(on,new)
-        if i == 1 then
-          pdf_literalcode("/%s gs",key)
-        else
-          return format("/%s gs",key)
-        end
+    if not opaq then return end
+
+    local key, on, os, new
+    local mode = prescript.tr_alternative or 1
+    mode = transparancy_modes[tonumber(mode) or mode:lower()]
+    if not mode then
+      mode = prescript.tr_alternative
+      warn("unsupported blend mode: '%s'", mode)
+    end
+    opaq = opaq:explode":"
+    for i,v in ipairs(opaq) do
+      opaq[i] = format("%.3f", v) :gsub(decimals,rmzeros)
+    end
+    for i,v in ipairs{ {mode,opaq[1],opaq[2] or opaq[1]},{"Normal",1,1} } do
+      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[3])
+      on, new = update_pdfobjs(os)
+      key = add_extgs_resources(on,new)
+      if i == 1 then
+        pdf_literalcode("/%s gs",key)
+      else
+        return format("/%s gs",key)
       end
     end
   end
@@ -2203,114 +2203,112 @@ do
   function do_preobj_SH(object, prescript)
     local shade_no
     local sh_type = prescript and prescript.sh_type
-    if not sh_type then
-      return
+    if not sh_type then return end
+
+    local domain  = prescript.sh_domain or "0 1"
+    local centera = (prescript.sh_center_a or "0 0"):explode()
+    local centerb = (prescript.sh_center_b or "0 0"):explode()
+    local transform = prescript.sh_transform == "yes"
+    local sx,sy,sr,dx,dy = 1,1,1,0,0
+    if transform then
+      local first = (prescript.sh_first or "0 0"):explode()
+      local setx  = (prescript.sh_set_x or "0 0"):explode()
+      local sety  = (prescript.sh_set_y or "0 0"):explode()
+      local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
+      if x ~= 0 and y ~= 0 then
+        local path = object.path
+        local path1x = path[1].x_coord
+        local path1y = path[1].y_coord
+        local path2x = path[x].x_coord
+        local path2y = path[y].y_coord
+        local dxa = path2x - path1x
+        local dya = path2y - path1y
+        local dxb = setx[2] - first[1]
+        local dyb = sety[2] - first[2]
+        if dxa ~= 0 and dya ~= 0 and dxb ~= 0 and dyb ~= 0 then
+          sx = dxa / dxb ; if sx < 0 then sx = - sx end
+          sy = dya / dyb ; if sy < 0 then sy = - sy end
+          sr = math.sqrt(sx^2 + sy^2)
+          dx = path1x - sx*first[1]
+          dy = path1y - sy*first[2]
+        end
+      end
+    end
+    local ca, cb, colorspace, steps, fractions
+    ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "0"):explode":" }
+    cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "1"):explode":" }
+    steps = tonumber(prescript.sh_step) or 1
+    if steps > 1 then
+      fractions = { prescript.sh_fraction_1 or 0 }
+      for i=2,steps do
+        fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
+        ca[i] = (prescript[format("sh_color_a_%i",i)] or "0"):explode":"
+        cb[i] = (prescript[format("sh_color_b_%i",i)] or "1"):explode":"
+      end
+    end
+    if prescript.mplib_spotcolor then
+      ca, cb = { }, { }
+      local names, pos, objref = { }, -1, ""
+      local script = object.prescript:explode"\13+"
+      for i=#script,1,-1 do
+        if script[i]:find"mplib_spotcolor" then
+          local t, name, value = script[i]:explode"="[2]:explode":"
+          value, objref, name = t[1], t[2], t[3]
+          if not names[name] then
+            pos = pos+1
+            names[name] = pos
+            names[#names+1] = name
+          end
+          t = { }
+          for j=1,names[name] do t[#t+1] = 0 end
+          t[#t+1] = value
+          tableinsert(#ca == #cb and ca or cb, t)
+        end
+      end
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          for i=1,#names-#tt do tt[#tt+1] = 0 end
+        end
+      end
+      if #names == 1 then
+        colorspace = objref
+      else
+        colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
+      end
     else
-      local domain  = prescript.sh_domain or "0 1"
-      local centera = (prescript.sh_center_a or "0 0"):explode()
-      local centerb = (prescript.sh_center_b or "0 0"):explode()
-      local transform = prescript.sh_transform == "yes"
-      local sx,sy,sr,dx,dy = 1,1,1,0,0
-      if transform then
-        local first = (prescript.sh_first or "0 0"):explode()
-        local setx  = (prescript.sh_set_x or "0 0"):explode()
-        local sety  = (prescript.sh_set_y or "0 0"):explode()
-        local x,y = tonumber(setx[1]) or 0, tonumber(sety[1]) or 0
-        if x ~= 0 and y ~= 0 then
-          local path = object.path
-          local path1x = path[1].x_coord
-          local path1y = path[1].y_coord
-          local path2x = path[x].x_coord
-          local path2y = path[y].y_coord
-          local dxa = path2x - path1x
-          local dya = path2y - path1y
-          local dxb = setx[2] - first[1]
-          local dyb = sety[2] - first[2]
-          if dxa ~= 0 and dya ~= 0 and dxb ~= 0 and dyb ~= 0 then
-            sx = dxa / dxb ; if sx < 0 then sx = - sx end
-            sy = dya / dyb ; if sy < 0 then sy = - sy end
-            sr = math.sqrt(sx^2 + sy^2)
-            dx = path1x - sx*first[1]
-            dy = path1y - sy*first[2]
+      local model = 0
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          model = model > #tt and model or #tt
+        end
+      end
+      for _,t in ipairs{ca,cb} do
+        for _,tt in ipairs(t) do
+          if #tt < model then
+            color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
           end
         end
       end
-      local ca, cb, colorspace, steps, fractions
-      ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "0"):explode":" }
-      cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "1"):explode":" }
-      steps = tonumber(prescript.sh_step) or 1
-      if steps > 1 then
-        fractions = { prescript.sh_fraction_1 or 0 }
-        for i=2,steps do
-          fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
-          ca[i] = (prescript[format("sh_color_a_%i",i)] or "0"):explode":"
-          cb[i] = (prescript[format("sh_color_b_%i",i)] or "1"):explode":"
-        end
-      end
-      if prescript.mplib_spotcolor then
-        ca, cb = { }, { }
-        local names, pos, objref = { }, -1, ""
-        local script = object.prescript:explode"\13+"
-        for i=#script,1,-1 do
-          if script[i]:find"mplib_spotcolor" then
-            local t, name, value = script[i]:explode"="[2]:explode":"
-            value, objref, name = t[1], t[2], t[3]
-            if not names[name] then
-              pos = pos+1
-              names[name] = pos
-              names[#names+1] = name
-            end
-            t = { }
-            for j=1,names[name] do t[#t+1] = 0 end
-            t[#t+1] = value
-            tableinsert(#ca == #cb and ca or cb, t)
-          end
-        end
-        for _,t in ipairs{ca,cb} do
-          for _,tt in ipairs(t) do
-            for i=1,#names-#tt do tt[#tt+1] = 0 end
-          end
-        end
-        if #names == 1 then
-          colorspace = objref
-        else
-          colorspace = pdfetcs.clrspcs[ tableconcat(names,",") ]
-        end
-      else
-        local model = 0
-        for _,t in ipairs{ca,cb} do
-          for _,tt in ipairs(t) do
-            model = model > #tt and model or #tt
-          end
-        end
-        for _,t in ipairs{ca,cb} do
-          for _,tt in ipairs(t) do
-            if #tt < model then
-              color_normalize(model == 4 and {1,1,1,1} or {1,1,1},tt)
-            end
-          end
-        end
-        colorspace = model == 4 and "/DeviceCMYK"
-                  or model == 3 and "/DeviceRGB"
-                  or model == 1 and "/DeviceGray"
-                  or err"unknown color model"
-      end
-      if sh_type == "linear" then
-        local coordinates = format("%f %f %f %f",
-          dx + sx*centera[1], dy + sy*centera[2],
-          dx + sx*centerb[1], dy + sy*centerb[2])
-        shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
-      elseif sh_type == "circular" then
-        local factor = prescript.sh_factor or 1
-        local radiusa = factor * prescript.sh_radius_a
-        local radiusb = factor * prescript.sh_radius_b
-        local coordinates = format("%f %f %f %f %f %f",
-          dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
-          dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
-        shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
-      else
-        err"unknown shading type"
-      end
+      colorspace = model == 4 and "/DeviceCMYK"
+                or model == 3 and "/DeviceRGB"
+                or model == 1 and "/DeviceGray"
+                or err"unknown color model"
+    end
+    if sh_type == "linear" then
+      local coordinates = format("%f %f %f %f",
+        dx + sx*centera[1], dy + sy*centera[2],
+        dx + sx*centerb[1], dy + sy*centerb[2])
+      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
+    elseif sh_type == "circular" then
+      local factor = prescript.sh_factor or 1
+      local radiusa = factor * prescript.sh_radius_a
+      local radiusb = factor * prescript.sh_radius_b
+      local coordinates = format("%f %f %f %f %f %f",
+        dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
+        dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
+      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
+    else
+      err"unknown shading type"
     end
     return shade_no, prescript.sh_stroking == "yes"
   end
@@ -2332,8 +2330,9 @@ local function add_pattern_resources (key, val)
 end
 if not pdfmode then
   pdfetcs.shadingpatterns = { }
+  pdfetcs.shadingpatterninit_r, pdfetcs.shadingpatterninit_w = true, true
 end
-function luamplib.dolatelua (on, os)
+function luamplib.dolatelua (on, os, xobj)
   local h, v = pdf.getpos()
   h = format("%f", h/factor) :gsub(decimals,rmzeros)
   v = format("%f", v/factor) :gsub(decimals,rmzeros)
@@ -2342,11 +2341,18 @@ function luamplib.dolatelua (on, os)
     pdf.refobj(on)
   else
     local t = pdfetcs.shadingpatterns[on] or { }
-    if h ~= t[1] or v ~= t[2] then
+    local shift = os == "group" and pdfetcs.tr_group.shifts[xobj]
+               or os == "pattern" and pdfetcs.patterns[xobj].shifts
+    if shift then
+      h, v = -shift[1], -shift[2] -- engine bug in dvi mode?
+    end
+    if tonumber(h) ~= tonumber(t[1]) or tonumber(v) ~= tonumber(t[2]) then
       warn"Rerun to get correct shading pattern"
     end
     local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
-    local f = ioopen(name, on == 1 and "w" or "a")
+    local init = pdfetcs.shadingpatterninit_w
+    if init then pdfetcs.shadingpatterninit_w = nil end
+    local f = ioopen(name, init and "w" or "a")
     if f then
       f:write(("%s %s %s\n"):format(on, h, v))
       f:close()
@@ -2367,29 +2373,12 @@ local function do_preobj_shading (object, prescript)
   if pdfmode then
     put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
   else
-    if is_defined"mplibgroupname" then
-      local name = get_macro"mplibgroupname"
-      pdfetcs.shadingpatterns[name] = pdfetcs.shadingpatterns[name] or { }
-      tableinsert(pdfetcs.shadingpatterns[name], { on, os })
-      goto skip_latelua
-    elseif is_defined"mplibpatternname" then
-      local name = get_macro"mplibpatternname"
-      pdfetcs.shadingpatterns[name] = pdfetcs.shadingpatterns[name] or { }
-      tableinsert(pdfetcs.shadingpatterns[name], { on, os })
-      goto skip_latelua
-    end
-    if is_defined"RecordProperties" then
-      put2output(tableconcat{
-        "\\csname tex_savepos:D\\endcsname\\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
-        \\special{pdf:put ",format(pdfetcs.resfmt, on)," <<",os,"/Matrix[1 0 0 1 \z
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
-        ]>>}"
-      })
-    else
-      local num = (pdfetcs.patternshadingnum or 0) + 1
-      pdfetcs.patternshadingnum = num
-      if num == 1 then
+    local xobj = is_defined"mplibgroupname" and {"group", get_macro"mplibgroupname"}
+              or is_defined"mplibpatternname" and {"pattern", get_macro"mplibpatternname"}
+    if xobj or not is_defined"RecordProperties" then -- in xobject or plain
+      local init = pdfetcs.shadingpatterninit_r
+      if init then
+        pdfetcs.shadingpatterninit_r = nil
         local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
         local f = ioopen(name)
         if f then
@@ -2400,10 +2389,19 @@ local function do_preobj_shading (object, prescript)
           f:close()
         end
       end
-      local t = pdfetcs.shadingpatterns[num] or { }
+      local t = pdfetcs.shadingpatterns[on] or { 0, 0 }
       texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
-        format(" <<%s/Matrix[1 0 0 1 %s %s]>>}", os, t[1] or 0, t[2] or 0) }
-      put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",num,") }" })
+                format(" <<%s/Matrix[1 0 0 1 %s %s]>>}", os, t[1], t[2]) }
+      put2output("\\latelua{ luamplib.dolatelua(%s,%s) }", on,
+                xobj and ("'%s',[[%s]]"):format(xobj[1], xobj[2]))
+    else
+      put2output(tableconcat{
+        "\\csname tex_savepos:D\\endcsname\\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
+        \\special{pdf:put ",format(pdfetcs.resfmt, on)," <<",os,"/Matrix[1 0 0 1 \z
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
+        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
+        ]>>}"
+      })
     end
   end
   ::skip_latelua::
@@ -2415,9 +2413,9 @@ end
 
 pdfetcs.patterns = { }
 local function gather_resources (ispattern)
-  local names, t = {"ExtGState","ColorSpace","Pattern","Shading"}, { }
+  local t = { }
   if pdfmanagement then
-    for _,v in ipairs(names) do
+    for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
       local mytoks
       run_tex_code ({
         "\\mplibtmptoks\\expanded{{",
@@ -2475,7 +2473,7 @@ local function gather_resources (ispattern)
       warn"transparent package is not fully functional without pdfmanagement code."
     end
     if luatexbase.callbacktypes.finish_pdffile then
-      for _,v in ipairs(names) do
+      for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
         local tt = pdfetcs[v.."_res"]
         if tt then
           local res = tableconcat( tt )
@@ -2534,13 +2532,6 @@ function luamplib.registerpattern ( boxid, name, opts )
     local index = tex.saveboxresource(boxid, attr, optres, true, opts.bbox and 4 or 1)
     patterns[name] = { id = index, colored = opts.colored }
   else
-    if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf in dvi mode
-      local llx, lly = get_macro'MPllx', get_macro'MPlly'
-      local llxy = format("/Matrix[1 0 0 1 %s %s]", -llx, -lly)
-      for _,t in ipairs(pdfetcs.shadingpatterns[name]) do
-        texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
-      end
-    end
     local cnt = #patterns + 1
     local objname = "@mplibpattern" .. cnt
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
@@ -2558,6 +2549,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     }
     patterns[cnt] = objname
     patterns[name] = { id = cnt, colored = opts.colored }
+    patterns[name].shifts = { get_macro"MPllx", get_macro"MPlly" } -- for shading patterns above
   end
 end
 
@@ -2814,12 +2806,6 @@ function luamplib.registergroup (boxid, name, opts)
     }, "global")
     whd = format("%.3f %.3f 0", wd/factor, (ht+dp)/factor) :gsub(decimals,rmzeros)
   else
-    if pdfetcs.shadingpatterns[name] then -- here print shading pattern obj to pdf in dvi mode
-      local llxy = format("/Matrix[1 0 0 1 %s %s]", -mpllx, -mplly) :gsub(decimals,rmzeros)
-      for _,t in ipairs(pdfetcs.shadingpatterns[name]) do
-        texsprint(format("\\special{pdf:put %s <<%s%s>>}", pdfetcs.resfmt:format(t[1]), t[2], llxy))
-      end
-    end
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
     texsprint {

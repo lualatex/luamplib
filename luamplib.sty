@@ -92,6 +92,7 @@
 {\def\:{\global\let\mplibsptoken= } \: }
 \protected\def\mppattern#1{%
   \begingroup
+  \def\MPllx{0}\def\MPlly{0}%
   \def\mplibpatternname{#1}%
   \mplibpatterngetnexttok
 }
