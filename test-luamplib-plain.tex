@@ -1,8 +1,12 @@
-%\input luaotfload.sty
+\input luaotfload.sty
+\ifnum\outputmode>0
+  \font\myfont={file:lmroman10-bold.otf} at 10pt
+\else
+  \let\myfont=\bf
+\fi
 \input miniltx
 \input color
-\definecolor{orange}{cmyk}{0,.5,1,0}
-\input luaotfload.sty
+\definecolor{orange}{rgb}{1,.5,0}
 \input luamplib.sty
 \mpliblegacybehavior{true}%
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
@@ -39,6 +43,7 @@ draw textext "\tracingcommands0 textext 50\% color" shifted (10,-10) withcolor .
 draw bbox currentpicture;
 endfig;
 
+verbatimtex B\endgraf A etex;
 beginfig(18);
 numeric u;
 u = 1cm;
@@ -165,7 +170,10 @@ diameter:\Dia bp.%
     rotatedlabel.top(textext "Rotated!", origin, 45);
   endfig;
 \endmplibcode
-\par
+
+\vfill
+\penalty-9999
+
 \mplibcode
 beginfig(1) % in dvi mode, not work for type1 font
 draw mplibgraphictext "\bf Funny$\sqrt{2}$"
@@ -316,19 +324,21 @@ usemplibgroup "testTRgroup"
 \usemplibgroup{mytex}%
 \mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 \par
+\leavevmode
 \mpfig
-  draw mplibgraphictext "\bf MPLIB"
+  draw mplibgraphictext "\myfont MPLIB"
   fakebold 1 fillcolor .7[white,blue] drawcolor .7blue scaled 7
   withmppattern "pattuncolored" ;
 \endmpfig
-\leavevmode
 \mpfig
-  draw btex \bf\TeX etex rotated 30 scaled 3
+  draw btex \myfont\TeX etex rotated 30 scaled 3
     withshadingmethod "linear"
     withshadingcolors (red,blue)
     withshadingvector (0,1)
     ;
 \endmpfig
+
+\leavevmode
 \mppattern{p1}
   \mpfig
     fill fullcircle scaled 3
@@ -437,6 +447,65 @@ draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
   draw TeX;
 \endmplibcode
-Current instance name is: \currentmpinstancename \vskip 2\baselineskip
+Current instance name is: \currentmpinstancename
+
+\medskip
+\centerline{*\qquad *\qquad * }
+\medskip
+
+\mpfig*
+def myshading =
+  withshadingmethod "linear"
+  withshadingvector (2, 1)
+  withshadingcolors (red, blue)
+enddef;
+picture pic[];
+pic1 = image(
+fill fullcircle scaled 60 shifted 30right withoutcolor;
+fill fullcircle scaled 60 withoutcolor;
+) ;
+pic2 := image( draw pic1 myshading ) ;
+\endmpfig
+
+\setbox0\hbox{\def\mplibgroupname{mygrshpic}\mpfig draw pic2; \endmpfig}
+\directlua{ luamplib.registergroup(0, "mygrshpic", { asgroup="" }) }
+\leavevmode
+\mpfig
+usemplibgroup "mygrshpic"
+withtransparency (1, 2/3) ;
+\endmpfig
+\mplibgroup{mygrshpic}[asgroup=""]
+\mpfig
+draw pic2 ;
+\endmpfig
+\endmplibgroup
+\usemplibgroup{mygrshpic}
+
+\leavevmode
+\mpfig
+usemplibgroup "mygrshpic"
+withtransparency (1, 2/3) ;
+\endmpfig
+\mpfig % shading outside picture group
+draw pic1
+asgroup "off"
+myshading
+withtransparency (1, 2/3) ;
+\endmpfig
+
+\leavevmode
+\mpfig % shading outside picture group
+draw btex \bf\TeX etex scaled 5
+asgroup "off"
+myshading
+withoutcolor
+withtransparency (1, 2/3) ;
+\endmpfig
+\mpfig % shading outside picture non-group
+draw btex \bf\TeX etex scaled 5
+myshading
+withoutcolor
+withtransparency (1, 2/3) ;
+\endmpfig
 
 \bye
