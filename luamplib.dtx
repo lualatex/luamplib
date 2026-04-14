@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/04/09 v2.40.6 Interface for using the mplib library]%
+  [2026/04/14 v2.40.7 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -139,7 +139,7 @@ See source file '\inFileName' for licencing and contact information.
     \ifnum #1=\vln \vadjust{\vbox to 0pt{\vskip-2ex \vss \unvbox0 \vss}}\fi }\relax
   \AddToHookNext{env/verbatim/after}{\RemoveFromHook{para/begin}[mpfig/example]}}
 
-\def\bsx{\begingroup\begingroup\color{Goldenrod4}}
+\def\bsx{\leavevmode\begingroup\begingroup\color{Goldenrod4}}
 \def\esx{\endgroup\endgroup}
 
 \let\descriptionlabelorig\descriptionlabel
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/04/09 v2.40.6}
+% \date{2026/04/14 v2.40.7}
 %
 % \maketitle
 %
@@ -678,7 +678,7 @@ See source file '\inFileName' for licencing and contact information.
 %   This key is intended for figures the meaning of which is the sequence of texts in the
 %   \TeX-text boxes in the order they are drawn in the figure.
 %
-%   \notabene Inside |text|-mode figures, reusing \TeX-text boxes is strongly discouraged.
+%   \notabene Within |text|-mode figures, reusing \TeX-text boxes is strongly discouraged.
 %
 %   Note that the text in a \TeX-text box which starts with |[taggingoff]| will not be tagged
 %   at all, and
@@ -1215,7 +1215,7 @@ See source file '\inFileName' for licencing and contact information.
 %   An example:
 %\startmpfig
 %\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
-%\mpfig picture tex; tex = mpliboutlinetext.p ("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
+%\mpfig picture tex; tex = mpliboutlinetext("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
 %\stopmpfig{15}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
@@ -1229,7 +1229,7 @@ See source file '\inFileName' for licencing and contact information.
 %    \begin{mplibcode}
 %      beginfig(1)
 %        picture tex;
-%        tex = mpliboutlinetext.p ("\bfseries \TeX");
+%        tex = mpliboutlinetext ("\bfseries \TeX");
 %        for i=1 upto mpliboutlinenum:
 %          mplibfillandstrokeglyph mpliboutlinepic[i]
 %            scaled 8
@@ -1545,7 +1545,6 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
-% \ifdim\dimexpr\pagegoal-\pagetotal\relax<3\baselineskip \newpage \fi
 %
 % \subsubsection[\ttfamily mpliblength, mplibuclength]{\ttfamily mpliblength ..., mplibuclength ...}
 %   \bsx|mpliblength| \meta{string}\esx\ returns the number of unicode characters in the string.
@@ -1719,8 +1718,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.6",
-  date          = "2026/04/09",
+  version       = "2.40.7",
+  date          = "2026/04/14",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2687,6 +2686,9 @@ end
 %    luamplib's mplibgraphictext operator
 %    \begin{macrocode}
 do
+  if not math.round then
+    function math.round(x) return x < 0 and -math.floor(-x + 0.5) or math.floor(x + 0.5) end
+  end
   local emboldenfonts = { }
   local function roundupwidth (f, fb)
     local wd = math.round(f.size * fb / factor * 10)
@@ -2801,7 +2803,8 @@ do
           local width = roundupwidth(ft, fakebold)
           if ft.format == "opentype" or ft.format == "truetype" then
             local name = ft.name:gsub('"',''):gsub(';$','')
-            name = format('%s;embolden=%s;',name,fakebold)
+            local t = name:gsub("^file:",""):gsub("^name:",""):gsub("^kpse:",""):gsub("^my:","")
+            name = format('%s%sembolden=%s;',name, t:find":" and ";" or ":", fakebold)
             _, i = fonts.constructors.readanddefine(name,ft.size)
           elseif pdfmode then
             local ft = table.copy(ft)
@@ -4548,8 +4551,7 @@ local function gather_resources (ispattern)
       for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
         local tt = pdfetcs[v.."_res"]
         if tt then
-          local res = tableconcat( tt )
-          t[#t+1] = ("/%s<<%s>>"):format(v, res)
+          t[#t+1] = ("/%s<<%s>>"):format(v, tableconcat(tt))
         end
       end
     else
@@ -5359,7 +5361,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/09 v2.40.6 mplib package for LuaTeX]
+    [2026/04/14 v2.40.7 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

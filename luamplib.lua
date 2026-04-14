@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.6",
-  date          = "2026/04/09",
+  version       = "2.40.7",
+  date          = "2026/04/14",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -723,6 +723,9 @@ local function getrulemetric (box, curr, bp)
 end
 
 do
+  if not math.round then
+    function math.round(x) return x < 0 and -math.floor(-x + 0.5) or math.floor(x + 0.5) end
+  end
   local emboldenfonts = { }
   local function roundupwidth (f, fb)
     local wd = math.round(f.size * fb / factor * 10)
@@ -834,7 +837,8 @@ do
           local width = roundupwidth(ft, fakebold)
           if ft.format == "opentype" or ft.format == "truetype" then
             local name = ft.name:gsub('"',''):gsub(';$','')
-            name = format('%s;embolden=%s;',name,fakebold)
+            local t = name:gsub("^file:",""):gsub("^name:",""):gsub("^kpse:",""):gsub("^my:","")
+            name = format('%s%sembolden=%s;',name, t:find":" and ";" or ":", fakebold)
             _, i = fonts.constructors.readanddefine(name,ft.size)
           elseif pdfmode then
             local ft = table.copy(ft)
@@ -2476,8 +2480,7 @@ local function gather_resources (ispattern)
       for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
         local tt = pdfetcs[v.."_res"]
         if tt then
-          local res = tableconcat( tt )
-          t[#t+1] = ("/%s<<%s>>"):format(v, res)
+          t[#t+1] = ("/%s<<%s>>"):format(v, tableconcat(tt))
         end
       end
     else

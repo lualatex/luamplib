@@ -13,7 +13,7 @@
 \setmainfont{latin modern roman}
 \newfontfamily\hangulfont{NotoSansCJKKR}[Script=Hangul,Language=Korean]
 \usepackage{luamplib}
-\usepackage{geometry,unicode-math,graphicx,xcolor}
+\usepackage{geometry,lua-unicode-math,graphicx,xcolor}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
@@ -401,7 +401,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 \endgroup
 
-\begin{center}\mplibforcehmode
+\mplibforcehmode
 \mppattern{p1}
   \mpfig[off]
     fill fullcircle scaled 3
@@ -437,30 +437,11 @@ mplibfillandstrokeglyph pic
   withmplibcolors ("orange", 2/3red)
   ;
 \endmpfig
-\mpfig*
-  picture pic;
-  pic = btex \includegraphics[width=120bp]{hacker} etex shifted 50 dir 30;
-\endmpfig
-\mplibgroup{mymask}[asgroup="masking"]
-  \mpfig[off]
-    label(btex \sffamily\bfseries\Huge Meta etex scaled 2, center pic) withcolor 1;
-  \endmpfig
-\endmplibgroup
-\mpfig[alt=test general masking]
-  fill bbox pic
-    withshadingmethod "linear"
-    withshadingcolors(3/4red,3/4blue)
-    ;
-  draw pic
-    withmaskinggroup "mymask"
-    withmaskingbgcolor 0.1
-    ;
-\endmpfig
 \mpfig
   mplibdrawglyph mplibglyph "R" of "utmr8a.pfb" scaled 1/10 withcolor 2/3red;
 \endmpfig
-\end{center}
 
+\mplibnoforcehmode
 \mpliblegacybehavior{true}%
 
 \vskip 2\baselineskip
@@ -522,43 +503,26 @@ Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
 \begin{center}* \qquad * \qquad *\end{center}
 
-shading pattern and xobject:
-\mpfig*
-picture pic[];
-pic1 = image(
-fill fullcircle scaled 44 withoutcolor;
-fill fullcircle scaled 44 shifted 22right withoutcolor;
-) ;
-pic2 = image( draw pic1
-withshadingmethod "circular"
-withshadingcolors (red, blue)
-% shading inside group
-) ;
-\endmpfig
-\mpfig
-draw pic2
-asgroup ""
-withtransparency (1, 2/3) ;
-\endmpfig
-\mplibgroup{mygrshpic}[asgroup=""] % see next subsection
-\mpfig
-draw pic2 ;
-\endmpfig
-\endmplibgroup
-\usemplibgroup{mygrshpic}
-\mpfig
-usemplibgroup "mygrshpic"
-withtransparency (1, 2/3) ;
-\endmpfig
-\mpfig % shading outside group
-draw pic1
-asgroup ""
-withshadingmethod "circular"
-withshadingcolors (red, blue)
-withtransparency (1, 2/3) ;
-\endmpfig
-
 pattern after masking
+\mpfig*
+  picture pic;
+  pic = btex \includegraphics[width=120bp]{hacker} etex shifted 50 dir 30;
+\endmpfig
+\mplibgroup{mymask}[asgroup="masking"]
+  \mpfig[off]
+    label(btex \sffamily\bfseries\Huge Meta etex scaled 2, center pic) withcolor 1;
+  \endmpfig
+\endmplibgroup
+\mpfig[alt=test general masking]
+  fill bbox pic
+    withshadingmethod "linear"
+    withshadingcolors(3/4red,3/4blue)
+    ;
+  draw pic
+    withmaskinggroup "mymask"
+    withmaskingbgcolor 0.1
+    ;
+\endmpfig
 \mppattern{mypatt2}[ xstep = 2, ystep = 2, matrix = "rotated 30", ]
 \mpfig[off]
 draw (up--down) scaled 5 withcolor 2/3[blue,white] ;
@@ -566,11 +530,32 @@ draw (left--right) scaled 5 withcolor 2/3[red,white] ;
 \endmpfig
 \endmppattern
 \mpfig
-draw mplibgraphictext "\bfseries ABCDE" fakebold 1/2 drawcolor 2/3red scaled 5
+draw mplibgraphictext "\bfseries ABCD" fakebold 1/2 drawcolor 2/3red scaled 5
 withmppattern "mypatt2";
 \endmpfig
 
-masking inside pattern
+pattern inside masking
+\mppattern{mypattern}[colored=false]
+\SuspendTagging\relax
+\tiny\TeX
+\endmppattern
+\mplibgroup{mygroup}[asgroup="masking"]
+\mpfig[off]
+path p; p = fullcircle xscaled 120 yscaled 50 ;
+fill p withmppattern "mypattern" withcolor 1 ;
+\endmpfig
+\endmplibgroup
+\mpfig
+draw image(fill p
+  withshadingmethod "linear" withshadingcolors (red,blue)
+  withmaskinggroup "mygroup"
+) asgroup "" withgroupname "mygroup2" ;
+\endmpfig
+\mpfig
+usemplibgroup "mygroup2" rotated 15 ;
+\endmpfig
+
+masking inside pattern\marginpar{acrobat/foxit}
 \mplibgroup{mymask2}[asgroup="masking"]
 \mpfig[off]
 picture tex;
@@ -587,23 +572,50 @@ fill bbox tex
 \endmpfig
 \endmppattern
 \mpfig
-fill fullcircle xscaled 140 yscaled 70 withmppattern "mypattern" ;
+fill p withmppattern "mypattern";
 \endmpfig
-
-pattern inside masking
-\mppattern{mypattern}[colored=false]
-\SuspendTagging\relax
-\tiny\TeX
-\endmppattern
-\mplibgroup{mygroup}[asgroup="masking"]
+\mplibgroup{mygroup3}
 \mpfig[off]
-fill fullcircle xscaled 140 yscaled 70 withmppattern "mypattern" withcolor 1 ;
+fill p withmppattern "mypattern" ;
 \endmpfig
 \endmplibgroup
 \mpfig
-fill fullcircle xscaled 140 yscaled 70
-  withshadingmethod "linear" withshadingcolors (red,blue)
-  withmaskinggroup "mygroup" ;
+usemplibgroup "mygroup3" rotated 15 ;
+\endmpfig
+
+shading pattern and xobject\marginpar{acrobat}
+\mpfig*
+picture pic[];
+pic1 = image(
+fill fullcircle scaled 44 withoutcolor;
+fill fullcircle scaled 44 shifted 22right withoutcolor;
+) ;
+pic2 = image( draw pic1
+withshadingmethod "circular"
+withshadingcolors (red, blue) % shading inside group
+) ;
+\endmpfig
+\mpfig
+draw pic2
+asgroup ""
+withtransparency (1, 2/3) ;
+\endmpfig
+\mplibgroup{mygrshpic}[asgroup=""]
+\mpfig
+draw pic2 ;
+\endmpfig
+\endmplibgroup
+\usemplibgroup{mygrshpic}
+\mpfig
+usemplibgroup "mygrshpic"
+withtransparency (1, 2/3) ;
+\endmpfig
+\mpfig % shading outside group
+draw pic1
+asgroup ""
+withshadingmethod "circular"
+withshadingcolors (red, blue)
+withtransparency (1, 2/3) ;
 \endmpfig
 
 \end{document}
