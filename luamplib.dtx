@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/04/14 v2.40.7 Interface for using the mplib library]%
+  [2026/04/16 v2.40.8 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/04/14 v2.40.7}
+% \date{2026/04/16 v2.40.8}
 %
 % \maketitle
 %
@@ -1277,7 +1277,7 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{itemize}
 % \item As shown, in addition to those arguments mimicking \emph{metafun}'s,
 %   we allow another argument at the right-hand side:
-%   |asgroup| |"off"| will produce an ordinary \emph{Form XObject}
+%   |asgroup| |"off"| will produce an ordinary \emph{form XObject}
 %   rather than a transparency group XObject.
 %   On the contrary, |asgroup| |""| (empty string) will produce a transparency group
 %   in which both of the PDF keys |/I| and |/K| are |false|.
@@ -1358,19 +1358,14 @@ See source file '\inFileName' for licencing and contact information.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
 % \notabene When you give shading effect upon a \emph{textual picture} (ie.\ non-path object)
-% inside or outside a transparency group, many of the PDF renderers including Mac OS Preview
-% do not interprete PDF coordinates properly.
+% inside or outside a transparency group, currently many of the PDF renderers,
+% including Mac OS Preview and Foxit Editor, do not interprete PDF coordinates properly.
 % If that happens, consider using other PDF viewer such as Adobe Acrobat. An example:
 % \startmpfig
 % \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 25right withoutcolor;); pic2 = image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
 % \mpfig draw pic2 asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
-% \mplibgroup{mygrshpic}[asgroup=""]
-% \mpfig draw pic2; \endmpfig
-% \endmplibgroup
-% \usemplibgroup{mygrshpic}\vskip15pt
-% \mpfig usemplibgroup "mygrshpic" withtransparency (1, 2/3); \endmpfig\vskip15pt
 % \mpfig draw pic1 asgroup "" withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue) withtransparency (1, 2/3); \endmpfig
-% \stopmpfig{20}
+% \stopmpfig{18}
 %\begin{verbatim}
 %    \mpfig*
 %      picture pic[];
@@ -1378,7 +1373,7 @@ See source file '\inFileName' for licencing and contact information.
 %          fill fullcircle scaled 60 withoutcolor;
 %          fill fullcircle scaled 60 shifted 25right withoutcolor;
 %        ) ;
-%      pic2 = image(                      % shading inside group
+%      pic2 = image(
 %        draw pic1
 %          withshadingmethod "linear"
 %          withshadingvector (2, 1)
@@ -1386,22 +1381,9 @@ See source file '\inFileName' for licencing and contact information.
 %      ) ;
 %    \endmpfig
 %
-%    \mpfig
+%    \mpfig                               % shading inside group
 %      draw pic2
 %        asgroup ""
-%        withtransparency (1, 2/3) ;
-%    \endmpfig
-%
-%    \mplibgroup{mygrshpic}[asgroup=""]   % see next subsection
-%      \mpfig
-%        draw pic2 ;
-%      \endmpfig
-%    \endmplibgroup
-%
-%    \usemplibgroup{mygrshpic}
-%
-%    \mpfig
-%      usemplibgroup "mygrshpic"
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
 %
@@ -1414,7 +1396,51 @@ See source file '\inFileName' for licencing and contact information.
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
 %\end{verbatim}
+% After some experiment, however, it turned out that
+% the best way to get picture shading with transparency group
+% is to give shading effect within an ordinary form XObject
+% and then wrap it in a transparency group XObject. Most PDF renderers do render it properly:
+%\startmpfig
+%\mpfig draw pic2 asgroup "off" withgroupname "myshading" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{4}
+%\begin{verbatim}
+%    \mpfig                               % shading within ordinary xobject
+%      draw pic2
+%        asgroup "off"
+%        withgroupname "myshading"
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+%\startmpfig
+%\mpfig usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{3}
+%\begin{verbatim}
+%    \mpfig                               % wrap in a transparency group
+%      usemplibgroup "myshading"
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+% or preferably (see next subsection \secref{mplibgroupendmplibgroup} on \cs{mplibgroup}):
+%\startmpfig
+%\mplibgroup{myshading}[asgroup="off"]
+%\mpfig draw pic2; \endmpfig
+%\endmplibgroup
+%\mpfig usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{7}
+%\begin{verbatim}
+%    \mplibgroup{myshading}[asgroup="off"]            % or no option
+%      \mpfig
+%        draw pic2 ;
+%      \endmpfig
+%    \endmplibgroup
 %
+%    \mpfig
+%      usemplibgroup "myshading"
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
 %
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
@@ -1718,8 +1744,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.7",
-  date          = "2026/04/14",
+  version       = "2.40.8",
+  date          = "2026/04/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4499,6 +4525,7 @@ local function gather_resources (optres, ispattern)
       end
     end
   elseif is_defined(pdfetcs.pgfextgs) then
+    run_tex_code"\\relax" -- flush tex.sprint queue
     if pdfmode then
       for k,v in pairs { ExtGState  = "pgf@sys@pgf@resource@list@extgs",
                          ColorSpace = "pgf@sys@pgf@resource@list@colorspaces",
@@ -5373,7 +5400,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/14 v2.40.7 mplib package for LuaTeX]
+    [2026/04/16 v2.40.8 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.7",
-  date          = "2026/04/14",
+  version       = "2.40.8",
+  date          = "2026/04/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2436,6 +2436,7 @@ local function gather_resources (optres, ispattern)
       end
     end
   elseif is_defined(pdfetcs.pgfextgs) then
+    run_tex_code"\\relax" -- flush tex.sprint queue
     if pdfmode then
       for k,v in pairs { ExtGState  = "pgf@sys@pgf@resource@list@extgs",
                          ColorSpace = "pgf@sys@pgf@resource@list@colorspaces",

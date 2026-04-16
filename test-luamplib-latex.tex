@@ -505,32 +505,34 @@ Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
 pattern after masking
 \mpfig*
-  picture pic;
-  pic = btex \includegraphics[width=120bp]{hacker} etex shifted 50 dir 30;
+  picture pic; pic = btex \sffamily\bfseries\Huge Meta etex scaled 2;
 \endmpfig
 \mplibgroup{mymask}[asgroup="masking"]
   \mpfig[off]
-    label(btex \sffamily\bfseries\Huge Meta etex scaled 2, center pic) withcolor 1;
+    draw pic withcolor 1;
   \endmpfig
 \endmplibgroup
 \mpfig[alt=test general masking]
-  fill bbox pic
-    withshadingmethod "linear"
-    withshadingcolors(3/4red,3/4blue)
-    ;
-  draw pic
-    withmaskinggroup "mymask"
-    withmaskingbgcolor 0.1
-    ;
+  draw image(
+    for i=-7 upto 8 :
+      fill unitsquare
+      xscaled (xpart lrcorner pic + 3 bboxmargin)
+      yscaled 5
+      rotated 15
+      shifted (0, 5i)
+      withcolor ((i+7)/14)[blue,red] ;
+    endfor
+  ) withmaskinggroup "mymask"
+    withmaskingbgcolor 1/10 ;
+  clip currentpicture to bbox pic;
 \endmpfig
-\mppattern{mypatt2}[ xstep = 2, ystep = 2, matrix = "rotated 30", ]
+\mppattern{mypatt2}[ xstep = 3, ystep = 3 ]
 \mpfig[off]
-draw (up--down) scaled 5 withcolor 2/3[blue,white] ;
-draw (left--right) scaled 5 withcolor 2/3[red,white] ;
+fill fullcircle scaled 2 withcolor 2/3 red;
 \endmpfig
 \endmppattern
 \mpfig
-draw mplibgraphictext "\bfseries ABCD" fakebold 1/2 drawcolor 2/3red scaled 5
+draw mplibgraphictext "\bfseries POST" fakebold 1/2 drawcolor 2/3red scaled 5
 withmppattern "mypatt2";
 \endmpfig
 
@@ -555,7 +557,7 @@ draw image(fill p
 usemplibgroup "mygroup2" rotated 15 ;
 \endmpfig
 
-masking inside pattern\marginpar{acrobat/foxit}
+masking inside pattern\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome}}
 \mplibgroup{mymask2}[asgroup="masking"]
 \mpfig[off]
 picture tex;
@@ -583,7 +585,31 @@ fill p withmppattern "mypattern" ;
 usemplibgroup "mygroup3" rotated 15 ;
 \endmpfig
 
-shading pattern and xobject\marginpar{acrobat}
+just shading in pattern
+\mppattern{myshpatt}
+\mpfig[off]
+bboxmargin:=1/5;
+fill bbox tex
+withshadingmethod"linear" withshadingcolors(2/3[white,red], 2/3[white,blue])
+withtransparency (1, 1/10)
+;
+draw tex
+withshadingmethod"linear" withshadingcolors(2/3[white,red], 2/3[white,blue]) ;
+\endmpfig
+\endmppattern
+\mpfig
+fill p withmppattern "myshpatt";
+\endmpfig
+\mplibgroup{mygroup4}
+\mpfig[off]
+fill p withmppattern "myshpatt" ;
+\endmpfig
+\endmplibgroup
+\mpfig
+usemplibgroup "mygroup4" rotated 15 ;
+\endmpfig
+
+shading pattern and xobject\marginpar{\leavevmode\llap{acrobat}}
 \mpfig*
 picture pic[];
 pic1 = image(
@@ -601,11 +627,10 @@ asgroup ""
 withtransparency (1, 2/3) ;
 \endmpfig
 \mplibgroup{mygrshpic}[asgroup=""]
-\mpfig
+\mpfig[off]
 draw pic2 ;
 \endmpfig
 \endmplibgroup
-\usemplibgroup{mygrshpic}
 \mpfig
 usemplibgroup "mygrshpic"
 withtransparency (1, 2/3) ;
@@ -616,6 +641,16 @@ asgroup ""
 withshadingmethod "circular"
 withshadingcolors (red, blue)
 withtransparency (1, 2/3) ;
+\endmpfig
+
+\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome/preview}}
+\mplibgroup{myshading}
+\mpfig[off]
+  draw pic2;
+\endmpfig
+\endmplibgroup
+\mpfig
+  usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3) ;
 \endmpfig
 
 \end{document}

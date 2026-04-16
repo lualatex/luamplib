@@ -504,8 +504,19 @@ withtransparency (1, 2/3) ;
 \mpfig % shading outside picture non-group
 draw btex \bf\TeX etex scaled 5
 myshading
-withoutcolor
 withtransparency (1, 2/3) ;
 \endmpfig
 
+this is the best:
+\mplibgroup{myshading}
+\mpfig
+draw pic2
+myshading ;
+draw btex \bf\TeX etex scaled 5 shifted lrcorner pic2
+myshading ;
+\endmpfig
+\endmplibgroup
+\mpfig
+usemplibgroup "myshading" asgroup "" withtransparency(1, 2/3) ;
+\endmpfig
 \bye
