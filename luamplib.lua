@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.7",
-  date          = "2026/04/14",
+  version       = "2.40.8",
+  date          = "2026/04/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2416,7 +2416,7 @@ local function do_preobj_shading (object, prescript)
 end
 
 pdfetcs.patterns = { }
-local function gather_resources (ispattern)
+local function gather_resources (optres, ispattern)
   local t = { }
   if pdfmanagement then
     for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
@@ -2436,11 +2436,11 @@ local function gather_resources (ispattern)
       end
     end
   elseif is_defined(pdfetcs.pgfextgs) then
+    run_tex_code"\\relax" -- flush tex.sprint queue
     if pdfmode then
-      for k,v in pairs {
-        ExtGState  = "pgf@sys@pgf@resource@list@extgs",
-        Pattern    = "pgf@sys@pgf@resource@list@patterns",
-        ColorSpace = "pgf@sys@pgf@resource@list@colorspaces", } do
+      for k,v in pairs { ExtGState  = "pgf@sys@pgf@resource@list@extgs",
+                         ColorSpace = "pgf@sys@pgf@resource@list@colorspaces",
+                         Pattern    = "pgf@sys@pgf@resource@list@patterns", } do
         local res = (get_macro(v) or ""):gsub("^%s*(.-)%s*$","%1")
         if res ~= "" then
           t[#t+1] = ("/%s<<%s>>"):format(k, res )
@@ -2448,13 +2448,12 @@ local function gather_resources (ispattern)
       end
     else
       local abc = get_macro"pgfutil@abc" or ""
-      for k,v in pairs {
-        ExtGState  = "@pgfextgs",
-        Pattern    = "@pgfpatterns",
-        ColorSpace = "@pgfcolorspaces", } do
+      for k,v in pairs { ExtGState  = "@pgfextgs",
+                         ColorSpace = "@pgfcolorspaces",
+                         Pattern    = "@pgfpatterns", } do
         local tt = { }
-        for vv in abc:gmatch( v .. "%s*<<%s*(.-)%s*>>" ) do
-          tt[#tt+1] = vv
+        for vv in abc:gmatch( v .. "%s*(%b<>)" ) do
+          tt[#tt+1] = vv:match("^<<%s*(.-)%s*>>$")
         end
         if #tt > 0 then
           t[#t+1] = ("/%s<<%s>>"):format(k, tableconcat(tt) )
@@ -2490,7 +2489,21 @@ local function gather_resources (ispattern)
       end
     end
   end
-  return tableconcat(t)
+  local result = tableconcat(t)
+  if optres ~= "" then
+    for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
+      local res = optres:match("/"..v.."%s*%b<>")
+      if res then
+        if result:find("/"..v) then
+          res = res:match("<<(.+)>>$")
+          result = result:gsub("/"..v.."%s*<<", "%1"..res, 1)
+        else
+          result = result .. res
+        end
+      end
+    end
+  end
+  return result
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
@@ -2525,7 +2538,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix[%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
-  optres = optres .. gather_resources(true) -- tiling pattern plus masking glitches with acrobat
+  optres = gather_resources(optres, true) -- tiling pattern plus masking glitches with acrobat
   local patterns = pdfetcs.patterns
   if pdfmode then
     if opts.bbox then
@@ -2717,7 +2730,7 @@ local function do_preobj_GRP (object, prescript)
                                        trgroup.isolated, trgroup.knockout))
       grattr = format("/Group %s", pdfetcs.resfmt:format(on))
     end
-    local res = gather_resources()
+    local res = gather_resources("")
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
       put2output(tableconcat{
@@ -2762,7 +2775,7 @@ function luamplib.registergroup (boxid, name, opts)
   local wd, ht, dp = node.getwhd(box)
   local is_mask = opts.asgroup and opts.asgroup:find"masking"
   local res = opts.resources or ""
-  res = res .. gather_resources()
+  res = gather_resources(res)
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end

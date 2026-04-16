@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/04/14 v2.40.7 Interface for using the mplib library]%
+  [2026/04/16 v2.40.8 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/04/14 v2.40.7}
+% \date{2026/04/16 v2.40.8}
 %
 % \maketitle
 %
@@ -1277,7 +1277,7 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{itemize}
 % \item As shown, in addition to those arguments mimicking \emph{metafun}'s,
 %   we allow another argument at the right-hand side:
-%   |asgroup| |"off"| will produce an ordinary \emph{Form XObject}
+%   |asgroup| |"off"| will produce an ordinary \emph{form XObject}
 %   rather than a transparency group XObject.
 %   On the contrary, |asgroup| |""| (empty string) will produce a transparency group
 %   in which both of the PDF keys |/I| and |/K| are |false|.
@@ -1358,19 +1358,14 @@ See source file '\inFileName' for licencing and contact information.
 % However, if you have made the original transparency group using |withoutcolor| command,
 % colors will have effects on the uncolored objects in the group.
 % \notabene When you give shading effect upon a \emph{textual picture} (ie.\ non-path object)
-% inside or outside a transparency group, many of the PDF renderers including Mac OS Preview
-% do not interprete PDF coordinates properly.
+% inside or outside a transparency group, currently many of the PDF renderers,
+% including Mac OS Preview and Foxit Editor, do not interprete PDF coordinates properly.
 % If that happens, consider using other PDF viewer such as Adobe Acrobat. An example:
 % \startmpfig
 % \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 25right withoutcolor;); pic2 = image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
 % \mpfig draw pic2 asgroup "" withtransparency (1, 2/3); \endmpfig\vskip15pt
-% \mplibgroup{mygrshpic}[asgroup=""]
-% \mpfig draw pic2; \endmpfig
-% \endmplibgroup
-% \usemplibgroup{mygrshpic}\vskip15pt
-% \mpfig usemplibgroup "mygrshpic" withtransparency (1, 2/3); \endmpfig\vskip15pt
 % \mpfig draw pic1 asgroup "" withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue) withtransparency (1, 2/3); \endmpfig
-% \stopmpfig{20}
+% \stopmpfig{18}
 %\begin{verbatim}
 %    \mpfig*
 %      picture pic[];
@@ -1378,7 +1373,7 @@ See source file '\inFileName' for licencing and contact information.
 %          fill fullcircle scaled 60 withoutcolor;
 %          fill fullcircle scaled 60 shifted 25right withoutcolor;
 %        ) ;
-%      pic2 = image(                      % shading inside group
+%      pic2 = image(
 %        draw pic1
 %          withshadingmethod "linear"
 %          withshadingvector (2, 1)
@@ -1386,22 +1381,9 @@ See source file '\inFileName' for licencing and contact information.
 %      ) ;
 %    \endmpfig
 %
-%    \mpfig
+%    \mpfig                               % shading inside group
 %      draw pic2
 %        asgroup ""
-%        withtransparency (1, 2/3) ;
-%    \endmpfig
-%
-%    \mplibgroup{mygrshpic}[asgroup=""]   % see next subsection
-%      \mpfig
-%        draw pic2 ;
-%      \endmpfig
-%    \endmplibgroup
-%
-%    \usemplibgroup{mygrshpic}
-%
-%    \mpfig
-%      usemplibgroup "mygrshpic"
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
 %
@@ -1414,7 +1396,51 @@ See source file '\inFileName' for licencing and contact information.
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
 %\end{verbatim}
+% After some experiment, however, it turned out that
+% the best way to get picture shading with transparency group
+% is to give shading effect within an ordinary form XObject
+% and then wrap it in a transparency group XObject. Most PDF renderers do render it properly:
+%\startmpfig
+%\mpfig draw pic2 asgroup "off" withgroupname "myshading" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{4}
+%\begin{verbatim}
+%    \mpfig                               % shading within ordinary xobject
+%      draw pic2
+%        asgroup "off"
+%        withgroupname "myshading"
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+%\startmpfig
+%\mpfig usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{3}
+%\begin{verbatim}
+%    \mpfig                               % wrap in a transparency group
+%      usemplibgroup "myshading"
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
+% or preferably (see next subsection \secref{mplibgroupendmplibgroup} on \cs{mplibgroup}):
+%\startmpfig
+%\mplibgroup{myshading}[asgroup="off"]
+%\mpfig draw pic2; \endmpfig
+%\endmplibgroup
+%\mpfig usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{7}
+%\begin{verbatim}
+%    \mplibgroup{myshading}[asgroup="off"]            % or no option
+%      \mpfig
+%        draw pic2 ;
+%      \endmpfig
+%    \endmplibgroup
 %
+%    \mpfig
+%      usemplibgroup "myshading"
+%        asgroup ""
+%        withtransparency (1, 2/3) ;
+%    \endmpfig
+%\end{verbatim}
 %
 % \subsubsection[\cs{mplibgroup}]{\cs{mplibgroup\{...\} ...} \cs{endmplibgroup}}
 %   \label{sec:mplibgroupendmplibgroup}
@@ -1557,7 +1583,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, |mplibuclength| |"Äpfel"|,
 %   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
 %   returns |5|, not |6| or |7|.
-%   This operator requires \pkg{lua-uni-algos} package.
+%   This operator requires \pkg{lua-uni-algos} package installed.
 %
 % \subsubsection[\ttfamily mplibsubstring, mplibucsubstring]{\ttfamily mplibsubstring ... of ..., mplibucsubstring ... of ...}
 %   \bsx|mplibsubstring| \meta{pair} |of| \meta{string}\esx\ is a unicode-aware version equivalent to the
@@ -1572,7 +1598,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For instance, |mplibucsubstring| |(0,1)| |of| |"Äpfel"|,
 %   where |Ä| is encoded using two codepoints (U+0041 and U+0308),
 %   returns |"Ä"|, not |"A"|.
-%   This operator requires \pkg{lua-uni-algos} package.
+%   This operator requires \pkg{lua-uni-algos} package installed.
 %
 % \subsection{Lua}
 %
@@ -1718,8 +1744,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.7",
-  date          = "2026/04/14",
+  version       = "2.40.8",
+  date          = "2026/04/16",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4479,7 +4505,7 @@ end
 %    Tiling Patterns
 %    \begin{macrocode}
 pdfetcs.patterns = { }
-local function gather_resources (ispattern)
+local function gather_resources (optres, ispattern)
   local t = { }
   if pdfmanagement then
     for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
@@ -4499,11 +4525,11 @@ local function gather_resources (ispattern)
       end
     end
   elseif is_defined(pdfetcs.pgfextgs) then
+    run_tex_code"\\relax" -- flush tex.sprint queue
     if pdfmode then
-      for k,v in pairs {
-        ExtGState  = "pgf@sys@pgf@resource@list@extgs",
-        Pattern    = "pgf@sys@pgf@resource@list@patterns",
-        ColorSpace = "pgf@sys@pgf@resource@list@colorspaces", } do
+      for k,v in pairs { ExtGState  = "pgf@sys@pgf@resource@list@extgs",
+                         ColorSpace = "pgf@sys@pgf@resource@list@colorspaces",
+                         Pattern    = "pgf@sys@pgf@resource@list@patterns", } do
         local res = (get_macro(v) or ""):gsub("^%s*(.-)%s*$","%1")
         if res ~= "" then
           t[#t+1] = ("/%s<<%s>>"):format(k, res )
@@ -4511,13 +4537,12 @@ local function gather_resources (ispattern)
       end
     else
       local abc = get_macro"pgfutil@abc" or ""
-      for k,v in pairs {
-        ExtGState  = "@pgfextgs",
-        Pattern    = "@pgfpatterns",
-        ColorSpace = "@pgfcolorspaces", } do
+      for k,v in pairs { ExtGState  = "@pgfextgs",
+                         ColorSpace = "@pgfcolorspaces",
+                         Pattern    = "@pgfpatterns", } do
         local tt = { }
-        for vv in abc:gmatch( v .. "%s*<<%s*(.-)%s*>>" ) do
-          tt[#tt+1] = vv
+        for vv in abc:gmatch( v .. "%s*(%b<>)" ) do
+          tt[#tt+1] = vv:match("^<<%s*(.-)%s*>>$")
         end
         if #tt > 0 then
           t[#t+1] = ("/%s<<%s>>"):format(k, tableconcat(tt) )
@@ -4561,7 +4586,21 @@ local function gather_resources (ispattern)
       end
     end
   end
-  return tableconcat(t)
+  local result = tableconcat(t)
+  if optres ~= "" then
+    for _,v in ipairs {"ExtGState","ColorSpace","Pattern","Shading"} do
+      local res = optres:match("/"..v.."%s*%b<>")
+      if res then
+        if result:find("/"..v) then
+          res = res:match("<<(.+)>>$")
+          result = result:gsub("/"..v.."%s*<<", "%1"..res, 1)
+        else
+          result = result .. res
+        end
+      end
+    end
+  end
+  return result
 end
 function luamplib.registerpattern ( boxid, name, opts )
   local box = texgetbox(boxid)
@@ -4596,7 +4635,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     format("/Matrix[%s %s %s]", opts.matrix or "1 0 0 1", opts.xshift or 0, opts.yshift or 0),
   }
   local optres = opts.resources or ""
-  optres = optres .. gather_resources(true) -- tiling pattern plus masking glitches with acrobat
+  optres = gather_resources(optres, true) -- tiling pattern plus masking glitches with acrobat
   local patterns = pdfetcs.patterns
   if pdfmode then
     if opts.bbox then
@@ -4796,7 +4835,7 @@ local function do_preobj_GRP (object, prescript)
                                        trgroup.isolated, trgroup.knockout))
       grattr = format("/Group %s", pdfetcs.resfmt:format(on))
     end
-    local res = gather_resources()
+    local res = gather_resources("")
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
       put2output(tableconcat{
@@ -4841,7 +4880,7 @@ function luamplib.registergroup (boxid, name, opts)
   local wd, ht, dp = node.getwhd(box)
   local is_mask = opts.asgroup and opts.asgroup:find"masking"
   local res = opts.resources or ""
-  res = res .. gather_resources()
+  res = gather_resources(res)
   local attr = { "/Type/XObject/Subtype/Form/FormType 1" }
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
@@ -5361,7 +5400,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/14 v2.40.7 mplib package for LuaTeX]
+    [2026/04/16 v2.40.8 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
