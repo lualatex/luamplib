@@ -1214,14 +1214,14 @@ See source file '\inFileName' for licencing and contact information.
 %   Uncolored pattern will be painted later by the color of a \metapost object.
 %   An example:
 %\startmpfig
-%\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 30",]\tiny\TeX\end{mppattern}
+%\begin{mppattern}{pattnocolor}[colored=false, matrix="slanted .3 rotated 15",]\tiny\TeX\end{mppattern}
 %\mpfig picture tex; tex = mpliboutlinetext("\bfseries \TeX"); for i=1 upto mpliboutlinenum: mplibfillandstrokeglyph mpliboutlinepic[i] scaled 8 withmppattern "pattnocolor" withpen pencircle scaled 1/2 withcolor (i/4)[red,blue]; endfor \endmpfig
 %\stopmpfig{15}
 %\begin{verbatim}
 %    \begin{mppattern}{pattnocolor}
 %      [
 %        colored = false,
-%        matrix = "slanted .3 rotated 30",
+%        matrix = "slanted .3 rotated 15",
 %      ]
 %      \tiny\TeX
 %    \end{mppattern}
@@ -1453,20 +1453,22 @@ See source file '\inFileName' for licencing and contact information.
 % An example:\footnote{Note that, here again, within a transparency group XObject
 %   a tiling pattern is encapsulated in an inner, ordinary XObject.
 %   This annoyance is especially for Mac OS Preview which misapplies
-%   the transformation matrix to tiling or shading patterns in a transparency group.
-%   Most other PDF renderers seem to behave properly even without the double wrapping. }
+%   the transformation matrix to tiling or shading patterns
+%   directly wrapped in a transparency group.
+%   Most other PDF renderers seem to behave properly even with single wrapping
+%   in a transparency group. }
 %\startmpfig
-%\mplibgroup{texpatt1}[asgroup="off",]\mpfig filldraw fullcircle xscaled 90 yscaled 50 withmppattern "pattnocolor" withcolor 2/3red;\endmpfig \endmplibgroup
+%\mplibgroup{texpatt1}[asgroup="off",]\mpfig filldraw fullcircle xscaled 100 yscaled 50 withmppattern "pattnocolor" withcolor 2/3red;\endmpfig \endmplibgroup
 %\mplibgroup{texpatt2}[asgroup=""]\usemplibgroup{texpatt1}\endmplibgroup
 %\usemplibgroup{texpatt2}
 %\stopmpfig{15}
 %\begin{verbatim}
-%    \mplibgroup{texpatt1}                     % or \begin{mplibgroup}{mygrx}
+%    \mplibgroup{texpatt1}                     % or \begin{mplibgroup}{texpatt1}
 %      [                                       % options: see below
 %        asgroup="off",
 %      ]
 %      \mpfig                                  % or any other TeX code
-%        filldraw fullcircle xscaled 90 yscaled 50
+%        filldraw fullcircle xscaled 100 yscaled 50
 %          withmppattern "pattnocolor"
 %          withcolor 2/3 red ;
 %      \endmpfig
@@ -1503,7 +1505,7 @@ See source file '\inFileName' for licencing and contact information.
 % \hline
 %   Key         & Value Type    & Explanation\\
 % \hline
-%   |asgroup|   &\emph{string} & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"|, |"masking"| or |"off"|\\
+%   |asgroup|   &\emph{string} & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"|, |"off"| or |"masking"|\\
 %   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
 %     or MP transform code\\
