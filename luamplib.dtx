@@ -1450,29 +1450,45 @@ See source file '\inFileName' for licencing and contact information.
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
 %
-% An example:
+% An example:\footnote{Note that, here again, within a transparency group XObject
+%   a tiling pattern is encapsulated in an inner, ordinary XObject.
+%   This annoyance is especially for Mac OS Preview which misapplies
+%   the transformation matrix to tiling or shading patterns in a transparency group.
+%   Most other PDF renderers seem to behave properly even without the double wrapping. }
 %\startmpfig
-%\mplibgroup{mygrx}[asgroup="",]\mpfig pickup pencircle scaled 10; draw (left--right) scaled 20 rotated 45; draw (left--right) scaled 20 rotated -45; \endmpfig \endmplibgroup
-%\usemplibgroup{mygrx} \vskip10pt\par
-%\mpfig usemplibgroup "mygrx" scaled 1.5 withtransparency (1, 0.5); \endmpfig
-%\stopmpfig{10}
+%\mplibgroup{texpatt1}[asgroup="off",]\mpfig filldraw fullcircle xscaled 90 yscaled 50 withmppattern "pattnocolor" withcolor 2/3red;\endmpfig \endmplibgroup
+%\mplibgroup{texpatt2}[asgroup=""]\usemplibgroup{texpatt1}\endmplibgroup
+%\usemplibgroup{texpatt2}
+%\stopmpfig{15}
 %\begin{verbatim}
-%    \mplibgroup{mygrx}                  % or \begin{mplibgroup}{mygrx}
-%      [                                 % options: see below
+%    \mplibgroup{texpatt1}                     % or \begin{mplibgroup}{mygrx}
+%      [                                       % options: see below
+%        asgroup="off",
+%      ]
+%      \mpfig                                  % or any other TeX code
+%        filldraw fullcircle xscaled 90 yscaled 50
+%          withmppattern "pattnocolor"
+%          withcolor 2/3 red ;
+%      \endmpfig
+%    \endmplibgroup                            % or \end{mplibgroup}
+%
+%    \mplibgroup{texpatt2}
+%      [
 %        asgroup="",
 %      ]
-%      \mpfig                            % or any other TeX code
-%        pickup pencircle scaled 10;
-%        draw (left--right) scaled 20 rotated 45 ;
-%        draw (left--right) scaled 20 rotated -45 ;
-%      \endmpfig
-%    \endmplibgroup                      % or \end{mplibgroup}
-%
-%    \usemplibgroup{mygrx}
+%      \usemplibgroup{texpatt1}
+%    \endmplibgroup
+%\end{verbatim}
+%\startmpfig
+%\mpfig usemplibgroup "texpatt2" rotated -15 scaled 1.2 withtransparency(1,2/3); \endmpfig
+%\stopmpfig{4}
+%\begin{verbatim}
+%    \usemplibgroup{texpatt2}
 %
 %    \mpfig
-%      usemplibgroup "mygrx" scaled 1.5
-%        withtransparency (1, 0.5) ;
+%      usemplibgroup "texpatt2"
+%        rotated -15 scaled 1.2
+%        withtransparency (1, 2/3) ;
 %    \endmpfig
 %\end{verbatim}
 %
