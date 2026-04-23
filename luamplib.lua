@@ -1577,7 +1577,7 @@ primarydef p withmaskinggroup s =
   withprescript "mplibmaskname=" & s
 enddef;
 def withmaskingbgcolor expr c =
-  withprescript "mplibmaskingbgcolor=" & decimal c
+  withprescript "mplibmaskingbgcolor=" & colordecimals c
 enddef;
 primarydef p withfademethod s =
   if picture p:
@@ -2643,7 +2643,8 @@ local function do_preobj_FADE (object, prescript)
     local mac = get_macro("luamplib.group."..prescript.mplibmaskname)
     on = mac:match(pdfmode and "%d+" or "{pdf:uxobj (.-)}")
     local bc = prescript.mplibmaskingbgcolor
-    bc = bc and ("/BC[%f]"):format(bc):gsub(decimals,rmzeros) or ""
+    bc = bc and bc:gsub(":"," ")
+    bc = bc and ("/BC[%s]"):format(bc):gsub(decimals,rmzeros) or ""
     os = format("<</SMask<</S/Luminosity/G %s%s>>>>",
                 pdfmode and format(pdfetcs.resfmt, on) or on, bc)
   else
