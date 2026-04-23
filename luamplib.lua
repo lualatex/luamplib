@@ -2805,9 +2805,10 @@ function luamplib.registergroup (boxid, name, opts)
     for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
     local on
     if t.masking then
-      on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
+      on = update_pdfobjs(format("<</S/Transparency/CS%s>>", opts.colorspace or "/DeviceGray"))
     else
-      on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>", t.isolated, t.knockout))
+      local cs = opts.colorspace and ("/CS%s"):format(opts.colorspace) or ""
+      on = update_pdfobjs(format("<</S/Transparency%s/I %s/K %s>>", cs, t.isolated, t.knockout))
     end
     attr[#attr+1] = format("/Group %s", pdfetcs.resfmt:format(on))
   end

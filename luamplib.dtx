@@ -1506,6 +1506,7 @@ See source file '\inFileName' for licencing and contact information.
 %   Key         & Value Type    & Explanation\\
 % \hline
 %   |asgroup|   &\emph{string} & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"|, |"off"| or |"masking"|\\
+%  |colorspace| &\emph{string} & |/CS| entry to a transparency group, such as |"/DeviceGray"|\\
 %   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
 %     or MP transform code\\
@@ -1522,6 +1523,13 @@ See source file '\inFileName' for licencing and contact information.
 % in the example \hyperlink{noasgroupexample}{above} at \secref{transparencygroup}.
 %
 % As for the option |asgroup="masking"|, see the next subsection \secref{withmaskinggroup}.
+%
+% With |colorspace| option,
+% which is no-op for ordinary form XObject,
+% users can specify the color space of a transparency group.
+% For instance, the mplibgroup will be painted in grayscale model
+% when |colorspace=|\allowbreak|"/DeviceGray"| is given to an `isolated' transparency group.\relax
+% \footnote{Note that some PDF renderers such as Mac OS Preview do not render properly this option.}
 %
 % As shown, you can reuse the mplibgroup
 % using the \TeX\ command \cs{usemplibgroup} or
@@ -4928,9 +4936,10 @@ function luamplib.registergroup (boxid, name, opts)
     for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
     local on
     if t.masking then
-      on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
+      on = update_pdfobjs(format("<</S/Transparency/CS%s>>", opts.colorspace or "/DeviceGray"))
     else
-      on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>", t.isolated, t.knockout))
+      local cs = opts.colorspace and ("/CS%s"):format(opts.colorspace) or ""
+      on = update_pdfobjs(format("<</S/Transparency%s/I %s/K %s>>", cs, t.isolated, t.knockout))
     end
     attr[#attr+1] = format("/Group %s", pdfetcs.resfmt:format(on))
   end
