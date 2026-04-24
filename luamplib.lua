@@ -1760,6 +1760,16 @@ def withshadingcenter expr a =
     )
   )
 enddef;
+def withshadingcenters (expr a, b) =
+  withprescript "sh_center_a=" & ddecimal a
+  withprescript "sh_center_b=" & ddecimal b
+enddef;
+let withshadingvectors = withshadingcenters;
+def withshadingextends (expr a, b) =
+  withprescript "sh_extends=" &
+    if a: "true" else: "false" fi & " " &
+    if b: "true" else: "false" fi
+enddef;
 def withshadingdomain expr d =
   withprescript "sh_domain=" & ddecimal d
 enddef;
@@ -2125,7 +2135,7 @@ do
   end
 end
 
-local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
+local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions,extends)
   for _,v in ipairs{ca,cb} do
     for i,vv in ipairs(v) do
       for ii,vvv in ipairs(vv) do
@@ -2163,7 +2173,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
     format("/Coords[%s]",       coordinates),
-    "/Extend[true true]/AntiAlias true>>",
+    format("/Extend[%s]/AntiAlias true>>", extends or "true true")
   } :gsub(decimals,rmzeros)
   local on, new = update_pdfobjs(os)
   if new then
@@ -2298,11 +2308,12 @@ do
                 or model == 1 and "/DeviceGray"
                 or err"unknown color model"
     end
+    local extends = prescript.sh_extends
     if sh_type == "linear" then
       local coordinates = format("%f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2],
         dx + sx*centerb[1], dy + sy*centerb[2])
-      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions,extends)
     elseif sh_type == "circular" then
       local factor = prescript.sh_factor or 1
       local radiusa = factor * prescript.sh_radius_a
@@ -2310,7 +2321,7 @@ do
       local coordinates = format("%f %f %f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
         dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
-      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions,extends)
     else
       err"unknown shading type"
     end

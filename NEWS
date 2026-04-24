@@ -1,7 +1,10 @@
                        History of the luamplib package
 
-   * new option for \mplibgroup, colorspace
-   * withmaskingbgcolor allows color expression in rgb/cmyk model.
+   * new options for shading:
+     withshadingcenters, withshadingvectors, and withshadingextends
+   * new options for transparency group, though both are not encouraged:
+     - add colorspace option to \mplibgroup
+     - allow color expressions in rgb/cmyk model after withmaskingbgcolor
 
 2026/04/16 2.40.8
    * [doc] add a remark and examples about the recommended way to get
