@@ -1763,6 +1763,8 @@ enddef;
 def withshadingcenters (expr a, b) =
   withprescript "sh_center_a=" & ddecimal a
   withprescript "sh_center_b=" & ddecimal b
+  withshadingtransform "no"
+  withshadingfactor 1
 enddef;
 let withshadingvectors = withshadingcenters;
 def withshadingextends (expr a, b) =

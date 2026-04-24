@@ -898,17 +898,17 @@ See source file '\inFileName' for licencing and contact information.
 %   \item[withshadingorigin \meta{pair}]
 %     The center of both starting and ending circles.
 %     Default value: |center p|, where |p| is the operand of |withshadingmethod|.
+%   \item[withshadingcenter \meta{pair}]
+%     Value to specify the starting center.
+%     For instance,
+%     |(0,0)| means that the center of starting circle is |center p|;
+%     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
 %   \item[withshadingradius \meta{pair}]
 %     Radii of starting and ending circles, respectively. This is no-op in linear mode.
 %     Default value: |(0, abs(center p - urcorner p))|
 %   \item[withshadingfactor \meta{numeric}]
 %     Multiplier of the radii. This is no-op in linear mode.
 %     Default value: |1.2|
-%   \item[withshadingcenter \meta{pair}]
-%     Value to specify the starting center.
-%     For instance,
-%     |(0,0)| means that the center of starting circle is |center p|;
-%     |(1,1)| means |urcorner p|; |(-1,-1)| means |llcorner p|.
 %   \item[withshadingtransform \meta{string}]
 %     where \meta{string} shall be |"yes"| (respect transform) or |"no"| (ignore transform).
 %     Default value: |"no"| for pictures made by |infont| operator or having multiple components;
@@ -921,7 +921,7 @@ See source file '\inFileName' for licencing and contact information.
 %     For combined shading of more than two colors.
 %   \item[withshadingfraction \meta{numeric}]
 %     Fractional number of each shading step.
-%     Only meaningful with |withshadingstep|.
+%     So, only meaningful within |withshadingstep|.
 %   \item[withshadingcolors (\meta{color expr}, \meta{color expr})]
 %     Starting and ending colors,
 %     default value being |(white,| |black)|.
@@ -935,12 +935,30 @@ See source file '\inFileName' for licencing and contact information.
 %     In circular mode, the centers of starting and ending circles:
 %     this could be easier to understand than issueing two macros
 %     |withshadingorigin| and |withshadingcenter|.
+%     Note that both |withshadingtransform| |"no"| and
+%     |withshadingfactor| |1| are already decalred within the macro.
 %   \item[withshadingvectors (\meta{pair}, \meta{pair})]
 %     Synonym of |withshadingcenters|. It can be used instead of |withshadingvector|
 %     or |withshadingdirection|.
 %   \item[withshadingextends (\meta{boolean}, \meta{boolean})]
 %     Values specifying whether to extend the shading
-%     beyond the starting and ending points or circles. Default value: |(true,| |true)|.
+%     beyond the starting and ending points or circles. Default value: |(true,| |true)|
+%\startmpfig
+%\mpfig path p[]; p1 = fullcircle scaled 50; p2 = fullcircle scaled 50 shifted 50right; fill subpath (2,6) of p1 -- subpath (-2,2) of p2 -- cycle withshadingmethod "circular" withshadingradius (25,25) withshadingcenters (center p1, center p2) withshadingcolors (3/4[red,white], red) withshadingextends (true, false) ; \endmpfig
+%\stopmpfig{7}
+%\begin{verbatim}
+%    \mpfig
+%      path p[];
+%      p1 = fullcircle scaled 50;
+%      p2 = fullcircle scaled 50 shifted 50 right;
+%      fill subpath (2,6) of p1 -- subpath (-2,2) of p2 -- cycle
+%        withshadingmethod  "circular"
+%        withshadingradius  (25, 25)
+%        withshadingcenters (center p1, center p2)
+%        withshadingcolors  (3/4[red,white], red)
+%        withshadingextends (true, false) ;
+%    \endmpfig
+%\end{verbatim}
 %   \item[withshadingstroke \meta{string}]
 %     where \meta{string} shall be |"yes"| or |"no"|.
 %     Only meaningful when the shading object is a \meta{path};
@@ -1263,7 +1281,7 @@ See source file '\inFileName' for licencing and contact information.
 % is to give a \emph{textual picture} as the operand of |withmppattern|:
 %\startmpfig
 %\mpfig draw mplibgraphictext "\bfseries\TeX" fakebold 1/2 rotated 15 scaled 8 withmppattern "pattnocolor" withmplibcolors(2/3[red,white], 2/3red); \endmpfig
-%\stopmpfig{6}
+%\stopmpfig{7}
 %\begin{verbatim}
 %    \begin{mplibcode}
 %      beginfig(2)
@@ -1339,7 +1357,7 @@ See source file '\inFileName' for licencing and contact information.
 %\mpfig draw pic asgroup "" withgroupname "mygroup" withtransparency (1, 1/2); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig\par
 %\noindent\clap{\vrule width 10bp height .25bp depth .25bp}\clap{\vrule width .5bp height 5bp depth 5bp}\usemplibgroup{mygroup} \par
 %\mpfig usemplibgroup "mygroup" withtransparency (1,2/3); draw (left--right) scaled 5; draw (up--down) scaled 5;\endmpfig
-%\stopmpfig{18}
+%\stopmpfig{16}
 %\begin{verbatim}
 %    \mpfig
 %      picture pic;
@@ -1549,7 +1567,7 @@ See source file '\inFileName' for licencing and contact information.
 % which is no-op for ordinary form XObject,
 % users can specify the color space of a transparency group.
 % For instance, the mplibgroup will be painted in grayscale model
-% when |colorspace=|\allowbreak|"/DeviceGray"| is given to an `isolated' transparency group.\relax
+% when |colorspace=|\allowbreak|"/DeviceGray"| is given to an \emph{isolated} transparency group.\relax
 % \footnote{Note that some PDF renderers such as Mac OS Preview or Firefox
 %   do not render properly this option.}
 %
@@ -3834,6 +3852,8 @@ enddef;
 def withshadingcenters (expr a, b) =
   withprescript "sh_center_a=" & ddecimal a
   withprescript "sh_center_b=" & ddecimal b
+  withshadingtransform "no"
+  withshadingfactor 1
 enddef;
 let withshadingvectors = withshadingcenters;
 def withshadingextends (expr a, b) =
