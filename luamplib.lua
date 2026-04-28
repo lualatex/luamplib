@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.40.8",
-  date          = "2026/04/16",
+  version       = "2.41.0",
+  date          = "2026/04/28",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1577,7 +1577,7 @@ primarydef p withmaskinggroup s =
   withprescript "mplibmaskname=" & s
 enddef;
 def withmaskingbgcolor expr c =
-  withprescript "mplibmaskingbgcolor=" & decimal c
+  withprescript "mplibmaskingbgcolor=" & colordecimals c
 enddef;
 primarydef p withfademethod s =
   if picture p:
@@ -1759,6 +1759,18 @@ def withshadingcenter expr a =
       ypart a * ypart (urcorner mplib_shade_path - lrcorner mplib_shade_path)/2
     )
   )
+enddef;
+def withshadingcenters (expr a, b) =
+  withprescript "sh_center_a=" & ddecimal a
+  withprescript "sh_center_b=" & ddecimal b
+  withshadingtransform "no"
+  withshadingfactor 1
+enddef;
+let withshadingpoints = withshadingcenters;
+def withshadingextend (expr a, b) =
+  withprescript "sh_extend=" &
+    if a: "true" else: "false" fi & " " &
+    if b: "true" else: "false" fi
 enddef;
 def withshadingdomain expr d =
   withprescript "sh_domain=" & ddecimal d
@@ -2125,7 +2137,7 @@ do
   end
 end
 
-local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions)
+local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
   for _,v in ipairs{ca,cb} do
     for i,vv in ipairs(v) do
       for ii,vvv in ipairs(vv) do
@@ -2163,7 +2175,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("/ColorSpace %s",    colorspace),
     format("/Function %s",      objref),
     format("/Coords[%s]",       coordinates),
-    "/Extend[true true]/AntiAlias true>>",
+    format("/Extend[%s]/AntiAlias true>>", extend or "true true")
   } :gsub(decimals,rmzeros)
   local on, new = update_pdfobjs(os)
   if new then
@@ -2298,11 +2310,12 @@ do
                 or model == 1 and "/DeviceGray"
                 or err"unknown color model"
     end
+    local extend = prescript.sh_extend
     if sh_type == "linear" then
       local coordinates = format("%f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2],
         dx + sx*centerb[1], dy + sy*centerb[2])
-      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      shade_no = sh_pdfpageresources(2,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
     elseif sh_type == "circular" then
       local factor = prescript.sh_factor or 1
       local radiusa = factor * prescript.sh_radius_a
@@ -2310,7 +2323,7 @@ do
       local coordinates = format("%f %f %f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
         dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
-      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions)
+      shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
     else
       err"unknown shading type"
     end
@@ -2643,7 +2656,8 @@ local function do_preobj_FADE (object, prescript)
     local mac = get_macro("luamplib.group."..prescript.mplibmaskname)
     on = mac:match(pdfmode and "%d+" or "{pdf:uxobj (.-)}")
     local bc = prescript.mplibmaskingbgcolor
-    bc = bc and ("/BC[%f]"):format(bc):gsub(decimals,rmzeros) or ""
+    bc = bc and bc:gsub(":"," ")
+    bc = bc and ("/BC[%s]"):format(bc):gsub(decimals,rmzeros) or ""
     os = format("<</SMask<</S/Luminosity/G %s%s>>>>",
                 pdfmode and format(pdfetcs.resfmt, on) or on, bc)
   else
@@ -2805,9 +2819,10 @@ function luamplib.registergroup (boxid, name, opts)
     for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
     local on
     if t.masking then
-      on = update_pdfobjs"<</S/Transparency/CS/DeviceGray>>"
+      on = update_pdfobjs(format("<</S/Transparency/CS%s>>", opts.colorspace or "/DeviceGray"))
     else
-      on = update_pdfobjs(format("<</S/Transparency/I %s/K %s>>", t.isolated, t.knockout))
+      local cs = opts.colorspace and ("/CS%s"):format(opts.colorspace) or ""
+      on = update_pdfobjs(format("<</S/Transparency%s/I %s/K %s>>", cs, t.isolated, t.knockout))
     end
     attr[#attr+1] = format("/Group %s", pdfetcs.resfmt:format(on))
   end

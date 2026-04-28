@@ -1,5 +1,14 @@
                        History of the luamplib package
 
+2026/04/28 2.41.0
+   * new options for shading:
+     - new macros withshadingpoints, withshadingcenters, and withshadingextend
+     - revise the documentation on shading accrodingly (1.2.6)
+   * new options for transparency group, though both are not encouraged:
+     - add colorspace option to \mplibgroup
+     - allow color expressions in rgb/cmyk model after withmaskingbgcolor
+   * [doc] replace the example in \mplibgroup section with a new one (1.2.14)
+
 2026/04/16 2.40.8
    * [doc] add a remark and examples about the recommended way to get
      shading pattern with transparency group (1.2.13)
