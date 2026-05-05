@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/04/28 v2.41.0 Interface for using the mplib library]%
+  [2026/05/05 v2.41.1 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/04/28 v2.41.0}
+% \date{2026/05/05 v2.41.1}
 %
 % \maketitle
 %
@@ -1823,8 +1823,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.0",
-  date          = "2026/04/28",
+  version       = "2.41.1",
+  date          = "2026/05/05",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2227,6 +2227,7 @@ do
         luamplib.numbersystem or "scaled",
         tostring(luamplib.textextlabel),
         tostring(luamplib.legacyverbatimtex),
+        tostring(tex.currentgrouplevel), -- address #63
       }
       has_instancename = false
     end
@@ -4067,10 +4068,12 @@ local function put_tex_boxes (object,prescript)
       ry = (fourth.x_coord - tx)/th
       if sy == 0 then sy = 0.00001 end
     end
-    start_pdf_code()
-    pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-    put2output("\\mplibputtextbox{%i}",n)
-    stop_pdf_code()
+
+%    \end{macrocode}
+% Attempt to address \#189, the displacement issue of pdf link boxes.
+%    \begin{macrocode}
+    local matrix = format("%f %f %f %f", sx, rx, ry, sy) :gsub(decimals,rmzeros)
+    put2output("\\mplibputtextbox{%i}{%f}{%f}{%s}", n, tx, ty, matrix)
   end
 end
 
@@ -5494,7 +5497,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/28 v2.41.0 mplib package for LuaTeX]
+    [2026/05/05 v2.41.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -5571,9 +5574,22 @@ end
 }
 %    \end{macrocode}
 %
-%    Make |btex...etex| box zero-metric.
+%    Make |btex...etex| box zero-metric. Plus address the issue \#189.
+%    |bdir 0| seems to be redundant, but no harm.
 %    \begin{macrocode}
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+\ifnum\outputmode>0 %
+  \def\mplibputtextbox#1#2#3#4{%
+    \pdfextension save\relax
+    \vbox to 0pt{\vss
+      \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
+      \kern#3bp}%
+    \pdfextension restore\relax}
+\else
+  \def\mplibputtextbox#1#2#3#4{%
+    \special{pdf:btrans matrix #4 #2 #3}%
+    \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
+    \special{pdf:etrans}}
+\fi
 %    \end{macrocode}
 %
 %    use Transparency Group
@@ -6162,11 +6178,26 @@ end
   \cs_gset_nopar:cpn {luamplib.notaggedbox.#1}{#1}
   \bool_set_eq:NN \l__luamplib_tag_usetext_bool \l_tmpa_bool
 }
-\cs_set_nopar:Npn \mplibputtextbox #1
+\sys_if_output_pdf:TF
 {
-  \vbox to 0pt{\vss\hbox to 0pt{
-    \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
-  \hss}}
+  \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
+  {
+    \pdfextension save\relax
+    \vbox to 0pt{\vss
+      \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
+        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
+      \kern #3bp}
+    \pdfextension restore\relax
+  }
+}
+{
+  \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
+  {
+    \special{pdf:btrans~matrix~#4~#2~#3}
+    \vbox to 0pt{\vss\hbox bdir0 to 0pt{
+      \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}}
+    \special{pdf:etrans}
+  }
 }
 %    \end{macrocode}
 % TODO: Not sure whether asgroup/mplibgroup with |text| mode will be tagged correctly.

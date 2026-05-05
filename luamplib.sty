@@ -11,7 +11,7 @@
 \ifcsname ProvidesPackage\endcsname
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/04/28 v2.41.0 mplib package for LuaTeX]
+    [2026/05/05 v2.41.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -54,7 +54,19 @@
   \catcode`\#=12 \catcode`\^=12 \catcode`\~=12 \catcode`\_=12
   \catcode`\&=12 \catcode`\$=12 \catcode`\%=12 \catcode`\^^M=12
 }
-\def\mplibputtextbox#1{\vbox to 0pt{\vss\hbox to 0pt{\raise\dp#1\copy#1\hss}}}
+\ifnum\outputmode>0 %
+  \def\mplibputtextbox#1#2#3#4{%
+    \pdfextension save\relax
+    \vbox to 0pt{\vss
+      \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
+      \kern#3bp}%
+    \pdfextension restore\relax}
+\else
+  \def\mplibputtextbox#1#2#3#4{%
+    \special{pdf:btrans matrix #4 #2 #3}%
+    \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
+    \special{pdf:etrans}}
+\fi
 \protected\def\usemplibgroup#1#{\usemplibgroupmain}
 \def\usemplibgroupmain#1{%
   \prependtomplibbox\hbox dir TLT\bgroup
@@ -549,11 +561,26 @@
   \cs_gset_nopar:cpn {luamplib.notaggedbox.#1}{#1}
   \bool_set_eq:NN \l__luamplib_tag_usetext_bool \l_tmpa_bool
 }
-\cs_set_nopar:Npn \mplibputtextbox #1
+\sys_if_output_pdf:TF
 {
-  \vbox to 0pt{\vss\hbox to 0pt{
-    \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}
-  \hss}}
+  \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
+  {
+    \pdfextension save\relax
+    \vbox to 0pt{\vss
+      \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
+        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
+      \kern #3bp}
+    \pdfextension restore\relax
+  }
+}
+{
+  \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
+  {
+    \special{pdf:btrans~matrix~#4~#2~#3}
+    \vbox to 0pt{\vss\hbox bdir0 to 0pt{
+      \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}}
+    \special{pdf:etrans}
+  }
 }
 \cs_set_nopar:Npn \luamplibtagasgroupset
 {

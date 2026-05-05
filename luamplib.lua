@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.0",
-  date          = "2026/04/28",
+  version       = "2.41.1",
+  date          = "2026/05/05",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -332,6 +332,7 @@ do
         luamplib.numbersystem or "scaled",
         tostring(luamplib.textextlabel),
         tostring(luamplib.legacyverbatimtex),
+        tostring(tex.currentgrouplevel), -- address #63
       }
       has_instancename = false
     end
@@ -1936,10 +1937,9 @@ local function put_tex_boxes (object,prescript)
       ry = (fourth.x_coord - tx)/th
       if sy == 0 then sy = 0.00001 end
     end
-    start_pdf_code()
-    pdf_literalcode("%f %f %f %f %f %f cm",sx,rx,ry,sy,tx,ty)
-    put2output("\\mplibputtextbox{%i}",n)
-    stop_pdf_code()
+
+    local matrix = format("%f %f %f %f", sx, rx, ry, sy) :gsub(decimals,rmzeros)
+    put2output("\\mplibputtextbox{%i}{%f}{%f}{%s}", n, tx, ty, matrix)
   end
 end
 

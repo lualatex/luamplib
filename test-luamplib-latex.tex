@@ -13,7 +13,7 @@
 \setmainfont{latin modern roman}
 \newfontfamily\hangulfont{NotoSansCJKKR}[Script=Hangul,Language=Korean]
 \usepackage{luamplib}
-\usepackage{geometry,lua-unicode-math,graphicx,xcolor}
+\usepackage{geometry,lua-unicode-math,graphicx,xcolor,hyperref}
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
@@ -503,6 +503,8 @@ Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
 \begin{center}* \qquad * \qquad *\end{center}
 
+\section{My Section}\label{sec:my_section}
+
 pattern after masking
 \mpfig*
   picture pic; pic = btex \sffamily\bfseries\Huge Meta etex scaled 2;
@@ -653,4 +655,8 @@ withtransparency (1, 2/3) ;
   usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3) ;
 \endmpfig
 
+\mpfig[text]
+  drawdot origin withpen pencircle scaled 2;
+  draw btex go to section \ref{sec:my_section} \dots etex rotated 15 scaled 2 shifted (50,10);
+\endmpfig
 \end{document}
