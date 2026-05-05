@@ -1,7 +1,8 @@
                        History of the luamplib package
 
+2026/05/05 2.41.1
    * address #189, the issue on the displacement of pdf link boxes
-   * address ages-old issue #63, the issue on nested mplibcode env.
+   * address #63, the ages-old issue on nested mplibcode environments
 
 2026/04/28 2.41.0
    * new options for shading:
