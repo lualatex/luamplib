@@ -998,6 +998,9 @@ See source file '\inFileName' for licencing and contact information.
 %     sets the radii of starting and ending circles. This is no-op in the linear mode.
 %     Default value is |(0, abs(center p - urcorner p))|, meaning that fading starts from the
 %     center and ends at the four corners of the bounding box.
+%   \item [withfadeextend (\meta{boolean}, \meta{boolean})]
+%     specifies whether to extend the fading
+%     beyond the starting and ending points or circles, default value being |(true,| |true)|.
 %   \item [withfadebbox (\meta{pair}, \meta{pair})]
 %     sets the bounding box of the fading area, default value being |(llcorner p,| |urcorner p)|.
 %     Though this option is not needed in most cases, there could be cases when users want to
@@ -1321,31 +1324,31 @@ See source file '\inFileName' for licencing and contact information.
 %   rather than a transparency group XObject.
 %   On the contrary, |asgroup| |""| (empty string) will produce a transparency group
 %   in which both of the PDF keys |/I| and |/K| are |false|.
-% \item You can reuse the group as many times as you want
+% \item You can reuse the XObject as many times as you want
 %   in the \TeX{} code or in other \metapost code chunks,
 %   with infinitesimal increase in the size of PDF file.
 %   For this functionality we provide \TeX{} and \metapost macros as follows:
 % \end{itemize}
 % \begin{description}
-% \item[withgroupname \meta{string}] associates a transparency group with the given name.
-%   When this is not appended to the sentence with |asgroup| operator,
-%   the default group name `|lastmplibgroup|' will be used.
+% \item[withgroupname \meta{string}] associates an XObject with the given name.
+%   When this command is not appended to the sentence with |asgroup| operator,
+%   the default name `|lastmplibgroup|' will be used.
 %
 % \item[\textbackslash usemplibgroup\marg{name}]
 %   \hypertarget{usemplibgroup}{}\relax
-%   is a \TeX\ command to reuse a transparency group of the name
+%   is a \TeX\ command to reuse an XObject of the name
 %   once used.
-%   Note that the position of the group will be origin-based:
+%   Note that the position of the XObject will be origin-based:
 %   in other words, lower-left corner of the bounding box will be shifted to the origin.
 %
 % \item[usemplibgroup \meta{string}] is a \metapost command which will add
-%   a transparency group of the name to the |currentpicture|.
+%   an XObject of the name to the |currentpicture|.
 %   Contrary to the \TeX\ command just mentioned,
-%   the position of the group is the same as the original transparency group.
+%   the position of the XObject is the same as the original XObject.
 %
 % \item[withgroupbbox (\meta{pair}, \meta{pair})]
 %   \hypertarget{withgroupbbox}{}\relax
-%   sets the bounding box of the transparency group,
+%   sets the bounding box of the XObject,
 %   default value being |(llcorner p, urcorner p)|.
 %   This option might be needed especially when you draw with a thick pen
 %   a path that touches the boundary;
@@ -1394,9 +1397,9 @@ See source file '\inFileName' for licencing and contact information.
 %    \endmpfig
 %\end{verbatim}
 %
-% Also note that normally the transparency groups are not affected by outer color commands.
-% However, if you have made the original transparency group using |withoutcolor| command,
-% colors will have effects on the uncolored objects in the group.
+% Also note that normally the XObjects are not affected by outer color commands.
+% However, if you have made the original XObject using |withoutcolor| command,
+% colors will have effects on its uncolored objects.
 % \notabene When you give shading effect upon a \emph{textual picture} (ie.\ non-path object)
 % inside or outside a transparency group, currently many of the PDF renderers,
 % including Mac OS Preview and Foxit Editor, do not interprete PDF coordinates properly.
@@ -3867,6 +3870,7 @@ def withshadingextend (expr a, b) =
     if a: "true" else: "false" fi & " " &
     if b: "true" else: "false" fi
 enddef;
+let withfadeextend = withshadingextend;
 def withshadingdomain expr d =
   withprescript "sh_domain=" & ddecimal d
 enddef;
@@ -4869,7 +4873,7 @@ local function do_preobj_FADE (object, prescript)
     end
     fd_type = fd_type == "linear" and 2 or 3
     local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
-    on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
+    on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1, {}, prescript.sh_extend)
     os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
     on = update_pdfobjs(os)
     bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)

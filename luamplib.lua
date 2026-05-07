@@ -1773,6 +1773,7 @@ def withshadingextend (expr a, b) =
     if a: "true" else: "false" fi & " " &
     if b: "true" else: "false" fi
 enddef;
+let withfadeextend = withshadingextend;
 def withshadingdomain expr d =
   withprescript "sh_domain=" & ddecimal d
 enddef;
@@ -2686,7 +2687,7 @@ local function do_preobj_FADE (object, prescript)
     end
     fd_type = fd_type == "linear" and 2 or 3
     local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
-    on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1)
+    on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1, {}, prescript.sh_extend)
     os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
     on = update_pdfobjs(os)
     bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)

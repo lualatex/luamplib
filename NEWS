@@ -1,5 +1,7 @@
                        History of the luamplib package
 
+   * new option for fading: withfadeextend
+
 2026/05/05 2.41.1
    * address #189, the issue on the displacement of pdf link boxes
    * address #63, the ages-old issue on nested mplibcode environments
