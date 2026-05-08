@@ -3698,8 +3698,10 @@ primarydef p withfademethod s =
   else:
     p withprescript "mplibfadestate=stop"
   fi
-    hide(mplib_shade_step := 0;)
     withprescript "mplibfadetype=" & s
+    hide(mplib_shade_step := 1;)
+    withprescript "sh_color_a=1"
+    withprescript "sh_color_b=0"
     withprescript "mplibfadebbox=" &
       decimal (xpart llcorner p -1/4) & ":" &
       decimal (ypart llcorner p -1/4) & ":" &
@@ -4907,9 +4909,13 @@ local function do_preobj_FADE (object, prescript)
     if matrix:find"%a" then
       local data = format("mplibtransformmatrix(%s);",matrix)
       process(data,"@mplibtransformmatrix")
-      local t = luamplib.transformmatrix
-      matrix = format("%f %f %f %f %f %f", t[1],t[2],t[3],t[4],t[5]+dx,t[6]+dy):gsub(decimals,rmzeros)
+      matrix = luamplib.transformmatrix
+    else
+      matrix = matrix:explode()
     end
+    matrix[5] = matrix[5] + dx
+    matrix[6] = matrix[6] + dy
+    matrix = format("%f %f %f %f %f %f", tableunpack(matrix)) :gsub(decimals,rmzeros)
     on = sh_pdfpageresources(fd_type,"0 1","/DeviceGray",ca,cb,coords,steps,fractions,extend)
     os = format("<</PatternType 2/Shading %s/Matrix[%s]>>", format(pdfetcs.resfmt, on), matrix)
     on = update_pdfobjs(os)
