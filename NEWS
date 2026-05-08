@@ -1,6 +1,8 @@
                        History of the luamplib package
 
-   * new option for fading: withfadeextend
+   * new optional macro for shading: withshadingmatrix
+   * new optional macros for fading:
+      withfadestep, withfadefraction, withfadeextend, withfadematrix
 
 2026/05/05 2.41.1
    * address #189, the issue on the displacement of pdf link boxes

@@ -1589,17 +1589,13 @@ primarydef p withfademethod s =
   else:
     p withprescript "mplibfadestate=stop"
   fi
+    hide(mplib_shade_step := 0;)
     withprescript "mplibfadetype=" & s
     withprescript "mplibfadebbox=" &
       decimal (xpart llcorner p -1/4) & ":" &
       decimal (ypart llcorner p -1/4) & ":" &
       decimal (xpart urcorner p +1/4) & ":" &
       decimal (ypart urcorner p +1/4)
-enddef;
-def withfadeopacity (expr a,b) =
-  withprescript "mplibfadeopacity=" &
-    decimal a & ":" &
-    decimal b
 enddef;
 def withfadevector (expr a,b) =
   withprescript "mplibfadevector=" &
@@ -1734,6 +1730,7 @@ def withshadingstep (text t) =
   withprescript "sh_step=" & decimal mplib_shade_step
   t
 enddef;
+let withfadestep = withshadingstep;
 def withshadingradius expr a =
   withprescript "sh_radius_a=" & decimal (xpart a)
   withprescript "sh_radius_b=" & decimal (ypart a)
@@ -1785,6 +1782,7 @@ def withshadingfraction expr a =
     withprescript "sh_fraction_" & decimal mplib_shade_step & "=" & decimal a
   fi
 enddef;
+let withfadefraction = withshadingfraction;
 def withshadingcolors (expr a, b) =
   if mplib_shade_step > 0 :
     withprescript "sh_color=into"
@@ -1796,9 +1794,14 @@ def withshadingcolors (expr a, b) =
     withprescript "sh_color_b=" & colordecimals b
   fi
 enddef;
+let withfadeopacity = withshadingcolors;
 def withshadingstroke expr a =
   withprescript "sh_stroking=" & a
 enddef;
+def withshadingmatrix expr s =
+  withprescript "sh_matrix=" & s
+enddef;
+let withfadematrix = withshadingmatrix;
 def mpliblength primary t =
   runscript("return utf8.len[===[" & t & "]===]")
 enddef;
@@ -2346,23 +2349,30 @@ local function add_pattern_resources (key, val)
     end
   end
 end
-if not pdfmode then
+if pdfmode then
+  function luamplib.dolatelua (on, os, matrix)
+    local h, v = pdf.getpos()
+    h = format("%f", h/factor) :gsub(decimals,rmzeros)
+    v = format("%f", v/factor) :gsub(decimals,rmzeros)
+    local t = matrix and matrix:explode() or {1,0,0,1,0,0}
+    matrix = format("%s %s %s %s %s %s", t[1], t[2], t[3], t[4], t[5]+h, t[6]+v)
+    pdf.obj(on, format("<<%s/Matrix[%s]>>", os, matrix))
+    pdf.refobj(on)
+  end
+else
   pdfetcs.shadingpatterns = { }
   pdfetcs.shadingpatterninit_r, pdfetcs.shadingpatterninit_w = true, true
-end
-function luamplib.dolatelua (on, os, xobj)
-  local h, v = pdf.getpos()
-  h = format("%f", h/factor) :gsub(decimals,rmzeros)
-  v = format("%f", v/factor) :gsub(decimals,rmzeros)
-  if pdfmode then
-    pdf.obj(on, format("<<%s/Matrix[1 0 0 1 %s %s]>>", os, h, v))
-    pdf.refobj(on)
-  else
+  function luamplib.dolatelua (on, kind, xobj)
+    local h, v
     local t = pdfetcs.shadingpatterns[on] or { }
-    local shift = os == "group" and pdfetcs.tr_group.shifts[xobj]
-               or os == "pattern" and pdfetcs.patterns[xobj].shifts
+    local shift = kind == "group" and pdfetcs.tr_group.shifts[xobj]
+               or kind == "pattern" and pdfetcs.patterns[xobj].shifts
     if shift then
       h, v = -shift[1], -shift[2] -- engine bug in dvi mode?
+    else
+      h, v = pdf.getpos()
+      h = format("%f", h/factor) :gsub(decimals,rmzeros)
+      v = format("%f", v/factor) :gsub(decimals,rmzeros)
     end
     if tonumber(h) ~= tonumber(t[1]) or tonumber(v) ~= tonumber(t[2]) then
       warn"Rerun to get correct shading pattern"
@@ -2383,44 +2393,43 @@ local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
   local on = do_preobj_SH(object, prescript)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
+  local matrix = prescript.sh_matrix or "1 0 0 1 0 0"
+  if matrix:find"%a" then
+    local data = format("mplibtransformmatrix(%s);",matrix)
+    process(data,"@mplibtransformmatrix")
+    local t = luamplib.transformmatrix
+    matrix = format("%f %f %f %f %f %f", t[1], t[2], t[3], t[4], t[5], t[6]):gsub(decimals,rmzeros)
+  end
   if prescript.sh_in_xobj == "yes" then
-    on = update_pdfobjs(("<<%s>>"):format(os))
+    on = update_pdfobjs(("<<%s/Matrix[%s]>>"):format(os, matrix))
     goto skip_latelua
   end
   on = update_pdfobjs()
   if pdfmode then
-    put2output(tableconcat{ "\\latelua{ luamplib.dolatelua(",on,",[[",os,"]]) }" })
+    put2output(tableconcat{"\\latelua{luamplib.dolatelua(",on,",[[",os,"]],[[",matrix,"]])}"})
   else
     local xobj = is_defined"mplibgroupname" and {"group", get_macro"mplibgroupname"}
               or is_defined"mplibpatternname" and {"pattern", get_macro"mplibpatternname"}
-    if xobj or not is_defined"RecordProperties" then -- in xobject or plain
-      local init = pdfetcs.shadingpatterninit_r
-      if init then
-        pdfetcs.shadingpatterninit_r = nil
-        local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
-        local f = ioopen(name)
-        if f then
-          for line in f:lines() do
-            local t = line:explode()
-            pdfetcs.shadingpatterns[ tonumber(t[1]) ] = { t[2], t[3] }
-          end
-          f:close()
+    local init = pdfetcs.shadingpatterninit_r
+    if init then
+      pdfetcs.shadingpatterninit_r = nil
+      local name = format("%s/%s_shadingpatterns.aux", cachedir or outputdir(), tex.jobname)
+      local f = ioopen(name)
+      if f then
+        for line in f:lines() do
+          local t = line:explode()
+          pdfetcs.shadingpatterns[ tonumber(t[1]) ] = { t[2], t[3] }
         end
+        f:close()
       end
-      local t = pdfetcs.shadingpatterns[on] or { 0, 0 }
-      texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
-                format(" <<%s/Matrix[1 0 0 1 %s %s]>>}", os, t[1], t[2]) }
-      put2output("\\latelua{ luamplib.dolatelua(%s,%s) }", on,
-                xobj and ("'%s',[[%s]]"):format(xobj[1], xobj[2]))
-    else
-      put2output(tableconcat{
-        "\\csname tex_savepos:D\\endcsname\\RecordProperties{luamplib/getpos/",on,"}{xpos,ypos}\z
-        \\special{pdf:put ",format(pdfetcs.resfmt, on)," <<",os,"/Matrix[1 0 0 1 \z
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{xpos}sp} \z
-        \\csname dim_to_decimal_in_bp:n\\endcsname{\\RefProperty{luamplib/getpos/",on,"}{ypos}sp}\z
-        ]>>}"
-      })
     end
+    local t = pdfetcs.shadingpatterns[on] or { 0, 0 }
+    local mt = matrix:explode()
+    matrix = format("%s %s %s %s %s %s", mt[1], mt[2], mt[3], mt[4], mt[5]+t[1], mt[6]+t[2])
+    texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
+              format(" <<%s/Matrix[%s]>>}", os, matrix) }
+    put2output("\\latelua{ luamplib.dolatelua(%s,%s) }", on,
+              xobj and ("'%s',[[%s]]"):format(xobj[1], xobj[2]))
   end
   ::skip_latelua::
   local key, val = format("MPlibPt%s", on), format(pdfetcs.resfmt, on)
@@ -2673,7 +2682,7 @@ local function do_preobj_FADE (object, prescript)
         vec = {centerx, centery, centerx, centery} -- center for both circles
       end
     end
-    local coords = { vec[1]+dx, vec[2]+dy, vec[3]+dx, vec[4]+dy }
+    local coords = { vec[1], vec[2], vec[3], vec[4] }
     if fd_type == "linear" then
       coords = format("%f %f %f %f", tableunpack(coords))
     elseif fd_type == "circular" then
@@ -2686,9 +2695,26 @@ local function do_preobj_FADE (object, prescript)
       err("unknown fading method '%s'", fd_type)
     end
     fd_type = fd_type == "linear" and 2 or 3
-    local opaq = (prescript.mplibfadeopacity or "1:0"):explode":"
-    on = sh_pdfpageresources(fd_type, "0 1", "/DeviceGray", {{opaq[1]}}, {{opaq[2]}}, coords, 1, {}, prescript.sh_extend)
-    os = format("<</PatternType 2/Shading %s>>", format(pdfetcs.resfmt, on))
+    local extend, steps, fractions = prescript.sh_extend, tonumber(prescript.sh_step) or 1
+    local ca = { (prescript.sh_color_a_1 or prescript.sh_color_a or "1"):explode":" }
+    local cb = { (prescript.sh_color_b_1 or prescript.sh_color_b or "0"):explode":" }
+    if steps > 1 then
+      fractions = { prescript.sh_fraction_1 or 0 }
+      for i=2,steps do
+        fractions[i] = prescript[format("sh_fraction_%i",i)] or (i/steps)
+        ca[i] = (prescript[format("sh_color_a_%i",i)] or "1"):explode":"
+        cb[i] = (prescript[format("sh_color_b_%i",i)] or "0"):explode":"
+      end
+    end
+    local matrix = prescript.sh_matrix or "1 0 0 1 0 0"
+    if matrix:find"%a" then
+      local data = format("mplibtransformmatrix(%s);",matrix)
+      process(data,"@mplibtransformmatrix")
+      local t = luamplib.transformmatrix
+      matrix = format("%f %f %f %f %f %f", t[1],t[2],t[3],t[4],t[5]+dx,t[6]+dy):gsub(decimals,rmzeros)
+    end
+    on = sh_pdfpageresources(fd_type,"0 1","/DeviceGray",ca,cb,coords,steps,fractions,extend)
+    os = format("<</PatternType 2/Shading %s/Matrix[%s]>>", format(pdfetcs.resfmt, on), matrix)
     on = update_pdfobjs(os)
     bbox = format("0 0 %f %f", bbox[3]+dx, bbox[4]+dy)
     local streamtext = format("q /Pattern cs/MPlibFd%s scn %s re f Q", on, bbox)
