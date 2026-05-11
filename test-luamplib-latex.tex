@@ -659,4 +659,90 @@ withtransparency (1, 2/3) ;
   drawdot origin withpen pencircle scaled 2;
   draw btex go to section \ref{sec:my_section} \dots etex rotated 15 scaled 2 shifted (50,10);
 \endmpfig
+
+\leavevmode
+\mpfig
+  color myorange; myorange = (1,3/4,0);
+  draw image(fill makepath pensquare xscaled 160 yscaled 100 withoutcolor)
+    withshadingmethod "circular"
+    withshadingradius (0,80)
+    withshadingmatrix "yscaled .5 rotated 23.5"
+    withshadingtransform "no"
+    withshadingfactor 1
+    withshadingextend (false, false)
+    withshadingstep(
+      withshadingfraction 1/8
+      withshadingcolors (myorange,red)
+    )
+    withshadingstep(
+      withshadingfraction 2/8
+      withshadingcolors (red,myorange)
+    )
+    withshadingstep(
+      withshadingfraction 3/8
+      withshadingcolors (myorange,red)
+    )
+    withshadingstep(
+      withshadingfraction 4/8
+      withshadingcolors (red,myorange)
+    )
+    withshadingstep(
+      withshadingfraction 5/8
+      withshadingcolors (myorange,red)
+    )
+    withshadingstep(
+      withshadingfraction 6/8
+      withshadingcolors (red,myorange)
+    )
+    withshadingstep(
+      withshadingfraction 7/8
+      withshadingcolors (myorange,red)
+    )
+    withshadingstep(
+      withshadingfraction 8/8
+      withshadingcolors (red,myorange)
+    ) ;
+\endmpfig
+\mpfig
+  fill makepath pensquare xscaled 160 yscaled 100
+    withshadingmethod "linear"
+    withshadingcolors (red,blue)
+    ;
+  draw image(fill makepath pensquare xscaled 160 yscaled 100 withcolor myorange)
+    withfademethod "circular"
+    withfaderadius (0,80)
+    withfadematrix "yscaled .5 rotated 23.5"
+    withfadestep(
+      withfadefraction 1/8
+      withfadeopacity (0,1)
+    )
+    withfadestep(
+      withfadefraction 2/8
+      withfadeopacity (1,0)
+    )
+    withfadestep(
+      withfadefraction 3/8
+      withfadeopacity (0,1)
+    )
+    withfadestep(
+      withfadefraction 4/8
+      withfadeopacity (1,0)
+    )
+    withfadestep(
+      withfadefraction 5/8
+      withfadeopacity (0,1)
+    )
+    withfadestep(
+      withfadefraction 6/8
+      withfadeopacity (1,0)
+    )
+    withfadestep(
+      withfadefraction 7/8
+      withfadeopacity (0,1)
+    )
+    withfadestep(
+      withfadefraction 8/8
+      withfadeopacity (1,0)
+    ) ;
+\endmpfig
 \end{document}

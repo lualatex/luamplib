@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/05/05 v2.41.1 Interface for using the mplib library]%
+  [2026/05/12 v2.41.2 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/05/05 v2.41.1}
+% \date{2026/05/12 v2.41.2}
 %
 % \maketitle
 %
@@ -519,7 +519,7 @@ See source file '\inFileName' for licencing and contact information.
 %   For spot colors, \pkg{l3color} module is well supported in PDF and DVI mode.
 %   Package \pkg{colorspace} is supported as well in PDF mode,
 %   but could conflict with \pkg{luamplib}'s special features such as shading
-%   when \cs{DocumentMetadata}, ie.\ PDF management code, is not loaded.
+%   when \cs{DocumentMetadata}, i.e.\ PDF management code, is not loaded.
 %
 %   \notabene Formerly,
 %   only the first object would have been colored as intended
@@ -1412,7 +1412,7 @@ See source file '\inFileName' for licencing and contact information.
 % Also note that normally the XObjects are not affected by outer color commands.
 % However, if you have made the original XObject using |withoutcolor| command,
 % colors will have effects on its uncolored objects.
-% \notabene When you give shading effect upon a \emph{textual picture} (ie.\ non-path object)
+% \notabene When you give shading effect upon a \emph{textual picture} (i.e.\ non-path object)
 % inside or outside a transparency group, currently many of the PDF renderers,
 % including Mac OS Preview and Foxit Editor, do not interprete PDF coordinates properly.
 % If that happens, consider using other PDF viewer such as Adobe Acrobat. An example:
@@ -1797,7 +1797,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \cs{setbox0=}\allowbreak\cs{hbox}\allowbreak|{\tiny\TeX}|,
 %   or corresponding Lua code using |tex.setbox| function; then the argument should be |0|.\relax
 %     \footnote{In DVI mode, \TeX\ macro `|mplibpatternname|' should be set as \meta{pattern name}
-%     before preparing the box, if shading pattern (ie.\ shading on picture) is used
+%     before preparing the box, if shading pattern (i.e.\ shading on picture) is used
 %     in the pattern cell. }
 %
 %   As for the third argument, see above Table~\ref{tab:mppatternoptions}.
@@ -1815,7 +1815,7 @@ See source file '\inFileName' for licencing and contact information.
 %   please make sure that both of the \TeX\ macros `|MPllx|' and `|MPlly|' are defined as `|0|'
 %   before invoking the Lua function.\footnote{\relax
 %     In DVI mode, \TeX\ macro `|mplibgroupname|' also should be set as \meta{group name} before
-%     preparing the box, if shading pattern (ie.\ shading on picture) is used in the mplibgroup. }
+%     preparing the box, if shading pattern (i.e.\ shading on picture) is used in the mplibgroup. }
 %
 %   As for the third argument, see above Table~\ref{tab:mplibgroupoptions}.
 %   The argument cannot be absent, but can be an empty table, i.e.\ |{ }|.
@@ -1838,8 +1838,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.1",
-  date          = "2026/05/05",
+  version       = "2.41.2",
+  date          = "2026/05/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2231,8 +2231,10 @@ do
 %    Here, excute each |mplibcode| data,
 %    ie |\begin{mplibcode} ... \end{mplibcode}|.
 %    \begin{macrocode}
+  local process_stack = 0
   function process (data, instancename)
     local currfmt
+    process_stack = process_stack + 1
     if instancename and instancename ~= "" then
       currfmt = instancename
       has_instancename = true
@@ -2242,7 +2244,7 @@ do
         luamplib.numbersystem or "scaled",
         tostring(luamplib.textextlabel),
         tostring(luamplib.legacyverbatimtex),
-        tostring(tex.currentgrouplevel), -- address #63
+        tostring(process_stack), -- try to address #63
       }
       has_instancename = false
     end
@@ -2268,6 +2270,7 @@ do
     else
       err"Mem file unloadable. Maybe generated with a different version of mplib?"
     end
+    process_stack = process_stack - 1
     return converted, result
   end
 end
@@ -5544,7 +5547,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/05/05 v2.41.1 mplib package for LuaTeX]
+    [2026/05/12 v2.41.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

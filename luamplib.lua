@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.1",
-  date          = "2026/05/05",
+  version       = "2.41.2",
+  date          = "2026/05/12",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -321,8 +321,10 @@ do
     log = reporterror(result)
     return mpx, result, log
   end
+  local process_stack = 0
   function process (data, instancename)
     local currfmt
+    process_stack = process_stack + 1
     if instancename and instancename ~= "" then
       currfmt = instancename
       has_instancename = true
@@ -332,7 +334,7 @@ do
         luamplib.numbersystem or "scaled",
         tostring(luamplib.textextlabel),
         tostring(luamplib.legacyverbatimtex),
-        tostring(tex.currentgrouplevel), -- address #63
+        tostring(process_stack), -- try to address #63
       }
       has_instancename = false
     end
@@ -358,6 +360,7 @@ do
     else
       err"Mem file unloadable. Maybe generated with a different version of mplib?"
     end
+    process_stack = process_stack - 1
     return converted, result
   end
 end
