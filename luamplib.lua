@@ -2821,6 +2821,11 @@ local function do_preobj_GRP (object, prescript)
   return grstate
 end
 function luamplib.registergroup (boxid, name, opts)
+  if opts.asgroup and opts.asgroup:find"wrapped" then
+    luamplib.registergroup(boxid, name, {bbox=opts.bbox, resources=opts.resources})
+    run_tex_code{"\\setbox", boxid, "\\hbox bdir0{\\csname luamplib.group.", name, "\\endcsname}"}
+    opts.asgroup = opts.asgroup:gsub("wrapped","")
+  end
   local box = texgetbox(boxid)
   local wd, ht, dp = node.getwhd(box)
   local is_mask = opts.asgroup and opts.asgroup:find"masking"

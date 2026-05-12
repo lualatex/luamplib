@@ -4,6 +4,7 @@
    * new optional macro for shading: withshadingmatrix
    * new optional macros for fading:
       withfadestep, withfadefraction, withfadeextend, withfadematrix
+   * new option for \mplibgroup: asgroup="wrapped"
    * fix the issue #63 (previous version was faulty with codeinherit)
 
 2026/05/05 2.41.1

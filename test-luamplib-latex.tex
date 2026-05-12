@@ -745,4 +745,21 @@ withtransparency (1, 2/3) ;
       withfadeopacity (1,0)
     ) ;
 \endmpfig
+
+\mplibgroup{myshading}[asgroup="isolated,wrapped",matrix="rotated 15"]
+\mpfig[off]
+draw image(
+  pickup pencircle scaled 1;
+  filldraw fullcircle scaled 60 withoutcolor;
+  filldraw fullcircle scaled 60 shifted 25right withoutcolor;
+)
+  withshadingmethod "linear"
+  withshadingvector (1, 0)
+  withshadingcolors (red, blue) ;
+\endmpfig
+\endmplibgroup
+\mpfig[alt=shading test]
+drawdot origin withpen pencircle scaled 2;
+usemplibgroup "myshading" withtransparency (1, 2/3) ;
+\endmpfig
 \end{document}

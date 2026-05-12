@@ -1482,21 +1482,21 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 % or preferably (see next subsection \secref{mplibgroupendmplibgroup} on \cs{mplibgroup}):
 %\startmpfig
-%\mplibgroup{myshading}[asgroup="off"]
+%\mplibgroup{myshading}[asgroup="wrapped"]
 %\mpfig draw pic2; \endmpfig
 %\endmplibgroup
-%\mpfig usemplibgroup "myshading" asgroup "" withtransparency (1, 2/3); \endmpfig
-%\stopmpfig{7}
+%\mpfig usemplibgroup "myshading" rotated 15 withtransparency (1, 2/3); \endmpfig
+%\stopmpfig{6}
+%   \hypertarget{doublewrappingexample}{}\relax
 %\begin{verbatim}
-%    \mplibgroup{myshading}[asgroup="off"]            % or no option
+%    \mplibgroup{myshading}[asgroup="wrapped"]
 %      \mpfig
 %        draw pic2 ;
 %      \endmpfig
 %    \endmplibgroup
 %
 %    \mpfig
-%      usemplibgroup "myshading"
-%        asgroup ""
+%      usemplibgroup "myshading" rotated 15
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
 %\end{verbatim}
@@ -1509,22 +1509,22 @@ See source file '\inFileName' for licencing and contact information.
 % with these macros from \TeX\ side.
 % The syntax is similar to the \cs{mppattern} command (see above \secref{mppattern}).
 %
-% An example:\footnote{Note that, here again, within a transparency group XObject
-%   a tiling pattern is encapsulated in an inner, ordinary XObject.
+% An example:\footnote{Note that, by the option |asgroup="wrapped"|,
+%   within a transparency group XObject
+%   a tiling pattern is wrapped in an inner, ordinary XObject.
 %   This annoyance is especially for Mac OS Preview which misapplies
 %   the transformation matrix to tiling or shading patterns
 %   directly wrapped in a transparency group.
-%   Most other PDF renderers seem to behave properly even with single wrapping
-%   in a transparency group. }
+%   Most other PDF renderers seem to behave properly even with single wrapping. }
 %\startmpfig
-%\mplibgroup{texpatt1}[asgroup="off",]\mpfig filldraw fullcircle xscaled 100 yscaled 50 withmppattern "pattnocolor" withcolor 2/3red;\endmpfig \endmplibgroup
-%\mplibgroup{texpatt2}[asgroup=""]\usemplibgroup{texpatt1}\endmplibgroup
-%\usemplibgroup{texpatt2}
-%\stopmpfig{14}
+%\mplibgroup{texpatt}[asgroup="wrapped",]\mpfig filldraw fullcircle xscaled 100 yscaled 50 withmppattern "pattnocolor" withcolor 2/3red;\endmpfig \endmplibgroup
+%\usemplibgroup{texpatt}\par
+%\mpfig usemplibgroup "texpatt" rotated -15 scaled 1.2 withtransparency(1,2/3); \endmpfig
+%\stopmpfig{13}
 %\begin{verbatim}
-%    \mplibgroup{texpatt1}                     % or \begin{mplibgroup}{texpatt1}
+%    \mplibgroup{texpatt}                      % or \begin{mplibgroup}{texpatt}
 %      [                                       % options: see below
-%        asgroup="off",
+%        asgroup="wrapped",
 %      ]
 %      \mpfig                                  % or any other TeX code
 %        filldraw fullcircle xscaled 100 yscaled 50
@@ -1533,21 +1533,10 @@ See source file '\inFileName' for licencing and contact information.
 %      \endmpfig
 %    \endmplibgroup                            % or \end{mplibgroup}
 %
-%    \mplibgroup{texpatt2}
-%      [
-%        asgroup="",
-%      ]
-%      \usemplibgroup{texpatt1}
-%    \endmplibgroup
-%\end{verbatim}
-%\startmpfig
-%\mpfig usemplibgroup "texpatt2" rotated -15 scaled 1.2 withtransparency(1,2/3); \endmpfig
-%\stopmpfig{2}
-%\begin{verbatim}
-%    \usemplibgroup{texpatt2}
+%    \usemplibgroup{texpatt}
 %
 %    \mpfig
-%      usemplibgroup "texpatt2"
+%      usemplibgroup "texpatt"
 %        rotated -15 scaled 1.2
 %        withtransparency (1, 2/3) ;
 %    \endmpfig
@@ -1564,7 +1553,8 @@ See source file '\inFileName' for licencing and contact information.
 % \hline
 %   Key         & Value Type    & Explanation\\
 % \hline
-%   |asgroup|   &\emph{string} & |""|, |"isolated"|, |"knockout"|, |"isolated,knockout"|, |"off"| or |"masking"|\\
+%   |asgroup|   &\emph{string} & |""|, or any comma-separated combination of |isolated|,\\[-2pt]
+%               &              & |knockout|, |wrapped| and |off|, or |"masking"|\\
 %  |colorspace| &\emph{string} & |/CS| entry to a transparency group, such as |"/DeviceGray"|\\
 %   |bbox|      &\emph{table} or \emph{string} & |llx|, |lly|, |urx|, |ury| values\kern1pt*\\
 %   |matrix|    &\emph{table} or \emph{string} & |xx|, |yx|, |xy|, |yy| values\kern1pt*
@@ -1580,6 +1570,15 @@ See source file '\inFileName' for licencing and contact information.
 % Thus the individual objects, not the XObject as a whole, will be affected
 % by outer transparency command, just like the first figure
 % in the \hyperlink{noasgroupexample}{example} above at \secref{transparencygroup}.
+%
+% Option |asgroup="wrapped"| can be regarded as a shortcut of double \cs{mplibgroup} command.
+% The content will be wrapped in an ordinary form XObject
+% before being wrapped again in a transparency group.
+% This option could be useful when a tiling pattern
+% (see the example just above)
+% or a picture shading
+% (see the \hyperlink{doublewrappingexample}{example} above at \secref{transparencygroup})
+% is used in the content.
 %
 % As for the option |asgroup="masking"|, see the next subsection \secref{withmaskinggroup}.
 %
@@ -5022,6 +5021,11 @@ local function do_preobj_GRP (object, prescript)
   return grstate
 end
 function luamplib.registergroup (boxid, name, opts)
+  if opts.asgroup and opts.asgroup:find"wrapped" then
+    luamplib.registergroup(boxid, name, {bbox=opts.bbox, resources=opts.resources})
+    run_tex_code{"\\setbox", boxid, "\\hbox bdir0{\\csname luamplib.group.", name, "\\endcsname}"}
+    opts.asgroup = opts.asgroup:gsub("wrapped","")
+  end
   local box = texgetbox(boxid)
   local wd, ht, dp = node.getwhd(box)
   local is_mask = opts.asgroup and opts.asgroup:find"masking"
