@@ -1,5 +1,7 @@
                        History of the luamplib package
 
+   * new optional argument for asgroup operator: wrapped
+
 2026/05/12 2.41.2
    * new optional macro for shading: withshadingmatrix
    * new optional macros for fading:

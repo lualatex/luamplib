@@ -351,6 +351,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \hbox{\test{knockout}\,\test{}
   \mpfig usemplibgroup "test:knockout" scaled 2/3 rotated 15 ; \endmpfig
 }%
+\marginpar{\leavevmode\llap{acrobat/foxit/texworks/(mupdf)}}
 
 \bigskip
 \mpfig[text]
@@ -559,7 +560,7 @@ draw image(fill p
 usemplibgroup "mygroup2" rotated 15 ;
 \endmpfig
 
-masking inside pattern\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome}}
+masking inside pattern\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome/mupdf/texworks}}
 \mplibgroup{mymask2}[asgroup="masking"]
 \mpfig[off]
 picture tex;
@@ -611,7 +612,7 @@ fill p withmppattern "myshpatt" ;
 usemplibgroup "mygroup4" rotated 15 ;
 \endmpfig
 
-shading pattern and xobject\marginpar{\leavevmode\llap{acrobat}}
+shading pattern and xobject\marginpar{\leavevmode\llap{acrobat/mupdf}}
 \mpfig*
 picture pic[];
 pic1 = image(
@@ -645,7 +646,7 @@ withshadingcolors (red, blue)
 withtransparency (1, 2/3) ;
 \endmpfig
 
-\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome/preview}}
+\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome/mupdf/texworks/preview}}
 \mplibgroup{myshading}
 \mpfig[off]
   draw pic2;

@@ -2759,6 +2759,7 @@ local function do_preobj_GRP (object, prescript)
   if grstate == "start" then
     trgroup.name = prescript.mplibgroupname or "lastmplibgroup"
     trgroup.isolated, trgroup.knockout, trgroup.off = false, false, false
+    trgroup.wrapped = false
     for _,v in ipairs(prescript.gr_type:explode",+") do
       trgroup[v] = true
     end
@@ -2783,6 +2784,13 @@ local function do_preobj_GRP (object, prescript)
     local res = gather_resources("")
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
+      if trgroup.wrapped then
+        put2output(tableconcat{
+          "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
+          "/BBox[", bbox, "]} resources{", res, "}\\mplibscratchbox",
+          "\\setbox\\mplibscratchbox\\hbox{\\useboxresource\\lastsavedboxresourceindex}",
+        })
+      end
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
         "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
@@ -2798,6 +2806,17 @@ local function do_preobj_GRP (object, prescript)
         "\\box\\mplibscratchbox}",
       })
     else
+      if trgroup.wrapped then
+        trgroup.cnt = (trgroup.cnt or 0) + 1
+        local objname = format("@mplibtrgr%s", trgroup.cnt)
+        put2output(tableconcat{
+          "\\special{pdf:bxobj ", objname, " bbox ", bbox, "}",
+          "\\unhbox\\mplibscratchbox",
+          "\\special{pdf:put @resources <<", res, ">>}",
+          "\\special{pdf:exobj}",
+          "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
+        })
+      end
       trgroup.cnt = (trgroup.cnt or 0) + 1
       local objname = format("@mplibtrgr%s", trgroup.cnt)
       put2output(tableconcat{
