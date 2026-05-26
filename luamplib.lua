@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.2",
-  date          = "2026/05/12",
+  version       = "2.41.3",
+  date          = "2026/05/26",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2357,10 +2357,9 @@ end
 if pdfmode then
   function luamplib.dolatelua (on, os, matrix)
     local h, v = pdf.getpos()
-    h = format("%f", h/factor) :gsub(decimals,rmzeros)
-    v = format("%f", v/factor) :gsub(decimals,rmzeros)
     local t = matrix and matrix:explode() or {1,0,0,1,0,0}
-    matrix = format("%s %s %s %s %s %s", t[1], t[2], t[3], t[4], t[5]+h, t[6]+v)
+    matrix = format("%f %f %f %f %f %f", t[1], t[2], t[3], t[4], t[5]+h/factor, t[6]+v/factor)
+      :gsub(decimals,rmzeros)
     pdf.obj(on, format("<<%s/Matrix[%s]>>", os, matrix))
     pdf.refobj(on)
   end
@@ -2759,7 +2758,8 @@ local function do_preobj_GRP (object, prescript)
   if grstate == "start" then
     trgroup.name = prescript.mplibgroupname or "lastmplibgroup"
     trgroup.isolated, trgroup.knockout, trgroup.off = false, false, false
-    for _,v in ipairs(prescript.gr_type:explode",+") do
+    trgroup.wrapped = false
+    for _,v in ipairs(prescript.gr_type:gsub("%s",""):explode",+") do
       trgroup[v] = true
     end
     trgroup.bbox = prescript.mplibgroupbbox:explode":"
@@ -2783,6 +2783,13 @@ local function do_preobj_GRP (object, prescript)
     local res = gather_resources("")
     local bbox = format("%f %f %f %f", llx,lly,urx,ury) :gsub(decimals,rmzeros)
     if pdfmode then
+      if trgroup.wrapped then
+        put2output(tableconcat{
+          "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
+          "/BBox[", bbox, "]} resources{", res, "}\\mplibscratchbox",
+          "\\setbox\\mplibscratchbox\\hbox{\\useboxresource\\lastsavedboxresourceindex}",
+        })
+      end
       put2output(tableconcat{
         "\\saveboxresource type 2 attr{/Type/XObject/Subtype/Form/FormType 1",
         "/BBox[", bbox, "]", grattr, "} resources{", res, "}\\mplibscratchbox",
@@ -2798,6 +2805,17 @@ local function do_preobj_GRP (object, prescript)
         "\\box\\mplibscratchbox}",
       })
     else
+      if trgroup.wrapped then
+        trgroup.cnt = (trgroup.cnt or 0) + 1
+        local objname = format("@mplibtrgr%s", trgroup.cnt)
+        put2output(tableconcat{
+          "\\special{pdf:bxobj ", objname, " bbox ", bbox, "}",
+          "\\unhbox\\mplibscratchbox",
+          "\\special{pdf:put @resources <<", res, ">>}",
+          "\\special{pdf:exobj}",
+          "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
+        })
+      end
       trgroup.cnt = (trgroup.cnt or 0) + 1
       local objname = format("@mplibtrgr%s", trgroup.cnt)
       put2output(tableconcat{
@@ -2857,7 +2875,7 @@ function luamplib.registergroup (boxid, name, opts)
   end
   if opts.asgroup and not opts.asgroup:find"off" then
     local t = { isolated = false, knockout = false, masking = false }
-    for _,v in ipairs(opts.asgroup:explode",+") do t[v] = true end
+    for _,v in ipairs(opts.asgroup:gsub("%s",""):explode",+") do t[v] = true end
     local on
     if t.masking then
       on = update_pdfobjs(format("<</S/Transparency/CS%s>>", opts.colorspace or "/DeviceGray"))
