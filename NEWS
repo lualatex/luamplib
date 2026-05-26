@@ -1,6 +1,8 @@
                        History of the luamplib package
 
+2026/05/26 2.41.3
    * new optional argument for asgroup operator: wrapped
+   * fix the parsing of asgroup option
 
 2026/05/12 2.41.2
    * new optional macro for shading: withshadingmatrix

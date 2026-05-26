@@ -1,7 +1,8 @@
 \ifnum\outputmode > 0
   \DocumentMetadata{ lang=en-US, pdfversion=2.0, pdfstandard=ua-2,
-  tagging=on, tagging-setup={math/setup=mathml-SE} }
-%  \DocumentMetadata{ debug=BBox }
+    tagging=on, tagging-setup={math/setup=mathml-SE},
+%    debug=BBox,
+  }
   \documentclass{article}
 \else
   \documentclass[dvipdfmx]{article}
@@ -747,7 +748,7 @@ withtransparency (1, 2/3) ;
     ) ;
 \endmpfig
 
-\mplibgroup{myshading}[asgroup="isolated,wrapped",matrix="rotated 15"]
+\mplibgroup{myshading}[asgroup="isolated, wrapped",matrix="rotated 15",colorspace="/DeviceGray"]
 \mpfig[off]
 draw image(
   pickup pencircle scaled 1;
@@ -756,10 +757,10 @@ draw image(
 )
   withshadingmethod "linear"
   withshadingvector (1, 0)
-  withshadingcolors (red, blue) ;
+  withshadingcolors (blue, green) ;
 \endmpfig
 \endmplibgroup
-\mpfig[alt=shading test]
+\mpfig[alt=shading test, adjust-BBox=-10bp 6bp -9bp 14bp]
 drawdot origin withpen pencircle scaled 2;
 usemplibgroup "myshading" withtransparency (1, 2/3) ;
 \endmpfig
