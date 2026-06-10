@@ -1,5 +1,10 @@
                        History of the luamplib package
 
+2026/06/10 2.42.0
+   * new shading method "coons" which implemented Coons patch mesh shading
+   * withshadingmatrix is available with path as well as picture objects
+   * [doc] rearrange the order of subsections about metapost macros
+
 2026/05/26 2.41.3
    * new optional argument for asgroup operator: wrapped
    * fix the parsing of asgroup option

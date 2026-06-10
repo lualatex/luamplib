@@ -273,7 +273,7 @@ draw mpliboutlinetext.b ("$\displaystyle\frac{1}{1-x^2}$")
 \endmpfig
 \endmppattern
 \mpfig
-draw unitsquare shifted -center unitsquare scaled 45 withpostscript "collect" ;
+draw makepath pensquare scaled 45 withpostscript "collect" ;
 filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
   withcolor \mpcolor{red!50!blue!50} withpostscript "evenodd" ;
 \endmpfig
@@ -323,11 +323,10 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 
 \def\test#1{%
   \mpfig
-  fill unitsquare shifted -center unitsquare scaled 200
+  fill makepath pensquare scaled 200
     withshadingmethod "linear"
-    withshadingcolors (.3[red,white], .3[blue,white])
+    withshadingcolors ("red!70", "blue!70")
     ;
-  label( btex MetaPost etex scaled 3, origin) ;
   draw image(
     fill fullcircle scaled 100 shifted 25left
       withcolor .8white
@@ -336,6 +335,9 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
     fill fullcircle scaled 100 shifted 25right
       withcolor .8white
       withtransparency (2,1)
+      ;
+    label( btex \bfseries MetaPost etex scaled 2.75, origin)
+      withtransparency (2,0)
       ;
   )
   asgroup "#1"
@@ -352,7 +354,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \hbox{\test{knockout}\,\test{}
   \mpfig usemplibgroup "test:knockout" scaled 2/3 rotated 15 ; \endmpfig
 }%
-\marginpar{\leavevmode\llap{acrobat/foxit/texworks/(mupdf)}}
+\marginpar{\leavevmode\llap{acrobat/texworks}}
 
 \bigskip
 \mpfig[text]
@@ -748,6 +750,7 @@ withtransparency (1, 2/3) ;
     ) ;
 \endmpfig
 
+\leavevmode
 \mplibgroup{myshading}[asgroup="isolated, wrapped",matrix="rotated 15",colorspace="/DeviceGray"]
 \mpfig[off]
 draw image(
@@ -764,4 +767,24 @@ draw image(
 drawdot origin withpen pencircle scaled 2;
 usemplibgroup "myshading" withtransparency (1, 2/3) ;
 \endmpfig
+\mpfig
+color yellow; yellow = (1,1,0);
+u := 70;
+path p; p = unitsquare;
+def fsquare (expr n) =
+ (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) scaled u
+enddef;
+def rsquare (expr n) =
+ (point n of p -- point n-1 of p -- point n-2 of p -- point n-3 of p -- cycle) scaled u
+enddef;
+fill p scaled 2u
+  withshadingmethod  "coons"
+  withcoonspatchinit (fsquare(0), red, green, blue, yellow)
+  withcoonspatchnext (1, rsquare(0) shifted (u, 0), yellow, red)
+  withcoonspatchnext (1, fsquare(0) shifted (u, u), red,  green)
+  withcoonspatchnext (3, rsquare(2) shifted (0, u), yellow, red)
+  ;
+\endmpfig
+Coons patch mesh shading: preview hiccups.
+
 \end{document}

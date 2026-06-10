@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.3",
-  date          = "2026/05/26",
+  version       = "2.42.0",
+  date          = "2026/06/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1687,6 +1687,9 @@ def mplib_with_shade_method (expr p, m) =
     withprescript "sh_factor=1"
     withprescript "sh_center_a=" & ddecimal llcorner p
     withprescript "sh_center_b=" & ddecimal urcorner p
+  elseif m = "coons":
+    withprescript "sh_type=coons"
+    withprescript "sh_transform=no"
   else :
     withprescript "sh_type=circular"
     withprescript "sh_factor=1.2"
@@ -1695,6 +1698,46 @@ def mplib_with_shade_method (expr p, m) =
     withprescript "sh_radius_a=" & decimal 0
     withprescript "sh_radius_b=" & decimal mplib_max_radius(p)
   fi
+enddef;
+def withcoonspatchinit (expr p, a, b, c, d) =
+  withprescript "sh_coons_path=" &
+    if string p: p
+    else:
+      ddecimal point       0 of p & " " &
+      ddecimal postcontrol 0 of p & " " &
+      ddecimal precontrol  1 of p & " " &
+      ddecimal point       1 of p & " " &
+      ddecimal postcontrol 1 of p & " " &
+      ddecimal precontrol  2 of p & " " &
+      ddecimal point       2 of p & " " &
+      ddecimal postcontrol 2 of p & " " &
+      ddecimal precontrol  3 of p & " " &
+      ddecimal point       3 of p & " " &
+      ddecimal postcontrol 3 of p & " " &
+      ddecimal precontrol  0 of p
+    fi
+  hide(mplib_shade_step := 0;)
+  withshadingstep ( withshadingcolors (a, b) )
+  withshadingstep ( withshadingcolors (b, c) )
+  withshadingstep ( withshadingcolors (c, d) )
+enddef;
+def withcoonspatchnext (expr f, p, a, b) =
+  withshadingstep(
+    withprescript "sh_coons_edge_" & decimal mplib_shade_step & "=" & decimal f
+    withprescript "sh_coons_path_" & decimal mplib_shade_step & "=" &
+      if string p: p
+      else:
+        ddecimal postcontrol 1 of p & " " &
+        ddecimal precontrol  2 of p & " " &
+        ddecimal point       2 of p & " " &
+        ddecimal postcontrol 2 of p & " " &
+        ddecimal precontrol  3 of p & " " &
+        ddecimal point       3 of p & " " &
+        ddecimal postcontrol 3 of p & " " &
+        ddecimal precontrol  0 of p
+      fi
+    withshadingcolors (a, b)
+  )
 enddef;
 def mplib_with_shade_method_analyze(expr p) =
   mplib_shade_path := p ;
@@ -2146,6 +2189,19 @@ do
   end
 end
 
+local function add_shading_resources (on, new)
+  if new then
+    local key, val = format("MPlibSh%s", on), format(pdfetcs.resfmt, on)
+    if pdfmanagement then
+      texsprint {
+        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Shading}{", key, "}{", val, "}"
+      }
+    else
+      local res = format("/%s %s", key, val)
+      pdfetcs.fallback_update_resources("Shading",res,"@MPlibSh")
+    end
+  end
+end
 local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
   for _,v in ipairs{ca,cb} do
     for i,vv in ipairs(v) do
@@ -2187,18 +2243,14 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
     format("/Extend[%s]/AntiAlias true>>", extend or "true true")
   } :gsub(decimals,rmzeros)
   local on, new = update_pdfobjs(os)
-  if new then
-    local key, val = format("MPlibSh%s", on), format(pdfetcs.resfmt, on)
-    if pdfmanagement then
-      texsprint {
-        "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Shading}{", key, "}{", val, "}"
-      }
-    else
-      local res = format("/%s %s", key, val)
-      pdfetcs.fallback_update_resources("Shading",res,"@MPlibSh")
-    end
-  end
+  add_shading_resources(on, new)
   return on
+end
+
+local function get_mp_matrix (matrix)
+  local data = format("mplibtransformmatrix(%s);", matrix)
+  process(data,"@mplibtransformmatrix")
+  return luamplib.transformmatrix
 end
 
 local do_preobj_SH
@@ -2224,6 +2276,102 @@ do
     elseif #cb == 3 then -- #ca == 4
       cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
     end
+  end
+  local function do_shading_coons_patch (object, prescript, colorspace, ca, cb)
+    local X_t, Y_t = { }, { }
+    local path = prescript.sh_coons_path
+    if path then
+      path = path:explode()
+      for i = 1, #path do
+        local t = i % 2 == 1 and X_t or Y_t
+        t[#t+1] = tonumber(path[i])
+      end
+    else
+      path = object.path
+      for i = 1, #path do
+        X_t[#X_t+1] = path[i].x_coord
+        Y_t[#Y_t+1] = path[i].y_coord
+        X_t[#X_t+1] = path[i].right_x
+        Y_t[#Y_t+1] = path[i].right_y
+        local j = i == #path and 1 or i+1
+        X_t[#X_t+1] = path[j].left_x
+        Y_t[#Y_t+1] = path[j].left_y
+      end
+    end
+
+    local steps = tonumber(prescript.sh_step) or 0
+    for i = 4, steps do
+      local path = prescript["sh_coons_path_"..i]
+      path = path:explode()
+      for j = 1, #path do
+        local t = j % 2 == 1 and X_t or Y_t
+        t[#t+1] = tonumber(path[j])
+      end
+    end
+
+    local xmin, xmax = math.min(tableunpack(X_t)), math.max(tableunpack(X_t))
+    local ymin, ymax = math.min(tableunpack(Y_t)), math.max(tableunpack(Y_t))
+    local wd, ht = xmax - xmin, ymax - ymin
+
+    local coords = { }
+    for i = 1, 12 do
+      coords[#coords+1] = math.floor((X_t[i] - xmin)/wd * 0xFFFF )
+      coords[#coords+1] = math.floor((Y_t[i] - ymin)/ht * 0xFFFF )
+    end
+    coords = string.pack( ">"..("H"):rep(24), tableunpack(coords))
+
+    local colors
+    if #ca < 3 or #cb < 3 then
+      colors = { 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0 }
+    else
+      colors = { }
+      for i = 1, 3 do
+        for _, v in ipairs(ca[i]) do
+          colors[#colors+1] = math.floor(v * 0xFF)
+        end
+      end
+      for _, v in ipairs(cb[3]) do
+        colors[#colors+1] = math.floor(v * 0xFF)
+      end
+    end
+    colors = string.char(tableunpack(colors))
+
+    local stream = { string.char(0) .. coords .. colors }
+
+    for i = 4, steps do
+      local coords = { }
+      for j = 13+(i-4)*8, 20+(i-4)*8 do
+        coords[#coords+1] = math.floor((X_t[j] - xmin)/wd * 0xFFFF )
+        coords[#coords+1] = math.floor((Y_t[j] - ymin)/ht * 0xFFFF )
+      end
+      coords = string.pack( ">"..("H"):rep(16), tableunpack(coords))
+
+      local colors = { }
+      for _, v in ipairs(ca[i]) do
+        colors[#colors+1] = math.floor(v * 0xFF)
+      end
+      for _, v in ipairs(cb[i]) do
+        colors[#colors+1] = math.floor(v * 0xFF)
+      end
+      colors = string.char(tableunpack(colors))
+
+      local flag = tonumber(prescript["sh_coons_edge_"..i])
+
+      stream[#stream+1] = string.char(flag)..coords..colors
+    end
+
+    local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
+    local colordecode = colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
+                     or colorspace == "/DeviceRGB"  and "0 1 0 1 0 1"
+                     or "0 1"
+    local on, new = update_pdfobjs( tableconcat{
+      "/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8",
+      format("/ColorSpace %s", colorspace),
+      format("/Decode [0 1 0 1 %s]", colordecode),
+    }, tableconcat(stream))
+    add_shading_resources(on, new)
+
+    return on, matrix
   end
   function do_preobj_SH(object, prescript)
     local shade_no
@@ -2320,6 +2468,7 @@ do
                 or err"unknown color model"
     end
     local extend = prescript.sh_extend
+    local coons_matrix
     if sh_type == "linear" then
       local coordinates = format("%f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2],
@@ -2333,10 +2482,25 @@ do
         dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
         dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
       shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
+    elseif sh_type == "coons" then
+      shade_no, coons_matrix = do_shading_coons_patch(object, prescript, colorspace, ca, cb)
     else
       err"unknown shading type"
     end
-    return shade_no, prescript.sh_stroking == "yes"
+
+    local matrix = prescript.sh_matrix
+    if matrix and matrix:find"%a" then
+      local t = get_mp_matrix(matrix)
+      matrix = format("%f %f %f %f %f %f", tableunpack(t)) :gsub(decimals,rmzeros)
+    end
+    if coons_matrix and matrix then
+      local a, b = coons_matrix:explode(), matrix:explode()
+      matrix = format("%f %f %f %f %f %f",
+        a[1]*b[1]+a[2]*b[3], a[1]*b[2]+a[2]*b[4], a[3]*b[1]+a[4]*b[3], a[3]*b[2]+a[4]*b[4],
+        a[5]+b[5], a[6]+b[6]) :gsub(decimals,rmzeros)
+    end
+
+    return shade_no, prescript.sh_stroking == "yes", matrix or coons_matrix
   end
 end
 
@@ -2395,15 +2559,9 @@ else
 end
 local function do_preobj_shading (object, prescript)
   if not prescript or not prescript.sh_operand_type then return end
-  local on = do_preobj_SH(object, prescript)
+  local on,_,matrix = do_preobj_SH(object, prescript)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
-  local matrix = prescript.sh_matrix or "1 0 0 1 0 0"
-  if matrix:find"%a" then
-    local data = format("mplibtransformmatrix(%s);",matrix)
-    process(data,"@mplibtransformmatrix")
-    local t = luamplib.transformmatrix
-    matrix = format("%f %f %f %f %f %f", t[1], t[2], t[3], t[4], t[5], t[6]):gsub(decimals,rmzeros)
-  end
+  matrix = matrix or "1 0 0 1 0 0"
   if prescript.sh_in_xobj == "yes" then
     on = update_pdfobjs(("<<%s/Matrix[%s]>>"):format(os, matrix))
     goto skip_latelua
@@ -2548,9 +2706,7 @@ function luamplib.registerpattern ( boxid, name, opts )
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
   if opts.matrix and opts.matrix:find"%a" then
-    local data = format("mplibtransformmatrix(%s);",opts.matrix)
-    process(data,"@mplibtransformmatrix")
-    local t = luamplib.transformmatrix
+    local t = get_mp_matrix(opts.matrix)
     opts.matrix = format("%f %f %f %f", t[1], t[2], t[3], t[4])
     opts.xshift = opts.xshift or format("%f",t[5])
     opts.yshift = opts.yshift or format("%f",t[6])
@@ -2711,13 +2867,7 @@ local function do_preobj_FADE (object, prescript)
       end
     end
     local matrix = prescript.sh_matrix or "1 0 0 1 0 0"
-    if matrix:find"%a" then
-      local data = format("mplibtransformmatrix(%s);",matrix)
-      process(data,"@mplibtransformmatrix")
-      matrix = luamplib.transformmatrix
-    else
-      matrix = matrix:explode()
-    end
+    matrix = matrix:find"%a" and get_mp_matrix(matrix) or matrix:explode()
     matrix[5] = matrix[5] + dx
     matrix[6] = matrix[6] + dy
     matrix = format("%f %f %f %f %f %f", tableunpack(matrix)) :gsub(decimals,rmzeros)
@@ -2853,9 +3003,8 @@ function luamplib.registergroup (boxid, name, opts)
   if type(opts.matrix) == "table" then opts.matrix = tableconcat(opts.matrix," ") end
   if type(opts.bbox) == "table" then opts.bbox = tableconcat(opts.bbox," ") end
   if opts.matrix and opts.matrix:find"%a" then
-    local data = format("mplibtransformmatrix(%s);",opts.matrix)
-    process(data,"@mplibtransformmatrix")
-    opts.matrix = format("%f %f %f %f %f %f",tableunpack(luamplib.transformmatrix))
+    local t = get_mp_matrix(opts.matrix)
+    opts.matrix = format("%f %f %f %f %f %f",tableunpack(t))
   end
   local grtype = 3
   if opts.bbox then
@@ -3162,7 +3311,7 @@ do
                         objecttype = 'fill'
                       end
                     end
-                    local shade_no, shade_stroking = do_preobj_SH(object,prescript) -- shading
+                    local shade_no, shade_stroke, shade_cm = do_preobj_SH(object,prescript) -- shading
                     if shade_no then
                       pdf_literalcode"q /Pattern cs"
                       objecttype = false
@@ -3236,8 +3385,11 @@ do
                       end
                     end
                     if shade_no then -- shading
-                      pdf_literalcode("W%s %s /MPlibSh%s sh Q",
-                        evenodd and "*" or "", shade_stroking and "s" or "n", shade_no)
+                      pdf_literalcode("W%s %s %s/MPlibSh%s sh Q",
+                        evenodd and "*" or "",
+                        shade_stroke and "s" or "n",
+                        shade_cm and shade_cm.." cm " or "",
+                        shade_no)
                     end
                   end
                 end
