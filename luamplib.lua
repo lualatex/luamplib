@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.41.3",
-  date          = "2026/05/26",
+  version       = "2.42.0",
+  date          = "2026/06/10",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1727,14 +1727,14 @@ def withcoonspatchnext (expr f, p, a, b) =
     withprescript "sh_coons_path_" & decimal mplib_shade_step & "=" &
       if string p: p
       else:
-        ddecimal postcontrol 0 of p & " " &
-        ddecimal precontrol  1 of p & " " &
-        ddecimal point       1 of p & " " &
         ddecimal postcontrol 1 of p & " " &
         ddecimal precontrol  2 of p & " " &
         ddecimal point       2 of p & " " &
         ddecimal postcontrol 2 of p & " " &
-        ddecimal precontrol  3 of p
+        ddecimal precontrol  3 of p & " " &
+        ddecimal point       3 of p & " " &
+        ddecimal postcontrol 3 of p & " " &
+        ddecimal precontrol  0 of p
       fi
     withshadingcolors (a, b)
   )
@@ -2299,8 +2299,8 @@ do
       end
     end
 
-    local step = tonumber(prescript.sh_step) or 0
-    for i = 4, step do
+    local steps = tonumber(prescript.sh_step) or 0
+    for i = 4, steps do
       local path = prescript["sh_coons_path_"..i]
       path = path:explode()
       for j = 1, #path do
@@ -2338,7 +2338,7 @@ do
 
     local stream = { string.char(0) .. coords .. colors }
 
-    for i = 4, step do
+    for i = 4, steps do
       local coords = { }
       for j = 13+(i-4)*8, 20+(i-4)*8 do
         coords[#coords+1] = math.floor((X_t[j] - xmin)/wd * 0xFFFF )

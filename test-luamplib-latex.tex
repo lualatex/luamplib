@@ -771,7 +771,7 @@ usemplibgroup "myshading" withtransparency (1, 2/3) ;
 color yellow; yellow = (1,1,0);
 u := 70;
 path p; p = unitsquare;
-def psquare (expr n) =
+def fsquare (expr n) =
  (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) scaled u
 enddef;
 def rsquare (expr n) =
@@ -779,10 +779,10 @@ def rsquare (expr n) =
 enddef;
 fill p scaled 2u
   withshadingmethod  "coons"
-  withcoonspatchinit (psquare(0), red, green, blue, yellow)
-  withcoonspatchnext (1, rsquare(3) shifted (u, 0), yellow, red)
-  withcoonspatchnext (1, psquare(1) shifted (u, u), red,  green)
-  withcoonspatchnext (3, rsquare(1) shifted (0, u), yellow, red)
+  withcoonspatchinit (fsquare(0), red, green, blue, yellow)
+  withcoonspatchnext (1, rsquare(0) shifted (u, 0), yellow, red)
+  withcoonspatchnext (1, fsquare(0) shifted (u, u), red,  green)
+  withcoonspatchnext (3, rsquare(2) shifted (0, u), yellow, red)
   ;
 \endmpfig
 Coons patch mesh shading: preview hiccups.
