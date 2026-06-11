@@ -2030,14 +2030,15 @@ local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
 pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
-local function update_pdfobjs (os, stream)
-  local key = os
-  if stream then key = key..stream end
-  local on = key and pdfobjs[key]
-  if on then
-    return on,false
-  end
-  if pdfmode then
+local update_pdfobjs
+if pdfmode then
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     if stream then
       on = pdf.immediateobj("stream",stream,os)
     elseif os then
@@ -2045,7 +2046,19 @@ local function update_pdfobjs (os, stream)
     else
       on = pdf.reserveobj()
     end
-  else
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
+  end
+else
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     on = pdfetcs.cnt or 1
     if stream then
       texsprint(format("\\special{pdf:stream @mplibpdfobj%s (%s) <<%s>>}",on,stream,os))
@@ -2055,11 +2068,11 @@ local function update_pdfobjs (os, stream)
       texsprint(format("\\special{pdf:obj @mplibpdfobj%s <<>>}",on))
     end
     pdfetcs.cnt = on + 1
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
   end
-  if key then
-    pdfobjs[key] = on
-  end
-  return on,true
 end
 pdfetcs.resfmt = pdfmode and "%s 0 R" or "@mplibpdfobj%s"
 if pdfmode then
@@ -2364,11 +2377,22 @@ do
     local colordecode = colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
                      or colorspace == "/DeviceRGB"  and "0 1 0 1 0 1"
                      or "0 1"
-    local on, new = update_pdfobjs( tableconcat{
-      "/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8",
-      format("/ColorSpace %s", colorspace),
-      format("/Decode [0 1 0 1 %s]", colordecode),
-    }, tableconcat(stream))
+    local dict = format("/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8\z
+      /ColorSpace %s/Decode [0 1 0 1 %s]", colorspace, colordecode)
+    local stream = tableconcat(stream)
+    local on, new
+    if pdfmode then
+      on, new = update_pdfobjs(dict, stream)
+    else
+      local t = { }
+      for i = 1, stream:len() do
+        t[#t+1] = format("%02X", stream:byte(i))
+      end
+      stream = tableconcat(t)
+      on, new = update_pdfobjs(format(
+        "<<%s/Filter[/ASCIIHexDecode]/Length %d>>\nstream\n%s\nendstream",
+        dict, stream:len(), stream))
+    end
     add_shading_resources(on, new)
 
     return on, matrix

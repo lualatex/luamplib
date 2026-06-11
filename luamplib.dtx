@@ -1729,8 +1729,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % Coons patch mesh shadings are constructed from one or more color patches,
 % each bounded by four cubic Bézier curves.
-% The syntax is \bsx\meta{path} \textbar\ \meta{textual picture} |withshadingmethod| |"coons"|\esx,
-% which currently does not work in DVI mode.
+% The syntax is \bsx\meta{path} \textbar\ \meta{textual picture} |withshadingmethod| |"coons"|\esx.
 % Among a number of optional macros for shading,
 % only |withshadingmatrix| and |withshadingstroke| are available for this method
 % (see above \secref{luamplibshading}).
@@ -1792,12 +1791,13 @@ See source file '\inFileName' for licencing and contact information.
 %   \endmpfig
 %\end{verbatim}
 %\startmpfig
-%\mpfig u:=75; path p; p:= unitsquare scaled u; def fsquare (expr n) = (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) enddef; def rsquare (expr n) = (point n of p -- point n-1 of p -- point n-2 of p -- point n-3 of p -- cycle) enddef; fill unitsquare scaled 2u withshadingmethod  "coons" withcoonspatchinit (fsquare(0), red, green, blue, yellow) withcoonspatchnext (1, rsquare(0) shifted (u,0), yellow, red) withcoonspatchnext (1, fsquare(0) shifted (u,u), red, yellow) withcoonspatchnext (3, rsquare(2) shifted (0,u), yellow, red); pickup pencircle scaled 2; drawarrow fsquare(0) shifted ( -1, -1) withcolor blue; drawarrow rsquare(0) shifted (u+1, -1) withcolor red ; drawarrow rsquare(2) shifted ( -1,u+1) withcolor (1,.5,0); drawarrow fsquare(0) shifted (u+1,u+1) withcolor (0,1,1); label.lft(btex \sffamily Edge 1 etex rotated 90, (u,u/2)) withcolor blue; label.bot(btex \sffamily Edge 1 etex , (3/2u,u)) withcolor red; label.rt(btex \sffamily Edge 3 etex rotated -90, (u,3/2u)) withcolor (0,1,1); drawarrow (u,-12)--(u,-3) withpen pencircle scaled 1; label.bot(btex \sffamily\footnotesize point 1 of patch\textsubscript{1} $=$ point 0 of patch\textsubscript{2} etex, (u,-10)); label.top(btex \sffamily Edge 0 etex, (u/2,0)) withcolor blue;\endmpfig
+%\mpfig u:=75; path p; p:= unitsquare scaled u; def fsquare (expr n) = (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) enddef; def rsquare (expr n) = (point n of p -- point n-1 of p -- point n-2 of p -- point n-3 of p -- cycle) enddef; fill unitsquare scaled 2u withshadingmethod  "coons" withcoonspatchinit (fsquare(0), red, green, blue, yellow) withcoonspatchnext (1, rsquare(0) shifted (u,0), yellow, red) withcoonspatchnext (1, fsquare(0) shifted (u,u), red, yellow) withcoonspatchnext (3, rsquare(2) shifted (0,u), yellow, red); pickup pencircle scaled 2; drawarrow fsquare(0) shifted (-1,-1) withcolor 1/3[blue,white]; drawarrow rsquare(0) shifted (u+1,-1) withcolor 1/3[red,white]; drawarrow rsquare(2) shifted (-1,u+1) withcolor (1,.5,0); drawarrow fsquare(0) shifted (u+1,u+1) withcolor (0,1,1); label.lft(btex \sffamily Edge 1 etex rotated 90, (u,u/2)) withcolor blue; label.bot(btex \sffamily Edge 1 etex , (3/2u,u)) withcolor 1/3[red,white]; label.rt(btex \sffamily Edge 3 etex rotated -90, (u,3/2u)) withcolor (0,1,1); drawarrow (u,-12)--(u,-3) withpen pencircle scaled 1; label.bot(btex \sffamily\footnotesize point 1 of patch\textsubscript{1} $=$ point 0 of patch\textsubscript{2} etex, (u,-10)); label.top(btex \sffamily Edge 0 etex, (u/2,0)) withcolor blue;\endmpfig
 %\stopmpfig{14}
 %\begin{verbatim}
 %   \mpfig
 %     u := 75;
-%     path p; p:= unitsquare scaled u;
+%     path p;
+%     p:= unitsquare scaled u;
 %     def fsquare (expr n) =
 %       (point n of p -- point n+1 of p --
 %        point n+2 of p -- point n+3 of p -- cycle)
@@ -4312,14 +4312,15 @@ local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
 pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
-local function update_pdfobjs (os, stream)
-  local key = os
-  if stream then key = key..stream end
-  local on = key and pdfobjs[key]
-  if on then
-    return on,false
-  end
-  if pdfmode then
+local update_pdfobjs
+if pdfmode then
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     if stream then
       on = pdf.immediateobj("stream",stream,os)
     elseif os then
@@ -4327,7 +4328,19 @@ local function update_pdfobjs (os, stream)
     else
       on = pdf.reserveobj()
     end
-  else
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
+  end
+else
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     on = pdfetcs.cnt or 1
     if stream then
       texsprint(format("\\special{pdf:stream @mplibpdfobj%s (%s) <<%s>>}",on,stream,os))
@@ -4337,11 +4350,11 @@ local function update_pdfobjs (os, stream)
       texsprint(format("\\special{pdf:obj @mplibpdfobj%s <<>>}",on))
     end
     pdfetcs.cnt = on + 1
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
   end
-  if key then
-    pdfobjs[key] = on
-  end
-  return on,true
 end
 pdfetcs.resfmt = pdfmode and "%s 0 R" or "@mplibpdfobj%s"
 if pdfmode then
@@ -4654,11 +4667,22 @@ do
     local colordecode = colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
                      or colorspace == "/DeviceRGB"  and "0 1 0 1 0 1"
                      or "0 1"
-    local on, new = update_pdfobjs( tableconcat{
-      "/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8",
-      format("/ColorSpace %s", colorspace),
-      format("/Decode [0 1 0 1 %s]", colordecode),
-    }, tableconcat(stream))
+    local dict = format("/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8\z
+      /ColorSpace %s/Decode [0 1 0 1 %s]", colorspace, colordecode)
+    local stream = tableconcat(stream)
+    local on, new
+    if pdfmode then
+      on, new = update_pdfobjs(dict, stream)
+    else
+      local t = { }
+      for i = 1, stream:len() do
+        t[#t+1] = format("%02X", stream:byte(i))
+      end
+      stream = tableconcat(t)
+      on, new = update_pdfobjs(format(
+        "<<%s/Filter[/ASCIIHexDecode]/Length %d>>\nstream\n%s\nendstream",
+        dict, stream:len(), stream))
+    end
     add_shading_resources(on, new)
 
     return on, matrix
