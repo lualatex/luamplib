@@ -2503,7 +2503,7 @@ do
     local colors
     if #ca > 2 then
       for i,v in ipairs(ca) do
-        for ii,vv in ipairs(ca[i]) do
+        for ii,vv in ipairs(v) do
           ca[i][ii] = math.floor(vv * 0xFF)
         end
       end
