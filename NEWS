@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2026/06/17 2.42.1
+   * new shading methods: "triangle", "lattice", and "tensor"
+   * Coons patch mesh shading is available in DVI mode as well
+
 2026/06/10 2.42.0
    * new shading method "coons" which implemented Coons patch mesh shading
    * withshadingmatrix is available with path as well as picture objects

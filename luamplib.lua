@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.42.0",
-  date          = "2026/06/10",
+  version       = "2.42.1",
+  date          = "2026/06/17",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1690,6 +1690,20 @@ def mplib_with_shade_method (expr p, m) =
   elseif m = "coons":
     withprescript "sh_type=coons"
     withprescript "sh_transform=no"
+  elseif m = "triangle":
+    withprescript "sh_type=triangle"
+    withprescript "sh_transform=no"
+  elseif m = "lattice":
+    withprescript "sh_type=lattice"
+    withprescript "sh_transform=no"
+  elseif m = "tensor":
+    withprescript "sh_type=tensor"
+    withprescript "sh_transform=no"
+    withprescript "sh_tensor_path=" &
+      ddecimal 1/4[point 0 of p, point 2 of p] & " " &
+      ddecimal 1/4[point 1 of p, point 3 of p] & " " &
+      ddecimal 1/4[point 2 of p, point 0 of p] & " " &
+      ddecimal 1/4[point 3 of p, point 1 of p]
   else :
     withprescript "sh_type=circular"
     withprescript "sh_factor=1.2"
@@ -1698,6 +1712,45 @@ def mplib_with_shade_method (expr p, m) =
     withprescript "sh_radius_a=" & decimal 0
     withprescript "sh_radius_b=" & decimal mplib_max_radius(p)
   fi
+enddef;
+def withlatticeverticesperrow expr n =
+  withprescript "sh_lattice_perrow=" & decimal n
+enddef;
+def withlatticeverticesdata (text t) =
+  withprescript "sh_lattice_data=" &
+  for item = t:
+    if string item: item & " " &
+    elseif pair item: ddecimal item & " " &
+    fi
+  endfor ""
+  hide(mplib_shade_step := 0;)
+  for item = t:
+    if string item:
+    elseif pair item:
+    else: withshadingstep( withshadingcolors(item,item) )
+    fi
+  endfor
+enddef;
+def withtrianglepatchinit (expr p, a, b, c) =
+  if string p: withprescript "sh_triangle_string=" & p fi
+  hide(mplib_shade_step := 0;)
+  if string p:
+    withtrianglepatchnext(0, (0,0), a)
+    withtrianglepatchnext(0, (0,0), b)
+    withtrianglepatchnext(0, (0,0), c)
+  else:
+    withtrianglepatchnext(0, point 0 of p, a)
+    withtrianglepatchnext(0, point 1 of p, b)
+    withtrianglepatchnext(0, point 2 of p, c)
+  fi
+enddef;
+def withtrianglepatchnext (expr f, p, a) =
+  withshadingstep(
+    withprescript "sh_triangle_edge_" & decimal mplib_shade_step & "=" & decimal f
+    withprescript "sh_triangle_vertex_" & decimal mplib_shade_step & "=" &
+      if string p: p  else: ddecimal p  fi
+    withshadingcolors (a, a)
+  )
 enddef;
 def withcoonspatchinit (expr p, a, b, c, d) =
   withprescript "sh_coons_path=" &
@@ -1721,6 +1774,32 @@ def withcoonspatchinit (expr p, a, b, c, d) =
   withshadingstep ( withshadingcolors (b, c) )
   withshadingstep ( withshadingcolors (c, d) )
 enddef;
+def withtensorpatchinit (expr p, q, a, b, c, d) =
+  withprescript "sh_coons_path=" &
+    if string p: p & " " & q
+    else:
+      ddecimal point       0 of p & " " &
+      ddecimal postcontrol 0 of p & " " &
+      ddecimal precontrol  1 of p & " " &
+      ddecimal point       1 of p & " " &
+      ddecimal postcontrol 1 of p & " " &
+      ddecimal precontrol  2 of p & " " &
+      ddecimal point       2 of p & " " &
+      ddecimal postcontrol 2 of p & " " &
+      ddecimal precontrol  3 of p & " " &
+      ddecimal point       3 of p & " " &
+      ddecimal postcontrol 3 of p & " " &
+      ddecimal precontrol  0 of p & " " &
+      ddecimal point       0 of q & " " &
+      ddecimal point       1 of q & " " &
+      ddecimal point       2 of q & " " &
+      ddecimal point       3 of q
+    fi
+  hide(mplib_shade_step := 0;)
+  withshadingstep ( withshadingcolors (a, b) )
+  withshadingstep ( withshadingcolors (b, c) )
+  withshadingstep ( withshadingcolors (c, d) )
+enddef;
 def withcoonspatchnext (expr f, p, a, b) =
   withshadingstep(
     withprescript "sh_coons_edge_" & decimal mplib_shade_step & "=" & decimal f
@@ -1735,6 +1814,28 @@ def withcoonspatchnext (expr f, p, a, b) =
         ddecimal point       3 of p & " " &
         ddecimal postcontrol 3 of p & " " &
         ddecimal precontrol  0 of p
+      fi
+    withshadingcolors (a, b)
+  )
+enddef;
+def withtensorpatchnext (expr f, p, q, a, b) =
+  withshadingstep(
+    withprescript "sh_coons_edge_" & decimal mplib_shade_step & "=" & decimal f
+    withprescript "sh_coons_path_" & decimal mplib_shade_step & "=" &
+      if string p: p & " " & q
+      else:
+        ddecimal postcontrol 1 of p & " " &
+        ddecimal precontrol  2 of p & " " &
+        ddecimal point       2 of p & " " &
+        ddecimal postcontrol 2 of p & " " &
+        ddecimal precontrol  3 of p & " " &
+        ddecimal point       3 of p & " " &
+        ddecimal postcontrol 3 of p & " " &
+        ddecimal precontrol  0 of p & " " &
+        ddecimal point       0 of q & " " &
+        ddecimal point       1 of q & " " &
+        ddecimal point       2 of q & " " &
+        ddecimal point       3 of q
       fi
     withshadingcolors (a, b)
   )
@@ -2030,14 +2131,15 @@ local pdfobjs, pdfetcs = {}, {}
 pdfetcs.pgfextgs = "pgf@sys@addpdfresource@extgs@plain"
 pdfetcs.pgfpattern = "pgf@sys@addpdfresource@patterns@plain"
 pdfetcs.pgfcolorspace = "pgf@sys@addpdfresource@colorspaces@plain"
-local function update_pdfobjs (os, stream)
-  local key = os
-  if stream then key = key..stream end
-  local on = key and pdfobjs[key]
-  if on then
-    return on,false
-  end
-  if pdfmode then
+local update_pdfobjs
+if pdfmode then
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     if stream then
       on = pdf.immediateobj("stream",stream,os)
     elseif os then
@@ -2045,7 +2147,19 @@ local function update_pdfobjs (os, stream)
     else
       on = pdf.reserveobj()
     end
-  else
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
+  end
+else
+  function update_pdfobjs (os, stream)
+    local key = os
+    if stream then key = key..stream end
+    local on = key and pdfobjs[key]
+    if on then
+      return on,false
+    end
     on = pdfetcs.cnt or 1
     if stream then
       texsprint(format("\\special{pdf:stream @mplibpdfobj%s (%s) <<%s>>}",on,stream,os))
@@ -2055,11 +2169,11 @@ local function update_pdfobjs (os, stream)
       texsprint(format("\\special{pdf:obj @mplibpdfobj%s <<>>}",on))
     end
     pdfetcs.cnt = on + 1
+    if key then
+      pdfobjs[key] = on
+    end
+    return on,true
   end
-  if key then
-    pdfobjs[key] = on
-  end
-  return on,true
 end
 pdfetcs.resfmt = pdfmode and "%s 0 R" or "@mplibpdfobj%s"
 if pdfmode then
@@ -2248,8 +2362,7 @@ local function sh_pdfpageresources(shtype,domain,colorspace,ca,cb,coordinates,st
 end
 
 local function get_mp_matrix (matrix)
-  local data = format("mplibtransformmatrix(%s);", matrix)
-  process(data,"@mplibtransformmatrix")
+  process(("mplibtransformmatrix(%s);"):format(matrix), "@mplibtransformmatrix")
   return luamplib.transformmatrix
 end
 
@@ -2277,18 +2390,154 @@ do
       cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
     end
   end
+  local function write_mesh_objs (shtype, colorspace, stream, perrow)
+    local dict = format(
+      "/ShadingType %d/%s/BitsPerCoordinate 16/BitsPerComponent 8/ColorSpace %s/Decode[0 1 0 1 %s]",
+      shtype,
+      perrow and format("VerticesPerRow %d", perrow) or "BitsPerFlag 8",
+      colorspace,
+      colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
+      or colorspace == "/DeviceRGB" and "0 1 0 1 0 1" or "0 1")
+    local on, new
+    if pdfmode then
+      on, new = update_pdfobjs(dict, stream)
+    else
+      local t = { }
+      for i = 1, stream:len() do
+        t[#t+1] = format("%02X", stream:byte(i))
+      end
+      stream = tableconcat(t)
+      on, new = update_pdfobjs(format(
+        "<<%s/Filter[/ASCIIHexDecode]/Length %d>>\nstream\n%s\nendstream",
+        dict, stream:len(), stream))
+    end
+    add_shading_resources(on, new)
+    return on
+  end
+  local function do_shading_lattice_mesh (object, prescript, colorspace, ca, cb)
+    local perrow = prescript.sh_lattice_perrow or 2
+    local data   = prescript.sh_lattice_data
+    data = data and data:explode() or { }
+    if #data < 8 then
+      data = { }
+      local path = object.path
+      for _,i in ipairs{1,2,4,3} do
+        data[#data+1] = path[i].x_coord
+        data[#data+1] = path[i].y_coord
+      end
+    end
+    if #data / 2 % perrow ~= 0 then err"vertices_per_row mismatches lattice_data" end
+    local Xt, Yt = { }, { }
+    for i = 1, #data, 2 do
+      Xt[#Xt+1] = tonumber(data[i])
+      Yt[#Yt+1] = tonumber(data[i+1])
+    end
+    local xmin, xmax = math.min(tableunpack(Xt)), math.max(tableunpack(Xt))
+    local ymin, ymax = math.min(tableunpack(Yt)), math.max(tableunpack(Yt))
+    local wd, ht = xmax - xmin, ymax - ymin
+    for i = 1, #Xt do
+      Xt[i] = math.floor((Xt[i] - xmin)/wd * 0xFFFF )
+    end
+    for i = 1, #Yt do
+      Yt[i] = math.floor((Yt[i] - ymin)/ht * 0xFFFF )
+    end
+
+    local colors = { }
+    if #ca > 3 then
+      for i,v in ipairs(ca) do
+        colors[i] = { }
+        for ii,vv in ipairs(v) do
+          colors[i][ii] = math.floor(vv * 0xFF)
+        end
+      end
+    else
+      colors = {{0,0,255},{0,255,0},{255,0,0},{255,255,0}}
+    end
+
+    local stream = { }
+    for i = 1, #Xt do
+      stream[#stream+1] = string.pack( ">HH", Xt[i], Yt[i])
+      for _,vv in ipairs(colors[i]) do
+        stream[#stream+1] = string.char(tonumber(vv))
+      end
+    end
+
+    local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
+    local on = write_mesh_objs (5, colorspace, tableconcat(stream), perrow)
+    return on, matrix
+  end
+  local function do_shading_triangle_mesh (object, prescript, colorspace, ca, cb)
+    local str = prescript.sh_triangle_string
+    if str then
+      str = str:explode()
+      prescript.sh_triangle_vertex_1 = format("%s %s", str[1], str[2])
+      prescript.sh_triangle_vertex_2 = format("%s %s", str[3], str[4])
+      prescript.sh_triangle_vertex_3 = format("%s %s", str[5], str[6])
+    end
+
+    local Xt, Yt = { }, { }
+    local steps = tonumber(prescript.sh_step) or 0
+    if steps > 2 then
+      for i = 1, steps do
+        local v = prescript["sh_triangle_vertex_" .. i]:explode()
+        Xt[#Xt+1] = tonumber(v[1])
+        Yt[#Yt+1] = tonumber(v[2])
+      end
+    else
+      local path = object.path
+      for i = 1, 3 do
+        Xt[#Xt+1] = path[i].x_coord
+        Yt[#Yt+1] = path[i].y_coord
+      end
+    end
+    local xmin, xmax = math.min(tableunpack(Xt)), math.max(tableunpack(Xt))
+    local ymin, ymax = math.min(tableunpack(Yt)), math.max(tableunpack(Yt))
+    local wd, ht = xmax - xmin, ymax - ymin
+    for i = 1, #Xt do
+      Xt[i] = math.floor((Xt[i] - xmin)/wd * 0xFFFF )
+    end
+    for i = 1, #Yt do
+      Yt[i] = math.floor((Yt[i] - ymin)/ht * 0xFFFF )
+    end
+
+    local colors
+    if #ca > 2 then
+      for i,v in ipairs(ca) do
+        for ii,vv in ipairs(v) do
+          ca[i][ii] = math.floor(vv * 0xFF)
+        end
+      end
+      colors = ca
+    else
+      colors = { {255, 0, 0}, {0, 255, 0}, {0, 0, 255} }
+    end
+
+    local stream = { }
+    for i = 1, #Xt do
+      local flag = tonumber(prescript["sh_triangle_edge_" .. i]) or 0
+      stream[#stream+1] = string.char(flag)
+      stream[#stream+1] = string.pack( ">HH", Xt[i], Yt[i])
+      for _,vv in ipairs(colors[i]) do
+        stream[#stream+1] = string.char(tonumber(vv))
+      end
+    end
+
+    local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
+    local on = write_mesh_objs (4, colorspace, tableconcat(stream))
+    return on, matrix
+  end
   local function do_shading_coons_patch (object, prescript, colorspace, ca, cb)
+    local tensor = prescript.sh_type == "tensor"
     local X_t, Y_t = { }, { }
     local path = prescript.sh_coons_path
     if path then
-      path = path:explode()
-      for i = 1, #path do
+      for i,v in ipairs( path:explode() ) do
         local t = i % 2 == 1 and X_t or Y_t
-        t[#t+1] = tonumber(path[i])
+        t[#t+1] = tonumber(v)
       end
     else
       path = object.path
-      for i = 1, #path do
+      for i = 1, 4 do
         X_t[#X_t+1] = path[i].x_coord
         Y_t[#Y_t+1] = path[i].y_coord
         X_t[#X_t+1] = path[i].right_x
@@ -2297,15 +2546,20 @@ do
         X_t[#X_t+1] = path[j].left_x
         Y_t[#Y_t+1] = path[j].left_y
       end
+      if tensor then
+        for i,v in ipairs( prescript.sh_tensor_path:explode() ) do
+          local t = i % 2 == 1 and X_t or Y_t
+          t[#t+1] = tonumber(v)
+        end
+      end
     end
 
     local steps = tonumber(prescript.sh_step) or 0
     for i = 4, steps do
       local path = prescript["sh_coons_path_"..i]
-      path = path:explode()
-      for j = 1, #path do
-        local t = j % 2 == 1 and X_t or Y_t
-        t[#t+1] = tonumber(path[j])
+      for i,v in ipairs( path:explode() ) do
+        local t = i % 2 == 1 and X_t or Y_t
+        t[#t+1] = tonumber(v)
       end
     end
 
@@ -2313,12 +2567,13 @@ do
     local ymin, ymax = math.min(tableunpack(Y_t)), math.max(tableunpack(Y_t))
     local wd, ht = xmax - xmin, ymax - ymin
 
+    local n = tensor and 16 or 12
     local coords = { }
-    for i = 1, 12 do
+    for i = 1, n do
       coords[#coords+1] = math.floor((X_t[i] - xmin)/wd * 0xFFFF )
       coords[#coords+1] = math.floor((Y_t[i] - ymin)/ht * 0xFFFF )
     end
-    coords = string.pack( ">"..("H"):rep(24), tableunpack(coords))
+    coords = string.pack( ">"..("H"):rep(2*n), tableunpack(coords))
 
     local colors
     if #ca < 3 or #cb < 3 then
@@ -2338,13 +2593,14 @@ do
 
     local stream = { string.char(0) .. coords .. colors }
 
+    local nn = tensor and 12 or 8
     for i = 4, steps do
       local coords = { }
-      for j = 13+(i-4)*8, 20+(i-4)*8 do
+      for j = n+(i-4)*nn+1, n+(i-3)*nn do
         coords[#coords+1] = math.floor((X_t[j] - xmin)/wd * 0xFFFF )
         coords[#coords+1] = math.floor((Y_t[j] - ymin)/ht * 0xFFFF )
       end
-      coords = string.pack( ">"..("H"):rep(16), tableunpack(coords))
+      coords = string.pack( ">"..("H"):rep(2*nn), tableunpack(coords))
 
       local colors = { }
       for _, v in ipairs(ca[i]) do
@@ -2361,16 +2617,7 @@ do
     end
 
     local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
-    local colordecode = colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
-                     or colorspace == "/DeviceRGB"  and "0 1 0 1 0 1"
-                     or "0 1"
-    local on, new = update_pdfobjs( tableconcat{
-      "/ShadingType 6/BitsPerFlag 8/BitsPerCoordinate 16/BitsPerComponent 8",
-      format("/ColorSpace %s", colorspace),
-      format("/Decode [0 1 0 1 %s]", colordecode),
-    }, tableconcat(stream))
-    add_shading_resources(on, new)
-
+    local on = write_mesh_objs (tensor and 7 or 6, colorspace, tableconcat(stream))
     return on, matrix
   end
   function do_preobj_SH(object, prescript)
@@ -2468,7 +2715,7 @@ do
                 or err"unknown color model"
     end
     local extend = prescript.sh_extend
-    local coons_matrix
+    local mesh_matrix
     if sh_type == "linear" then
       local coordinates = format("%f %f %f %f",
         dx + sx*centera[1], dy + sy*centera[2],
@@ -2482,8 +2729,12 @@ do
         dx + sx*centera[1], dy + sy*centera[2], sr*radiusa,
         dx + sx*centerb[1], dy + sy*centerb[2], sr*radiusb)
       shade_no = sh_pdfpageresources(3,domain,colorspace,ca,cb,coordinates,steps,fractions,extend)
-    elseif sh_type == "coons" then
-      shade_no, coons_matrix = do_shading_coons_patch(object, prescript, colorspace, ca, cb)
+    elseif sh_type == "coons" or sh_type == "tensor" then
+      shade_no, mesh_matrix = do_shading_coons_patch(object, prescript, colorspace, ca, cb)
+    elseif sh_type == "triangle" then
+      shade_no, mesh_matrix = do_shading_triangle_mesh(object, prescript, colorspace, ca, cb)
+    elseif sh_type == "lattice" then
+      shade_no, mesh_matrix = do_shading_lattice_mesh(object, prescript, colorspace, ca, cb)
     else
       err"unknown shading type"
     end
@@ -2493,14 +2744,14 @@ do
       local t = get_mp_matrix(matrix)
       matrix = format("%f %f %f %f %f %f", tableunpack(t)) :gsub(decimals,rmzeros)
     end
-    if coons_matrix and matrix then
-      local a, b = coons_matrix:explode(), matrix:explode()
+    if mesh_matrix and matrix then
+      local a, b = mesh_matrix:explode(), matrix:explode()
       matrix = format("%f %f %f %f %f %f",
         a[1]*b[1]+a[2]*b[3], a[1]*b[2]+a[2]*b[4], a[3]*b[1]+a[4]*b[3], a[3]*b[2]+a[4]*b[4],
         a[5]+b[5], a[6]+b[6]) :gsub(decimals,rmzeros)
     end
 
-    return shade_no, prescript.sh_stroking == "yes", matrix or coons_matrix
+    return shade_no, prescript.sh_stroking == "yes", matrix or mesh_matrix
   end
 end
 
