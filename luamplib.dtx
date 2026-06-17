@@ -1971,12 +1971,14 @@ See source file '\inFileName' for licencing and contact information.
 %   The initial patch.
 %
 %   The only difference to |withcoonspatchinit| macro of Coons patch shading is the second argument
-%   being inserted for specifying four inner control points.
+%   inserted for specifying four inner control points.
 %   It shall be a path that has four points, or a string composed of eight numerics separated
 %   by spaces ($x$ and $y$ coordinates of each point).
-%   It is assumed that the orientation of the path is the same as the outer path.
-%   When this macro is not given, an imaginary path scaled by half the size of outer path
-%   will be used as the default value.
+%   If the first argument is given in string type,
+%   the second argument should also be given in string type.
+%   It is assumed that the orientation of the inner path is the same as the outer path.
+%   When this macro is not given, the default value will be an imaginary path
+%   scaled by half the size of the outer path obtained from the object of shading.
 %
 % \item[withtensorpatchnext (\meta{number}, \meta{path} \textbar\ \meta{string},
 %   \meta{path} \textbar\ \meta{string}, \meta{color}, \meta{color})]
@@ -1984,7 +1986,7 @@ See source file '\inFileName' for licencing and contact information.
 %   This optional macro requires |withtensorpatchinit| specified beforehand.
 %
 %   The only difference to |withcoonspatchnext| macro of Coons patch shading is the third argument
-%   being inserted for specifying four inner control points.
+%   inserted for specifying four inner control points.
 %   The syntax is the same as the second argument of |withtensorpatchinit| described just above.
 % \end{description}
 %
@@ -4208,7 +4210,7 @@ def withcoonspatchinit (expr p, a, b, c, d) =
 enddef;
 def withtensorpatchinit (expr p, q, a, b, c, d) =
   withprescript "sh_coons_path=" &
-    if string p: p
+    if string p: p & " " & q
     else:
       ddecimal point       0 of p & " " &
       ddecimal postcontrol 0 of p & " " &
@@ -4254,7 +4256,7 @@ def withtensorpatchnext (expr f, p, q, a, b) =
   withshadingstep(
     withprescript "sh_coons_edge_" & decimal mplib_shade_step & "=" & decimal f
     withprescript "sh_coons_path_" & decimal mplib_shade_step & "=" &
-      if string p: p
+      if string p: p & " " & q
       else:
         ddecimal postcontrol 1 of p & " " &
         ddecimal precontrol  2 of p & " " &

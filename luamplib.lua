@@ -1776,7 +1776,7 @@ def withcoonspatchinit (expr p, a, b, c, d) =
 enddef;
 def withtensorpatchinit (expr p, q, a, b, c, d) =
   withprescript "sh_coons_path=" &
-    if string p: p
+    if string p: p & " " & q
     else:
       ddecimal point       0 of p & " " &
       ddecimal postcontrol 0 of p & " " &
@@ -1822,7 +1822,7 @@ def withtensorpatchnext (expr f, p, q, a, b) =
   withshadingstep(
     withprescript "sh_coons_edge_" & decimal mplib_shade_step & "=" & decimal f
     withprescript "sh_coons_path_" & decimal mplib_shade_step & "=" &
-      if string p: p
+      if string p: p & " " & q
       else:
         ddecimal postcontrol 1 of p & " " &
         ddecimal precontrol  2 of p & " " &
