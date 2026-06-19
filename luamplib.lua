@@ -2404,11 +2404,7 @@ do
     if pdfmode then
       on, new = update_pdfobjs(dict, stream)
     else
-      local t = { }
-      for i = 1, stream:len() do
-        t[#t+1] = format("%02X", stream:byte(i))
-      end
-      stream = tableconcat(t)
+      stream = format(("%02X"):rep(stream:len()), stream:byte(1,stream:len()))
       on, new = update_pdfobjs(format(
         "<<%s/Filter[/ASCIIHexDecode]/Length %d>>\nstream\n%s\nendstream",
         dict, stream:len(), stream))
@@ -2434,8 +2430,8 @@ do
     end
     if not coons then return colors, devicen end
     local t = { }
-    for i,v in ipairs(colors) do
-      for ii,vv in ipairs(v) do
+    for _,v in ipairs(colors) do
+      for _,vv in ipairs(v) do
         t[#t+1] = vv
       end
     end
@@ -2474,18 +2470,17 @@ do
     local xmin, ymin, wd, ht
     Xt, Yt, xmin, ymin, wd, ht = vertex_ffff(Xt, Yt)
 
-    local colors, devicen
+    local colors, devicen = { }
     if #ca > 3 then
       colors, devicen = colors_ff(ca)
     elseif colorspace == "/DeviceRGB" then
       colors = {{255,0,0},{0,255,0},{0,0,255},{255,255,0}}
-    else
-      err "colorspace mismatch?"
     end
 
     local stream = { }
     for i = 1, #Xt do
       stream[#stream+1] = string.pack( ">HH", Xt[i], Yt[i])
+      if not colors[i] then err"colorspace mismatch?" end
       for _,vv in ipairs(colors[i]) do
         stream[#stream+1] = string.char(tonumber(vv))
       end
@@ -2522,10 +2517,10 @@ do
     local xmin, ymin, wd, ht
     Xt, Yt, xmin, ymin, wd, ht = vertex_ffff(Xt, Yt)
 
-    local colors, devicen
+    local colors, devicen = { }
     if #ca > 2 then
       colors, devicen = colors_ff(ca)
-    else
+    elseif colorspace == "/DeviceRGB" then
       colors = { {255, 0, 0}, {0, 255, 0}, {0, 0, 255} }
     end
 
@@ -2593,11 +2588,12 @@ do
     coords = string.pack( ">"..("H"):rep(2*n), tableunpack(coords))
 
     local colors, devicen
-    if #ca < 3 or #cb < 3 then
-      colors = { 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0 }
-    else
+    if ca[3] and cb[3] then
       colors, devicen = colors_ff({ca[1], ca[2], ca[3], cb[3]}, true)
+    elseif colorspace == "/DeviceRGB" then
+      colors = { 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0 }
     end
+    if not colors then err"colorspace mismatch?" end
     colors = string.char(tableunpack(colors))
 
     local stream = { string.char(0) .. coords .. colors }
@@ -2611,8 +2607,8 @@ do
       end
       coords = string.pack( ">"..("H"):rep(2*nn), tableunpack(coords))
 
-      local colors = colors_ff({ca[i], cb[i]}, true)
       if not ca[i] or not cb[i] then err"colorspace mismatch?" end
+      local colors = colors_ff({ca[i], cb[i]}, true)
       colors = string.char(tableunpack(colors))
 
       local flag = tonumber(prescript["sh_coons_edge_"..i])
