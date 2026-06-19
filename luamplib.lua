@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.42.1",
-  date          = "2026/06/17",
+  version       = "2.42.2",
+  date          = "2026/06/19",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -1717,17 +1717,17 @@ def withlatticeverticesperrow expr n =
   withprescript "sh_lattice_perrow=" & decimal n
 enddef;
 def withlatticeverticesdata (text t) =
+  hide(luamplib_tmp_num_ := 0;)
   withprescript "sh_lattice_data=" &
   for item = t:
-    if string item: item & " " &
-    elseif pair item: ddecimal item & " " &
+    if odd(incr luamplib_tmp_num_):
+      if pair item: ddecimal fi item & " " &
     fi
   endfor ""
-  hide(mplib_shade_step := 0;)
+  hide(luamplib_tmp_num_ := 0; mplib_shade_step := 0;)
   for item = t:
-    if string item:
-    elseif pair item:
-    else: withshadingstep( withshadingcolors(item,item) )
+    if not odd(incr luamplib_tmp_num_):
+      withshadingstep( withshadingcolors(item,item) )
     fi
   endfor
 enddef;
@@ -2390,14 +2390,16 @@ do
       cb[1], cb[2], cb[3], cb[4] = 1-cb[1], 1-cb[2], 1-cb[3], 0
     end
   end
-  local function write_mesh_objs (shtype, colorspace, stream, perrow)
+  local function write_mesh_objs (shtype, colorspace, stream, devicen, perrow)
+    local cc = colorspace == "/DeviceCMYK" and 4
+            or colorspace == "/DeviceRGB" and 3
+            or devicen or 1
     local dict = format(
-      "/ShadingType %d/%s/BitsPerCoordinate 16/BitsPerComponent 8/ColorSpace %s/Decode[0 1 0 1 %s]",
+      "/ShadingType %d/%s/BitsPerCoordinate 16/BitsPerComponent 8/ColorSpace %s/Decode[0 1 0 1%s]",
       shtype,
       perrow and format("VerticesPerRow %d", perrow) or "BitsPerFlag 8",
       colorspace,
-      colorspace == "/DeviceCMYK" and "0 1 0 1 0 1 0 1"
-      or colorspace == "/DeviceRGB" and "0 1 0 1 0 1" or "0 1")
+      (" 0 1"):rep(cc))
     local on, new
     if pdfmode then
       on, new = update_pdfobjs(dict, stream)
@@ -2413,6 +2415,43 @@ do
     end
     add_shading_resources(on, new)
     return on
+  end
+  local function colors_ff (colortab, coons)
+    local colors, devicen = { }
+    for i,v in ipairs(colortab) do
+      colors[i] = { }
+      for ii,vv in ipairs(v) do
+        if type(vv) == "string" and vv:find"%s" then
+          local t = vv:explode()
+          for iii,vvv in ipairs(t) do
+            colors[i][iii] = math.floor(vvv * 0xFF)
+          end
+          devicen = #t
+        else
+          colors[i][ii] = math.floor(vv * 0xFF)
+        end
+      end
+    end
+    if not coons then return colors, devicen end
+    local t = { }
+    for i,v in ipairs(colors) do
+      for ii,vv in ipairs(v) do
+        t[#t+1] = vv
+      end
+    end
+    return t, devicen
+  end
+  local function vertex_ffff (Xt, Yt)
+    local xmin, xmax = math.min(tableunpack(Xt)), math.max(tableunpack(Xt))
+    local ymin, ymax = math.min(tableunpack(Yt)), math.max(tableunpack(Yt))
+    local wd, ht = xmax - xmin, ymax - ymin
+    for i = 1, #Xt do
+      Xt[i] = math.floor((Xt[i] - xmin)/wd * 0xFFFF )
+    end
+    for i = 1, #Yt do
+      Yt[i] = math.floor((Yt[i] - ymin)/ht * 0xFFFF )
+    end
+    return Xt, Yt, xmin, ymin, wd, ht
   end
   local function do_shading_lattice_mesh (object, prescript, colorspace, ca, cb)
     local perrow = prescript.sh_lattice_perrow or 2
@@ -2432,26 +2471,16 @@ do
       Xt[#Xt+1] = tonumber(data[i])
       Yt[#Yt+1] = tonumber(data[i+1])
     end
-    local xmin, xmax = math.min(tableunpack(Xt)), math.max(tableunpack(Xt))
-    local ymin, ymax = math.min(tableunpack(Yt)), math.max(tableunpack(Yt))
-    local wd, ht = xmax - xmin, ymax - ymin
-    for i = 1, #Xt do
-      Xt[i] = math.floor((Xt[i] - xmin)/wd * 0xFFFF )
-    end
-    for i = 1, #Yt do
-      Yt[i] = math.floor((Yt[i] - ymin)/ht * 0xFFFF )
-    end
+    local xmin, ymin, wd, ht
+    Xt, Yt, xmin, ymin, wd, ht = vertex_ffff(Xt, Yt)
 
-    local colors = { }
+    local colors, devicen
     if #ca > 3 then
-      for i,v in ipairs(ca) do
-        colors[i] = { }
-        for ii,vv in ipairs(v) do
-          colors[i][ii] = math.floor(vv * 0xFF)
-        end
-      end
+      colors, devicen = colors_ff(ca)
+    elseif colorspace == "/DeviceRGB" then
+      colors = {{255,0,0},{0,255,0},{0,0,255},{255,255,0}}
     else
-      colors = {{0,0,255},{0,255,0},{255,0,0},{255,255,0}}
+      err "colorspace mismatch?"
     end
 
     local stream = { }
@@ -2463,7 +2492,7 @@ do
     end
 
     local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
-    local on = write_mesh_objs (5, colorspace, tableconcat(stream), perrow)
+    local on = write_mesh_objs (5, colorspace, tableconcat(stream), devicen, perrow)
     return on, matrix
   end
   local function do_shading_triangle_mesh (object, prescript, colorspace, ca, cb)
@@ -2490,24 +2519,12 @@ do
         Yt[#Yt+1] = path[i].y_coord
       end
     end
-    local xmin, xmax = math.min(tableunpack(Xt)), math.max(tableunpack(Xt))
-    local ymin, ymax = math.min(tableunpack(Yt)), math.max(tableunpack(Yt))
-    local wd, ht = xmax - xmin, ymax - ymin
-    for i = 1, #Xt do
-      Xt[i] = math.floor((Xt[i] - xmin)/wd * 0xFFFF )
-    end
-    for i = 1, #Yt do
-      Yt[i] = math.floor((Yt[i] - ymin)/ht * 0xFFFF )
-    end
+    local xmin, ymin, wd, ht
+    Xt, Yt, xmin, ymin, wd, ht = vertex_ffff(Xt, Yt)
 
-    local colors
+    local colors, devicen
     if #ca > 2 then
-      for i,v in ipairs(ca) do
-        for ii,vv in ipairs(v) do
-          ca[i][ii] = math.floor(vv * 0xFF)
-        end
-      end
-      colors = ca
+      colors, devicen = colors_ff(ca)
     else
       colors = { {255, 0, 0}, {0, 255, 0}, {0, 0, 255} }
     end
@@ -2517,13 +2534,14 @@ do
       local flag = tonumber(prescript["sh_triangle_edge_" .. i]) or 0
       stream[#stream+1] = string.char(flag)
       stream[#stream+1] = string.pack( ">HH", Xt[i], Yt[i])
+      if not colors[i] then err"colorspace mismatch?" end
       for _,vv in ipairs(colors[i]) do
         stream[#stream+1] = string.char(tonumber(vv))
       end
     end
 
     local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
-    local on = write_mesh_objs (4, colorspace, tableconcat(stream))
+    local on = write_mesh_objs (4, colorspace, tableconcat(stream), devicen)
     return on, matrix
   end
   local function do_shading_coons_patch (object, prescript, colorspace, ca, cb)
@@ -2563,31 +2581,22 @@ do
       end
     end
 
-    local xmin, xmax = math.min(tableunpack(X_t)), math.max(tableunpack(X_t))
-    local ymin, ymax = math.min(tableunpack(Y_t)), math.max(tableunpack(Y_t))
-    local wd, ht = xmax - xmin, ymax - ymin
+    local xmin, ymin, wd, ht
+    X_t, Y_t, xmin, ymin, wd, ht = vertex_ffff(X_t, Y_t)
 
     local n = tensor and 16 or 12
     local coords = { }
     for i = 1, n do
-      coords[#coords+1] = math.floor((X_t[i] - xmin)/wd * 0xFFFF )
-      coords[#coords+1] = math.floor((Y_t[i] - ymin)/ht * 0xFFFF )
+      coords[#coords+1] = X_t[i]
+      coords[#coords+1] = Y_t[i]
     end
     coords = string.pack( ">"..("H"):rep(2*n), tableunpack(coords))
 
-    local colors
+    local colors, devicen
     if #ca < 3 or #cb < 3 then
       colors = { 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0 }
     else
-      colors = { }
-      for i = 1, 3 do
-        for _, v in ipairs(ca[i]) do
-          colors[#colors+1] = math.floor(v * 0xFF)
-        end
-      end
-      for _, v in ipairs(cb[3]) do
-        colors[#colors+1] = math.floor(v * 0xFF)
-      end
+      colors, devicen = colors_ff({ca[1], ca[2], ca[3], cb[3]}, true)
     end
     colors = string.char(tableunpack(colors))
 
@@ -2597,18 +2606,13 @@ do
     for i = 4, steps do
       local coords = { }
       for j = n+(i-4)*nn+1, n+(i-3)*nn do
-        coords[#coords+1] = math.floor((X_t[j] - xmin)/wd * 0xFFFF )
-        coords[#coords+1] = math.floor((Y_t[j] - ymin)/ht * 0xFFFF )
+        coords[#coords+1] = X_t[j]
+        coords[#coords+1] = Y_t[j]
       end
       coords = string.pack( ">"..("H"):rep(2*nn), tableunpack(coords))
 
-      local colors = { }
-      for _, v in ipairs(ca[i]) do
-        colors[#colors+1] = math.floor(v * 0xFF)
-      end
-      for _, v in ipairs(cb[i]) do
-        colors[#colors+1] = math.floor(v * 0xFF)
-      end
+      local colors = colors_ff({ca[i], cb[i]}, true)
+      if not ca[i] or not cb[i] then err"colorspace mismatch?" end
       colors = string.char(tableunpack(colors))
 
       local flag = tonumber(prescript["sh_coons_edge_"..i])
@@ -2617,7 +2621,7 @@ do
     end
 
     local matrix = format("%f 0 0 %f %f %f", wd, ht, xmin, ymin) :gsub(decimals,rmzeros)
-    local on = write_mesh_objs (tensor and 7 or 6, colorspace, tableconcat(stream))
+    local on = write_mesh_objs (tensor and 7 or 6, colorspace, tableconcat(stream), devicen)
     return on, matrix
   end
   function do_preobj_SH(object, prescript)
