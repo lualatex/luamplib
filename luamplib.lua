@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.42.9",
-  date          = "2026/09/01",
+  version       = "2.43.0",
+  date          = "2026/09/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -502,7 +502,7 @@ end
 do
   local colfmt = ccexplat and "l3color" or "xcolor"
   local mplibcolorfmt = {
-    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expandafter{\current@color}}}}]],
+    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expanded{{\current@color}}}}}]],
     l3color = [[\color_export:nnN%s{raw}\l_tmpa_tl\mplibtmptoks\expandafter{\l_tmpa_tl}]]
   }
   function process_color (str)
@@ -547,8 +547,12 @@ do
   function process_mplibcolor(str)
     local res = process_color(str)
     if res:find" cs " then return res end
-    res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
-    return format("(%s)", tableconcat(res, ","))
+    res = res:match'"mpliboverridecolor=(.+)"'
+    local t = colorsplit(res)
+    if #t == 0 then
+      err("Color processing failed '%s'. It could be a luamplib bug. Please report.", res)
+    end
+    return format("(%s)", tableconcat(t, ","))
   end
 end
 
@@ -635,7 +639,7 @@ do
         if t then return t end
       end
     end
-    local f = loadstring(code)
+    local f = load(code)
     if type(f) == "function" then
       local buffer = {}
       function mp.print(...)
@@ -660,7 +664,7 @@ do
     return str:gsub("\\%%", "\0PerCent\0")
               :gsub("%%.-\n", "")
               :gsub("%%.-$",  "")
-              :gsub("%zPerCent%z", "\\%%")
+              :gsub("\0PerCent\0", "\\%%")
               :gsub("\r.-$",  "")
               :gsub("%s+", " ")
   end
@@ -1700,6 +1704,9 @@ def withfadebbox (expr a,b) =
     decimal xpart b & ":" &
     decimal ypart b
 enddef;
+def withadjustbbox expr n =
+  withprescript "mplibadjustbbox=" & decimal n
+enddef;
 primarydef p asgroup s =
   image(
     draw center p
@@ -2356,6 +2363,13 @@ do
     hue        = "Hue",        saturation = "Saturation", color     = "Color",
     luminosity = "Luminosity", compatible = "Compatible",
   }
+  local full_opacity
+  local function get_full_opacity()
+    local on, new = update_pdfobjs"<</BM/Normal/ca 1/CA 1/AIS false>>"
+    local key = add_extgs_resources(on,new)
+    full_opacity = format("/%s gs",key)
+    return full_opacity
+  end
   function do_preobj_TR(object,prescript)
     if object.postscript == "collect" then return end
     local opaq = prescript and prescript.tr_transparency
@@ -2372,16 +2386,11 @@ do
     for i,v in ipairs(opaq) do
       opaq[i] = format("%.3f", v) :gsub(decimals,rmzeros)
     end
-    for i,v in ipairs{ {mode,opaq[1],opaq[2] or opaq[1]},{"Normal",1,1} } do
-      os = format("<</BM/%s/ca %s/CA %s/AIS false>>",v[1],v[2],v[3])
-      on, new = update_pdfobjs(os)
-      key = add_extgs_resources(on,new)
-      if i == 1 then
-        pdf_literalcode("/%s gs",key)
-      else
-        return format("/%s gs",key)
-      end
-    end
+    os = format("<</BM/%s/ca %s/CA %s/AIS false>>",mode,opaq[1],opaq[2] or opaq[1])
+    on, new = update_pdfobjs(os)
+    key = add_extgs_resources(on,new)
+    pdf_literalcode("/%s gs",key)
+    return full_opacity or get_full_opacity()
   end
 end
 
@@ -2859,7 +2868,7 @@ local function do_preobj_shading (object, prescript)
   local on,_,matrix = do_preobj_SH(object, prescript)
   local os = format("/PatternType 2/Shading %s", format(pdfetcs.resfmt, on))
   matrix = matrix or "1 0 0 1 0 0"
-  if prescript.sh_in_xobj == "yes" then
+  if not pdfmode and prescript.sh_in_xobj == "yes" then -- only in dvi mode
     on = update_pdfobjs(("<<%s/Matrix[%s]>>"):format(os, matrix))
     goto skip_latelua
   end
@@ -3195,9 +3204,14 @@ local function do_preobj_FADE (object, prescript)
       end
     end
 
-    local pen = mplib.pen_info(object)
-    if pen and pen.width then
-      local wd = pen.width / 2
+    local wd = prescript.mplibadjustbbox
+    if not wd then
+      local pen = mplib.pen_info(object)
+      if pen and pen.width then
+        wd = pen.width / 2 * math.sqrt(2)
+      end
+    end
+    if wd then
       bbox = { bbox[1]-wd, bbox[2]-wd, bbox[3]+wd, bbox[4]+wd }
     end
 
@@ -3249,17 +3263,26 @@ local function do_preobj_GRP (object, prescript)
       trgroup[v] = true
     end
     trgroup.bbox = prescript.mplibgroupbbox:explode":"
-    trgroup.widths = { }
+    trgroup.adjustbbox = prescript.mplibadjustbbox
+    if not trgroup.adjustbbox then
+      trgroup.widths = { }
+    end
     put2output[[\begingroup\setbox\mplibscratchbox\hbox\bgroup\luamplibtagasgroupset]]
   elseif grstate == "stop" then
     local llx,lly,urx,ury = tableunpack(trgroup.bbox)
 
-    if #trgroup.widths > 0 then
-      local wd = math.max(tableunpack(trgroup.widths))
-      if wd and wd > 0 then
-        wd = wd/2
-        llx,lly,urx,ury = llx-wd, lly-wd, urx+wd, ury+wd
+    local wd = trgroup.adjustbbox
+    if not wd then
+      if #trgroup.widths > 0 then
+        wd = math.max(tableunpack(trgroup.widths))
+        if wd > 0 then
+          wd = wd / 2 * math.sqrt(2)
+        end
       end
+      trgroup.widths = nil
+    end
+    if wd then
+      llx,lly,urx,ury = llx-wd, lly-wd, urx+wd, ury+wd
     end
 
     put2output(tableconcat{
@@ -3418,11 +3441,11 @@ end
 
 do
   local function stop_special_effects(fade,opaq)
-    if fade then -- fading
-      stop_pdf_code()
-    end
     if opaq then -- opacity
       pdf_literalcode(opaq)
+    end
+    if fade then -- fading
+      stop_pdf_code()
     end
   end
 
@@ -3567,8 +3590,8 @@ do
                 local prescript     = object.prescript
                 prescript = prescript and script2table(prescript) -- prescript is now a table
                 do_preobj_CR(object,prescript) -- color
-                local tr_opaq = do_preobj_TR(object,prescript) -- opacity
                 local fading_ = do_preobj_FADE(object,prescript) -- fading
+                local tr_opaq = do_preobj_TR(object,prescript) -- opacity
                 do_preobj_PAT(object,prescript) -- tiling pattern
                 do_preobj_shading(object,prescript) -- shading pattern
                 local trgroup = do_preobj_GRP(object,prescript) -- transparency group
@@ -3748,7 +3771,8 @@ do
                   end
                 end
                 if fading_ == "start" then
-                  pdfetcs.fading.specialeffects = {fading_, tr_opaq}
+                  stop_special_effects(false, tr_opaq)
+                  pdfetcs.fading.specialeffects = {fading_, false}
                 elseif trgroup == "start" then
                   pdfetcs.tr_group.specialeffects = {fading_, tr_opaq}
                 elseif fading_ == "stop" then

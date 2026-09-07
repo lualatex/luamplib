@@ -1,5 +1,11 @@
                        History of the luamplib package
 
+2026/09/07 2.43.0
+   * fix bug in color processing which was raised with beamer class (#207)
+   * new optional macro for fading and asgroup: withadjustbbox
+     See the documentation 1.2.13 and 1.2.15 for details.
+   * fix transparency used with fading, now affecting only specified object
+
 2026/09/01 2.42.9
    * fix btex/etex scanning, now ignoring comments and strings (#204, #205)
    * fix shading of paths drawn with a transformed or non-circle pen

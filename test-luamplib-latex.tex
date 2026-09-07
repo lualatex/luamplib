@@ -47,12 +47,14 @@ verbatimtex \lower.2em etex
 beginfig(0);
 draw origin--(1cm,0) withcolor \mpcolor{teal};
 draw btex g etex withcolor \mpcolor{orange};
-draw btex\tracingcommands0
+draw btex
+% this is a comment at the very first position.
+% this is a comment at second line.
+  \tracingcommands0
   multi%
   \begin{huge}line\end{huge}
   texcode
-  with \%
-  etex shifted (10,0);
+  with \% % etex shifted (10,0);
 draw bbox currentpicture;
 endfig;
 
@@ -357,11 +359,13 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \marginpar{\leavevmode\llap{acrobat/texworks}}
 
 \bigskip
+\noindent
 \mpfig[text]
   draw mplibgraphictext "\textbf{MPLIB}"
     fakebold 1 fillcolor "red!70" drawcolor .7red scaled 7
     withmppattern "mypatt" ;
 \endmpfig
+←firefox bug.
 
 \leavevmode
 \begin{mplibgroup}{mytex}[matrix="rotated 15"] \SuspendTagging{}\TeX \end{mplibgroup}%
@@ -649,7 +653,7 @@ withshadingcolors (red, blue)
 withtransparency (1, 2/3) ;
 \endmpfig
 
-\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{acrobat/foxit/firefox/chrome/mupdf/texworks/preview}}
+\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{OK with almost all viewer}}
 \mplibgroup{myshading}
 \mpfig[off]
   draw pic2;
@@ -785,6 +789,19 @@ fill p scaled 2u
   withcoonspatchnext (3, rsquare(2) shifted (0, u), yellow, red)
   ;
 \endmpfig
-Coons patch mesh shading: preview hiccups.
+←preview bug.
+\mpfig[alt=testing the macro withadjustbbox, adjust-BBox=-1bp -8bp 0bp 0bp]
+  linejoin := 0;  % sharp arrows
+  linecap := 0;  % square ends
+  picture pic;
+  pic = image(drawarrow (subpath (2,4) of fullcircle scaled 30) withpen pencircle scaled 2)scaled 5;
+  draw pic
+    asgroup ""
+    withfademethod"linear"
+    withfadevector(llcorner pic, urcorner pic)
+    withadjustbbox 8
+    ;
+draw boundingbox currentpicture withcolor 1/2white;
+\endmpfig
 
 \end{document}
