@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/09/01 v2.42.9 Interface for using the mplib library]%
+  [2026/09/07 v2.43.0 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/09/01 v2.42.9}
+% \date{2026/09/07 v2.43.0}
 %
 % \maketitle
 %
@@ -1225,8 +1225,8 @@ See source file '\inFileName' for licencing and contact information.
 %     at \secref{transparencygroup} on the analogous macro |withgroupbbox|.
 %   \item [withadjustbbox \meta{numeric}]
 %     More convenient way to adjust BBox value than |withfadebbox|.
-%     The llcorner of the BBox will move leftward and downward by the amount specified,
-%     and the urcorner will move rightward and upward by the same amount.
+%     The lower left corner of the BBox will move leftward and downward by the amount specified,
+%     and the upper right corner will move rightward and upward by the same amount.
 %   \end{description}
 %   An example:
 %\startmpfig
@@ -1447,7 +1447,7 @@ See source file '\inFileName' for licencing and contact information.
 %   is a \TeX\ command to reuse an XObject of the name
 %   once used.
 %   Note that the position of the XObject will be origin-based:
-%   in other words, lower-left corner of the bounding box will be shifted to the origin.
+%   in other words, lower left corner of the bounding box will be shifted to the origin.
 %
 % \item[usemplibgroup \meta{string}] is a \metapost command which will add
 %   an XObject of the name to the |currentpicture|.
@@ -1468,8 +1468,8 @@ See source file '\inFileName' for licencing and contact information.
 %
 %   \item [withadjustbbox \meta{numeric}]
 %     More convenient way to adjust BBox value than |withgroupbbox|.
-%     The llcorner of the BBox will move leftward and downward by the amount specified,
-%     and the urcorner will move rightward and upward by the same amount.
+%     The lower left corner of the BBox will move leftward and downward by the amount specified,
+%     and the upper right corner will move rightward and upward by the same amount.
 % \end{description}
 % An example showing the effect of transparency group and
 % the difference between the \TeX\ and \metapost commands:
@@ -2242,8 +2242,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.42.9",
-  date          = "2026/09/01",
+  version       = "2.43.0",
+  date          = "2026/09/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2863,7 +2863,12 @@ end
 do
   local colfmt = ccexplat and "l3color" or "xcolor"
   local mplibcolorfmt = {
-    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expandafter{\current@color}}}}]],
+%    \end{macrocode}
+% Fix a bug reported at \#207,
+% which was introduced recently when \cs{edef} was changed to \cs{expandafter}.
+% We now use \cs{expanded} instead.
+%    \begin{macrocode}
+    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expanded{{\current@color}}}}}]],
     l3color = [[\color_export:nnN%s{raw}\l_tmpa_tl\mplibtmptoks\expandafter{\l_tmpa_tl}]]
   }
   function process_color (str)
@@ -2908,8 +2913,12 @@ do
   function process_mplibcolor(str)
     local res = process_color(str)
     if res:find" cs " then return res end
-    res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
-    return format("(%s)", tableconcat(res, ","))
+    res = res:match'"mpliboverridecolor=(.+)"'
+    local t = colorsplit(res)
+    if #t == 0 then
+      err("Color processing failed '%s'. It could be a luamplib bug. Please report.", res)
+    end
+    return format("(%s)", tableconcat(t, ","))
   end
 end
 
@@ -6444,6 +6453,10 @@ do
 % (color is always reset in front of each graphic object.)
 % The order therefore should be:
 % fading (|q|) --- opacity --- graphic object --- stop opacity --- |...| --- stop fading (|Q|).
+%
+% To be frank, a pattern (especially shading) is also a ExtGS. However, as there are
+% so many optional macros and, above all, they are \emph{reset by the color} of each object,
+% we decided them to affect all the following objects which have no color.
 %    \begin{macrocode}
                 if fading_ == "start" then
                   stop_special_effects(false, tr_opaq)
@@ -6526,7 +6539,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/09/01 v2.42.9 mplib package for LuaTeX]
+    [2026/09/07 v2.43.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

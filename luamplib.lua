@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.42.9",
-  date          = "2026/09/01",
+  version       = "2.43.0",
+  date          = "2026/09/07",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -502,7 +502,7 @@ end
 do
   local colfmt = ccexplat and "l3color" or "xcolor"
   local mplibcolorfmt = {
-    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expandafter{\current@color}}}}]],
+    xcolor = [[{\setbox0\hbox{{\color%s\global\mplibtmptoks\expanded{{\current@color}}}}}]],
     l3color = [[\color_export:nnN%s{raw}\l_tmpa_tl\mplibtmptoks\expandafter{\l_tmpa_tl}]]
   }
   function process_color (str)
@@ -547,8 +547,12 @@ do
   function process_mplibcolor(str)
     local res = process_color(str)
     if res:find" cs " then return res end
-    res = colorsplit(res:match'"mpliboverridecolor=(.+)"')
-    return format("(%s)", tableconcat(res, ","))
+    res = res:match'"mpliboverridecolor=(.+)"'
+    local t = colorsplit(res)
+    if #t == 0 then
+      err("Color processing failed '%s'. It could be a luamplib bug. Please report.", res)
+    end
+    return format("(%s)", tableconcat(t, ","))
   end
 end
 
