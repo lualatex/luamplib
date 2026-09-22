@@ -3,9 +3,9 @@
     tagging=on, tagging-setup={math/setup=mathml-SE},
 %    debug=BBox,
   }
-  \documentclass{article}
+  \documentclass[a4paper]{article}
 \else
-  \documentclass[dvipdfmx]{article}
+  \documentclass[a4paper,dvipdfmx]{article}
   \pagewidth=\paperwidth
   \pageheight=\paperheight
   \special{papersize=\the\paperwidth,\the\paperheight}
@@ -18,6 +18,7 @@
 \everymplib{ beginfig(0); }
 \everyendmplib{ endfig; }
 \mpliblegacybehavior{true}%
+%\mplibexternalizename{figures/test-fig}\mplibexternalize
 \begin{document}
 \title{testing LuaMPlib}
 \parindent0pt
@@ -179,7 +180,7 @@ endfig;
    VerbatimTeX("\gdef\Dia{" & decimal D & "}");
    endfig;
 \end{mplibcode}%
-diameter:\Dia bp.%
+diameter:\ifdefined\Dia\Dia\fi bp.%
 \begin{mplibcode}[off]
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
@@ -518,11 +519,11 @@ pattern after masking
   picture pic; pic = btex \sffamily\bfseries\Huge Meta etex scaled 2;
 \endmpfig
 \mplibgroup{mymask}[asgroup="masking"]
-  \mpfig[off]
+  \mpfig[off,externalizedependson=-1]
     draw pic withcolor 1;
   \endmpfig
 \endmplibgroup
-\mpfig[alt=test general masking]
+\mpfig[alt=test general masking,externalizedependson=-2]
   draw image(
     for i=-7 upto 8 :
       fill unitsquare
@@ -653,7 +654,7 @@ withshadingcolors (red, blue)
 withtransparency (1, 2/3) ;
 \endmpfig
 
-\leavevmode\qquad\qquad but this is the best:\marginpar{\leavevmode\llap{OK with almost all viewer}}
+\leavevmode\qquad\qquad but this is the best:
 \mplibgroup{myshading}
 \mpfig[off]
   draw pic2;
@@ -767,7 +768,7 @@ draw image(
   withshadingcolors (blue, green) ;
 \endmpfig
 \endmplibgroup
-\mpfig[alt=shading test, adjust-BBox=-10bp 6bp -9bp 14bp]
+\mpfig[alt=shading test, adjust-BBox=-10bp 6bp -9bp 14bp, externalizemargin=14bp]
 drawdot origin withpen pencircle scaled 2;
 usemplibgroup "myshading2" withtransparency (1, 2/3) ;
 \endmpfig
@@ -790,7 +791,7 @@ fill p scaled 2u
   ;
 \endmpfig
 ←preview bug.
-\mpfig[alt=testing the macro withadjustbbox, adjust-BBox=-1bp -8bp 0bp 0bp]
+\mpfig[alt=testing the macro withadjustbbox, adjust-BBox=-1bp -8bp 0bp 0bp, externalizemargin=8bp]
   linejoin := 0;  % sharp arrows
   linecap := 0;  % square ends
   picture pic;

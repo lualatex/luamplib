@@ -25,7 +25,7 @@ TEXMFDIR  = $(shell kpsewhich --var-value TEXMFHOME)
 CTAN_ZIP  = $(NAME).zip
 ZIPS      = $(CTAN_ZIP)
 
-DOLATEX   = texfot --quiet --tee=/dev/null --ignore "hypdoc" --ignore "^Overfull" --ignore "^Underfull" lualatex -recorder $(DTX)
+DOLATEX   = texfot --quiet --tee=/dev/null --ignore "hypdoc" --ignore "^Overfull" --ignore "^Underfull" lualatex --shell-escape --recorder $(DTX)
 
 all: $(GENERATED)
 doc: all

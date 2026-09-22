@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.43.0",
-  date          = "2026/09/07",
+  version       = "2.44.0",
+  date          = "2026/09/22",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2094,6 +2094,9 @@ enddef;
 ]],
 }
 
+luamplib.externalize = luamplib.externalize or { }
+local externalize = luamplib.externalize
+
 luamplib.verbatiminput = false
 luamplib.everymplib    = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
 luamplib.everyendmplib = setmetatable({ [""] = "" },{ __index = function(t) return t[""] end })
@@ -2135,6 +2138,11 @@ function luamplib.process_mplibcode (data, instancename)
     :gsub("##", "#")
     :gsub("!l!u!a!(%d+)!m!p!l!", function(str) return t[tonumber(str)] or str end)
   end
+
+  if externalize.running then
+    if externalize.figure(data) then return end
+  end
+
   process(data, instancename)
 end
 
@@ -2191,16 +2199,16 @@ local function do_preobj_CR(object,prescript)
       local name1 = override:match("^/(.-) cs ")
       local name2 = override:match(" /(.-) CS ")
       if name1 then
-        texsprint(ccexplat, {
+        texsprint(ccexplat,
           "\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{",
           name1, "}{\\pdf_object_ref:n{", name1, "}}"
-        })
+        )
       end
       if name2 and name1 ~= name2 then
-        texsprint(ccexplat, {
+        texsprint(ccexplat,
           "\\pdfmanagement_add:nnn{Page/Resources/ColorSpace}{",
           name2, "}{\\pdf_object_ref:n{", name2, "}}"
-        })
+        )
       end
     end
   else
@@ -2299,18 +2307,18 @@ if pdfmode then
     end
   end
 else
-  texsprint {
+  texsprint (
     "\\luamplibatfirstshipout{",
     "\\special{pdf:obj @MPlibTr<<>>}",
     "\\special{pdf:obj @MPlibSh<<>>}",
     "\\special{pdf:obj @MPlibCS<<>>}",
-    "\\special{pdf:obj @MPlibPt<<>>}}",
-  }
+    "\\special{pdf:obj @MPlibPt<<>>}}"
+  )
   pdfetcs.fallback_update_resources = function (name,res,obj)
-    texsprint{"\\special{pdf:put ", obj, " <<", res, ">>}"}
+    texsprint("\\special{pdf:put ", obj, " <<", res, ">>}")
     local tabname = format("%s_res",name)
     if not pdfetcs[tabname] then
-      texsprint{"\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}"}
+      texsprint("\\luamplibateveryshipout{\\special{pdf:put @resources <</", name, " ", obj, ">>}}")
       pdfetcs[tabname] = { }
     end
     tableinsert(pdfetcs[tabname], res)
@@ -2322,20 +2330,20 @@ local function add_extgs_resources (on, new)
   if new then
     local val = format(pdfetcs.resfmt, on)
     if pdfmanagement then
-      texsprint {
+      texsprint (
         "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ExtGState}{", key, "}{", val, "}"
-      }
+      )
     else
       local tr = format("/%s %s", key, val)
       if is_defined(pdfetcs.pgfextgs) then
-        texsprint { "\\csname ", pdfetcs.pgfextgs, "\\endcsname{", tr, "}" }
+        texsprint ( "\\csname ", pdfetcs.pgfextgs, "\\endcsname{", tr, "}" )
       elseif is_defined"TRP@list" then
-        texsprint(catat11,{
+        texsprint(catat11,
           [[\if@filesw\immediate\write\@auxout{]],
           [[\string\g@addto@macro\string\TRP@list{]],
           tr,
-          [[}}\fi]],
-        })
+          [[}}\fi]]
+        )
         if not get_macro"TRP@list":find(tr) then
           texsprint(catat11,[[\global\TRP@reruntrue]])
         end
@@ -2398,9 +2406,9 @@ local function add_shading_resources (on, new)
   if new then
     local key, val = format("MPlibSh%s", on), format(pdfetcs.resfmt, on)
     if pdfmanagement then
-      texsprint {
+      texsprint (
         "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Shading}{", key, "}{", val, "}"
-      }
+      )
     else
       local res = format("/%s %s", key, val)
       pdfetcs.fallback_update_resources("Shading",res,"@MPlibSh")
@@ -2812,13 +2820,13 @@ end
 
 local function add_pattern_resources (key, val)
   if pdfmanagement then
-    texsprint {
+    texsprint (
       "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/Pattern}{", key, "}{", val, "}"
-    }
+    )
   else
     local res = format("/%s %s", key, val)
     if is_defined(pdfetcs.pgfpattern) then
-      texsprint { "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" }
+      texsprint ( "\\csname ", pdfetcs.pgfpattern, "\\endcsname{", res, "}" )
     else
       pdfetcs.fallback_update_resources("Pattern",res,"@MPlibPt")
     end
@@ -2894,8 +2902,8 @@ local function do_preobj_shading (object, prescript)
     local t = pdfetcs.shadingpatterns[on] or { 0, 0 }
     local mt = matrix:explode()
     matrix = format("%s %s %s %s %s %s", mt[1], mt[2], mt[3], mt[4], mt[5]+t[1], mt[6]+t[2])
-    texsprint{ "\\special{pdf:put ", format(pdfetcs.resfmt, on),
-              format(" <<%s/Matrix[%s]>>}", os, matrix) }
+    texsprint( "\\special{pdf:put ", format(pdfetcs.resfmt, on),
+              format(" <<%s/Matrix[%s]>>}", os, matrix) )
     put2output("\\latelua{ luamplib.dolatelua(%s,%s) }", on,
               xobj and ("'%s',[[%s]]"):format(xobj[1], xobj[2]))
   end
@@ -3047,7 +3055,7 @@ function luamplib.registerpattern ( boxid, name, opts )
     local cnt = #patterns + 1
     local objname = "@mplibpattern" .. cnt
     local metric = format("bbox %s", opts.bbox or format("0 0 %s %s",wd,hd))
-    texsprint {
+    texsprint (
       "\\expandafter\\newbox\\csname luamplib.patternbox.", cnt, "\\endcsname",
       "\\global\\setbox\\csname luamplib.patternbox.", cnt, "\\endcsname",
       "\\hbox{\\unhbox ", boxid, "}\\luamplibatnextshipout{",
@@ -3057,8 +3065,8 @@ function luamplib.registerpattern ( boxid, name, opts )
       "\\box\\csname luamplib.patternbox.", cnt, "\\endcsname",
       "\\special{pdf:put @resources <<", optres, ">>}",
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
-      "\\special{pdf:econtent}}",
-    }
+      "\\special{pdf:econtent}}"
+    )
     patterns[cnt] = objname
     patterns[name] = { id = cnt, colored = opts.colored }
     patterns[name].shifts = { get_macro"MPllx", get_macro"MPlly" } -- for shading patterns above
@@ -3072,13 +3080,13 @@ do
     if new then
       local key, val = format("MPlibCS%i",on), format(pdfetcs.resfmt,on)
       if pdfmanagement then
-        texsprint {
+        texsprint (
           "\\csname pdfmanagement_add:nnn\\endcsname{Page/Resources/ColorSpace}{", key, "}{", val, "}"
-        }
+        )
       else
         local res = format("/%s %s", key, val)
         if is_defined(pdfetcs.pgfcolorspace) then
-          texsprint { "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" }
+          texsprint ( "\\csname ", pdfetcs.pgfcolorspace, "\\endcsname{", res, "}" )
         else
           pdfetcs.fallback_update_resources("ColorSpace",res,"@MPlibCS")
         end
@@ -3416,7 +3424,7 @@ function luamplib.registergroup (boxid, name, opts)
   else
     trgroup.cnt = (trgroup.cnt or 0) + 1
     local objname = format("@mplibtrgr%s", trgroup.cnt)
-    texsprint {
+    texsprint (
       "\\expandafter\\newbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
       "\\global\\setbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
       "\\hbox{\\unhbox ", boxid, "}\\luamplibatnextshipout{",
@@ -3425,8 +3433,8 @@ function luamplib.registergroup (boxid, name, opts)
       "\\unhbox\\csname luamplib.groupbox.", trgroup.cnt, "\\endcsname",
       "\\special{pdf:put @resources <<", res, ">>}",
       "\\special{pdf:exobj <<", tableconcat(attr), ">>}",
-      "\\special{pdf:econtent}}",
-    }
+      "\\special{pdf:econtent}}"
+    )
     token.set_macro("luamplib.group."..name, tableconcat{
       "\\setbox\\mplibscratchbox\\hbox{\\special{pdf:uxobj ", objname, "}}",
       "\\wd\\mplibscratchbox ", wd, "sp",
@@ -3463,7 +3471,7 @@ do
   local function invert_matrix (t)
     local a, b, c, d, x, y = t[1], t[2], t[3], t[4], t[5], t[6]
     local det = a*d - b*c
-    assert(det ~= 0, 'transformation is not invertible!')
+    if det == 0 then err"transformation is not invertible!" end
     return format("%f %f %f %f %f %f cm ",
       d/det, 0-b/det, 0-c/det, a/det, (d*x-b*y)/det, (a*y-c*x)/det)
   end
@@ -3824,6 +3832,252 @@ function luamplib.colorconverter (cr)
     local s = cr[1]
     return format("%.3f g %.3f G",s,s), "0 g 0 G"
   end
+end
+
+do
+  local extname, prefix, pdfname, luaname, figtab, prevfigtab
+  local majorV, minorV = pdf.getmajorversion(), pdf.getminorversion()
+  local function is_shell_esc()
+    if status.shell_escape == 1 then return true end
+    luatexbase.module_error("luamplib",
+    "--shell-escape is needed for 'externalize' feature.\n\z
+    Rerun with --shell-escape option.")
+  end
+
+  function externalize.setup ()
+    extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
+    externalize.running = true
+    local dir = status.output_directory or "."
+    prefix = format("%s/%s",dir,extname)
+    luaname = format("%ss.lua",prefix,extname)
+    pdfname = format("%s/%s.pdf",dir,tex.jobname)
+
+    local extver = format("20260922.%s%s", majorV, minorV)
+    figtab = { version = extver }
+    if lfs.isfile(luaname) then
+      prevfigtab = require(luaname)
+    end
+    if not prevfigtab or prevfigtab.version ~= extver then
+      prevfigtab = { }
+      externalize.activate()
+    end
+
+    luatexbase.add_to_callback("finish_pdffile", function()
+      local mandatory = figtab.mandatory
+      if mandatory then
+        local depends = externalize.depends
+        for i = 1, #figtab do
+          if mandatory[i] then
+            for _,v in ipairs(depends[i]) do
+              mandatory[v] = true
+            end
+          end
+        end
+      end
+      if not figtab.found then
+        table.tofile(luaname, figtab, "return")
+        if not mandatory or not is_shell_esc() then return end
+        luatexbase.add_to_callback("wrapup_run", function()
+          os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+        end, "luamplib_externalize")
+      end
+    end,
+    "luamplib_externalize")
+  end
+  function externalize.activate ()
+    figtab.active = true
+    texsprint"\\AddToHook{shipout/before}\z
+    {\\directlua{luamplib.externalize.shipout(tex.getbox(\\the\\ShipoutBox))}}"
+  end
+  function externalize.latelua(wd,ht,dp,mgn)
+    local llx, lly = pdf.getpos()
+    local urx, ury = (llx+wd+mgn)/factor, (lly+ht+mgn)/factor
+    llx, lly = (llx-mgn)/factor, (lly-dp-mgn)/factor
+    local cropbox = ("/CropBox[%f %f %f %f]"):format(llx, lly, urx, ury)
+    pdf.setpageattributes(cropbox)
+  end
+  function externalize.shipout (head)
+    local attr = luatexbase.attributes.luamplibexternalizeattr
+    local getnext, has_attribute = node.getnext, node.has_attribute
+    local curr = head
+    while curr do
+      if curr.head then
+        local count = attr and has_attribute(curr,attr)
+        if count then
+          local page = (externalize.page or tex.count.ReadonlyShipoutCounter) + 1
+          externalize.page = page
+
+          local fig = figtab[count]
+          local wd, ht, dp = curr.width, curr.height, curr.depth
+
+          local latelua = node.new("whatsit","late_lua")
+          latelua.token = format("luamplib.externalize.latelua(%s,%s,%s,%s)",wd,ht,dp,fig.margin or 0)
+          latelua.name = "luamplib.externalize.latelua"
+          curr.head = node.insert_before(curr.head, curr.head, latelua)
+
+          fig.pages = fig.pages or { }
+          tableinsert(fig.pages, page)
+          fig.metric = fig.metric or { }
+          tableinsert(fig.metric, { wd, ht, dp })
+
+          tex.setbox("mplibscratchbox",node.copy(curr))
+          tex.shipout"mplibscratchbox"
+
+          figtab.found = true
+        else
+          externalize.shipout(curr.head)
+        end
+      elseif curr.leader and curr.leader.head then
+        externalize.shipout(curr.leader.head)
+      end
+      curr = getnext(curr)
+    end
+
+    if figtab.found then
+      if not luatexbase.in_callback("wrapup_run","luamplib_externalize") then
+        if is_shell_esc() then
+          externalize.wrapup_run()
+        else
+          luatexbase.add_to_callback("wrapup_run",function() end,"luamplib_externalize")
+        end
+      end
+      texsprint"\\DiscardShipoutBox"
+    end
+  end
+  function externalize.wrapup_run ()
+    luatexbase.add_to_callback("wrapup_run", function()
+      table.tofile(luaname, figtab, "return")
+
+      for i,v in ipairs(figtab) do
+        if v.pages then
+          local mgn = v.margin and v.margin*2 or 0
+          for ii,vv in ipairs(v.pages) do
+            local wd, ht, dp = tableunpack(v.metric[ii])
+            local status = os.spawn(format(
+              "luatex --halt-on-error --jobname=%s-%s-%s \z
+              \"\\pagewidth=%ssp\\pageheight=%ssp\z
+              \\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\z
+              \\pdfvariable majorversion %s\\pdfvariable minorversion %s\z
+              \\topskip=0pt\\nopagenumbers\z
+              \\directlua{img.write{filename=[[%s]],page=%s,pagebox=[[crop]]}}\\bye\"",
+              extname, i, ii, wd+mgn, ht+dp+mgn, majorV, minorV, pdfname, vv))
+            assert(status == 0, format("failed to generate external image No. %s!",i))
+            os.remove(format("%s-%s-%s.log", prefix, i, ii))
+          end
+        end
+      end
+
+      os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+    end,
+    "luamplib_externalize")
+  end
+  function externalize.figure(data)
+    local count = tex.count.luamplibexternalizecount + 1
+    tex.setcount("global", "luamplibexternalizecount", count)
+
+    local prevfig = prevfigtab[count]
+    local num_of_figs, whd
+    if prevfig then
+      num_of_figs = prevfig.pages and #prevfig.pages
+                 or prevfig.changed and 0
+                 or prevfig.num_of_figs
+      whd = prevfig.metric or prevfig.whd
+    end
+    local depend = get_macro"luamplibexternalizedependson"
+
+    local margin = get_macro"luamplibexternalizemargin"
+          margin = margin and tex.sp(margin)
+
+    figtab[count] = {
+      data = data,
+      depend = depend,
+      margin = margin,
+      num_of_figs = num_of_figs,
+      whd = whd,
+    }
+
+    if get_macro"luamplibexternalizedothis" == "false" then return end
+
+    local match = prevfig and prevfig.data == data
+              and prevfig.depend == depend
+              and prevfig.margin == margin
+
+    if prevfigtab.mandatory and prevfigtab.mandatory[count] then
+      goto do_this_fig
+    end
+    if depend then
+      local deps = depend:explode","
+      for i,v in ipairs(deps) do
+        local n = tonumber(v)
+        if n < 0 then
+          n = count + n
+        end
+        deps[i] = n
+      end
+
+      local depends = externalize.depends or { }
+      externalize.depends = depends
+      depends[count] = deps
+      for _,v in ipairs(deps) do
+        depends[v] = depends[v] or { }
+        tableinsert(depends[v], count)
+      end
+
+      local done = 0
+      for _,v in ipairs(deps) do
+        if figtab[v].changed then
+          done = done + 1
+        end
+      end
+
+      if done == #deps then -- all changed: OK
+        goto do_this_fig
+      elseif done == 0 and match then -- none changed and match: OK
+      else
+        match = true -- avoid error
+        figtab.mandatory = figtab.mandatory or { }
+        for _,v in ipairs(deps) do
+          figtab.mandatory[v] = true
+        end
+      end
+    end
+
+    if match then
+      if not num_of_figs then goto do_this_fig end
+      for i = 1, num_of_figs do
+        local name = format("%s-%s-%s.pdf", prefix, count, i)
+        if not lfs.isfile(name) then goto do_this_fig end
+        local wd, ht, dp = tableunpack(whd[i])
+        texsprint(ccexplat,
+          "\\prependtomplibbox\\hbox dir TLT\\bgroup",
+          "\\tag_socket_use:nn{luamplib/figure/begin}\\l__luamplib_tag_alt_dflt_tl",
+          "\\setbox\\mplibscratchbox\\vbox to", ht+dp, "sp{\\vss\\hbox to", wd, "sp{\\hss",
+          "\\directlua{img.write{filename=[[", name ,"]]}}\\hss}\\vss}",
+          "\\dp\\mplibscratchbox=", dp, "sp",
+          "\\ht\\mplibscratchbox=\\dimexpr\\ht\\mplibscratchbox-\\dp\\mplibscratchbox\\relax",
+          "\\tag_socket_use:nnn{luamplib/figure/end}{\\mplibscratchbox}{\\box\\mplibscratchbox}",
+          "\\egroup")
+      end
+      return true
+    end
+
+    ::do_this_fig::
+    if not figtab.active then
+      externalize.activate()
+    end
+    figtab[count].changed = true
+    texsprint"\\luamplibexternalizethisfigure"
+  end
+  local index = luatexbase.new_luafunction"luamplib_externalize"
+  lua.get_functions_table()[index] = function()
+    local data = token.scan_argument()
+    if externalize.running and externalize.figure(data) then
+      tex.setcount("l_tmpa_int", 1)
+    else
+      tex.setcount("l_tmpa_int", 0)
+    end
+  end
+  token.set_lua("luamplib@externalized", index, "global")
 end
 -- 
 --  End of File `luamplib.lua'.

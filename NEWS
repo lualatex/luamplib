@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2026/09/22 2.44.0
+   * implement 'externalize' functionality similar to PGF's 'external' library
+     See the documentation 1.1.19 for details.
+
 2026/09/07 2.43.0
    * fix bug in color processing which was raised with beamer class (#207)
    * new optional macro for fading and asgroup: withadjustbbox

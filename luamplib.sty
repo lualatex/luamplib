@@ -11,7 +11,7 @@
 \ifcsname ProvidesPackage\endcsname
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/09/07 v2.43.0 mplib package for LuaTeX]
+    [2026/09/22 v2.44.0 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -380,7 +380,7 @@
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 \def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
-  \hbox dir TLT\bgroup
+  \hbox dir TLT \luamplibexternalizemaybe \bgroup
   \xdef\MPllx{#1}\xdef\MPlly{#2}%
   \xdef\MPurx{#3}\xdef\MPury{#4}%
   \xdef\MPwidth{\the\dimexpr#3bp-#1bp\relax}%
@@ -436,7 +436,26 @@
 \let\luamplibnotagtextboxset\luamplibtagtextboxset
 \let\luamplibtagasgroupset\relax
 \let\luamplibtagasgroupput\luamplibtagtextboxset
+\let\luamplibexternalizemaybe\relax
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
+
+\def\mplibexternalize{%
+  \newcount\luamplibexternalizecount
+  \newattribute\luamplibexternalizeattr
+  \chardef\luamplibexternalizealloc\allocationnumber
+  \def\luamplibexternalizethisfigure{%
+    \def\luamplibexternalizemaybe{attr \luamplibexternalizealloc =\luamplibexternalizecount}%
+  }%
+  \directlua{luamplib.externalize.setup()}%
+  \def\luamplibexternalizedothis{true}%
+  \aftergroup\mplibexternalizesuspend
+}
+\def\mplibexternalizename#1{\directlua{luamplib.externalize.MY_NAME=[===[#1]===]}}
+\def\mplibexternalizesuspend{\ifdefined\luamplibexternalizecount
+  \directlua{luamplib.externalize.running = false}\fi}
+\def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
+  \directlua{luamplib.externalize.running = true}\fi}
+
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
   \keys_define:nn{luamplib/tagging}
@@ -449,6 +468,10 @@
       ,tag          .code:n = { }
       ,adjust-BBox  .code:n = { }
       ,tagging-setup .code:n = { }
+      ,externalize  .code:n = { \cs_set_nopar:Npn \luamplibexternalizedothis {#1} }
+      ,externalize  .default:n = { true }
+      ,externalizedependson .code:n = { \cs_set_nopar:Npn \luamplibexternalizedependson {#1} }
+      ,externalizemargin .code:n = { \cs_set_nopar:Npn \luamplibexternalizemargin {#1} }
       ,instance     .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
       ,instancename .meta:n = { instance = {#1} }
       ,unknown      .code:n = { \tl_gset:NV \currentmpinstancename \l_keys_key_str }
@@ -459,6 +482,26 @@
       \keys_set:ne{luamplib/tagging}{#1}
       \mplibtmptoks{}\ltxdomplibcode
     }
+  \RenewDocumentCommand\mpfig{s O{}}
+  {
+    \group_begin:
+    \keys_set_known:ne {luamplib/tagging} {#2}
+    \IfBooleanTF{#1} { \mplibprempfig * }
+                     { \mplibmainmpfig }
+  }
+  \RenewDocumentCommand\usemplibgroup{O{} m}
+  {
+    \group_begin:
+    \keys_set_known:ne {luamplib/tagging} {#1}
+    \luamplib@externalized{luamplib.group.#2}
+    \int_compare:nNnT {\l_tmpa_int} = {\c_zero_int}
+    {
+      \prependtomplibbox\hbox dir~TLT~\luamplibexternalizemaybe \bgroup
+        \csname luamplib.group.#2\endcsname
+      \egroup
+    }
+    \group_end:
+  }
   \cs_set_eq:NN \mplibalttext \use_none:n
   \cs_set_eq:NN \mplibactualtext \use_none:n
   \tl_put_left:Nn \mplibstoptoPDF \@newlistfalse
@@ -724,7 +767,10 @@
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/end}{alt}
 {
-    \__luamplib_tag_bbox_attribute:n {#1}
+    \cs_if_eq:NNT \luamplibexternalizemaybe \relax
+    {
+      \__luamplib_tag_bbox_attribute:n {#1}
+    }
     #2
     \tl_use:N \l__luamplib_tag_bbox_draw_tl
     \tag_mc_end:
@@ -827,6 +873,10 @@
 }
 \keys_define:nn {luamplib/instance}
 {
+  ,externalize  .code:n = { \cs_set_nopar:Npn \luamplibexternalizedothis {#1} }
+  ,externalize  .default:n = { true }
+  ,externalizedependson .code:n = { \cs_set_nopar:Npn \luamplibexternalizedependson {#1} }
+  ,externalizemargin .code:n = { \cs_set_nopar:Npn \luamplibexternalizemargin {#1} }
   ,instance     .code:n = { \tl_gset:Nn \currentmpinstancename {#1} }
   ,instancename .meta:n = { instance = {#1} }
   ,unknown      .code:n = { \tl_gset:NV \currentmpinstancename \l_keys_key_str }
@@ -834,7 +884,7 @@
 \cs_set_nopar:Npn \mplibstarttoPDF #1 #2 #3 #4
 {
   \prependtomplibbox
-  \hbox dir~TLT\bgroup
+  \hbox dir~TLT~\luamplibexternalizemaybe \bgroup
     \tag_socket_use:nn{luamplib/figure/begin}\l__luamplib_tag_alt_dflt_tl
     \xdef\MPllx{#1}\xdef\MPlly{#2}%
     \xdef\MPurx{#3}\xdef\MPury{#4}%
@@ -880,9 +930,10 @@
 }
 \RenewDocumentCommand\mpfig{s O{}}
 {
-  \begingroup
+  \group_begin:
   \tl_set:Nn \l__luamplib_tag_envname_tl {mpfig}
-  \keys_set_known:ne {luamplib/tagging} {#2}
+  \keys_set_known:neN {luamplib/tagging} {#2} \l_tmpa_tl
+  \keys_set:nV {luamplib/instance} \l_tmpa_tl
   \tl_set_eq:NN \l__luamplib_tag_alt_dflt_tl \mpfiginstancename
   \tag_socket_use:n{luamplib/figure/init}
   \IfBooleanTF{#1} { \mplibprempfig * }
@@ -890,19 +941,24 @@
 }
 \RenewDocumentCommand\usemplibgroup{O{} m}
 {
-  \begingroup
+  \group_begin:
   \tl_set:Nn \l__luamplib_tag_envname_tl {usemplibgroup}
-  \keys_set_known:ne {luamplib/tagging} {#1}
+  \keys_set_known:neN {luamplib/tagging} {#1} \l_tmpa_tl
+  \keys_set:nV {luamplib/instance} \l_tmpa_tl
   \tag_socket_use:n{luamplib/figure/init}
-  \prependtomplibbox\hbox dir~TLT\bgroup
-    \tag_socket_use:nn{luamplib/figure/begin}{#2}
-    \setbox\mplibscratchbox\hbox\bgroup
-      \bool_if:NF \l__luamplib_tag_usetext_bool { \tag_suspend:n{\usemplibgroup} }
-      \tag_socket_use:nnn{luamplib/mplibgroup/put}{#2}{\csname luamplib.group.#2\endcsname}
+  \luamplib@externalized{luamplib.group.#2}
+  \int_compare:nNnT {\l_tmpa_int} = {\c_zero_int}
+  {
+    \prependtomplibbox\hbox dir~TLT~\luamplibexternalizemaybe \bgroup
+      \tag_socket_use:nn{luamplib/figure/begin}{#2}
+      \setbox\mplibscratchbox\hbox\bgroup
+        \bool_if:NF \l__luamplib_tag_usetext_bool { \tag_suspend:n{\usemplibgroup} }
+        \tag_socket_use:nnn{luamplib/mplibgroup/put}{#2}{\csname luamplib.group.#2\endcsname}
+      \egroup
+      \tag_socket_use:nnn{luamplib/figure/end}{\mplibscratchbox}{\unhbox\mplibscratchbox}
     \egroup
-    \tag_socket_use:nnn{luamplib/figure/end}{\mplibscratchbox}{\unhbox\mplibscratchbox}
-  \egroup
-  \endgroup
+  }
+  \group_end:
 }
 \cs_new_nopar:Npn \mplibalttext #1
 {
