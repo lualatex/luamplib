@@ -217,9 +217,9 @@ local replace_texblock = {
   verbatimtex = function(str) return format("verbatimtex %s etex;", str) end, -- semicolon
 }
 
-local argidx1 = 0 -- index of the executable
-while arg[argidx1-1] do
-  argidx1 = argidx1 - 1
+local exeidx = 0 -- index of the executable
+while arg[exeidx-1] do
+  exeidx = exeidx - 1
 end
 local currenttime = os.time()
 do
@@ -274,7 +274,7 @@ do
     lfstouch(newfile,currenttime,ofmodify)
     return newfile
   end
-  local mpkpse = kpse.new(arg[argidx1], "mpost")
+  local mpkpse = kpse.new(arg[exeidx], "mpost")
   local special_ftype = {
     pfb = "type1 fonts",
     enc = "enc files",
@@ -3842,10 +3842,11 @@ do
   end
   local function args_normalized ()
     local args = { }
-    for i = argidx1, #arg do
+    for i = exeidx, #arg do
       args[#args+1] = arg[i]
     end
     tableinsert(args, 2, "--halt-on-error")
+    tableinsert(args, 3, "--interaction=nonstopmode")
     return args
   end
 
@@ -3962,6 +3963,7 @@ do
               format('%s/luatex', os.selfdir),
               format('--jobname=%s-%s-%s', extname, i, ii),
               '--halt-on-error',
+              '--interaction=nonstopmode',
               format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
               format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s', majorV, minorV),
               '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',

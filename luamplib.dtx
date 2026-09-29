@@ -751,8 +751,8 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[\cs{mplibexternalizename}\marg{prefix}]
 %   The filename of external images starts with \textsf{\meta{jobname}-mplib-figure} by default,
-%   which you can change by this command. For instance,
-%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}| will generate \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory (the directory should be existent in advance).
+%   which you can change using this command:
+%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}|, for instance, will generate \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory (which should be existent in advance) under the directory where the PDF file will be written.
 %   \notabene You should put this command \emph{before} \cs{mplibexternalize}.
 %
 % \notabene
@@ -2575,9 +2575,9 @@ local replace_texblock = {
 %    \end{macrocode}
 %   Function |luamplib.finder|
 %    \begin{macrocode}
-local argidx1 = 0 -- index of the executable
-while arg[argidx1-1] do
-  argidx1 = argidx1 - 1
+local exeidx = 0 -- index of the executable
+while arg[exeidx-1] do
+  exeidx = exeidx - 1
 end
 local currenttime = os.time()
 do
@@ -2645,7 +2645,7 @@ do
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
-  local mpkpse = kpse.new(arg[argidx1], "mpost")
+  local mpkpse = kpse.new(arg[exeidx], "mpost")
   local special_ftype = {
     pfb = "type1 fonts",
     enc = "enc files",
@@ -6619,10 +6619,11 @@ do
   end
   local function args_normalized ()
     local args = { }
-    for i = argidx1, #arg do
+    for i = exeidx, #arg do
       args[#args+1] = arg[i]
     end
     tableinsert(args, 2, "--halt-on-error")
+    tableinsert(args, 3, "--interaction=nonstopmode")
     return args
   end
 
@@ -6739,6 +6740,7 @@ do
               format('%s/luatex', os.selfdir),
               format('--jobname=%s-%s-%s', extname, i, ii),
               '--halt-on-error',
+              '--interaction=nonstopmode',
               format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
               format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s', majorV, minorV),
               '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',
@@ -7439,7 +7441,6 @@ end
   \directlua{luamplib.externalize.running = false}\fi}
 \def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
   \directlua{luamplib.externalize.running = true}\fi}
-
 
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
