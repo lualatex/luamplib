@@ -217,6 +217,10 @@ local replace_texblock = {
   verbatimtex = function(str) return format("verbatimtex %s etex;", str) end, -- semicolon
 }
 
+local argidx1 = 0 -- index of the executable
+while arg[argidx1-1] do
+  argidx1 = argidx1 - 1
+end
 local currenttime = os.time()
 do
   local luamplibtime = lfsattributes(kpse.find_file"luamplib.lua", "modification")
@@ -270,14 +274,7 @@ do
     lfstouch(newfile,currenttime,ofmodify)
     return newfile
   end
-  local mpkpse
-  do
-    local exe = 0
-    while arg[exe-1] do
-      exe = exe-1
-    end
-    mpkpse = kpse.new(arg[exe], "mpost")
-  end
+  local mpkpse = kpse.new(arg[argidx1], "mpost")
   local special_ftype = {
     pfb = "type1 fonts",
     enc = "enc files",
@@ -3843,6 +3840,14 @@ do
     "--shell-escape is needed for 'externalize' feature.\n\z
     Rerun with --shell-escape option.")
   end
+  local function args_normalized ()
+    local args = { }
+    for i = argidx1, #arg do
+      args[#args+1] = arg[i]
+    end
+    tableinsert(args, 2, "--halt-on-error")
+    return args
+  end
 
   function externalize.setup ()
     extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
@@ -3878,7 +3883,7 @@ do
         table.tofile(luaname, figtab, "return")
         if not mandatory or not is_shell_esc() then return end
         luatexbase.add_to_callback("wrapup_run", function()
-          os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+          os.exec(args_normalized())
         end, "luamplib_externalize")
       end
     end,
@@ -3953,21 +3958,24 @@ do
           local mgn = v.margin and v.margin*2 or 0
           for ii,vv in ipairs(v.pages) do
             local wd, ht, dp = tableunpack(v.metric[ii])
-            local status = os.spawn(format(
-              "luatex --halt-on-error --jobname=%s-%s-%s \z
-              \"\\pagewidth=%ssp\\pageheight=%ssp\z
+            local status = os.spawn{
+              format('%s/luatex', os.selfdir),
+              '--halt-on-error',
+              format('--jobname=%s-%s-%s', extname, i, ii),
+              format('"\\pagewidth=%ssp\\pageheight=%ssp\z
               \\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\z
               \\pdfvariable majorversion %s\\pdfvariable minorversion %s\z
               \\topskip=0pt\\nopagenumbers\z
-              \\directlua{img.write{filename=[[%s]],page=%s,pagebox=[[crop]]}}\\bye\"",
-              extname, i, ii, wd+mgn, ht+dp+mgn, majorV, minorV, pdfname, vv))
+              \\directlua{img.write{filename=[[%s]],page=%s,pagebox=[[crop]]}}\\bye"',
+              wd+mgn, ht+dp+mgn, majorV, minorV, pdfname, vv)
+            }
             assert(status == 0, format("failed to generate external image No. %s!",i))
             os.remove(format("%s-%s-%s.log", prefix, i, ii))
           end
         end
       end
 
-      os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+      os.exec(args_normalized())
     end,
     "luamplib_externalize")
   end

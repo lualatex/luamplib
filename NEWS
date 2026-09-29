@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+   * fix externalize for the cases when:
+     - '--lua=foo.lua' is a command-line option
+     - 'luatex' is not in the PATH
+
 2026/09/22 2.44.0
    * implement 'externalize' functionality similar to PGF's 'external' library
      See the documentation 1.1.19 for details.
