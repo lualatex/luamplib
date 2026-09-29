@@ -6737,14 +6737,13 @@ do
             local wd, ht, dp = tableunpack(v.metric[ii])
             local status = os.spawn{
               format('%s/luatex', os.selfdir),
-              '--halt-on-error',
               format('--jobname=%s-%s-%s', extname, i, ii),
-              format('"\\pagewidth=%ssp\\pageheight=%ssp\z
-              \\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\z
-              \\pdfvariable majorversion %s\\pdfvariable minorversion %s\z
-              \\topskip=0pt\\nopagenumbers\z
-              \\directlua{img.write{filename=[[%s]],page=%s,pagebox=[[crop]]}}\\bye"',
-              wd+mgn, ht+dp+mgn, majorV, minorV, pdfname, vv)
+              '--halt-on-error',
+              format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
+              format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s', majorV, minorV),
+              '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',
+              format('\\directlua{img.write{filename=[[%s]],page=%s,pagebox="crop"}}', pdfname, vv),
+              '\\bye',
             }
             assert(status == 0, format("failed to generate external image No. %s!",i))
             os.remove(format("%s-%s-%s.log", prefix, i, ii))
