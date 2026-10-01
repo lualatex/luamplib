@@ -751,10 +751,9 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[\cs{mplibexternalizename}\marg{prefix}]
 %   The filename of external images starts with \textsf{\meta{jobname}-mplib-figure} by default,
-%   which you can change using this command:
-%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}|, for instance, will generate \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory (which should be existent in advance) under the directory where the PDF file will be written.
+%   which you can change using this command.
+%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}|, for instance, will generate \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory (which should be existent in advance) under the directory where output files will be written.
 %   \notabene You should put this command \emph{before} \cs{mplibexternalize}.
-%
 % \notabene
 % If something goes wrong with `externalize' feature, delete the files whose name starts with \meta{prefix} (especially the |.lua| file).
 % At next run of \LaTeX, the world of externalization will start anew from the very beginning.
@@ -775,13 +774,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \item[externalizedependson=\{\meta{number}, \dots\}]
 %   If you modify a \metapost code chunk which is dependent on previous code chunks (this occurs when \cs{mplibcodeinherit} or \pkg{mplib} instance name is used), \pkg{luamplib}, not knowing the dependency, feeds only the changed code chunk to the \pkg{mplib} library. This will raise a \metapost error.
-%   To prevent the error, you have to specify \meta{number}(s) of the previous code chunks by using this option, for instance |externalizedependson={2,3}|.
+%   To prevent the error, you have to specify \meta{number}(s) of the previous code chunk(s) by using this option, for instance |externalizedependson={2,3}|.
 %
 %   The \meta{number} is set to zero by the \cs{mplibexternalize} command and increases by one each time \pkg{luamplib} meets |mplibcode|, \cs{mpfig}, or \cs{usemplibgroup}.
 %   If the given \meta{number} is negative, \pkg{luamplib} searches for the code chunk by tracing backwards: |-1| refers to the immediately preceding chunk.
 %
 % \item[externalizemargin=\meta{dimen}]
-%   To address the cutting-off problem (see below the limitations), we provide this option which
+%   To address the cutting-off problem (see the limitations below), we provide this option which
 %   will enlarge the BBox of external image(s) by the amount of \meta{dimen}.
 %   As it affects only PDF BBox values, the metric of \TeX\ boxes remains the same.
 % \end{description}
@@ -6634,6 +6633,13 @@ do
     prefix = format("%s/%s",dir,extname)
     luaname = format("%ss.lua",prefix,extname)
     pdfname = format("%s/%s.pdf",dir,tex.jobname)
+
+    if externalize.MY_NAME then
+      local dir = prefix:match"(.+)[/\\]"
+      if not lfs.isdir(dir) then
+        luatexbase.module_error("luamplib", dir.." directory does not exist!")
+      end
+    end
 
     local extver = format("20260922.%s%s", majorV, minorV)
     figtab = { version = extver }

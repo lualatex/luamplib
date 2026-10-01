@@ -3858,6 +3858,13 @@ do
     luaname = format("%ss.lua",prefix,extname)
     pdfname = format("%s/%s.pdf",dir,tex.jobname)
 
+    if externalize.MY_NAME then
+      local dir = prefix:match"(.+)[/\\]"
+      if not lfs.isdir(dir) then
+        luatexbase.module_error("luamplib", dir.." directory does not exist!")
+      end
+    end
+
     local extver = format("20260922.%s%s", majorV, minorV)
     figtab = { version = extver }
     if lfs.isfile(luaname) then
