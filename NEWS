@@ -5,6 +5,7 @@
      - '--lua=foo.lua', for instance, is a command-line option
      - 'luatex' is not in the PATH
    * [doc] be more precise about the directory where external files are saved
+   * [doc] fix the explanation about the 'externalize=true' option
    * Basically, externalize functionality now uses one big external image file
      rather than several small files to reduce the PDF file size and improve
      the compilation speed. But when you modify already externalized code

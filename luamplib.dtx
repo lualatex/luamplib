@@ -305,7 +305,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %   where \meta{string} should be |""| (empty), |"isolated"|, |"knockout"|, or |"isolated,knockout"|.
 %   Beware that currently many of the PDF rendering applications,
-%   except Adobe Acrobat and \TeX works,
+%   except Adobe Acrobat and \TeX works among others,
 %   cannot properly render the isolated or knockout effect.
 %
 %   Transparency group is available with \emph{plain} format as well with extended functionality.
@@ -761,7 +761,7 @@ See source file '\inFileName' for licencing and contact information.
 % Again, it would be a good idea to delete the files just mentioned when you have modified lots of code chunks after the initial run of externalization, because it will improve the compilation speed and make the size of PDF file much smaller.
 %
 % \item[\cs{mplibexternalizesuspend}]
-%   The operation of `externalize' functionality will be halted.
+%   The operation of `externalize' functionality (including the increment of a figure number) will be halted.
 %   This command does not respect \TeX's group scope.
 %
 % \item[\cs{mplibexternalizeresume}]
@@ -770,9 +770,8 @@ See source file '\inFileName' for licencing and contact information.
 % Options to |mplibcode| environment, and to the \cs{mpfig} and \cs{usemplibgroup} commands:
 % \begin{description}
 % \item[externalize=\meta{boolean}]
-%   By the option \bsx|externalize|\esx\ (shortcut of |externalize=true|), external image(s) for the specific \metapost code chunk will be generated even if `externalize' feature is suspended.
-%
-%   On the other hand, when \bsx|externalize=false|\esx\ is given, external image(s) for the specific code chunk will not be generated even if `externalize' feature is enabled.
+%   Unless you redefine a low-level command, option \bsx|externalize|\esx\ (shortcut of |externalize=true|) does nothing.
+%   However, when \bsx|externalize=false|\esx\ is given, external image(s) for the specific code chunk will not be generated even if `externalize' feature is enabled.
 %
 % \item[externalizedependson=\{\meta{number}, \dots\}]
 %   If you modify a \metapost code chunk which is dependent on previous code chunks (this occurs when \cs{mplibcodeinherit} or \pkg{mplib} instance name is used), \pkg{luamplib}, not knowing the dependency, feeds only the changed code chunk to the \pkg{mplib} library. This will raise a \metapost error.
@@ -1345,7 +1344,7 @@ See source file '\inFileName' for licencing and contact information.
 %\startmpfig
 %\mppattern{mypatt}[xstep=10, ystep=7, matrix="rotated 45",]\mpfig draw (up--down) scaled 5 withcolor 2/3[blue,white]; draw (left--right) scaled 5 withcolor 2/3[red,white];\endmpfig\endmppattern
 %\mpfig mplibdrawglyph image(draw fullcircle scaled 100; draw reverse fullcircle scaled 40;) withmppattern "mypatt" withpen pencircle scaled 1 withcolor \mpcolor{red!50!blue!50}; \endmpfig
-%\stopmpfig{18}
+%\stopmpfig{17}
 %\begin{verbatim}
 %    \mppattern{mypatt}               % or \begin{mppattern}{mypatt}
 %      [                              % options: see below
@@ -2059,7 +2058,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %\startmpfig
 %\mpfig u:=80; path p; p = unitsquare scaled u; def fsquare (expr n) = (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) enddef; def rsquare (expr n) = (point n of p -- point n-1 of p -- point n-2 of p -- point n-3 of p -- cycle) enddef; fill p scaled 2 withshadingmethod  "coons" withcoonspatchinit (fsquare(0), red, green, blue, yellow) withcoonspatchnext (1, rsquare(0) shifted (u,0), yellow, red) withcoonspatchnext (1, fsquare(0) shifted (u,u), red, green) withcoonspatchnext (3, rsquare(2) shifted (0,u), yellow, red); pickup pencircle scaled 2; drawarrow fsquare(0) shifted (-1,-1) withcolor (0,1,1); drawarrow rsquare(0) shifted (u+1,-1) withcolor (1,.6,1); drawarrow rsquare(2) shifted (-1,u+1) withcolor (1,.6,1); drawarrow fsquare(0) shifted (u+1,u+1) withcolor (0,1,1); label.lft(btex \sffamily Edge 1 etex rotated 90, (u,u/2)) withcolor (0,1,1); label.bot(btex \sffamily Edge 1 etex , (3/2u,u)) withcolor (1,.6,1); label.rt(btex \sffamily Edge 3 etex rotated -90, (u,3/2u)) withcolor (0,1,1); drawarrow (u,-12)--(u,-3) withpen pencircle scaled 1; label.bot(btex \sffamily\footnotesize point 1 of patch\textsubscript{1} $=$ point 0 of patch\textsubscript{2} etex, (u,-10)); label.top(btex \sffamily Edge 0 etex, (u/2,0)) withcolor (0,1,1);\endmpfig
-%\stopmpfig{13}
+%\stopmpfig{14}
 %\begin{verbatim}
 %   \mpfig
 %     u := 80 ;
