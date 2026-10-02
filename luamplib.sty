@@ -546,9 +546,9 @@
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text}
+    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text-block}
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
-    \tag_mc_begin:n{tag=text}
+    \tag_mc_begin:n{tag=text-block}
     #2
     \tag_mc_end:
     \tag_struct_end:
@@ -643,7 +643,7 @@
     \cs_gset_nopar:cpn {luamplib.mplibgroup.text.#1} {#1}
   }
   \tag_mc_end:
-  \tag_mc_begin:n{tag=text}
+  \tag_mc_begin:n{tag=text-block}
   #2
   \tag_mc_end:
   \tag_mc_begin:n{artifact}
