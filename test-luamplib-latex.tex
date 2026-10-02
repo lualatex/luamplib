@@ -312,7 +312,7 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 \endmpfig
 
 \leavevmode
-\mpfig[alt=test fading]
+\mpfig[alt=test fading, externalize=false]
   picture mill; mill = btex \includegraphics[width=100bp]{mill} etex;
   draw mill;
   mill := mill shifted 125right;

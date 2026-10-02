@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.0",
-  date          = "2026/09/22",
+  version       = "2.44.1",
+  date          = "2026/10/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3832,7 +3832,7 @@ function luamplib.colorconverter (cr)
 end
 
 do
-  local extname, prefix, pdfname, luaname, figtab, prevfigtab
+  local extname, prefix, pdfname, luaname, figtab, prevfigtab, bigname, bigtime
   local majorV, minorV = pdf.getmajorversion(), pdf.getminorversion()
   local function is_shell_esc()
     if status.shell_escape == 1 then return true end
@@ -3855,8 +3855,10 @@ do
     externalize.running = true
     local dir = status.output_directory or "."
     prefix = format("%s/%s",dir,extname)
-    luaname = format("%ss.lua",prefix,extname)
+    luaname = format("%ss.lua",prefix)
     pdfname = format("%s/%s.pdf",dir,tex.jobname)
+    bigname = format("%ss.pdf",prefix)
+    bigtime = lfs.modification(bigname) or 0
 
     if externalize.MY_NAME then
       local dir = prefix:match"(.+)[/\\]"
@@ -3865,12 +3867,13 @@ do
       end
     end
 
-    local extver = format("20260922.%s%s", majorV, minorV)
+    local extver = format("20261002.%s%s", majorV, minorV)
     figtab = { version = extver }
     if lfs.isfile(luaname) then
       prevfigtab = require(luaname)
     end
     if not prevfigtab or prevfigtab.version ~= extver then
+      bigtime = 0
       prevfigtab = { }
       externalize.activate()
     end
@@ -3961,24 +3964,28 @@ do
     luatexbase.add_to_callback("wrapup_run", function()
       table.tofile(luaname, figtab, "return")
 
-      for i,v in ipairs(figtab) do
-        if v.pages then
-          local mgn = v.margin and v.margin*2 or 0
-          for ii,vv in ipairs(v.pages) do
-            local wd, ht, dp = tableunpack(v.metric[ii])
-            local status = os.spawn{
-              format('%s/luatex', os.selfdir),
-              format('--jobname=%s-%s-%s', extname, i, ii),
-              '--halt-on-error',
-              '--interaction=nonstopmode',
-              format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
-              format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s', majorV, minorV),
-              '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',
-              format('\\directlua{img.write{filename=[[%s]],page=%s,pagebox="crop"}}', pdfname, vv),
-              '\\bye',
-            }
-            assert(status == 0, format("failed to generate external image No. %s!",i))
-            os.remove(format("%s-%s-%s.log", prefix, i, ii))
+      if bigtime == 0 then
+        file.copy(pdfname, bigname)
+      else
+        for i,v in ipairs(figtab) do
+          if v.pages then
+            local mgn = v.margin and v.margin*2 or 0
+            for ii,vv in ipairs(v.pages) do
+              local wd, ht, dp = tableunpack(v.metric[ii])
+              local status = os.spawn{
+                format('%s/luatex', os.selfdir),
+                format('--jobname=%s-%s-%s', extname, i, ii),
+                '--halt-on-error',
+                '--interaction=nonstopmode',
+                format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
+                format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s',majorV,minorV),
+                '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',
+                format('\\directlua{img.write{filename=[[%s]],page=%s,pagebox="crop"}}',pdfname,vv),
+                '\\bye',
+              }
+              assert(status == 0, format("failed to generate external image No. %s!",i))
+              os.remove(format("%s-%s-%s.log", prefix, i, ii))
+            end
           end
         end
       end
@@ -3992,11 +3999,11 @@ do
     tex.setcount("global", "luamplibexternalizecount", count)
 
     local prevfig = prevfigtab[count]
-    local num_of_figs, whd
+    local pdfpages, whd
     if prevfig then
-      num_of_figs = prevfig.pages and #prevfig.pages
-                 or prevfig.changed and 0
-                 or prevfig.num_of_figs
+      pdfpages = prevfig.pdfpages
+              or prevfig.pages
+              or prevfig.changed and { }
       whd = prevfig.metric or prevfig.whd
     end
     local depend = get_macro"luamplibexternalizedependson"
@@ -4008,7 +4015,7 @@ do
       data = data,
       depend = depend,
       margin = margin,
-      num_of_figs = num_of_figs,
+      pdfpages = pdfpages,
       whd = whd,
     }
 
@@ -4059,16 +4066,23 @@ do
     end
 
     if match then
-      if not num_of_figs then goto do_this_fig end
-      for i = 1, num_of_figs do
-        local name = format("%s-%s-%s.pdf", prefix, count, i)
-        if not lfs.isfile(name) then goto do_this_fig end
+      if not pdfpages then goto do_this_fig end
+      for i,v in ipairs(pdfpages) do
+        local spec
+        local small = format("%s-%s-%s.pdf", prefix, count, i)
+        local smalltime = lfs.modification(small) or 0
+        if smalltime > bigtime then
+          spec = format("filename=[[%s]]", small)
+        elseif bigtime > 0 then
+          spec = format("filename=[[%s]],page=%s,pagebox=[[crop]],keepopen=true", bigname, v)
+        end
         local wd, ht, dp = tableunpack(whd[i])
+        if not spec then goto do_this_fig end
         texsprint(ccexplat,
           "\\prependtomplibbox\\hbox dir TLT\\bgroup",
           "\\tag_socket_use:nn{luamplib/figure/begin}\\l__luamplib_tag_alt_dflt_tl",
           "\\setbox\\mplibscratchbox\\vbox to", ht+dp, "sp{\\vss\\hbox to", wd, "sp{\\hss",
-          "\\directlua{img.write{filename=[[", name ,"]]}}\\hss}\\vss}",
+          "\\directlua{img.write{", spec, "}}\\hss}\\vss}",
           "\\dp\\mplibscratchbox=", dp, "sp",
           "\\ht\\mplibscratchbox=\\dimexpr\\ht\\mplibscratchbox-\\dp\\mplibscratchbox\\relax",
           "\\tag_socket_use:nnn{luamplib/figure/end}{\\mplibscratchbox}{\\box\\mplibscratchbox}",
