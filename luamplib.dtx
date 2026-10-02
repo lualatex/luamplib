@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/09/22 v2.44.0 Interface for using the mplib library]%
+  [2026/10/02 v2.44.1 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/09/22 v2.44.0}
+% \date{2026/10/02 v2.44.1}
 %
 % \maketitle
 %
@@ -751,13 +751,14 @@ See source file '\inFileName' for licencing and contact information.
 % \begin{description}
 % \item[\cs{mplibexternalizename}\marg{prefix}]
 %   The filename of external images starts with \textsf{\meta{jobname}-mplib-figure} by default,
-%   which you can change by this command. For instance,
-%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}| will generate \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory (the directory should be existent in advance).
+%   which you can change using this command.
+%   \cs{mplibexternalizename}\allowbreak|{figures/|\allowbreak|metapost-figure}|, for instance, will generate \textsf{metapost-figures.pdf} or (in case you have modified \metapost code after the initial run) \textsf{metapost-figure-\textasteriskcentered-\textasteriskcentered.pdf} files in the \textsf{figures} subdirectory under the directory where output files will be written.
+% The subdirectory should be existent in advance.
 %   \notabene You should put this command \emph{before} \cs{mplibexternalize}.
-%
 % \notabene
 % If something goes wrong with `externalize' feature, delete the files whose name starts with \meta{prefix} (especially the |.lua| file).
 % At next run of \LaTeX, the world of externalization will start anew from the very beginning.
+% Again, it would be a good idea to delete the files just mentioned when you have modified lots of code chunks after the initial run of externalization, because it will improve the compilation speed and make the size of PDF file much smaller.
 %
 % \item[\cs{mplibexternalizesuspend}]
 %   The operation of `externalize' functionality will be halted.
@@ -775,13 +776,13 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \item[externalizedependson=\{\meta{number}, \dots\}]
 %   If you modify a \metapost code chunk which is dependent on previous code chunks (this occurs when \cs{mplibcodeinherit} or \pkg{mplib} instance name is used), \pkg{luamplib}, not knowing the dependency, feeds only the changed code chunk to the \pkg{mplib} library. This will raise a \metapost error.
-%   To prevent the error, you have to specify \meta{number}(s) of the previous code chunks by using this option, for instance |externalizedependson={2,3}|.
+%   To prevent the error, you have to specify \meta{number}(s) of the previous code chunk(s) by using this option, for instance |externalizedependson={2,3}|.
 %
 %   The \meta{number} is set to zero by the \cs{mplibexternalize} command and increases by one each time \pkg{luamplib} meets |mplibcode|, \cs{mpfig}, or \cs{usemplibgroup}.
-%   If the given \meta{number} is negative, \pkg{luamplib} searches for the code chunk by tracing backwards: |-1| refers to to the immediately preceding chunk.
+%   If the given \meta{number} is negative, \pkg{luamplib} searches for the code chunk by tracing backwards: |-1| refers to the immediately preceding chunk.
 %
 % \item[externalizemargin=\meta{dimen}]
-%   To address the cutting-off problem (see below the limitations), we provide this option which
+%   To address the cutting-off problem (see the limitations below), we provide this option which
 %   will enlarge the BBox of external image(s) by the amount of \meta{dimen}.
 %   As it affects only PDF BBox values, the metric of \TeX\ boxes remains the same.
 % \end{description}
@@ -791,7 +792,7 @@ See source file '\inFileName' for licencing and contact information.
 % \item The `externalize' feature currently supports only \LaTeX\ format in PDF mode.
 %
 % \item The part of a figure that protrudes out of the figure's bounding box will be cut off, and so invisible.
-%   As said before, |externalizemargin| option is provided to address this problem.
+%   As said, |externalizemargin| option is provided to address this problem.
 %
 % \item Hyperlinks in |btex| |...| |etex| (and its derivative) commands will be broken.
 %
@@ -1467,7 +1468,7 @@ See source file '\inFileName' for licencing and contact information.
 %     An example:
 %\startmpfig
 %\mpfig pickup pencircle scaled 10; draw image(draw fullcircle scaled 60 withcolor 3/4red; draw unitsquare scaled 60 withoutcolor;) withmppattern "pattnocolor" withpatternstroke "yes"; \endmpfig
-%\stopmpfig{6}
+%\stopmpfig{7}
 %\begin{verbatim}
 %    \mpfig
 %      pickup pencircle scaled 10;
@@ -1607,8 +1608,8 @@ See source file '\inFileName' for licencing and contact information.
 % \paragraph{Note on picture shading}
 % \hypertarget{para:pictureshading}{When}
 % you give shading effect upon a \emph{textual picture} (i.e.\ non-path object)
-% inside or outside a transparency group, currently many of the PDF renderers,
-% including Mac OS Preview and Foxit Editor, do not interprete PDF coordinates properly.
+% inside or outside a transparency group, currently many of the PDF renderers
+% do not interprete PDF coordinates properly.
 % If that happens, consider using other PDF viewer such as Adobe Acrobat or MuPDF. An example:
 % \mpfig* picture pic[]; pic1 = image(fill fullcircle scaled 60 withoutcolor; fill fullcircle scaled 60 shifted 25right withoutcolor;); pic2 = image(draw pic1 withshadingmethod "linear" withshadingvector (2, 1) withshadingcolors (red, blue)); \endmpfig
 %\begin{verbatim}
@@ -1781,8 +1782,7 @@ See source file '\inFileName' for licencing and contact information.
 % users can specify the color space of a transparency group.
 % For instance, the mplibgroup will be painted in grayscale model
 % when |colorspace=|\allowbreak|"/DeviceGray"| is given to an \emph{isolated} transparency group.\relax
-% \footnote{Note that some PDF renderers such as Mac OS Preview
-%   do not render properly this option.}
+% \footnote{Note that some PDF renderers do not render properly this option.}
 %
 % As shown, you can reuse the mplibgroup
 % using the \TeX\ command \cs{usemplibgroup} or
@@ -2059,7 +2059,7 @@ See source file '\inFileName' for licencing and contact information.
 %\end{verbatim}
 %\startmpfig
 %\mpfig u:=80; path p; p = unitsquare scaled u; def fsquare (expr n) = (point n of p -- point n+1 of p -- point n+2 of p -- point n+3 of p -- cycle) enddef; def rsquare (expr n) = (point n of p -- point n-1 of p -- point n-2 of p -- point n-3 of p -- cycle) enddef; fill p scaled 2 withshadingmethod  "coons" withcoonspatchinit (fsquare(0), red, green, blue, yellow) withcoonspatchnext (1, rsquare(0) shifted (u,0), yellow, red) withcoonspatchnext (1, fsquare(0) shifted (u,u), red, green) withcoonspatchnext (3, rsquare(2) shifted (0,u), yellow, red); pickup pencircle scaled 2; drawarrow fsquare(0) shifted (-1,-1) withcolor (0,1,1); drawarrow rsquare(0) shifted (u+1,-1) withcolor (1,.6,1); drawarrow rsquare(2) shifted (-1,u+1) withcolor (1,.6,1); drawarrow fsquare(0) shifted (u+1,u+1) withcolor (0,1,1); label.lft(btex \sffamily Edge 1 etex rotated 90, (u,u/2)) withcolor (0,1,1); label.bot(btex \sffamily Edge 1 etex , (3/2u,u)) withcolor (1,.6,1); label.rt(btex \sffamily Edge 3 etex rotated -90, (u,3/2u)) withcolor (0,1,1); drawarrow (u,-12)--(u,-3) withpen pencircle scaled 1; label.bot(btex \sffamily\footnotesize point 1 of patch\textsubscript{1} $=$ point 0 of patch\textsubscript{2} etex, (u,-10)); label.top(btex \sffamily Edge 0 etex, (u/2,0)) withcolor (0,1,1);\endmpfig
-%\stopmpfig{20}
+%\stopmpfig{13}
 %\begin{verbatim}
 %   \mpfig
 %     u := 80 ;
@@ -2174,8 +2174,8 @@ See source file '\inFileName' for licencing and contact information.
 %          red, yellow, blue, green) ;
 %   \endmpfig
 %\end{verbatim}
-% \notabene Be aware that currently Mac OS Preview or Foxit Editor
-% does not render properly the figure above.
+% \notabene Be aware that currently some PDF viewers including Mac OS Preview
+% do not render properly the figure above.
 %
 %
 % \subsection{Lua}
@@ -2322,8 +2322,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.0",
-  date          = "2026/09/22",
+  version       = "2.44.1",
+  date          = "2026/10/02",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2575,6 +2575,10 @@ local replace_texblock = {
 %    \end{macrocode}
 %   Function |luamplib.finder|
 %    \begin{macrocode}
+local exeidx = 0 -- index of the executable
+while arg[exeidx-1] do
+  exeidx = exeidx - 1
+end
 local currenttime = os.time()
 do
   local luamplibtime = lfsattributes(kpse.find_file"luamplib.lua", "modification")
@@ -2641,14 +2645,7 @@ do
 %    cache files if needed.
 %    See also \#74, \#97.
 %    \begin{macrocode}
-  local mpkpse
-  do
-    local exe = 0
-    while arg[exe-1] do
-      exe = exe-1
-    end
-    mpkpse = kpse.new(arg[exe], "mpost")
-  end
+  local mpkpse = kpse.new(arg[exeidx], "mpost")
   local special_ftype = {
     pfb = "type1 fonts",
     enc = "enc files",
@@ -6612,7 +6609,7 @@ end
 % The code for |externalize| functionality
 %    \begin{macrocode}
 do
-  local extname, prefix, pdfname, luaname, figtab, prevfigtab
+  local extname, prefix, pdfname, luaname, figtab, prevfigtab, bigname, bigtime
   local majorV, minorV = pdf.getmajorversion(), pdf.getminorversion()
   local function is_shell_esc()
     if status.shell_escape == 1 then return true end
@@ -6620,21 +6617,40 @@ do
     "--shell-escape is needed for 'externalize' feature.\n\z
     Rerun with --shell-escape option.")
   end
+  local function args_normalized ()
+    local args = { }
+    for i = exeidx, #arg do
+      args[#args+1] = arg[i]
+    end
+    tableinsert(args, 2, "--halt-on-error")
+    tableinsert(args, 3, "--interaction=nonstopmode")
+    return args
+  end
 
   function externalize.setup ()
     extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
     externalize.running = true
     local dir = status.output_directory or "."
     prefix = format("%s/%s",dir,extname)
-    luaname = format("%ss.lua",prefix,extname)
+    luaname = format("%ss.lua",prefix)
     pdfname = format("%s/%s.pdf",dir,tex.jobname)
+    bigname = format("%ss.pdf",prefix)
+    bigtime = lfs.modification(bigname) or 0
 
-    local extver = format("20260922.%s%s", majorV, minorV)
+    if externalize.MY_NAME then
+      local dir = prefix:match"(.+)[/\\]"
+      if not lfs.isdir(dir) then
+        luatexbase.module_error("luamplib", dir.." directory does not exist!")
+      end
+    end
+
+    local extver = format("20261002.%s%s", majorV, minorV)
     figtab = { version = extver }
     if lfs.isfile(luaname) then
       prevfigtab = require(luaname)
     end
     if not prevfigtab or prevfigtab.version ~= extver then
+      bigtime = 0
       prevfigtab = { }
       externalize.activate()
     end
@@ -6655,7 +6671,7 @@ do
         table.tofile(luaname, figtab, "return")
         if not mandatory or not is_shell_esc() then return end
         luatexbase.add_to_callback("wrapup_run", function()
-          os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+          os.exec(args_normalized())
         end, "luamplib_externalize")
       end
     end,
@@ -6725,26 +6741,33 @@ do
     luatexbase.add_to_callback("wrapup_run", function()
       table.tofile(luaname, figtab, "return")
 
-      for i,v in ipairs(figtab) do
-        if v.pages then
-          local mgn = v.margin and v.margin*2 or 0
-          for ii,vv in ipairs(v.pages) do
-            local wd, ht, dp = tableunpack(v.metric[ii])
-            local status = os.spawn(format(
-              "luatex --halt-on-error --jobname=%s-%s-%s \z
-              \"\\pagewidth=%ssp\\pageheight=%ssp\z
-              \\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\z
-              \\pdfvariable majorversion %s\\pdfvariable minorversion %s\z
-              \\topskip=0pt\\nopagenumbers\z
-              \\directlua{img.write{filename=[[%s]],page=%s,pagebox=[[crop]]}}\\bye\"",
-              extname, i, ii, wd+mgn, ht+dp+mgn, majorV, minorV, pdfname, vv))
-            assert(status == 0, format("failed to generate external image No. %s!",i))
-            os.remove(format("%s-%s-%s.log", prefix, i, ii))
+      if bigtime == 0 then
+        file.copy(pdfname, bigname)
+      else
+        for i,v in ipairs(figtab) do
+          if v.pages then
+            local mgn = v.margin and v.margin*2 or 0
+            for ii,vv in ipairs(v.pages) do
+              local wd, ht, dp = tableunpack(v.metric[ii])
+              local status = os.spawn{
+                format('%s/luatex', os.selfdir),
+                format('--jobname=%s-%s-%s', extname, i, ii),
+                '--halt-on-error',
+                '--interaction=nonstopmode',
+                format('\\pagewidth=%ssp\\pageheight=%ssp', wd+mgn, ht+dp+mgn),
+                format('\\pdfvariable majorversion %s\\pdfvariable minorversion %s',majorV,minorV),
+                '\\pdfvariable horigin 0pt\\pdfvariable vorigin 0pt\\topskip=0pt\\nopagenumbers',
+                format('\\directlua{img.write{filename=[[%s]],page=%s,pagebox="crop"}}',pdfname,vv),
+                '\\bye',
+              }
+              assert(status == 0, format("failed to generate external image No. %s!",i))
+              os.remove(format("%s-%s-%s.log", prefix, i, ii))
+            end
           end
         end
       end
 
-      os.exec{arg[0], "--halt-on-error", tableunpack(arg)}
+      os.exec(args_normalized())
     end,
     "luamplib_externalize")
   end
@@ -6753,11 +6776,11 @@ do
     tex.setcount("global", "luamplibexternalizecount", count)
 
     local prevfig = prevfigtab[count]
-    local num_of_figs, whd
+    local pdfpages, whd
     if prevfig then
-      num_of_figs = prevfig.pages and #prevfig.pages
-                 or prevfig.changed and 0
-                 or prevfig.num_of_figs
+      pdfpages = prevfig.pdfpages
+              or prevfig.pages
+              or prevfig.changed and { }
       whd = prevfig.metric or prevfig.whd
     end
     local depend = get_macro"luamplibexternalizedependson"
@@ -6769,7 +6792,7 @@ do
       data = data,
       depend = depend,
       margin = margin,
-      num_of_figs = num_of_figs,
+      pdfpages = pdfpages,
       whd = whd,
     }
 
@@ -6820,16 +6843,23 @@ do
     end
 
     if match then
-      if not num_of_figs then goto do_this_fig end
-      for i = 1, num_of_figs do
-        local name = format("%s-%s-%s.pdf", prefix, count, i)
-        if not lfs.isfile(name) then goto do_this_fig end
+      if not pdfpages then goto do_this_fig end
+      for i,v in ipairs(pdfpages) do
+        local spec
+        local small = format("%s-%s-%s.pdf", prefix, count, i)
+        local smalltime = lfs.modification(small) or 0
+        if smalltime > bigtime then
+          spec = format("filename=[[%s]]", small)
+        elseif bigtime > 0 then
+          spec = format("filename=[[%s]],page=%s,pagebox=[[crop]],keepopen=true", bigname, v)
+        end
         local wd, ht, dp = tableunpack(whd[i])
+        if not spec then goto do_this_fig end
         texsprint(ccexplat,
           "\\prependtomplibbox\\hbox dir TLT\\bgroup",
           "\\tag_socket_use:nn{luamplib/figure/begin}\\l__luamplib_tag_alt_dflt_tl",
           "\\setbox\\mplibscratchbox\\vbox to", ht+dp, "sp{\\vss\\hbox to", wd, "sp{\\hss",
-          "\\directlua{img.write{filename=[[", name ,"]]}}\\hss}\\vss}",
+          "\\directlua{img.write{", spec, "}}\\hss}\\vss}",
           "\\dp\\mplibscratchbox=", dp, "sp",
           "\\ht\\mplibscratchbox=\\dimexpr\\ht\\mplibscratchbox-\\dp\\mplibscratchbox\\relax",
           "\\tag_socket_use:nnn{luamplib/figure/end}{\\mplibscratchbox}{\\box\\mplibscratchbox}",
@@ -6879,7 +6909,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/09/22 v2.44.0 mplib package for LuaTeX]
+    [2026/10/02 v2.44.1 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -7432,7 +7462,6 @@ end
   \directlua{luamplib.externalize.running = false}\fi}
 \def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
   \directlua{luamplib.externalize.running = true}\fi}
-
 
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn

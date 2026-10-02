@@ -1,5 +1,17 @@
                        History of the luamplib package
 
+2026/10/02 2.44.1
+   * fix externalize functionality for the cases when:
+     - '--lua=foo.lua', for instance, is a command-line option
+     - 'luatex' is not in the PATH
+   * [doc] be more precise about the directory where external files are saved
+   * Basically, externalize functionality now uses one big external image file
+     rather than several small files to reduce the PDF file size and improve
+     the compilation speed. But when you modify already externalized code
+     chunks, small individual files will be generated and be included in the
+     PDF file. So it is a good idea to delete the external files if you have
+     modified lots of code chunks after the initial run of externalization.
+
 2026/09/22 2.44.0
    * implement 'externalize' functionality similar to PGF's 'external' library
      See the documentation 1.1.19 for details.
