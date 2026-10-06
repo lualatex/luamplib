@@ -57,10 +57,10 @@
 \ifnum\outputmode>0 %
   \def\mplibputtextbox#1#2#3#4{%
     \pdfextension save\relax
-    \ifnum 0\ifdim #2sp > 16322sp 1\else % for ProfCollege package
-            \ifdim #3sp > 16322sp 1\else
-            \ifdim #2sp < -16322sp 1\else
-            \ifdim #3sp < -16322sp 1\fi\fi\fi\fi > 0
+    \ifnum 0\ifdim #2sp > 16321sp 1\else % for ProfCollege package
+            \ifdim #3sp > 16321sp 1\else
+            \ifdim #2sp < -16321sp 1\else
+            \ifdim #3sp < -16321sp 1\fi\fi\fi\fi > 0
       \pdfextension literal{#4 #2 #3 cm}%
       \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
     \else
@@ -553,10 +553,12 @@
 {
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
+    \tl_set:Ne \l_tmpa_tl { \tag_get:n{struct_tag} }
+    \tl_set:Ne \l_tmpb_tl { \tag_get:n{mc_tag} }
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text-block}
+    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=\l_tmpa_tl}
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
-    \tag_mc_begin:n{tag=text-block}
+    \tag_mc_begin:n{tag=\l_tmpb_tl}
     #2
     \tag_mc_end:
     \tag_struct_end:
@@ -617,19 +619,24 @@
   \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
   {
     \pdfextension save\relax
-    \ifnum 0\ifdim #2sp > 16322sp 1\else % for ProfCollege package
-            \ifdim #3sp > 16322sp 1\else
-            \ifdim #2sp < -16322sp 1\else
-            \ifdim #3sp < -16322sp 1\fi\fi\fi\fi > 0
-      \pdfextension literal{#4 #2 #3 cm}
+    \bool_lazy_any:nTF
+    { % for ProfCollege package
+      { \dim_compare_p:nNn { #2sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #3sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #2sp } < { -16321sp } }
+      { \dim_compare_p:nNn { #3sp } < { -16321sp } }
+    }
+    {
+      \pdfextension literal{#4~#2~#3~cm}
       \vbox to 0pt{\vss\hbox bdir0 to 0pt{
         \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}}
-    \else
+    }
+    {
       \vbox to 0pt{\vss
         \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
           \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
         \kern #3bp}
-    \fi
+    }
     \pdfextension restore\relax
   }
 }
@@ -654,13 +661,14 @@
 \socket_new:nn{tagsupport/luamplib/mplibgroup/put}{2}
 \socket_new_plug:nnn{tagsupport/luamplib/mplibgroup/put}{default}
 {
+  \tl_set:Ne \l_tmpb_tl { \tag_get:n{mc_tag} }
   \cs_if_free:cT {luamplib.mplibgroup.text.#1}
   {
     \msg_warning:nnn {luamplib} {mplibgroup-text-mode} {#1}
     \cs_gset_nopar:cpn {luamplib.mplibgroup.text.#1} {#1}
   }
   \tag_mc_end:
-  \tag_mc_begin:n{tag=text-block}
+  \tag_mc_begin:n{tag=\l_tmpb_tl}
   #2
   \tag_mc_end:
   \tag_mc_begin:n{artifact}
