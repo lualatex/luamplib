@@ -370,10 +370,17 @@ filldraw fullcircle scaled 100 withmppattern "mypatt" withpen pencircle scaled 1
 
 \leavevmode
 \begin{mplibgroup}{mytex}[matrix="rotated 15"] \SuspendTagging{}\TeX \end{mplibgroup}%
-\csname tag_mc_artifact_group_begin:n\endcsname {}%
+  \ExplSyntaxOn
+  \tag_mc_end_push:
+  \tag_mc_begin:n {artifact}
+  \group_begin:
+  \tag_suspend:n{artifact-group}
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
-\csname tag_mc_artifact_group_end:\endcsname
+  \group_end:
+  \tag_mc_end:
+  \tag_mc_begin_pop:n{}
+  \ExplSyntaxOff
 \usemplibgroup[actualtext=TeX]{mytex}%
 \mpfig[actualtext=TeX] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 \mpfig[text]

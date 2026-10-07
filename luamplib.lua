@@ -4109,5 +4109,19 @@ do
   end
   token.set_lua("luamplib@externalized", index, "global")
 end
+
+do
+  local index = luatexbase.new_luafunction"luamplib_set_global_option"
+  token.set_lua("luamplibsetglobaloption", index, "global")
+  lua.get_functions_table()[index] = function()
+    local name = token.scan_argument()
+    local bool = token.scan_argument():lower()
+    if bool == "enable" or bool == "true" or bool == "yes" then
+      luamplib[name] = true
+    else
+      luamplib[name] = false
+    end
+  end
+end
 -- 
 --  End of File `luamplib.lua'.

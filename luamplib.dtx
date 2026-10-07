@@ -6885,6 +6885,24 @@ do
   end
   token.set_lua("luamplib@externalized", index, "global")
 end
+
+%    \end{macrocode}
+%
+% A macro for user's option setting that will be used in luamplib.sty
+%    \begin{macrocode}
+do
+  local index = luatexbase.new_luafunction"luamplib_set_global_option"
+  token.set_lua("luamplibsetglobaloption", index, "global")
+  lua.get_functions_table()[index] = function()
+    local name = token.scan_argument()
+    local bool = token.scan_argument():lower()
+    if bool == "enable" or bool == "true" or bool == "yes" then
+      luamplib[name] = true
+    else
+      luamplib[name] = false
+    end
+  end
+end
 %    \end{macrocode}
 %
 % \iffalse
@@ -7210,34 +7228,6 @@ end
     \fi
   }
 \fi
-%    \end{macrocode}
-%
-%    User settings.
-%    \begin{macrocode}
-\def\mplibshowlog#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.showlog = true
-    else
-      luamplib.showlog = false
-    end
-}}
-\def\mpliblegacybehavior#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.legacyverbatimtex = true
-    else
-      luamplib.legacyverbatimtex = false
-    end
-}}
-\def\mplibverbatim#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.verbatiminput = true
-    else
-      luamplib.verbatiminput = false
-    end
-}}
 \newtoks\mplibtmptoks
 %    \end{macrocode}
 %
@@ -7342,30 +7332,12 @@ end
 %
 %    More user settings.
 %    \begin{macrocode}
-\def\mplibtextextlabel#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.textextlabel = true
-    else
-      luamplib.textextlabel = false
-    end
-}}
-\def\mplibcodeinherit#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.codeinherit = true
-    else
-      luamplib.codeinherit = false
-    end
-}}
-\def\mplibglobaltextext#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.globaltextext = true
-    else
-      luamplib.globaltextext = false
-    end
-}}
+\def\mplibshowlog{\luamplibsetglobaloption{showlog}}
+\def\mpliblegacybehavior{\luamplibsetglobaloption{legacyverbatimtex}}
+\def\mplibverbatim{\luamplibsetglobaloption{verbatiminput}}
+\def\mplibtextextlabel{\luamplibsetglobaloption{textextlabel}}
+\def\mplibcodeinherit{\luamplibsetglobaloption{codeinherit}}
+\def\mplibglobaltextext{\luamplibsetglobaloption{globaltextext}}
 %    \end{macrocode}
 %
 %    The followings are from \ConTeXt general, mostly.

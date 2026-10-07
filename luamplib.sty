@@ -255,30 +255,6 @@
     \fi
   }
 \fi
-\def\mplibshowlog#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.showlog = true
-    else
-      luamplib.showlog = false
-    end
-}}
-\def\mpliblegacybehavior#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.legacyverbatimtex = true
-    else
-      luamplib.legacyverbatimtex = false
-    end
-}}
-\def\mplibverbatim#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.verbatiminput = true
-    else
-      luamplib.verbatiminput = false
-    end
-}}
 \newtoks\mplibtmptoks
 \ifcsname ver@luamplib.sty\endcsname
   \protected\def\everymplib{%
@@ -361,30 +337,12 @@
   \fi
 }
 \def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
-\def\mplibtextextlabel#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.textextlabel = true
-    else
-      luamplib.textextlabel = false
-    end
-}}
-\def\mplibcodeinherit#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.codeinherit = true
-    else
-      luamplib.codeinherit = false
-    end
-}}
-\def\mplibglobaltextext#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.globaltextext = true
-    else
-      luamplib.globaltextext = false
-    end
-}}
+\def\mplibshowlog{\luamplibsetglobaloption{showlog}}
+\def\mpliblegacybehavior{\luamplibsetglobaloption{legacyverbatimtex}}
+\def\mplibverbatim{\luamplibsetglobaloption{verbatiminput}}
+\def\mplibtextextlabel{\luamplibsetglobaloption{textextlabel}}
+\def\mplibcodeinherit{\luamplibsetglobaloption{codeinherit}}
+\def\mplibglobaltextext{\luamplibsetglobaloption{globaltextext}}
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 \def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
