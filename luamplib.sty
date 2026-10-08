@@ -11,7 +11,7 @@
 \ifcsname ProvidesPackage\endcsname
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/10/02 v2.44.1 mplib package for LuaTeX]
+    [2026/10/08 v2.44.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -57,9 +57,17 @@
 \ifnum\outputmode>0 %
   \def\mplibputtextbox#1#2#3#4{%
     \pdfextension save\relax
-    \vbox to 0pt{\vss
-      \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
-      \kern#3bp}%
+    \ifnum 0\ifdim #2sp > 16321sp 1\else % for ProfCollege package
+            \ifdim #3sp > 16321sp 1\else
+            \ifdim #2sp < -16321sp 1\else
+            \ifdim #3sp < -16321sp 1\fi\fi\fi\fi > 0
+      \pdfextension literal{#4 #2 #3 cm}%
+      \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
+    \else
+      \vbox to 0pt{\vss
+        \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
+        \kern#3bp}%
+    \fi
     \pdfextension restore\relax}
 \else
   \def\mplibputtextbox#1#2#3#4{%
@@ -247,30 +255,6 @@
     \fi
   }
 \fi
-\def\mplibshowlog#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.showlog = true
-    else
-      luamplib.showlog = false
-    end
-}}
-\def\mpliblegacybehavior#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.legacyverbatimtex = true
-    else
-      luamplib.legacyverbatimtex = false
-    end
-}}
-\def\mplibverbatim#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.verbatiminput = true
-    else
-      luamplib.verbatiminput = false
-    end
-}}
 \newtoks\mplibtmptoks
 \ifcsname ver@luamplib.sty\endcsname
   \protected\def\everymplib{%
@@ -353,30 +337,12 @@
   \fi
 }
 \def\mplibcachedir#1{\directlua{luamplib.getcachedir("\unexpanded{#1}")}}
-\def\mplibtextextlabel#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.textextlabel = true
-    else
-      luamplib.textextlabel = false
-    end
-}}
-\def\mplibcodeinherit#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.codeinherit = true
-    else
-      luamplib.codeinherit = false
-    end
-}}
-\def\mplibglobaltextext#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.globaltextext = true
-    else
-      luamplib.globaltextext = false
-    end
-}}
+\def\mplibshowlog{\luamplibsetglobaloption{showlog}}
+\def\mpliblegacybehavior{\luamplibsetglobaloption{legacyverbatimtex}}
+\def\mplibverbatim{\luamplibsetglobaloption{verbatiminput}}
+\def\mplibtextextlabel{\luamplibsetglobaloption{textextlabel}}
+\def\mplibcodeinherit{\luamplibsetglobaloption{codeinherit}}
+\def\mplibglobaltextext{\luamplibsetglobaloption{globaltextext}}
 \ifx\mplibscratchbox\undefined \newbox\mplibscratchbox \fi
 \def\mplibstarttoPDF#1#2#3#4{%
   \prependtomplibbox
@@ -546,9 +512,9 @@
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text}
+    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=\l__luamplib_tag_struct_tl}
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
-    \tag_mc_begin:n{tag=text}
+    \tag_mc_begin:n{tag=\l__luamplib_tag_struct_tl}
     #2
     \tag_mc_end:
     \tag_struct_end:
@@ -609,10 +575,24 @@
   \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
   {
     \pdfextension save\relax
-    \vbox to 0pt{\vss
-      \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
-        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
-      \kern #3bp}
+    \bool_lazy_any:nTF
+    { % for ProfCollege package
+      { \dim_compare_p:nNn { #2sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #3sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #2sp } < { -16321sp } }
+      { \dim_compare_p:nNn { #3sp } < { -16321sp } }
+    }
+    {
+      \pdfextension literal{#4~#2~#3~cm}
+      \vbox to 0pt{\vss\hbox bdir0 to 0pt{
+        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}}
+    }
+    {
+      \vbox to 0pt{\vss
+        \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
+          \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
+        \kern #3bp}
+    }
     \pdfextension restore\relax
   }
 }
@@ -643,7 +623,7 @@
     \cs_gset_nopar:cpn {luamplib.mplibgroup.text.#1} {#1}
   }
   \tag_mc_end:
-  \tag_mc_begin:n{tag=text}
+  \tag_mc_begin:n{tag=\l__luamplib_tag_struct_tl}
   #2
   \tag_mc_end:
   \tag_mc_begin:n{artifact}
@@ -825,6 +805,13 @@
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{text}
 {
+  \IfFormatAtLeastTF{2026-11-01}
+  {
+    \tl_set:Nn \l__luamplib_tag_struct_tl {text-block}
+  }
+  {
+    \tl_set:Nn \l__luamplib_tag_struct_tl {text}
+  }
   \bool_set_true:N \l__luamplib_tag_usetext_bool
   \socket_assign_plug:nn{tagsupport/luamplib/figure/begin}{artifact}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{artifact}

@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/10/02 v2.44.1 Interface for using the mplib library]%
+  [2026/10/08 v2.44.2 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/10/02 v2.44.1}
+% \date{2026/10/08 v2.44.2}
 %
 % \maketitle
 %
@@ -2321,8 +2321,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.1",
-  date          = "2026/10/02",
+  version       = "2.44.2",
+  date          = "2026/10/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2663,7 +2663,7 @@ do
           file = replaceinputmpfile(name,file)
         end
       else
-        file = mpkpse:find_file(name, name:match("%a+$"))
+        file = mpkpse:find_file(name, name:match"%.(%a+)$")
       end
       if file then
         kpse.record_input_file(file) -- recorder
@@ -6885,6 +6885,24 @@ do
   end
   token.set_lua("luamplib@externalized", index, "global")
 end
+
+%    \end{macrocode}
+%
+% A macro for user's option setting that will be used in luamplib.sty
+%    \begin{macrocode}
+do
+  local index = luatexbase.new_luafunction"luamplib_set_global_option"
+  token.set_lua("luamplibsetglobaloption", index, "global")
+  lua.get_functions_table()[index] = function()
+    local name = token.scan_argument()
+    local bool = token.scan_argument():lower()
+    if bool == "enable" or bool == "true" or bool == "yes" then
+      luamplib[name] = true
+    else
+      luamplib[name] = false
+    end
+  end
+end
 %    \end{macrocode}
 %
 % \iffalse
@@ -6908,7 +6926,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/10/02 v2.44.1 mplib package for LuaTeX]
+    [2026/10/08 v2.44.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -6991,9 +7009,17 @@ end
 \ifnum\outputmode>0 %
   \def\mplibputtextbox#1#2#3#4{%
     \pdfextension save\relax
-    \vbox to 0pt{\vss
-      \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
-      \kern#3bp}%
+    \ifnum 0\ifdim #2sp > 16321sp 1\else % for ProfCollege package
+            \ifdim #3sp > 16321sp 1\else
+            \ifdim #2sp < -16321sp 1\else
+            \ifdim #3sp < -16321sp 1\fi\fi\fi\fi > 0
+      \pdfextension literal{#4 #2 #3 cm}%
+      \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
+    \else
+      \vbox to 0pt{\vss
+        \hbox bdir0 to 0pt{\kern#2bp\pdfextension setmatrix{#4}\raise\dp#1\copy#1\hss}%
+        \kern#3bp}%
+    \fi
     \pdfextension restore\relax}
 \else
   \def\mplibputtextbox#1#2#3#4{%
@@ -7202,34 +7228,6 @@ end
     \fi
   }
 \fi
-%    \end{macrocode}
-%
-%    User settings.
-%    \begin{macrocode}
-\def\mplibshowlog#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.showlog = true
-    else
-      luamplib.showlog = false
-    end
-}}
-\def\mpliblegacybehavior#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.legacyverbatimtex = true
-    else
-      luamplib.legacyverbatimtex = false
-    end
-}}
-\def\mplibverbatim#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.verbatiminput = true
-    else
-      luamplib.verbatiminput = false
-    end
-}}
 \newtoks\mplibtmptoks
 %    \end{macrocode}
 %
@@ -7334,30 +7332,12 @@ end
 %
 %    More user settings.
 %    \begin{macrocode}
-\def\mplibtextextlabel#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.textextlabel = true
-    else
-      luamplib.textextlabel = false
-    end
-}}
-\def\mplibcodeinherit#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.codeinherit = true
-    else
-      luamplib.codeinherit = false
-    end
-}}
-\def\mplibglobaltextext#1{\directlua{
-    local s = string.lower("#1")
-    if s == "enable" or s == "true" or s == "yes" then
-      luamplib.globaltextext = true
-    else
-      luamplib.globaltextext = false
-    end
-}}
+\def\mplibshowlog{\luamplibsetglobaloption{showlog}}
+\def\mpliblegacybehavior{\luamplibsetglobaloption{legacyverbatimtex}}
+\def\mplibverbatim{\luamplibsetglobaloption{verbatiminput}}
+\def\mplibtextextlabel{\luamplibsetglobaloption{textextlabel}}
+\def\mplibcodeinherit{\luamplibsetglobaloption{codeinherit}}
+\def\mplibglobaltextext{\luamplibsetglobaloption{globaltextext}}
 %    \end{macrocode}
 %
 %    The followings are from \ConTeXt general, mostly.
@@ -7570,12 +7550,12 @@ end
   \bool_if:NTF \l__luamplib_tag_usetext_bool
   {
     \tag_mc_end_push:
-    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=text}
+    \tag_struct_begin:n{tag=NonStruct, stash, parent-tag=\l__luamplib_tag_struct_tl}
     \cs_gset_nopar:cpe {luamplib.taggedbox.#1} {\tag_get:n{struct_num}}
 %    \end{macrocode}
 % TODO: We force an MC. Otherwise |a| and |b| in |btex a $x$ b etex| are not tagged.
 %    \begin{macrocode}
-    \tag_mc_begin:n{tag=text}
+    \tag_mc_begin:n{tag=\l__luamplib_tag_struct_tl}
     #2
     \tag_mc_end:
     \tag_struct_end:
@@ -7640,10 +7620,24 @@ end
   \cs_set_nopar:Npn \mplibputtextbox #1 #2 #3 #4
   {
     \pdfextension save\relax
-    \vbox to 0pt{\vss
-      \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
-        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
-      \kern #3bp}
+    \bool_lazy_any:nTF
+    { % for ProfCollege package
+      { \dim_compare_p:nNn { #2sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #3sp } > { 16321sp } }
+      { \dim_compare_p:nNn { #2sp } < { -16321sp } }
+      { \dim_compare_p:nNn { #3sp } < { -16321sp } }
+    }
+    {
+      \pdfextension literal{#4~#2~#3~cm}
+      \vbox to 0pt{\vss\hbox bdir0 to 0pt{
+        \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}}
+    }
+    {
+      \vbox to 0pt{\vss
+        \hbox bdir0 to 0pt{\kern #2bp \pdfextension setmatrix {#4}
+          \socket_use:nnn{tagsupport/luamplib/textext/put}{#1}{\raise\dp#1\copy#1}\hss}
+        \kern #3bp}
+    }
     \pdfextension restore\relax
   }
 }
@@ -7681,7 +7675,7 @@ end
     \cs_gset_nopar:cpn {luamplib.mplibgroup.text.#1} {#1}
   }
   \tag_mc_end:
-  \tag_mc_begin:n{tag=text}
+  \tag_mc_begin:n{tag=\l__luamplib_tag_struct_tl}
   #2
   \tag_mc_end:
   \tag_mc_begin:n{artifact}
@@ -7876,6 +7870,13 @@ end
 }
 \socket_new_plug:nnn{tagsupport/luamplib/figure/init}{text}
 {
+  \IfFormatAtLeastTF{2026-11-01}
+  {
+    \tl_set:Nn \l__luamplib_tag_struct_tl {text-block}
+  }
+  {
+    \tl_set:Nn \l__luamplib_tag_struct_tl {text}
+  }
   \bool_set_true:N \l__luamplib_tag_usetext_bool
   \socket_assign_plug:nn{tagsupport/luamplib/figure/begin}{artifact}
   \socket_assign_plug:nn{tagsupport/luamplib/figure/end}{artifact}

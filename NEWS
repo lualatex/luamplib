@@ -1,5 +1,9 @@
                        History of the luamplib package
 
+2026/10/08 2.44.2
+   * fix \mplibputtextbox for ProfCollege package
+   * adapt to new paragraph-related tag names in LaTeX 2026-11-01
+
 2026/10/02 2.44.1
    * fix externalize functionality for the cases when:
      - '--lua=foo.lua', for instance, is a command-line option
