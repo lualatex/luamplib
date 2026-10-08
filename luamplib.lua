@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.1",
-  date          = "2026/10/02",
+  version       = "2.44.2",
+  date          = "2026/10/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -293,7 +293,7 @@ do
           file = replaceinputmpfile(name,file)
         end
       else
-        file = mpkpse:find_file(name, name:match("%a+$"))
+        file = mpkpse:find_file(name, name:match"%.(%a+)$")
       end
       if file then
         kpse.record_input_file(file) -- recorder

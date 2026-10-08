@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/10/02 v2.44.1 Interface for using the mplib library]%
+  [2026/10/08 v2.44.2 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/10/02 v2.44.1}
+% \date{2026/10/08 v2.44.2}
 %
 % \maketitle
 %
@@ -2321,8 +2321,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.1",
-  date          = "2026/10/02",
+  version       = "2.44.2",
+  date          = "2026/10/08",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -2663,7 +2663,7 @@ do
           file = replaceinputmpfile(name,file)
         end
       else
-        file = mpkpse:find_file(name, name:match("%a+$"))
+        file = mpkpse:find_file(name, name:match"%.(%a+)$")
       end
       if file then
         kpse.record_input_file(file) -- recorder
@@ -6926,7 +6926,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/10/02 v2.44.1 mplib package for LuaTeX]
+    [2026/10/08 v2.44.2 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
