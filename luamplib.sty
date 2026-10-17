@@ -75,8 +75,7 @@
     \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
     \special{pdf:etrans}}
 \fi
-\def\mplibexternaloptions#1\undefined{\ifdefined\luamplibexternalizecount
-  \luamplibgetexternaloptions{#1}\else\xdef\currentmpinstancename{#1}\fi}
+\def\mplibexternaloptions#1\undefined{\ifx\empty#1\empty\else\luamplibgetexternaloptions{#1}\fi}
 \protected\def\usemplibgroup#1#{\begingroup\mplibexternaloptions#1\undefined\usemplibgroupmain}
 \def\usemplibgroupmain#1{%
   \ifdefined\luamplibexternalizecount

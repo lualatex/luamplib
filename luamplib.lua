@@ -3850,7 +3850,7 @@ do
     return args
   end
   if not lfs.modification then require"lualibs-file" end
-  if not file.copy then require "lualibs-io"; file.copy = io.copydata end
+  if not io.copydata then require "lualibs-io" end
 
   function externalize.setup ()
     extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
@@ -3966,7 +3966,7 @@ do
       table.tofile(luaname, figtab, "return")
 
       if bigtime == 0 then
-        file.copy(pdfname, bigname)
+        io.copydata(pdfname, bigname)
       else
         for i,v in ipairs(figtab) do
           if v.pages then
@@ -4134,8 +4134,8 @@ do
       else
         local opt = trim(opt)
         if opt == "externalize" then
-          token.set_macro("luamplibexternalizedothis", "true")
-        else
+          token.set_macro(exte_opts[opt], "true")
+        elseif opt ~= "" then
           token.set_macro("currentmpinstancename", opt, "global")
         end
       end
