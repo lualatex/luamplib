@@ -218,13 +218,13 @@
   \def\mplibcodegetinstancename[#1]{\mplibexternaloptions#1\undefined\mplibcodeindeed}
   \protected\def\mplibcode{%
     \begingroup
+    \glet\currentmpinstancename\empty
     \futurelet\nexttok\mplibcodebranch
   }
   \def\mplibcodebranch{%
     \ifx [\nexttok
       \expandafter\mplibcodegetinstancename
     \else
-      \global\let\currentmpinstancename\empty
       \expandafter\mplibcodeindeed
     \fi
   }
