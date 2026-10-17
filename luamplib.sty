@@ -75,11 +75,20 @@
     \vbox to 0pt{\vss\hbox bdir0 to 0pt{\raise\dp#1\copy#1\hss}}%
     \special{pdf:etrans}}
 \fi
-\protected\def\usemplibgroup#1#{\usemplibgroupmain}
+\def\mplibexternaloptions#1\undefined{\ifdefined\luamplibexternalizecount
+  \luamplibgetexternaloptions{#1}\else\xdef\currentmpinstancename{#1}\fi}
+\protected\def\usemplibgroup#1#{\begingroup\mplibexternaloptions#1\undefined\usemplibgroupmain}
 \def\usemplibgroupmain#1{%
-  \prependtomplibbox\hbox dir TLT\bgroup
-  \csname luamplib.group.#1\endcsname
-  \egroup
+  \ifdefined\luamplibexternalizecount
+    \csname luamplib@externalized\endcsname{luamplib.group.#1}%
+    \ifnum\csname l_tmpa_int\endcsname=0 \usemplibgroupmainreally{#1}\fi
+  \else
+    \usemplibgroupmainreally{#1}%
+  \fi
+  \endgroup
+}
+\def\usemplibgroupmainreally#1{%
+  \prependtomplibbox\hbox dir TLT \luamplibexternalizemaybe{\csname luamplib.group.#1\endcsname}%
 }
 \protected\def\mplibgroup#1{%
   \begingroup
@@ -160,7 +169,7 @@
     \fi
   \fi
 }
-\def\mplibgobbleoptsmpfig[#1]{\mplibmainmpfig}
+\def\mplibgobbleoptsmpfig[#1]{\mplibexternaloptions#1\undefined\mplibmainmpfig}
 \def\mplibmainmpfig{%
   \begingroup
   \mplibsetupcatcodes
@@ -207,7 +216,7 @@
 }
 \protected\def\endmpfig{endmpfig}
 \unless\ifcsname ver@luamplib.sty\endcsname
-  \def\mplibcodegetinstancename[#1]{\xdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \def\mplibcodegetinstancename[#1]{\mplibexternaloptions#1\undefined\mplibcodeindeed}
   \protected\def\mplibcode{%
     \begingroup
     \futurelet\nexttok\mplibcodebranch
@@ -403,10 +412,26 @@
 \let\luamplibtagasgroupset\relax
 \let\luamplibtagasgroupput\luamplibtagtextboxset
 \let\luamplibexternalizemaybe\relax
-\ifcsname SuspendTagging\endcsname\else\endinput\fi
-
 \def\mplibexternalize{%
-  \newcount\luamplibexternalizecount
+  \ifcsname ver@luamplib.sty\endcsname
+    \gdef\AtBeginShipout{\AddToHook{shipout/before}}%
+  \else
+    \ifcsname AtBeginShipout\endcsname\else
+      \ifnum\currentgrouplevel>0 %
+        \errhelp{ If you insist on \mplibexternalize to be allowed in a group,
+        you have to load atbegshi.sty by yourself at the outermost group level.}%
+        \errmessage{Package luamplib Error:
+        \string\mplibexternalize\space should not be used in a group}%
+      \fi
+      \input{atbegshi.sty}%
+    \fi
+    \attribute0=0 %
+    \ifcsname l_tmpa_int\endcsname\else
+      \csname newcount\expandafter\endcsname\csname l_tmpa_int\endcsname\fi
+    \glet\ShipoutBox\AtBeginShipoutBox
+    \glet\DiscardShipoutBox\AtBeginShipoutDiscard
+  \fi
+  \csname newcount\endcsname\luamplibexternalizecount
   \newattribute\luamplibexternalizeattr
   \chardef\luamplibexternalizealloc\allocationnumber
   \def\luamplibexternalizethisfigure{%
@@ -421,7 +446,7 @@
   \directlua{luamplib.externalize.running = false}\fi}
 \def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
   \directlua{luamplib.externalize.running = true}\fi}
-
+\ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
   \keys_define:nn{luamplib/tagging}

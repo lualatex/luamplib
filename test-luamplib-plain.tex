@@ -10,6 +10,7 @@
 \input luamplib.sty
 \mpliblegacybehavior{true}%
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
+%\mplibexternalize
 \tracingcommands1
 A%
 \mplibcode
@@ -160,7 +161,7 @@ endfig;
    VerbatimTeX("\gdef\Dia{" & decimal D & "}");
    endfig;
 \endmplibcode
-diameter:\Dia bp.%
+diameter:\ifdefined\Dia\Dia\fi bp.%
 \mplibcode
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
