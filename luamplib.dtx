@@ -6918,11 +6918,20 @@ do
     end
   end
 end
-
 %    \end{macrocode}
 %
-% A macro for user's option setting that will be used in luamplib.sty
+% Macros for user's option setting that will be used in luamplib.sty
 %    \begin{macrocode}
+do
+  local index = luatexbase.new_luafunction"luamplib_every_mplib"
+  token.set_lua("luamplibaddtoeverycode", index, "global")
+  lua.get_functions_table()[index] = function()
+    local kind  = token.scan_argument()
+    local key   = token.scan_argument()
+    local value = token.scan_argument(false)
+    luamplib[kind][trim(key)] = value
+  end
+end
 do
   local index = luatexbase.new_luafunction"luamplib_set_global_option"
   token.set_lua("luamplibsetglobaloption", index, "global")
@@ -7289,15 +7298,11 @@ end
   }
   \newcommand\mplibdoeverymplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{#1}{#2}%
   }
   \newcommand\mplibdoeveryendmplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{#1}{#2}%
   }
 \else
   \def\mplibgetinstancename[#1]{\def\currentmpinstancename{#1}}
@@ -7309,9 +7314,7 @@ end
   }
   \long\def\mplibdoeverymplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{\currentmpinstancename}{#1}%
   }
   \protected\def\everyendmplib#1#{%
     \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
@@ -7321,9 +7324,7 @@ end
   }
   \long\def\mplibdoeveryendmplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{\currentmpinstancename}{#1}%
   }
 \fi
 %    \end{macrocode}

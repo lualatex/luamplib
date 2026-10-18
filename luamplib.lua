@@ -4142,7 +4142,16 @@ do
     end
   end
 end
-
+do
+  local index = luatexbase.new_luafunction"luamplib_every_mplib"
+  token.set_lua("luamplibaddtoeverycode", index, "global")
+  lua.get_functions_table()[index] = function()
+    local kind  = token.scan_argument()
+    local key   = token.scan_argument()
+    local value = token.scan_argument(false)
+    luamplib[kind][trim(key)] = value
+  end
+end
 do
   local index = luatexbase.new_luafunction"luamplib_set_global_option"
   token.set_lua("luamplibsetglobaloption", index, "global")

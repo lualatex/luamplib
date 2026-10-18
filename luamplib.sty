@@ -277,15 +277,11 @@
   }
   \newcommand\mplibdoeverymplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{#1}{#2}%
   }
   \newcommand\mplibdoeveryendmplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{#1}{#2}%
   }
 \else
   \def\mplibgetinstancename[#1]{\def\currentmpinstancename{#1}}
@@ -297,9 +293,7 @@
   }
   \long\def\mplibdoeverymplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{\currentmpinstancename}{#1}%
   }
   \protected\def\everyendmplib#1#{%
     \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
@@ -309,9 +303,7 @@
   }
   \long\def\mplibdoeveryendmplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{\currentmpinstancename}{#1}%
   }
 \fi
 \def\mpdim#1{ runscript("luamplibdimen{#1}") }
