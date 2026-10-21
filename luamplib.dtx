@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/10/08 v2.44.2 Interface for using the mplib library]%
+  [2026/10/21 v2.44.3 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/10/08 v2.44.2}
+% \date{2026/10/21 v2.44.3}
 %
 % \maketitle
 %
@@ -2321,8 +2321,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.2",
-  date          = "2026/10/08",
+  version       = "2.44.3",
+  date          = "2026/10/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -6893,13 +6893,15 @@ do
   token.set_lua("luamplibgetexternaloptions", index, "global")
   lua.get_functions_table()[index] = function()
     local opts = token.scan_argument()
-    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$",""):explode",+"
+    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$","")
+               :gsub("%b{}", function(s) return s:gsub(",",";"):match"^%{(.*)%}$" end)
+               :explode",+"
     for _,opt in ipairs(opts) do
       local key, val = opt:match"^%s*(.-)%s*=%s*(.-)%s*$"
       if key and val then
         local cs = exte_opts[key]
         if cs then
-          token.set_macro(cs, val, cs == "currentmpinstancename" and "global" or nil)
+          token.set_macro(cs, val:gsub(";",","), cs == "currentmpinstancename" and "global" or nil)
         end
       else
         local opt = trim(opt)
@@ -6962,7 +6964,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/10/08 v2.44.2 mplib package for LuaTeX]
+    [2026/10/21 v2.44.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex

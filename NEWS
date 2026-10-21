@@ -1,5 +1,6 @@
                        History of the luamplib package
 
+2026/10/21 2.44.3
    * 'externalize' functionality now supports Plain TeX as well.
 
 2026/10/08 2.44.2

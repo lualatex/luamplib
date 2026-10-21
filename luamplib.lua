@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.2",
-  date          = "2026/10/08",
+  version       = "2.44.3",
+  date          = "2026/10/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -4117,13 +4117,15 @@ do
   token.set_lua("luamplibgetexternaloptions", index, "global")
   lua.get_functions_table()[index] = function()
     local opts = token.scan_argument()
-    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$",""):explode",+"
+    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$","")
+               :gsub("%b{}", function(s) return s:gsub(",",";"):match"^%{(.*)%}$" end)
+               :explode",+"
     for _,opt in ipairs(opts) do
       local key, val = opt:match"^%s*(.-)%s*=%s*(.-)%s*$"
       if key and val then
         local cs = exte_opts[key]
         if cs then
-          token.set_macro(cs, val, cs == "currentmpinstancename" and "global" or nil)
+          token.set_macro(cs, val:gsub(";",","), cs == "currentmpinstancename" and "global" or nil)
         end
       else
         local opt = trim(opt)
