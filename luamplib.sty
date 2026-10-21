@@ -398,10 +398,6 @@
   \closein0
   \input luamplib.cfg
 \fi
-\def\luamplibtagtextboxset#1#2{#2}
-\let\luamplibnotagtextboxset\luamplibtagtextboxset
-\let\luamplibtagasgroupset\relax
-\let\luamplibtagasgroupput\luamplibtagtextboxset
 \let\luamplibexternalizemaybe\relax
 \def\mplibexternalize{%
   \ifcsname ver@luamplib.sty\endcsname
@@ -437,6 +433,10 @@
   \directlua{luamplib.externalize.running = false}\fi}
 \def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
   \directlua{luamplib.externalize.running = true}\fi}
+\def\luamplibtagtextboxset#1#2{#2}
+\let\luamplibnotagtextboxset\luamplibtagtextboxset
+\let\luamplibtagasgroupset\relax
+\let\luamplibtagasgroupput\luamplibtagtextboxset
 \ifcsname SuspendTagging\endcsname\else\endinput\fi
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
