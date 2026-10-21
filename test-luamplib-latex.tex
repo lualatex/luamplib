@@ -1,4 +1,5 @@
 \ifnum\outputmode > 0
+  %\RequirePackage{luatagging}
   \DocumentMetadata{ lang=en-US, pdfversion=2.0, pdfstandard=ua-2,
     tagging=on, tagging-setup={math/setup=mathml-SE},
 %    debug=BBox,
@@ -476,7 +477,7 @@ draw TeX;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceTwo]
+\begin{mplibcode}[instance=instanceTwo]
 beginfig(1);
 if not known a:
   draw btex code is not inherited from an instance with a different name etex;
@@ -510,7 +511,7 @@ endfig;
 \end{mplibcode}%
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\begin{mplibcode}[instanceOne]
+\begin{mplibcode}[instancename=instanceOne]
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
   draw TeX;

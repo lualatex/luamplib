@@ -85,7 +85,7 @@ See source file '\inFileName' for licencing and contact information.
 %<*driver>
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesFile{luamplib.drv}%
-  [2026/10/08 v2.44.2 Interface for using the mplib library]%
+  [2026/10/21 v2.44.3 Interface for using the mplib library]%
 \documentclass[11pt,a4paper]{ltxdoc}
 \usepackage{geometry,graphicx,xspace}
 \usepackage[x11names]{xcolor}
@@ -174,7 +174,7 @@ See source file '\inFileName' for licencing and contact information.
 % \author{Hans Hagen, Taco Hoekwater, Elie Roux, Philipp Gesang and Kim Dohyun\\
 % Current Maintainer: Kim Dohyun\\
 % Support: \url{https://github.com/lualatex/luamplib}}
-% \date{2026/10/08 v2.44.2}
+% \date{2026/10/21 v2.44.3}
 %
 % \maketitle
 %
@@ -757,7 +757,7 @@ See source file '\inFileName' for licencing and contact information.
 %   \notabene You should put this command \emph{before} \cs{mplibexternalize}.
 % \notabene
 % If something goes wrong with `externalize' feature, delete the files whose name starts with \meta{prefix} (especially the |.lua| file).
-% At next run of \LaTeX, the world of externalization will start anew from the very beginning.
+% At next run of \TeX, the world of externalization will start anew from the very beginning.
 % Again, it would be a good idea to delete the files just mentioned when you have modified lots of code chunks after the initial run of externalization, because it will improve the compilation speed and make the size of PDF file much smaller.
 %
 % \item[\cs{mplibexternalizesuspend}]
@@ -788,7 +788,7 @@ See source file '\inFileName' for licencing and contact information.
 %
 % \paragraph{Known limitations}
 % \begin{itemize}
-% \item The `externalize' feature currently supports only \LaTeX\ format in PDF mode.
+% \item The `externalize' feature currently supports \LaTeX/Plain\TeX\ format in \emph{PDF mode} only.
 %
 % \item The part of a figure that protrudes out of the figure's bounding box will be cut off, and so invisible.
 %   As said, |externalizemargin| option is provided to address this problem.
@@ -2321,8 +2321,8 @@ See source file '\inFileName' for licencing and contact information.
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.2",
-  date          = "2026/10/08",
+  version       = "2.44.3",
+  date          = "2026/10/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -6610,12 +6610,6 @@ end
 do
   local extname, prefix, pdfname, luaname, figtab, prevfigtab, bigname, bigtime
   local majorV, minorV = pdf.getmajorversion(), pdf.getminorversion()
-  local function is_shell_esc()
-    if status.shell_escape == 1 then return true end
-    luatexbase.module_error("luamplib",
-    "--shell-escape is needed for 'externalize' feature.\n\z
-    Rerun with --shell-escape option.")
-  end
   local function args_normalized ()
     local args = { }
     for i = exeidx, #arg do
@@ -6625,6 +6619,8 @@ do
     tableinsert(args, 3, "--interaction=nonstopmode")
     return args
   end
+  if not lfs.modification then require"lualibs-file" end
+  if not io.copydata then require "lualibs-io" end
 
   function externalize.setup ()
     extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
@@ -6654,31 +6650,11 @@ do
       externalize.activate()
     end
 
-    luatexbase.add_to_callback("finish_pdffile", function()
-      local mandatory = figtab.mandatory
-      if mandatory then
-        local depends = externalize.depends
-        for i = 1, #figtab do
-          if mandatory[i] then
-            for _,v in ipairs(depends[i]) do
-              mandatory[v] = true
-            end
-          end
-        end
-      end
-      if not figtab.found then
-        table.tofile(luaname, figtab, "return")
-        if not mandatory or not is_shell_esc() then return end
-        luatexbase.add_to_callback("wrapup_run", function()
-          os.exec(args_normalized())
-        end, "luamplib_externalize")
-      end
-    end,
-    "luamplib_externalize")
+    externalize.wrapup_run()
   end
   function externalize.activate ()
     figtab.active = true
-    texsprint"\\AddToHook{shipout/before}\z
+    texsprint "\\AtBeginShipout\z
     {\\directlua{luamplib.externalize.shipout(tex.getbox(\\the\\ShipoutBox))}}"
   end
   function externalize.latelua(wd,ht,dp,mgn)
@@ -6696,8 +6672,7 @@ do
       if curr.head then
         local count = attr and has_attribute(curr,attr)
         if count then
-          local page = (externalize.page or tex.count.ReadonlyShipoutCounter) + 1
-          externalize.page = page
+          local page = status.total_pages + 1
 
           local fig = figtab[count]
           local wd, ht, dp = curr.width, curr.height, curr.depth
@@ -6726,22 +6701,38 @@ do
     end
 
     if figtab.found then
-      if not luatexbase.in_callback("wrapup_run","luamplib_externalize") then
-        if is_shell_esc() then
-          externalize.wrapup_run()
-        else
-          luatexbase.add_to_callback("wrapup_run",function() end,"luamplib_externalize")
-        end
-      end
       texsprint"\\DiscardShipoutBox"
     end
   end
   function externalize.wrapup_run ()
+    local shell_esc = status.shell_escape == 1
+
     luatexbase.add_to_callback("wrapup_run", function()
+      local mandatory = figtab.mandatory
+      if not shell_esc and (mandatory or figtab.found) then
+        luatexbase.module_warning("luamplib",
+        "--shell-escape is needed for 'externalize' feature.\n\z
+        Rerun with --shell-escape option.")
+        return
+      end
+      if mandatory then
+        local depends = externalize.depends
+        for i = 1, #figtab do
+          if mandatory[i] then
+            for _,v in ipairs(depends[i]) do
+              mandatory[v] = true
+            end
+          end
+        end
+      end
       table.tofile(luaname, figtab, "return")
+      if not figtab.found then
+        if not mandatory then return end
+        goto os_exec
+      end
 
       if bigtime == 0 then
-        file.copy(pdfname, bigname)
+        io.copydata(pdfname, bigname)
       else
         for i,v in ipairs(figtab) do
           if v.pages then
@@ -6766,6 +6757,7 @@ do
         end
       end
 
+      ::os_exec::
       os.exec(args_normalized())
     end,
     "luamplib_externalize")
@@ -6856,12 +6848,16 @@ do
         if not spec then goto do_this_fig end
         texsprint(ccexplat,
           "\\prependtomplibbox\\hbox dir TLT\\bgroup",
+          "\\ifcsname tag_socket_use:nn\\endcsname",
           "\\tag_socket_use:nn{luamplib/figure/begin}\\l__luamplib_tag_alt_dflt_tl",
+          "\\fi",
           "\\setbox\\mplibscratchbox\\vbox to", ht+dp, "sp{\\vss\\hbox to", wd, "sp{\\hss",
           "\\directlua{img.write{", spec, "}}\\hss}\\vss}",
           "\\dp\\mplibscratchbox=", dp, "sp",
           "\\ht\\mplibscratchbox=\\dimexpr\\ht\\mplibscratchbox-\\dp\\mplibscratchbox\\relax",
+          "\\ifcsname tag_socket_use:nnn\\endcsname",
           "\\tag_socket_use:nnn{luamplib/figure/end}{\\mplibscratchbox}{\\box\\mplibscratchbox}",
+          "\\else\\box\\mplibscratchbox\\fi",
           "\\egroup")
       end
       return true
@@ -6885,11 +6881,53 @@ do
   end
   token.set_lua("luamplib@externalized", index, "global")
 end
-
+do
+  local exte_opts = {
+    externalize = "luamplibexternalizedothis",
+    externalizedependson = "luamplibexternalizedependson",
+    externalizemargin = "luamplibexternalizemargin",
+    instance = "currentmpinstancename",
+    instancename = "currentmpinstancename",
+  }
+  local index = luatexbase.new_luafunction"luamplib_externalize_options"
+  token.set_lua("luamplibgetexternaloptions", index, "global")
+  lua.get_functions_table()[index] = function()
+    local opts = token.scan_argument()
+    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$","")
+               :gsub("%b{}", function(s) return s:gsub(",",";"):match"^%{(.*)%}$" end)
+               :explode",+"
+    for _,opt in ipairs(opts) do
+      local key, val = opt:match"^%s*(.-)%s*=%s*(.-)%s*$"
+      if key and val then
+        local cs = exte_opts[key]
+        if cs then
+          token.set_macro(cs, val:gsub(";",","), cs == "currentmpinstancename" and "global" or nil)
+        end
+      else
+        local opt = trim(opt)
+        if opt == "externalize" then
+          token.set_macro(exte_opts[opt], "true")
+        elseif opt ~= "" then
+          token.set_macro("currentmpinstancename", opt, "global")
+        end
+      end
+    end
+  end
+end
 %    \end{macrocode}
 %
-% A macro for user's option setting that will be used in luamplib.sty
+% Macros for user's option setting that will be used in luamplib.sty
 %    \begin{macrocode}
+do
+  local index = luatexbase.new_luafunction"luamplib_every_mplib"
+  token.set_lua("luamplibaddtoeverycode", index, "global")
+  lua.get_functions_table()[index] = function()
+    local kind  = token.scan_argument()
+    local key   = token.scan_argument()
+    local value = token.scan_argument(false)
+    luamplib[kind][trim(key)] = value
+  end
+end
 do
   local index = luatexbase.new_luafunction"luamplib_set_global_option"
   token.set_lua("luamplibsetglobaloption", index, "global")
@@ -6926,7 +6964,7 @@ end
 %    \begin{macrocode}
   \NeedsTeXFormat{LaTeX2e}
   \ProvidesPackage{luamplib}
-    [2026/10/08 v2.44.2 mplib package for LuaTeX]
+    [2026/10/21 v2.44.3 mplib package for LuaTeX]
 \fi
 \ifdefined\newluafunction\else
   \input ltluatex
@@ -7031,11 +7069,19 @@ end
 %
 %    use Transparency Group
 %    \begin{macrocode}
-\protected\def\usemplibgroup#1#{\usemplibgroupmain}
+\def\mplibexternaloptions#1\undefined{\ifx\empty#1\empty\else\luamplibgetexternaloptions{#1}\fi}
+\protected\def\usemplibgroup#1#{\begingroup\mplibexternaloptions#1\undefined\usemplibgroupmain}
 \def\usemplibgroupmain#1{%
-  \prependtomplibbox\hbox dir TLT\bgroup
-  \csname luamplib.group.#1\endcsname
-  \egroup
+  \ifdefined\luamplibexternalizecount
+    \csname luamplib@externalized\endcsname{luamplib.group.#1}%
+    \ifnum\csname l_tmpa_int\endcsname=0 \usemplibgroupmainreally{#1}\fi
+  \else
+    \usemplibgroupmainreally{#1}%
+  \fi
+  \endgroup
+}
+\def\usemplibgroupmainreally#1{%
+  \prependtomplibbox\hbox dir TLT \luamplibexternalizemaybe{\csname luamplib.group.#1\endcsname}%
 }
 \protected\def\mplibgroup#1{%
   \begingroup
@@ -7125,7 +7171,7 @@ end
     \fi
   \fi
 }
-\def\mplibgobbleoptsmpfig[#1]{\mplibmainmpfig}
+\def\mplibgobbleoptsmpfig[#1]{\mplibexternaloptions#1\undefined\mplibmainmpfig}
 \def\mplibmainmpfig{%
   \begingroup
   \mplibsetupcatcodes
@@ -7176,16 +7222,16 @@ end
 %    The Plain-specific stuff.
 %    \begin{macrocode}
 \unless\ifcsname ver@luamplib.sty\endcsname
-  \def\mplibcodegetinstancename[#1]{\xdef\currentmpinstancename{#1}\mplibcodeindeed}
+  \def\mplibcodegetinstancename[#1]{\mplibexternaloptions#1\undefined\mplibcodeindeed}
   \protected\def\mplibcode{%
     \begingroup
+    \glet\currentmpinstancename\empty
     \futurelet\nexttok\mplibcodebranch
   }
   \def\mplibcodebranch{%
     \ifx [\nexttok
       \expandafter\mplibcodegetinstancename
     \else
-      \global\let\currentmpinstancename\empty
       \expandafter\mplibcodeindeed
     \fi
   }
@@ -7248,15 +7294,11 @@ end
   }
   \newcommand\mplibdoeverymplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{#1}{#2}%
   }
   \newcommand\mplibdoeveryendmplib[2][]{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["#1"] = [===[\unexpanded{#2}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{#1}{#2}%
   }
 \else
   \def\mplibgetinstancename[#1]{\def\currentmpinstancename{#1}}
@@ -7268,9 +7310,7 @@ end
   }
   \long\def\mplibdoeverymplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everymplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everymplib}{\currentmpinstancename}{#1}%
   }
   \protected\def\everyendmplib#1#{%
     \ifx\empty#1\empty \mplibgetinstancename[]\else \mplibgetinstancename#1\fi
@@ -7280,9 +7320,7 @@ end
   }
   \long\def\mplibdoeveryendmplib#1{%
     \endgroup
-    \directlua{
-      luamplib.everyendmplib["\currentmpinstancename"] = [===[\unexpanded{#1}]===]
-    }%
+    \luamplibaddtoeverycode{everyendmplib}{\currentmpinstancename}{#1}%
   }
 \fi
 %    \end{macrocode}
@@ -7412,21 +7450,29 @@ end
   \input luamplib.cfg
 \fi
 %    \end{macrocode}
-%
-%    Code for \LaTeX, especially \pkg{tagpdf}
+% |externalize| functionality supports PDF mode only.
 %    \begin{macrocode}
-\def\luamplibtagtextboxset#1#2{#2}
-\let\luamplibnotagtextboxset\luamplibtagtextboxset
-\let\luamplibtagasgroupset\relax
-\let\luamplibtagasgroupput\luamplibtagtextboxset
 \let\luamplibexternalizemaybe\relax
-\ifcsname SuspendTagging\endcsname\else\endinput\fi
-
-%    \end{macrocode}
-% |externalize| functionality supports \LaTeX\ PDF mode only.
-%    \begin{macrocode}
 \def\mplibexternalize{%
-  \newcount\luamplibexternalizecount
+  \ifcsname ver@luamplib.sty\endcsname
+    \gdef\AtBeginShipout{\AddToHook{shipout/before}}%
+  \else
+    \ifcsname AtBeginShipout\endcsname\else
+      \ifnum\currentgrouplevel>0 %
+        \errhelp{ If you insist on \mplibexternalize to be allowed in a group,
+        you have to load atbegshi.sty by yourself at the outermost group level.}%
+        \errmessage{Package luamplib Error:
+        \string\mplibexternalize\space should not be used in a group}%
+      \fi
+      \input{atbegshi.sty}%
+    \fi
+    \attribute0=0 %
+    \ifcsname l_tmpa_int\endcsname\else
+      \csname newcount\expandafter\endcsname\csname l_tmpa_int\endcsname\fi
+    \glet\ShipoutBox\AtBeginShipoutBox
+    \glet\DiscardShipoutBox\AtBeginShipoutDiscard
+  \fi
+  \csname newcount\endcsname\luamplibexternalizecount
   \newattribute\luamplibexternalizeattr
   \chardef\luamplibexternalizealloc\allocationnumber
   \def\luamplibexternalizethisfigure{%
@@ -7441,7 +7487,15 @@ end
   \directlua{luamplib.externalize.running = false}\fi}
 \def\mplibexternalizeresume{\ifdefined\luamplibexternalizecount
   \directlua{luamplib.externalize.running = true}\fi}
-
+\def\luamplibtagtextboxset#1#2{#2}
+\let\luamplibnotagtextboxset\luamplibtagtextboxset
+\let\luamplibtagasgroupset\relax
+\let\luamplibtagasgroupput\luamplibtagtextboxset
+\ifcsname SuspendTagging\endcsname\else\endinput\fi
+%    \end{macrocode}
+%
+%    Code for \LaTeX, especially \pkg{tagpdf}
+%    \begin{macrocode}
 \ifcsname ver@tagpdf.sty\endcsname \else
   \ExplSyntaxOn
   \keys_define:nn{luamplib/tagging}

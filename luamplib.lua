@@ -11,8 +11,8 @@
 
 luatexbase.provides_module {
   name          = "luamplib",
-  version       = "2.44.2",
-  date          = "2026/10/08",
+  version       = "2.44.3",
+  date          = "2026/10/21",
   description   = "Lua package to typeset Metapost with LuaTeX's MPLib.",
 }
 
@@ -3834,12 +3834,6 @@ end
 do
   local extname, prefix, pdfname, luaname, figtab, prevfigtab, bigname, bigtime
   local majorV, minorV = pdf.getmajorversion(), pdf.getminorversion()
-  local function is_shell_esc()
-    if status.shell_escape == 1 then return true end
-    luatexbase.module_error("luamplib",
-    "--shell-escape is needed for 'externalize' feature.\n\z
-    Rerun with --shell-escape option.")
-  end
   local function args_normalized ()
     local args = { }
     for i = exeidx, #arg do
@@ -3849,6 +3843,8 @@ do
     tableinsert(args, 3, "--interaction=nonstopmode")
     return args
   end
+  if not lfs.modification then require"lualibs-file" end
+  if not io.copydata then require "lualibs-io" end
 
   function externalize.setup ()
     extname = externalize.MY_NAME or format("%s-mplib-figure",tex.jobname)
@@ -3878,31 +3874,11 @@ do
       externalize.activate()
     end
 
-    luatexbase.add_to_callback("finish_pdffile", function()
-      local mandatory = figtab.mandatory
-      if mandatory then
-        local depends = externalize.depends
-        for i = 1, #figtab do
-          if mandatory[i] then
-            for _,v in ipairs(depends[i]) do
-              mandatory[v] = true
-            end
-          end
-        end
-      end
-      if not figtab.found then
-        table.tofile(luaname, figtab, "return")
-        if not mandatory or not is_shell_esc() then return end
-        luatexbase.add_to_callback("wrapup_run", function()
-          os.exec(args_normalized())
-        end, "luamplib_externalize")
-      end
-    end,
-    "luamplib_externalize")
+    externalize.wrapup_run()
   end
   function externalize.activate ()
     figtab.active = true
-    texsprint"\\AddToHook{shipout/before}\z
+    texsprint "\\AtBeginShipout\z
     {\\directlua{luamplib.externalize.shipout(tex.getbox(\\the\\ShipoutBox))}}"
   end
   function externalize.latelua(wd,ht,dp,mgn)
@@ -3920,8 +3896,7 @@ do
       if curr.head then
         local count = attr and has_attribute(curr,attr)
         if count then
-          local page = (externalize.page or tex.count.ReadonlyShipoutCounter) + 1
-          externalize.page = page
+          local page = status.total_pages + 1
 
           local fig = figtab[count]
           local wd, ht, dp = curr.width, curr.height, curr.depth
@@ -3950,22 +3925,38 @@ do
     end
 
     if figtab.found then
-      if not luatexbase.in_callback("wrapup_run","luamplib_externalize") then
-        if is_shell_esc() then
-          externalize.wrapup_run()
-        else
-          luatexbase.add_to_callback("wrapup_run",function() end,"luamplib_externalize")
-        end
-      end
       texsprint"\\DiscardShipoutBox"
     end
   end
   function externalize.wrapup_run ()
+    local shell_esc = status.shell_escape == 1
+
     luatexbase.add_to_callback("wrapup_run", function()
+      local mandatory = figtab.mandatory
+      if not shell_esc and (mandatory or figtab.found) then
+        luatexbase.module_warning("luamplib",
+        "--shell-escape is needed for 'externalize' feature.\n\z
+        Rerun with --shell-escape option.")
+        return
+      end
+      if mandatory then
+        local depends = externalize.depends
+        for i = 1, #figtab do
+          if mandatory[i] then
+            for _,v in ipairs(depends[i]) do
+              mandatory[v] = true
+            end
+          end
+        end
+      end
       table.tofile(luaname, figtab, "return")
+      if not figtab.found then
+        if not mandatory then return end
+        goto os_exec
+      end
 
       if bigtime == 0 then
-        file.copy(pdfname, bigname)
+        io.copydata(pdfname, bigname)
       else
         for i,v in ipairs(figtab) do
           if v.pages then
@@ -3990,6 +3981,7 @@ do
         end
       end
 
+      ::os_exec::
       os.exec(args_normalized())
     end,
     "luamplib_externalize")
@@ -4080,12 +4072,16 @@ do
         if not spec then goto do_this_fig end
         texsprint(ccexplat,
           "\\prependtomplibbox\\hbox dir TLT\\bgroup",
+          "\\ifcsname tag_socket_use:nn\\endcsname",
           "\\tag_socket_use:nn{luamplib/figure/begin}\\l__luamplib_tag_alt_dflt_tl",
+          "\\fi",
           "\\setbox\\mplibscratchbox\\vbox to", ht+dp, "sp{\\vss\\hbox to", wd, "sp{\\hss",
           "\\directlua{img.write{", spec, "}}\\hss}\\vss}",
           "\\dp\\mplibscratchbox=", dp, "sp",
           "\\ht\\mplibscratchbox=\\dimexpr\\ht\\mplibscratchbox-\\dp\\mplibscratchbox\\relax",
+          "\\ifcsname tag_socket_use:nnn\\endcsname",
           "\\tag_socket_use:nnn{luamplib/figure/end}{\\mplibscratchbox}{\\box\\mplibscratchbox}",
+          "\\else\\box\\mplibscratchbox\\fi",
           "\\egroup")
       end
       return true
@@ -4109,7 +4105,49 @@ do
   end
   token.set_lua("luamplib@externalized", index, "global")
 end
-
+do
+  local exte_opts = {
+    externalize = "luamplibexternalizedothis",
+    externalizedependson = "luamplibexternalizedependson",
+    externalizemargin = "luamplibexternalizemargin",
+    instance = "currentmpinstancename",
+    instancename = "currentmpinstancename",
+  }
+  local index = luatexbase.new_luafunction"luamplib_externalize_options"
+  token.set_lua("luamplibgetexternaloptions", index, "global")
+  lua.get_functions_table()[index] = function()
+    local opts = token.scan_argument()
+    opts = opts:gsub("^%s*%[",""):gsub("%]%s*$","")
+               :gsub("%b{}", function(s) return s:gsub(",",";"):match"^%{(.*)%}$" end)
+               :explode",+"
+    for _,opt in ipairs(opts) do
+      local key, val = opt:match"^%s*(.-)%s*=%s*(.-)%s*$"
+      if key and val then
+        local cs = exte_opts[key]
+        if cs then
+          token.set_macro(cs, val:gsub(";",","), cs == "currentmpinstancename" and "global" or nil)
+        end
+      else
+        local opt = trim(opt)
+        if opt == "externalize" then
+          token.set_macro(exte_opts[opt], "true")
+        elseif opt ~= "" then
+          token.set_macro("currentmpinstancename", opt, "global")
+        end
+      end
+    end
+  end
+end
+do
+  local index = luatexbase.new_luafunction"luamplib_every_mplib"
+  token.set_lua("luamplibaddtoeverycode", index, "global")
+  lua.get_functions_table()[index] = function()
+    local kind  = token.scan_argument()
+    local key   = token.scan_argument()
+    local value = token.scan_argument(false)
+    luamplib[kind][trim(key)] = value
+  end
+end
 do
   local index = luatexbase.new_luafunction"luamplib_set_global_option"
   token.set_lua("luamplibsetglobaloption", index, "global")

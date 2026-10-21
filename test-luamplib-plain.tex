@@ -10,6 +10,7 @@
 \input luamplib.sty
 \mpliblegacybehavior{true}%
 \everymplib{ beginfig(0); }\everyendmplib{ endfig; }
+%\mplibexternalize
 \tracingcommands1
 A%
 \mplibcode
@@ -160,7 +161,7 @@ endfig;
    VerbatimTeX("\gdef\Dia{" & decimal D & "}");
    endfig;
 \endmplibcode
-diameter:\Dia bp.%
+diameter:\ifdefined\Dia\Dia\fi bp.%
 \mplibcode
   vardef rotatedlabel@#(expr str, loc, angl) =
     draw thelabel@#(str, loc) rotatedaround(loc, angl)
@@ -321,8 +322,8 @@ usemplibgroup "testTRgroup"
 \mplibgroup{mytex}[matrix="rotated 15"] \TeX \endmplibgroup
 \hbox to0pt{\hss\vrule width.5pt height5pt depth5pt\hss}%
 \hbox to0pt{\hss\vrule width10pt height.25pt depth.25pt\hss}%
-\usemplibgroup{mytex}%
-\mpfig usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
+\usemplibgroup[externalizemargin=5bp]{mytex}%
+\mpfig[externalizemargin=5bp] usemplibgroup "mytex"; draw (left--right) scaled 5; draw (up--down) scaled 5; \endmpfig
 \par
 \leavevmode
 \mpfig
@@ -408,7 +409,7 @@ draw TeX;
 \endmplibcode
 Current instance name is: \currentmpinstancename \vskip 2\baselineskip
 
-\mplibcode[instanceTwo]
+\mplibcode[instancename=instanceTwo]
 beginfig(1);
 if not known a:
   draw btex code is not inherited from an instance with a different name etex;
@@ -442,7 +443,7 @@ endfig;
 \endmplibcode
 Current instance name is: \currentmpinstancename (should be empty) \vskip 2\baselineskip
 
-\mplibcode[instanceOne]
+\mplibcode[instance=instanceOne]
 draw unitsquare scaled a;
 draw btex a square with side $=a$, inherited from the same instance etex shifted (3/2a, 1/2a);
   draw TeX;
